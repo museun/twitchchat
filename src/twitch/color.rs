@@ -1,5 +1,9 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A 24-bit triplet for hex colors. Defaults to White (0xFF,0xFF,0xFF)
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RGB(pub u8, pub u8, pub u8);
 
 impl Default for RGB {
@@ -16,7 +20,8 @@ impl std::fmt::Display for RGB {
 }
 
 impl RGB {
-    /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into the RGB, `default`s if it can't
+    /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into the RGB,
+    /// `default`s if it can't
     pub fn from_hex(input: &str) -> Self {
         let input = input.trim();
         let input = match (input.chars().next(), input.len()) {
@@ -68,6 +73,7 @@ impl From<Twitch> for RGB {
 
 /// These are the default Twitch colors
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Twitch {
     /// RGB (hex): #0000FF
     Blue,
@@ -101,6 +107,12 @@ pub enum Twitch {
     YellowGreen,
     /// Turbo colors are custom user-selected colors
     Turbo(RGB),
+}
+
+impl Default for Twitch {
+    fn default() -> Self {
+        Twitch::Turbo(RGB::default())
+    }
 }
 
 impl From<&str> for Twitch {

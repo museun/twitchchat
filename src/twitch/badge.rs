@@ -1,4 +1,8 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum BadgeKind {
     Admin,
     Bits,
@@ -13,6 +17,7 @@ pub enum BadgeKind {
 
 /// Badges attached to a message
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Badge {
     pub kind: BadgeKind,
     pub data: String,

@@ -1,19 +1,25 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::ops::Range;
 
 /// Emotes are little pictograms used inline in twitch messages
 ///
-/// They are presented (to the irc connection) in a `id1:range1,range2/id2:range1,..` form
-/// which marks the byte position that the emote is at.
+/// They are presented (to the irc connection) in a
+/// `id1:range1,range2/id2:range1,..` form which marks the byte position that
+/// the emote is at.
 ///
 /// Examples:
 ///
 /// `"testing Kappa"` would be `25:8-13`
 /// `"Kappa testing Kappa"` would be `25:0-5,14-19`
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Emotes {
     /// The emote id, e.g. Kappa = 25
     pub id: usize,
-    /// A list of [Range](std::ops::Range) in the message where this emote is found
+    /// A list of [Range](std::ops::Range) in the message where this emote is
+    /// found
     pub ranges: Vec<Range<u16>>,
 }
 

@@ -65,7 +65,8 @@ pub enum Message {
     Reconnect(commands::Reconnect),
     /// Identifies the channel's chat settings (e.g., slow mode duration).
     RoomState(commands::RoomState),
-    /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
+    /// Announces Twitch-specific events to the channel (e.g., a user's
+    /// subscription notification).
     UserNotice(commands::UserNotice),
     /// Identifies a user's chat settings or properties (e.g., chat color)..
     UserState(commands::UserState),

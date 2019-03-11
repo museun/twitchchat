@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
 
@@ -6,6 +9,7 @@ use std::collections::HashMap;
 
 /// Tags are IRCv3 message tags. Twitch uses them extensively
 #[derive(Debug, Default, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Tags(pub(crate) HashMap<String, String>);
 
 impl Tags {
