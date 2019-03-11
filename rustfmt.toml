@@ -1,0 +1,6 @@
+wrap_comments = true
+format_strings = true
+format_macro_matchers = true
+fn_single_line = false
+imports_layout = "HorizontalVertical"
+edition = "2018"
