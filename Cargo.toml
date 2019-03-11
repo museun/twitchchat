@@ -15,6 +15,6 @@ hashbrown = { version = "0.1.8", features = ["serde"], optional = true }
 serde = { version = "1.0.89", features = ["derive"], optional = true }
 
 [features]
-default = ["hashbrown", "teststream"]
+default = ["hashbrown", "teststream", "serde_derive"]
 teststream = []
 serde_derive = ["serde"]
