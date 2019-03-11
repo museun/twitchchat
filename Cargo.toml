@@ -1,6 +1,6 @@
 [package]
 name = "twitchchat"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 description = "interface to the irc-side of twitch's chat system"
