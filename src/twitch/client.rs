@@ -4,8 +4,9 @@ use parking_lot::{Mutex, RwLock};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
 
-use super::{commands, Color, Error, LocalUser, Message};
+use super::{commands, Capability, Color, Error, LocalUser, Message};
 use crate::irc::types::Message as IrcMessage;
+use crate::UserConfig;
 
 type FilterMap = HashMap<super::dumb::Filter, Box<Fn(Message) + Send + Sync>>;
 
@@ -32,12 +33,20 @@ where
         }
     }
 
-    /// Runs, consuming all messages. send a message on the quit channel to stop
-    pub fn run(mut self, quit: std::sync::mpsc::Receiver<()>) -> Result<(), Error> {
-        while let Err(..) = quit.try_recv() {
+    /// Runs, consuming all messages. (pumping them through .on() filters)
+    pub fn run(mut self) -> Result<(), Error> {
+        loop {
             let _ = self.read_message()?;
         }
-        Ok(())
+    }
+
+    pub fn register(&mut self, config: UserConfig) -> Result<(), Error> {
+        for cap in config.caps.into_iter().filter_map(Capability::get_command) {
+            self.write_line(cap)?;
+        }
+
+        self.write_line(&format!("PASS {}", config.token))?;
+        self.write_line(&format!("NICK {}", config.nick))
     }
 
     /// Waits for the `GLOBALUSERSTATE` before continuing, discarding any messages received
@@ -53,21 +62,11 @@ where
                         color: state.color(),
                         badges: state.badges(),
                         emote_sets: state.emote_sets(),
-                    })
+                    });
                 }
                 _ => continue,
             }
         }
-    }
-
-    pub(crate) fn read_line(&mut self) -> Result<String, Error> {
-        let mut buf = String::new();
-        {
-            let mut read = self.read.lock();
-            read.read_line(&mut buf).map_err(Error::Read)?;
-        }
-
-        Ok(buf)
     }
 
     /// Reads a message

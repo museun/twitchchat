@@ -1,9 +1,9 @@
-use super::UserConfig;
 use crate::twitch::{Client, Error};
+use crate::UserConfig;
 
 use std::net::TcpStream;
 
-/// A simple Read/Write provider that uses a [TcpStream](std::net::TcpStream) (allowing for a TLS TcpStream)
+/// A simple Read/Write provider that uses a [TcpStream](std::net::TcpStream)
 pub struct TcpConn;
 
 // TODO TLS feature, use https://github.com/sfackler/rust-native-tls
@@ -11,9 +11,7 @@ pub struct TcpConn;
 // irc://irc.chat.twitch.tv:6667
 // TODO connect_timeout
 impl TcpConn {
-    /// Connects to the non-TLS Twitch irc endpoint and registering with  [UserConfig](UserConfig)
-    ///
-    /// This will block until the connection has successfully been completed, yielding the actual username    
+    /// Connects to the non-TLS Twitch irc endpoint and registering with [UserConfig](UserConfig)
     pub fn connect(config: &UserConfig) -> Result<Client<TcpStream, TcpStream>, Error> {
         const ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
@@ -35,6 +33,3 @@ impl TcpConn {
         Ok(client)
     }
 }
-
-
-

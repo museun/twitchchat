@@ -9,21 +9,31 @@ pub use self::emotes::Emotes;
 /// An assortment of Twitch commands
 pub mod commands;
 
+mod capability;
+pub use self::capability::Capability;
+
 mod error;
 pub use self::error::Error;
 
 mod client;
 pub use self::client::Client;
 
+/// Information gathered during the `GLOBALUSERSTATE` event
 #[derive(Debug, Clone)]
 pub struct LocalUser {
+    /// Your user id
     pub user_id: u64,
+    /// Your display name, if set
     pub display_name: Option<String>,
+    /// Your color, if set
     pub color: Option<Color>,
+    /// Your badges
     pub badges: Vec<Badge>,
+    /// Your list of emote sets
     pub emote_sets: Vec<u64>,
 }
 
+/// Messages created by the client.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Message {
     /// An irc Message
