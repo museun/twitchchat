@@ -2,8 +2,10 @@
 name = "twitchchat"
 version = "0.0.1"
 authors = ["museun <museun@outlook.com>"]
+repository = "https://github.com/museun/twitchchat"
 edition = "2018"
 description = "interface to the irc-side of twitch's chat system"
+keywords = [ "twitch", "irc" ]
 license = "0BSD"
 
 [dependencies]
