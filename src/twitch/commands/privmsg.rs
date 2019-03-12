@@ -26,6 +26,14 @@ impl PrivMsg {
     pub fn color(&self) -> Option<Color> {
         self.get("color").map(RGB::from_hex).map(Into::into)
     }
+    /// The irc name of the user (generally same as their twitch account name)
+    pub fn irc_name(&self) -> &str {
+        if let Some(crate::irc::types::Prefix::User { ref nick, .. }) = self.prefix {
+            &nick
+        } else {
+            unreachable!("must have a valid irc name")
+        }
+    }
     /// The display name of the user, if set
     pub fn display_name(&self) -> Option<&str> {
         self.get("display-name")
