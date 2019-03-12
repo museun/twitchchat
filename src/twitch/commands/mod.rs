@@ -35,8 +35,6 @@ pub use self::userstate::UserState;
 use crate::irc::types::*;
 use crate::twitch::{Badge, Color, Emotes, RGB};
 
-use hashbrown::HashMap;
-
 /// Tag allows access to the Tags part of the Message
 pub trait Tag {
     /// Gets the `key` from the mapping, returning the value if found

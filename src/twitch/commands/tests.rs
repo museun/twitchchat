@@ -1,6 +1,21 @@
 use super::*;
 
 #[test]
+fn parse_bad_auth() {
+    let input = ":tmi.twitch.tv NOTICE * :Improperly formatted auth";
+    let mut stream = crate::TestStream::new();
+    stream.write_message(input);
+
+    let mut client = crate::twitch::Client::new(stream.clone(), stream.clone());
+
+    let err = client.read_message().unwrap_err();
+    if let crate::twitch::Error::InvalidRegistration = err {
+        return;
+    }
+    panic!("unexpected error: {}", err)
+}
+
+#[test]
 fn parse_commands() {
     let prefix = Some(Prefix::User {
         nick: "museun".to_string(),

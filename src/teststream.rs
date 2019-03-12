@@ -26,7 +26,9 @@ impl TestStream {
 
     /// Writes a line to the stream (e.g. what should be read from the client)
     pub fn write_message<S: AsRef<[u8]>>(&mut self, data: S) {
-        self.read.write().extend_from_slice(&data.as_ref());
+        let mut w = self.read.write();
+        w.extend_from_slice(&data.as_ref());
+        w.extend_from_slice(&[b'\r', b'\n']);
     }
 }
 

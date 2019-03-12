@@ -11,6 +11,8 @@ pub enum Error {
     Read(std::io::Error),
     /// Invalid message received from Twitch
     InvalidMessage(String),
+    /// Invalid Nick/Pass combination
+    InvalidRegistration,
 }
 
 impl std::fmt::Display for Error {
@@ -22,6 +24,9 @@ impl std::fmt::Display for Error {
             Error::Read(err) => write!(f, "cannot read: {}", err),
             Error::InvalidMessage(raw) => {
                 write!(f, "invalid message, from '{}' (trimmed)", raw.trim())
+            }
+            Error::InvalidRegistration => {
+                write!(f, "invalid registration. check the `token` and `nick`")
             }
         }
     }

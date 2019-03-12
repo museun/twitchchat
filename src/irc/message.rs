@@ -1,4 +1,5 @@
 use crate::irc::types::{Prefix, Tags};
+use log::*;
 
 /// A simple IRC message
 ///
@@ -41,6 +42,12 @@ pub enum Message {
 
 impl Message {
     pub(crate) fn parse(input: &str) -> Option<Self> {
+        let input = input.trim(); // sanity check
+        if input.is_empty() {
+            return None;
+        }
+
+        trace!("parsing: {}", input);
         let (tags, input) = if input.starts_with('@') {
             let pos = input.find(' ')?;
             (Tags::parse(&input[..pos]), &input[pos + 1..])
@@ -109,5 +116,15 @@ impl<'a> Parts<'a> {
 
     fn data(&self) -> Option<String> {
         self.tail.map(str::to_string)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn parse_empty_data() {
+        assert_eq!(Message::parse(""), None);
+        assert_eq!(Message::parse("            "), None);
     }
 }

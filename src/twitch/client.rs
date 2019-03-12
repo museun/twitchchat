@@ -79,7 +79,7 @@ where
         let mut buf = String::new();
         {
             let mut read = self.read.lock();
-            read.read_line(&mut buf).map_err(Error::Read)?;
+            read.read_line(&mut buf).unwrap(); //.map_err(Error::Read)?;
         }
         let buf = buf.trim_end();
 
@@ -89,6 +89,27 @@ where
         // handle PINGs automatically
         if let IrcMessage::Ping { token } = &msg {
             self.write_line(&format!("PONG :{}n", token))?;
+        }
+
+        // sanity check, doing it here instead of after its been re-parsed to fail early
+        if let IrcMessage::Unknown {
+            prefix,
+            head,
+            args,
+            tail,
+            ..
+        } = &msg
+        {
+            if let (Some(crate::irc::types::Prefix::Server { host }), Some(data)) = (prefix, tail) {
+                if head == "NOTICE"
+                    && host == "tmi.twitch.tv"
+                    && data == "Improperly formatted auth"
+                    // excellent
+                    && args.get(0) == Some(&"*".into())
+                {
+                    return Err(Error::InvalidRegistration);
+                }
+            }
         }
 
         let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
