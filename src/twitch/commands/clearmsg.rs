@@ -31,4 +31,8 @@ impl Tag for ClearMsg {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
     }
+
+    fn tags(&self) -> HashMap<String, String> {
+        self.tags.0.clone()
+    }
 }

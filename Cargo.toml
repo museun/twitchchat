@@ -11,10 +11,10 @@ license = "0BSD"
 [dependencies]
 parking_lot = "0.7.1"
 uuid = { version = "0.7.2", features = ["v4"] }
-hashbrown = { version = "0.1.8", features = ["serde"], optional = true }
+hashbrown = { version = "0.1.8", features = ["serde"] }
 serde = { version = "1.0.89", features = ["derive"], optional = true }
 
 [features]
-default = ["hashbrown", "teststream", "serde_derive"]
+default = ["teststream", "serde_derive"]
 teststream = []
 serde_derive = ["serde"]

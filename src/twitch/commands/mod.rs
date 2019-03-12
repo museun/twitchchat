@@ -35,15 +35,22 @@ pub use self::userstate::UserState;
 use crate::irc::types::*;
 use crate::twitch::{Badge, Color, Emotes, RGB};
 
+use hashbrown::HashMap;
+
 /// Tag allows access to the Tags part of the Message
 pub trait Tag {
     /// Gets the `key` from the mapping, returning the value if found
     fn get(&self, key: &str) -> Option<&str>;
+    fn tags(&self) -> HashMap<String, String>;
 }
 
 impl Tag for Tags {
     fn get(&self, key: &str) -> Option<&str> {
         self.0.get(key).map(AsRef::as_ref)
+    }
+
+    fn tags(&self) -> HashMap<String, String> {
+        self.0.clone()
     }
 }
 

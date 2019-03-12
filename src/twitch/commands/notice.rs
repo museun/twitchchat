@@ -23,6 +23,10 @@ impl Tag for Notice {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
     }
+
+    fn tags(&self) -> HashMap<String, String> {
+        self.tags.0.clone()
+    }
 }
 
 /// These tags apply to both the NOTICE (Twitch Commands) and NOTICE (Twitch Chat Rooms) commands.
