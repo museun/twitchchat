@@ -15,20 +15,90 @@ pub struct UserConfig {
     pub caps: Vec<Capability>,
 }
 
-impl UserConfig {
-    /// Create a new config from token and nick with capabilities: `Membership`+`Commands`+`Tags`
-    pub fn new_with_default_caps<S>(token: S, nick: S) -> Self
-    where
-        S: ToString,
-    {
+/// A _builder_ type to create a `UserConfig` without dumb errors (like swapping nick/token)
+pub struct UserConfigBuilder {
+    nick: Option<String>,
+    token: Option<String>,
+    caps: hashbrown::HashSet<Capability>,
+}
+
+impl Default for UserConfigBuilder {
+    fn default() -> Self {
         Self {
-            token: token.to_string(),
-            nick: nick.to_string(),
-            caps: vec![
+            nick: None,
+            token: None,
+            caps: [
                 Capability::Membership,
                 Capability::Commands,
                 Capability::Tags,
-            ],
+            ]
+            .iter()
+            .cloned()
+            .collect(),
         }
+    }
+}
+
+impl UserConfigBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Use this nickname in the configuration
+    pub fn nick<S: ToString>(mut self, nick: S) -> Self {
+        self.nick.replace(nick.to_string());
+        self
+    }
+
+    /// Use this oauth token in the configuration
+    // check for the leading 'oauth:'
+    // and probably the length (its probably 64 bytes)
+    pub fn token<S: ToString>(mut self, token: S) -> Self {
+        self.token.replace(token.to_string());
+        self
+    }
+
+    /// Enable or disable the membership capability
+    pub fn membership(mut self) -> Self {
+        self.toggle_cap(Capability::Membership);
+        self
+    }
+
+    /// Enable or disable the commands capability
+    pub fn commands(mut self) -> Self {
+        self.toggle_cap(Capability::Commands);
+        self
+    }
+
+    /// Enable or disable the tags capability
+    pub fn tags(mut self) -> Self {
+        self.toggle_cap(Capability::Tags);
+        self
+    }
+
+    /// Build the `UserConfig`
+    ///
+    /// Returns None if nick or token are invalid
+    pub fn build(self) -> Option<UserConfig> {
+        Some(UserConfig {
+            nick: self.nick?,
+            token: self.token?,
+            caps: self.caps.into_iter().collect(),
+        })
+    }
+
+    fn toggle_cap(&mut self, cap: Capability) {
+        if self.caps.contains(&cap) {
+            self.caps.remove(&cap);
+        } else {
+            self.caps.insert(cap);
+        }
+    }
+}
+
+impl UserConfig {
+    /// Create a `UserConfigBuilder`, defaults with all of the `Capability` enabled
+    pub fn builder() -> UserConfigBuilder {
+        UserConfigBuilder::new()
     }
 }

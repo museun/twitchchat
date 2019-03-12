@@ -113,7 +113,7 @@ pub mod irc;
 pub mod twitch;
 
 mod userconfig;
-pub use self::userconfig::UserConfig;
+pub use self::userconfig::{UserConfig, UserConfigBuilder};
 
 #[cfg(feature = "teststream")]
 mod teststream;

@@ -1,4 +1,5 @@
 use hashbrown::HashMap;
+use log::*;
 use parking_lot::{Mutex, RwLock};
 
 use std::io::{BufRead, BufReader, Read, Write};
@@ -88,7 +89,7 @@ where
 
         // handle PINGs automatically
         if let IrcMessage::Ping { token } = &msg {
-            self.write_line(&format!("PONG :{}n", token))?;
+            self.write_line(&format!("PONG :{}", token))?;
         }
 
         // sanity check, doing it here instead of after its been re-parsed to fail early
@@ -147,6 +148,7 @@ where
     W: Write,
 {
     pub(crate) fn write_line(&mut self, data: &str) -> Result<(), Error> {
+        trace!("-> {}", data);
         let mut write = self.write.lock();
         write
             .write_all(data.as_bytes())
