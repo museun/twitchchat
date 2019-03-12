@@ -3,7 +3,7 @@ use super::*;
 /// General notices from the server.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Notice {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// The channel this event happened on
     pub channel: String,
     /// The message from the server
@@ -22,10 +22,6 @@ impl Notice {
 impl Tag for Notice {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }
 

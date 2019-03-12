@@ -3,7 +3,7 @@ use super::*;
 /// Send a message to a channel.
 #[derive(Debug, PartialEq, Clone)]
 pub struct PrivMsg {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// The IRC user that sent this message
     pub prefix: Option<Prefix>,
     /// The channel this message was sent to
@@ -63,9 +63,5 @@ impl PrivMsg {
 impl Tag for PrivMsg {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }

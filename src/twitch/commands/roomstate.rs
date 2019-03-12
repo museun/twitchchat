@@ -3,7 +3,7 @@ use super::*;
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Debug, PartialEq, Clone)]
 pub struct RoomState {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// The channel this event came from
     pub channel: String,
 }
@@ -41,10 +41,6 @@ impl RoomState {
 impl Tag for RoomState {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }
 

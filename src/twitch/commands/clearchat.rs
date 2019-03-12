@@ -5,7 +5,7 @@ use super::*;
 /// Typically after a user is banned from chat or timed out.
 #[derive(Debug, PartialEq, Clone)]
 pub struct ClearChat {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// The channel this event happened on
     pub channel: String,
     /// The owner of the message. Empty if its the entire channel
@@ -22,9 +22,5 @@ impl ClearChat {
 impl Tag for ClearChat {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }

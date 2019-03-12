@@ -3,7 +3,7 @@ use super::*;
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, PartialEq, Clone)]
 pub struct UserState {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     pub channel: String,
 }
 
@@ -28,9 +28,5 @@ impl UserState {
 impl Tag for UserState {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }

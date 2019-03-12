@@ -3,7 +3,7 @@ use super::*;
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Debug, PartialEq, Clone)]
 pub struct UserNotice {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// THe channel this event is for
     pub channel: String,
     /// Extra data provided by twitch
@@ -163,10 +163,6 @@ impl UserNotice {
 impl Tag for UserNotice {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }
 

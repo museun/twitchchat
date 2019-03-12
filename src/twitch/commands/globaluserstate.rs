@@ -3,7 +3,7 @@ use super::*;
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, PartialEq, Clone)]
 pub struct GlobalUserState {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
 }
 
 impl GlobalUserState {
@@ -38,9 +38,5 @@ impl GlobalUserState {
 impl Tag for GlobalUserState {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }

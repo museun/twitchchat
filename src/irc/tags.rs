@@ -17,4 +17,9 @@ impl Tags {
         });
         Self(map.collect())
     }
+
+    /// Clones the inner HashMap (for reuse elsewhere..)
+    pub fn inner_clone(&self) -> HashMap<String, String> {
+        self.0.clone()
+    }
 }

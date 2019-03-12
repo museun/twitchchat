@@ -41,16 +41,11 @@ use hashbrown::HashMap;
 pub trait Tag {
     /// Gets the `key` from the mapping, returning the value if found
     fn get(&self, key: &str) -> Option<&str>;
-    fn tags(&self) -> HashMap<String, String>;
 }
 
 impl Tag for Tags {
     fn get(&self, key: &str) -> Option<&str> {
         self.0.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.0.clone()
     }
 }
 

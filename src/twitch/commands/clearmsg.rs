@@ -5,7 +5,7 @@ use super::*;
 /// This is triggered via /delete <target-msg-id> on IRC.
 #[derive(Debug, PartialEq, Clone)]
 pub struct ClearMsg {
-    pub(crate) tags: Tags,
+    pub tags: Tags,
     /// The channel this event happened on
     pub channel: String,
     /// The message being moreved
@@ -30,9 +30,5 @@ impl ClearMsg {
 impl Tag for ClearMsg {
     fn get(&self, key: &str) -> Option<&str> {
         self.tags.get(key).map(AsRef::as_ref)
-    }
-
-    fn tags(&self) -> HashMap<String, String> {
-        self.tags.0.clone()
     }
 }
