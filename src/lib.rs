@@ -124,3 +124,8 @@ pub use teststream::TestStream;
 #[allow(dead_code)]
 pub(crate) const VERSION_STR: &str =
     concat!(env!("CARGO_PKG_NAME"), ":", env!("CARGO_PKG_VERSION"));
+
+/// The twitch irc address for non-TLS connections
+pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
+/// The twitch irc address for TLS connections
+pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";
