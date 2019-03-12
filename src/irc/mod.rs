@@ -1,6 +1,3 @@
-mod tcpconn;
-pub use self::tcpconn::TcpConn;
-
 mod message;
 mod prefix;
 mod tags;
