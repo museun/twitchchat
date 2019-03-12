@@ -19,6 +19,18 @@ impl std::fmt::Display for RGB {
     }
 }
 
+impl From<&str> for RGB {
+    fn from(s: &str) -> Self {
+        RGB::from_hex(s)
+    }
+}
+
+impl From<String> for RGB {
+    fn from(s: String) -> Self {
+        RGB::from_hex(&s)
+    }
+}
+
 impl RGB {
     /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into the RGB,
     /// `default`s if it can't
