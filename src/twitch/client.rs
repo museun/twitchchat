@@ -80,6 +80,16 @@ where
         }
     }
 
+    pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
+        use crate::irc::types::Message as IrcMessage;
+        loop {
+            match self.read_message()? {
+                Message::Irc(IrcMessage::Ready { name }) => return Ok(name),
+                _ => continue,
+            }
+        }
+    }
+
     /// Reads a message
     ///
     /// This can be an `IRC Message`, or a parsed `Twitch Command`
@@ -490,5 +500,55 @@ where
         S: AsRef<str>,
     {
         self.write_line(data.as_ref())
+    }
+}
+
+/// Client extensions
+pub trait ClientExt {
+    /// Join a (huge) list of channels
+    fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a;
+}
+
+impl<R, W: Write> ClientExt for Client<R, W> {
+    fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a,
+    {
+        let mut tmp = String::with_capacity(512);
+        for name in channels {
+            let name = name.as_ref();
+            let upper = tmp.capacity() - 2; // the \r\n
+            let lower = {
+                let name = name.len() + 1; // then #
+                let trailing = if tmp.is_empty() { 0 } else { 1 }; // then ,
+                name + trailing
+            };
+
+            let length = tmp.len();
+            if length + lower > upper {
+                self.raw(std::mem::replace(&mut tmp, String::with_capacity(512)))?;
+            }
+
+            if tmp.is_empty() {
+                tmp.push_str("JOIN ")
+            } else {
+                tmp.push(',')
+            }
+
+            if !name.starts_with('#') {
+                tmp.push('#');
+            }
+            tmp.push_str(&name.to_lowercase());
+        }
+
+        if !tmp.is_empty() {
+            self.raw(tmp)?;
+        }
+
+        Ok(())
     }
 }

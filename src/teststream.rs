@@ -20,7 +20,11 @@ impl TestStream {
     /// Reads a line from the stream (e.g. read what has written to the client)
     /// **NOTE** Keeps the trailing \r\n
     pub fn read_message(&mut self) -> Option<String> {
-        let w = self.write.write().drain(..).collect::<Vec<_>>();
+        let mut w = self.write.write();
+        if w.is_empty() {
+            return None;
+        }
+        let w = w.drain(..).collect::<Vec<_>>();
         String::from_utf8(w).ok()
     }
 
@@ -50,7 +54,6 @@ impl std::io::Write for TestStream {
         if buf == b"\r\n" {
             return Ok(buf.len());
         }
-
         self.buf.write().extend_from_slice(buf);
         Ok(buf.len())
     }
@@ -61,7 +64,9 @@ impl std::io::Write for TestStream {
             return Ok(());
         }
 
-        let w = self.buf.write().drain(..).collect::<Vec<_>>();
+        let mut w = self.buf.write().drain(..).collect::<Vec<_>>();
+        w.push(b'\r');
+        w.push(b'\n');
         copy(&mut Cursor::new(w), &mut *self.write.write()).map(|_| ())
     }
 }
