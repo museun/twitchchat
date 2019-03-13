@@ -2,7 +2,7 @@ mod badge;
 mod color;
 mod emotes;
 
-pub use self::badge::Badge;
+pub use self::badge::{Badge, BadgeKind};
 pub use self::color::{twitch_colors, Twitch as Color, RGB};
 pub use self::emotes::Emotes;
 

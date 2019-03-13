@@ -1,6 +1,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// BadgeKind are the `kind` of badges that are associated with messages.
+///
+/// Any unknown (e.g. custom badges/sub events, etc) are placed into the
+/// `Unknown` variant
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum BadgeKind {
@@ -19,12 +23,16 @@ pub enum BadgeKind {
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Badge {
+    /// The kind of Badge
     pub kind: BadgeKind,
+    /// Any associated data with the badge
+    ///
+    /// May be the version, the number of bits, the number of months in a substreak
     pub data: String,
 }
 
 impl Badge {
-    pub fn parse(input: &str) -> Option<Self> {
+    pub(crate) fn parse(input: &str) -> Option<Self> {
         use BadgeKind::*;
         let input = input.to_ascii_lowercase();
         let mut iter = input.split('/');
