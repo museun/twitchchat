@@ -48,7 +48,7 @@ impl PrivMsg {
     }
     /// The message body
     pub fn message(&self) -> &str {
-        self.get("message").unwrap()
+        self.message.as_str()
     }
     /// Whether this user was a moderator
     pub fn moderator(&self) -> bool {
