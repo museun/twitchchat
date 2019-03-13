@@ -5,6 +5,7 @@ use parking_lot::{Mutex, RwLock};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
 
+use super::channel::Channel;
 use super::{commands, Capability, Color, Error, LocalUser, Message};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
@@ -425,16 +426,23 @@ where
         self.command(&format!("/w {} {}", username, message))
     }
 
-    pub fn join(&mut self, channel: &str) -> Result<(), Error> {
+    pub fn join<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
+        let channel = Channel::validate(channel)?;
         self.raw(&format!("JOIN {}", channel))
     }
 
-    pub fn part(&mut self, channel: &str) -> Result<(), Error> {
+    pub fn part<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
+        let channel = Channel::validate(channel)?;
         self.raw(&format!("PART {}", channel))
     }
 
-    pub fn send(&mut self, channel: &str, msg: &str) -> Result<(), Error> {
-        self.raw(&format!("PRIVMSG {} :{}", channel, msg))
+    pub fn send<C, S>(&mut self, channel: C, msg: S) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+        S: AsRef<str>,
+    {
+        let channel = Channel::validate(channel)?;
+        self.raw(&format!("PRIVMSG {} :{}", channel, msg.as_ref()))
     }
 
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)

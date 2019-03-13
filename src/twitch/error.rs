@@ -13,6 +13,8 @@ pub enum Error {
     InvalidMessage(String),
     /// Invalid Nick/Pass combination
     InvalidRegistration,
+    /// Channel name provided was empty
+    EmptyChannelName,
 }
 
 impl std::fmt::Display for Error {
@@ -28,6 +30,7 @@ impl std::fmt::Display for Error {
             Error::InvalidRegistration => {
                 write!(f, "invalid registration. check the `token` and `nick`")
             }
+            Error::EmptyChannelName => write!(f, "empty channel name provided"),
         }
     }
 }
