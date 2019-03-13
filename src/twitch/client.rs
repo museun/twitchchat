@@ -17,7 +17,11 @@ type FilterMap = HashMap<super::dumb::Filter, Vec<Box<dyn Fn(Message) + Send + S
 pub struct Client<R, W> {
     read: Arc<Mutex<BufReader<R>>>,
     write: Arc<Mutex<W>>,
+
+    // TODO use an Inner struct for these 2
+    // They can share a mutex
     filters: Arc<RwLock<FilterMap>>,
+    inspect: Option<Arc<Mutex<Box<Fn(String) + 'static + Send + Sync>>>>,
 }
 
 impl<R, W> Clone for Client<R, W> {
@@ -26,6 +30,7 @@ impl<R, W> Clone for Client<R, W> {
             read: Arc::clone(&self.read),
             write: Arc::clone(&self.write),
             filters: Arc::clone(&self.filters),
+            inspect: self.inspect.clone(),
         }
     }
 }
@@ -41,6 +46,7 @@ where
             read: Arc::new(Mutex::new(BufReader::new(read))),
             write: Arc::new(Mutex::new(write)),
             filters: Arc::new(RwLock::new(FilterMap::new())),
+            inspect: None,
         }
     }
 
@@ -112,6 +118,10 @@ where
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
+
+        if let Some(ref inspect) = self.inspect {
+            (inspect.lock())(buf.to_string())
+        };
 
         // handle PINGs automatically
         if let IrcMessage::Ping { token } = &msg {
@@ -510,6 +520,14 @@ where
 
 /// Client extensions
 pub trait ClientExt {
+    /// When this is set, all "raw" reads from the Read portion of the client will be copied to the provided function
+    fn inspect<F>(&mut self, f: F)
+    where
+        F: Fn(String) + Send + Sync + 'static;
+
+    /// Remove the inspection function, if it exists
+    fn remove_inspect(&mut self);
+
     /// Join a (huge) list of channels
     fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
     where
@@ -518,6 +536,17 @@ pub trait ClientExt {
 }
 
 impl<R, W: Write> ClientExt for Client<R, W> {
+    fn inspect<F>(&mut self, f: F)
+    where
+        F: Fn(String) + Send + Sync + 'static,
+    {
+        self.inspect.replace(Arc::new(Mutex::new(Box::new(f))));
+    }
+
+    fn remove_inspect(&mut self) {
+        self.inspect.take();
+    }
+
     fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = S> + 'a,
@@ -555,5 +584,40 @@ impl<R, W: Write> ClientExt for Client<R, W> {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inspect() {
+        let mut stream = crate::TestStream::new();
+        let (r, w) = (stream.clone(), stream.clone());
+        let mut client = Client::new(r, w);
+
+        let ok = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let msg = ":museun!~user@localhost PRIVMSG #museun :this is a test";
+        {
+            let ok = Arc::clone(&ok);
+            let msg = msg.clone();
+            client.inspect(move |s| {
+                assert_eq!(s, msg);
+                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
+            });
+        }
+
+        stream.write_message(&msg);
+        client.read_message().unwrap();
+
+        client.remove_inspect();
+
+        for _ in 0..10 {
+            stream.write_message(&msg);
+            client.read_message().unwrap();
+            assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
+        }
     }
 }
