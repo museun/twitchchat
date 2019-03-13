@@ -16,7 +16,7 @@ mod error;
 pub use self::error::Error;
 
 mod client;
-pub use self::client::Client;
+pub use self::client::{Client, ClientExt};
 
 /// Twitch channel types
 pub mod channel;
