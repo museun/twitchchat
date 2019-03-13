@@ -12,6 +12,8 @@ use crate::UserConfig;
 
 type FilterMap = HashMap<super::dumb::Filter, Vec<Box<dyn Fn(Message) + Send + Sync>>>;
 
+type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
+
 /// Client is the IRC client for interacting with Twitch's chat.
 // TODO write usage
 pub struct Client<R, W> {
@@ -21,7 +23,7 @@ pub struct Client<R, W> {
     // TODO use an Inner struct for these 2
     // They can share a mutex
     filters: Arc<RwLock<FilterMap>>,
-    inspect: Option<Arc<Mutex<Box<Fn(String) + 'static + Send + Sync>>>>,
+    inspect: Option<Arc<Mutex<InspectFn>>>,
 }
 
 impl<R, W> Clone for Client<R, W> {
