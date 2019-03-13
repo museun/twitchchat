@@ -8,6 +8,10 @@ description = "interface to the irc-side of twitch's chat system"
 keywords = [ "twitch", "irc" ]
 license = "0BSD"
 
+[badges]
+circle-ci = { repository = "https://github.com/museun/twitchchat", branch = "master" }
+maintenance = { status = "actively-developed" }
+
 [dependencies]
 log = "0.4.6"
 parking_lot = "0.7.1"
