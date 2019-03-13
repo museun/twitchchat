@@ -80,6 +80,11 @@ where
         }
     }
 
+    /// Like [`wait_for_ready`]() but waits for the end of the IRC MOTD
+    ///
+    /// This will generally happen before `GLOBALUSERSTATE` but don't rely on that
+    ///
+    /// Returns the username assigned to you by the server
     pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
         use crate::irc::types::Message as IrcMessage;
         loop {
