@@ -1,6 +1,6 @@
 [package]
 name = "twitchchat"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["museun <museun@outlook.com>"]
 repository = "https://github.com/museun/twitchchat"
 edition = "2018"
