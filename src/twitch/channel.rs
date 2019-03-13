@@ -17,14 +17,18 @@ impl Channel {
 }
 
 impl From<String> for Channel {
-    fn from(mut s: String) -> Self {
+    fn from(s: String) -> Self {
         if s.is_empty() {
             return Self("".into());
         }
 
-        if !s.starts_with('#') {
-            s.insert(0, '#');
-        }
+        let s = s.to_lowercase();
+        let s = if !s.starts_with('#') {
+            ["#", s.as_str()].concat()
+        } else {
+            s.to_string()
+        };
+
         Self(s)
     }
 }

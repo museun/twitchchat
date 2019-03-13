@@ -269,11 +269,6 @@ where
         self.command("/help")
     }
 
-    // Usage: "/me <message>" - Send an "emote" message in the third person.
-    pub fn me(&mut self, msg: &str) -> Result<(), Error> {
-        self.command(&format!("/me {}", msg))
-    }
-
     // Usage: "/mods" - Lists the moderators of this channel.
     pub fn mods(&mut self) -> Result<(), Error> {
         self.command("/mods")
@@ -444,29 +439,56 @@ where
         self.raw(&format!("JOIN {}", channel))
     }
 
-    // Parts a `channel`
+    /// Parts a `channel`
     pub fn part<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(&format!("PART {}", channel))
     }
 
-    /// Sends the `msg` to the `channel`
-    pub fn send<C, S>(&mut self, channel: C, msg: S) -> Result<(), Error>
+    /// Sends an "emote" `message` in the third person to the `channel`
+    pub fn me<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+        S: AsRef<str>,
+    {
+        self.send(channel, &format!("/me {}", message.as_ref()))
+    }
+
+    /// Sends the `message` to the `channel`
+    ///
+    /// Same as `send`
+    pub fn privmsg<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
         S: AsRef<str>,
     {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PRIVMSG {} :{}", channel, msg.as_ref()))
+        self.raw(&format!("PRIVMSG {} :{}", channel, message.as_ref()))
+    }
+
+    /// Sends the `message` to the `channel`
+    pub fn send<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+        S: AsRef<str>,
+    {
+        let channel = Channel::validate(channel)?;
+        self.raw(&format!("PRIVMSG {} :{}", channel, message.as_ref()))
     }
 
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)
-    pub fn command(&mut self, data: &str) -> Result<(), Error> {
-        self.raw(&format!("PRIVMSG jtv :{}", data))
+    pub fn command<S>(&mut self, data: S) -> Result<(), Error>
+    where
+        S: AsRef<str>,
+    {
+        self.raw(&format!("PRIVMSG jtv :{}", data.as_ref()))
     }
 
     /// Sends a raw line (appends the required `\r\n`)
-    pub fn raw(&mut self, data: &str) -> Result<(), Error> {
-        self.write_line(data)
+    pub fn raw<S>(&mut self, data: S) -> Result<(), Error>
+    where
+        S: AsRef<str>,
+    {
+        self.write_line(data.as_ref())
     }
 }
