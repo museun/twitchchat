@@ -14,11 +14,20 @@ type FilterMap = HashMap<super::dumb::Filter, Box<Fn(Message) + Send + Sync>>;
 
 /// Client is the IRC client for interacting with Twitch's chat.
 // TODO write usage
-#[derive(Clone)]
 pub struct Client<R, W> {
     read: Arc<Mutex<BufReader<R>>>,
     write: Arc<Mutex<W>>,
     filters: Arc<RwLock<FilterMap>>,
+}
+
+impl<R, W> Clone for Client<R, W> {
+    fn clone(&self) -> Self {
+        Self {
+            read: Arc::clone(&self.read),
+            write: Arc::clone(&self.write),
+            filters: Arc::clone(&self.filters),
+        }
+    }
 }
 
 impl<R, W> Client<R, W>
