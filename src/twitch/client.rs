@@ -10,7 +10,7 @@ use super::{commands, Capability, Color, Error, LocalUser, Message};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
-type FilterMap = HashMap<super::dumb::Filter, Vec<Box<Fn(Message) + Send + Sync>>>;
+type FilterMap = HashMap<super::dumb::Filter, Vec<Box<dyn Fn(Message) + Send + Sync>>>;
 
 /// Client is the IRC client for interacting with Twitch's chat.
 // TODO write usage
