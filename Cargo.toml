@@ -15,9 +15,21 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 log = "0.4.6"
 parking_lot = "0.7.1"
-uuid = { version = "0.7.2", features = ["v4"] }
-hashbrown = { version = "0.1.8", features = ["serde"] }
-serde = { version = "1.0.89", features = ["derive"], optional = true }
+
+# twitch doesn't technially use uuid-v4, but something that resembles it 
+[dependencies.uuid]
+version = "0.7.2"
+features = ["v4"]
+
+# this will be removed when it gets merged into the std lib
+[dependencies.hashbrown]
+version = "0.1.8"
+features = ["serde"] 
+
+[dependencies.serde]
+version = "1.0.89"
+features = ["derive"]
+optional = true
 
 [features]
 default = ["teststream", "serde_derive"]
