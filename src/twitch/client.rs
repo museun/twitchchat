@@ -10,7 +10,7 @@ use super::{commands, Capability, Color, Error, LocalUser, Message};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
-type FilterMap = HashMap<super::dumb::Filter, Box<Fn(Message) + Send + Sync>>;
+type FilterMap = HashMap<super::dumb::Filter, Vec<Box<Fn(Message) + Send + Sync>>>;
 
 /// Client is the IRC client for interacting with Twitch's chat.
 // TODO write usage
@@ -129,9 +129,11 @@ where
         {
             let filter_map = &*self.filters.read();
             let key = msg.what_filter();
-            if let Some(filter) = filter_map.get(&key) {
-                trace!("sending msg to filter: {:?}", key);
-                (filter)(msg.clone()) // when in doubt
+            if let Some(filters) = filter_map.get(&key) {
+                for filter in filters {
+                    trace!("sending msg to filter: {:?}", key);
+                    (filter)(msg.clone()) // when in doubt
+                }
             }
         }
 
@@ -142,7 +144,7 @@ where
 
 impl<R, W> Client<R, W> {
     /// When a message, matching the type of the closure, is received run this function with it.
-    pub fn on<F, T>(&mut self, f: F) -> bool
+    pub fn on<F, T>(&mut self, f: F)
     where
         F: Fn(T) + 'static + Send + Sync, // hmm
         T: From<Message>,
@@ -152,8 +154,9 @@ impl<R, W> Client<R, W> {
 
         self.filters
             .write()
-            .insert(filter, Box::new(move |msg| f(msg.into())))
-            .is_none()
+            .entry(filter)
+            .or_default()
+            .push(Box::new(move |msg| f(msg.into())))
     }
 }
 
@@ -435,16 +438,19 @@ where
         self.command(&format!("/w {} {}", username, message))
     }
 
+    /// Joins a `channel`
     pub fn join<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(&format!("JOIN {}", channel))
     }
 
+    // Parts a `channel`
     pub fn part<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(&format!("PART {}", channel))
     }
 
+    /// Sends the `msg` to the `channel`
     pub fn send<C, S>(&mut self, channel: C, msg: S) -> Result<(), Error>
     where
         C: Into<Channel>,
