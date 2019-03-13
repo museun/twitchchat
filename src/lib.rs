@@ -35,7 +35,7 @@
 //!   read_message) to read a message (and pump the filters).
 //! - or do various [*other things*](./twitch/struct.Client.html#method.host)
 //!
-//! # Message filters, and why blocking with this is a bad idea
+//! # Message filters, and why blocking in them is a bad idea
 //! The client provides a very simplistic callback registration system
 //!
 //! To use it, you simply just `register` a closure with the client via its
@@ -68,15 +68,11 @@
 //! // your password and your nickname
 //! // the twitch oauth token must be prefixed with `oauth:your_token_here`
 //! let (nick, pass) = (std::env::var("MY_TWITCH_OAUTH_TOKEN").unwrap(), "my_name");
-//! let config = UserConfig {
-//!     token: pass.to_string(),
-//!     nick: nick.to_string(),
-//!     caps: vec![
-//!         Capability::Membership, // enable seeing whom is on the channel
-//!         Capability::Commands,   // enable sending twitch-specific commands (and receiving them)
-//!         Capability::Tags,       // enable metadata (`tags`) on many of the messages
-//!     ],
-//! };
+//! let config = UserConfig::builder()
+//!                 .token(pass)
+//!                 .nick(nick)
+//!                 .build()
+//!                 .unwrap();
 //!
 //! // client takes a std::io::Read and an std::io::Write
 //! let mut client = Client::new(read, write);
@@ -94,7 +90,11 @@
 //! );
 //!
 //! // when we receive a commands::PrivMsg print out who sent it, and the message
-//! client.on(|msg: PrivMsg| println!("{}: {}", msg.display_name().unwrap(), msg.message()));
+//! client.on(|msg: PrivMsg| {
+//!     // print out name: msg
+//!     let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
+//!     println!("{}: {}", name, msg.message())
+//! });
 //!
 //! // blocks the thread, but any callbacks set in the .on handlers will get their messages
 //! client.run();
@@ -105,23 +105,6 @@
 //! [`TestStream`](./struct.TestStream.html) is a simple TcpStream-like thing
 //! that lets you inject/read its internal buffers, allowing you to easily write
 //! unit tests for the [`Client`](./twitch/struct.Client.html)
-//!
-//! # UserConfigBuilder
-//! [`UserConfigBuilder`](./struct.UserConfigBuilder.html) gives you less of a
-//! chance to mess up the order of strings in the [`UserConfig`](./struct.UserConfig.html).
-//!
-//! ```rust
-//! # fn main {
-//! let config = UserConfig::builder()
-//!                 .token("my_secrets")
-//!                 .nick("my_name")
-//!                 .build()
-//!                 .unwrap();
-//! // config.nick = "my_nick"
-//! // config.token = "my_secrets"
-//! // config.caps = vec![Membership,Commands,Tags]
-//! # }
-//! ```
 
 /// IRC-related stuff
 pub mod irc;

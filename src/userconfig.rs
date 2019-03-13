@@ -8,9 +8,6 @@ pub struct UserConfig {
     pub token: String,
     /// Username to use on twitch. (must be associated with the oauth token)
     pub nick: String,
-    //
-    // TODO allow for TLS configuration here
-    //
     /// Which capabilites to enable
     pub caps: Vec<Capability>,
 }

@@ -94,12 +94,13 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
         tail,
     } = msg.clone()
     // TODO not this
+    // whats wrong with this?
     {
         let mut args = Rev(args);
         let cmd = match head.as_str() {
             "JOIN" => Message::Join(Join {
                 prefix,
-                channel: args.next()?, // this is from the wrong side
+                channel: args.next()?,
             }),
             "PART" => Message::Part(Part {
                 prefix,

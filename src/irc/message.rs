@@ -6,36 +6,45 @@ use log::*;
 /// Twitch messages will be part of the Unknown variant.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Message {
-    /// Ping command. The client should respond to this with a `PONG :${token}\r\n` message
-    ///
-    /// `token` the token sent with the ping, expected to receive back on a `PONG`
+    /// Ping command. The client should respond to this with a `PONG :${token}\r\n` message        
     Ping {
+        /// The token sent with the ping, expected to receive back on a `PONG`
         token: String,
     },
 
+    /// Acknowledgement (or not) on a CAPS request
+    // TODO https://ircv3.net/specs/core/capability-negotiation.html#the-cap-command
+    // THIS: https://ircv3.net/specs/core/capability-negotiation.html#the-cap-nak-subcommand
     Cap {
+        /// Whether it was acknowledged
         acknowledge: bool,
+        /// Which CAP was enabled
         cap: String,
     },
 
+    /// Happens when you've connected to the server. Corresponds to the `001` IRC message
     Connected {
+        /// The name the server assigned you
         name: String,
     },
 
+    /// Happens after the server sent you the MOTD. Corresponds to the `376` IRC message
     Ready {
+        /// The name the server assigned you
         name: String,
     },
 
     /// Unknown message.
-    ///
-    /// `head` will be the "COMMAND" part
-    /// `args` will be the args up to the *colon*
-    /// `tail` will be the data poriton after the *colon*
     Unknown {
+        /// Optional prefix. The sender of the message
         prefix: Option<Prefix>,
+        /// Any parsed tags
         tags: Tags,
+        /// the `COMMAND` portion of the IRC message
         head: String,
+        /// The argument list that follows the commands
         args: Vec<String>,
+        /// Any trailing data (generally after the ':')
         tail: Option<String>,
     },
 }
@@ -68,7 +77,11 @@ impl Message {
                 token: parts.data()?,
             },
             "CAP" => Message::Cap {
-                acknowledge: parts.args.first().map(|d| *d == "ACK").unwrap(),
+                acknowledge: parts
+                    .args
+                    .first()
+                    .map(|d| *d == "ACK")
+                    .unwrap_or_else(|| false),
                 cap: parts.tail.map(str::to_string).unwrap(),
             },
             "001" => Message::Connected {
