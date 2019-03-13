@@ -105,6 +105,23 @@
 //! [`TestStream`](./struct.TestStream.html) is a simple TcpStream-like thing
 //! that lets you inject/read its internal buffers, allowing you to easily write
 //! unit tests for the [`Client`](./twitch/struct.Client.html)
+//!
+//! # UserConfigBuilder
+//! [`UserConfigBuilder`](./struct.UserConfigBuilder.html) gives you less of a
+//! chance to mess up the order of strings in the [`UserConfig`](./struct.UserConfig.html).
+//!
+//! ```rust
+//! # fn main {
+//! let config = UserConfig::builder()
+//!                 .token("my_secrets")
+//!                 .nick("my_name")
+//!                 .build()
+//!                 .unwrap();
+//! // config.nick = "my_nick"
+//! // config.token = "my_secrets"
+//! // config.caps = vec![Membership,Commands,Tags]
+//! # }
+//! ```
 
 /// IRC-related stuff
 pub mod irc;

@@ -59,18 +59,25 @@ impl UserConfigBuilder {
     }
 
     /// Enable or disable the membership capability
+    ///
+    /// Enabled by default
     pub fn membership(mut self) -> Self {
         self.toggle_cap(Capability::Membership);
         self
     }
 
     /// Enable or disable the commands capability
+    ///
+    /// Enabled by default
+
     pub fn commands(mut self) -> Self {
         self.toggle_cap(Capability::Commands);
         self
     }
 
     /// Enable or disable the tags capability
+    ///
+    /// Enabled by default
     pub fn tags(mut self) -> Self {
         self.toggle_cap(Capability::Tags);
         self
