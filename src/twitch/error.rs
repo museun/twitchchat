@@ -1,4 +1,4 @@
-/// An error that [Client](irc::Client) can return
+/// An error that [`Client`](./struct.Client.html) can return
 #[derive(Debug)]
 pub enum Error {
     /// Connection could not be established

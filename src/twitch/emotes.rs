@@ -1,6 +1,5 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
 use std::ops::Range;
 
 /// Emotes are little pictograms used inline in twitch messages
@@ -16,9 +15,9 @@ use std::ops::Range;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Emotes {
-    /// The emote id, e.g. Kappa = 25
+    /// The emote id, e.g. `Kappa = 25`
     pub id: usize,
-    /// A list of [Range](std::ops::Range) in the message where this emote is
+    /// A list of [`Range`](https://doc.rust-lang.org/std/ops/struct.Range.html) in the message where this emote is
     /// found
     pub ranges: Vec<Range<u16>>,
 }
