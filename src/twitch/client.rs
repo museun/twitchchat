@@ -167,7 +167,26 @@ where
 }
 
 impl<R, W> Client<R, W> {
-    /// When a message, matching the type of the closure, is received run this function with it.
+    /// When a message, matching the type of the closure, is received run this
+    /// function with it.
+    ///
+    /// Usage:
+    /// ```no_run
+    ///     use twitchchat::commands::*;
+    ///     // ..
+    ///     let tok = client.on(|msg: PrivMsg| {
+    ///         // msg is now a `twitchchat::commands::PrivMsg`
+    ///     });
+    /// ```
+    ///
+    /// The avaiilable filters are the same names as the structs in
+    /// [commands](./commands/index.html#structs)
+    ///
+    /// When [`Client::read_message`](./struct.Client.html#method.read_message)
+    /// is called, it'll send a copy of the matching message to these filters
+    /// Multiple filters can be 'registered' for the same type Use the returned
+    /// token to remove the filter, by passing it to the
+    /// [`Client::off`](./struct.Client.html#method.off) method;
     pub fn on<F, T>(&mut self, f: F) -> Token
     where
         F: Fn(T) + 'static + Send + Sync, // hmm
