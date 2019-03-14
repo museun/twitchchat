@@ -39,7 +39,9 @@ where
     R: Read,
     W: Write,
 {
-    /// Create a new Client from a [Read](std::io::Read), [Write](std::io::Write) pair
+    /// Create a new Client from a
+    /// [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
+    /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
     pub fn new(read: R, write: W) -> Self {
         Self {
             read: Arc::new(Mutex::new(BufReader::new(read))),
@@ -49,13 +51,40 @@ where
         }
     }
 
-    /// Runs, consuming all messages. (pumping them through .on() filters)
+    /// Runs, consuming all messages.
+    ///
+    /// This also pumping them through
+    /// [`Client::on`](./struct.Client.html#method.on) filters
     pub fn run(mut self) -> Result<(), Error> {
         loop {
             let _ = self.read_message()?;
         }
     }
 
+    /// Registers with the server uses the provided [`UserConfig`](../struct.UserConfig.html)
+    ///
+    /// This is a **very** useful step, after you make the client and set up your initial filters
+    ///
+    /// You should call this to send your `OAuth token` and `Nickname`
+    ///
+    /// This also sends the [`Capabilities`](./enum.Capability.html) in the correct order
+    ///
+    /// Usage
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client, UserConfig};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// let config = UserConfig::builder()
+    ///                 .token(std::env::var("MY_PASSWORD").unwrap())
+    ///                 .nick("museun")
+    ///                 .build()
+    ///                 .unwrap();
+    /// client.register(config).unwrap();
+    /// // we should be connected now
+    /// // this'll block until everything is read
+    /// let _ = client.wait_for_ready().unwrap();
+    /// ```
     pub fn register(&mut self, config: UserConfig) -> Result<(), Error> {
         for cap in config.caps.into_iter().filter_map(Capability::get_command) {
             self.write_line(cap)?;
@@ -65,9 +94,28 @@ where
         self.write_line(&format!("NICK {}", config.nick))
     }
 
-    /// Waits for the `GLOBALUSERSTATE` before continuing, discarding any messages received
+    /// Waits for the
+    /// [`GLOBALUSERSTATE`](./commands/struct.GlobalUserState.html) before
+    /// continuing, discarding any messages received
     ///
-    /// Returns some useful information about your user
+    /// Returns some [`useful information`](./struct.LocalUser.html) about your user
+    ///
+    /// This blocks until the twitch registration is completed, this relies on
+    /// the [`Tags Capability`](./enum.Capability.html#variant.Tags) being sent.
+    ///
+    /// Usage:
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// match client.wait_for_ready() {
+    ///     Ok(user) => println!("user id: {}", user.user_id),
+    ///     Err(err) => panic!("failed to finish registration: {}", err)
+    /// };
+    /// // we can be sure that we're ready to join
+    /// client.join("some channel").unwrap();
+    /// ```
     pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
         loop {
             match self.read_message()? {
@@ -85,11 +133,25 @@ where
         }
     }
 
-    /// Like [`wait_for_ready`]() but waits for the end of the IRC MOTD
+    /// Like [`wait_for_ready`](./struct.Client.html#method.wait_for_ready) but waits for the end of the IRC MOTD
     ///
     /// This will generally happen before `GLOBALUSERSTATE` but don't rely on that
     ///
     /// Returns the username assigned to you by the server
+    ///
+    /// Usage:
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// match client.wait_for_irc_ready() {
+    ///     Ok(name) => println!("end of motd, our name is: {}", name),
+    ///     Err(err) => panic!("failed to finish registration: {}", err),
+    /// };
+    /// // we can be sure that we're ready to join
+    /// client.join("some channel").unwrap();
+    /// ```
     pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
         use crate::irc::types::Message as IrcMessage;
         loop {
@@ -100,10 +162,29 @@ where
         }
     }
 
-    /// Reads a message
+    /// Reads a [`Message`](./enum.Message.html#variants)
     ///
-    /// This can be an `IRC Message`, or a parsed `Twitch Command`
-    /// Will automatically handle some ~tedious~ messages, like the /heartbeat/
+    /// This will automatically handle some *tedious* messages, like the _heartbeat_ (PING)
+    ///
+    /// This also 'pumps' the messages through the filter
+    ///
+    /// Using this will drive the client (blocking for a read, then producing messages).
+    /// Usage:
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// // block the thread (i.e. wait for the client to close down)    
+    /// while let Ok(msg) = client.read_message() {
+    ///     // match msg {
+    ///     // .. stuff
+    ///     // }
+    /// }
+    ///
+    /// // or incrementally calling `client.read_message()`
+    /// // when you want the next message
+    /// ```
     pub fn read_message(&mut self) -> Result<Message, Error> {
         // TODO provide an internal buffer to prevent this dumb allocation
         // using https://docs.rs/bytes/0.4.11/bytes/
@@ -172,21 +253,33 @@ impl<R, W> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    ///     use twitchchat::commands::*;
-    ///     // ..
-    ///     let tok = client.on(|msg: PrivMsg| {
-    ///         // msg is now a `twitchchat::commands::PrivMsg`
-    ///     });
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// use twitchchat::twitch::commands::*;    
+    /// let pm_tok = client.on(|msg: PrivMsg| {
+    ///     // msg is now a `twitchchat::commands::PrivMsg`
+    /// });
+    /// let join_tok = client.on(|msg: Join| {
+    ///     // msg is now a `twitchchat::commands::Join`
+    /// });
+    ///
+    /// // if a PRIVMSG or JOIN is parsed here
+    /// // the corresponding closure, above, will run
+    /// client.read_message();
     /// ```
     ///
-    /// The avaiilable filters are the same names as the structs in
+    /// The available filters are the same names as the structs in
     /// [commands](./commands/index.html#structs)
     ///
     /// When [`Client::read_message`](./struct.Client.html#method.read_message)
-    /// is called, it'll send a copy of the matching message to these filters
-    /// Multiple filters can be 'registered' for the same type Use the returned
-    /// token to remove the filter, by passing it to the
-    /// [`Client::off`](./struct.Client.html#method.off) method;
+    /// is called, it'll send a copy of the matching message to these filters.
+    ///
+    /// Multiple filters can be 'registered' for the same type
+    ///
+    /// Use the returned token to remove the filter, by passing it to the
+    /// [`Client::off`](./struct.Client.html#method.off) method
     pub fn on<F, T>(&mut self, f: F) -> Token
     where
         F: Fn(T) + 'static + Send + Sync, // hmm
@@ -481,18 +574,48 @@ where
     }
 
     /// Joins a `channel`
+    ///
+    /// This ensures the channel name is lowercased and begins with a '#'.
+    ///
+    /// The following are equivilant
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// client.join("museun").unwrap();
+    /// client.join("#museun").unwrap();
+    /// client.join("Museun").unwrap();
+    /// client.join("#MUSEUN").unwrap();
+    /// ```    
     pub fn join<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(&format!("JOIN {}", channel))
     }
 
     /// Parts a `channel`
+    ///
+    /// This ensures the channel name is lowercased and begins with a '#'.
+    ///
+    /// The following are equivilant
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// client.part("museun").unwrap();
+    /// client.part("#museun").unwrap();
+    /// client.part("Museun").unwrap();
+    /// client.part("#MUSEUN").unwrap();
+    /// ```    
     pub fn part<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(&format!("PART {}", channel))
     }
 
     /// Sends an "emote" `message` in the third person to the `channel`
+    ///
+    /// This ensures the channel name is lowercased and begins with a '#'.
     pub fn me<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
@@ -503,7 +626,9 @@ where
 
     /// Sends the `message` to the `channel`
     ///
-    /// Same as `send`
+    /// This ensures the channel name is lowercased and begins with a '#'.
+    ///
+    /// Same as [`send`](./struct.Client.html#method.send)
     pub fn privmsg<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
@@ -514,6 +639,10 @@ where
     }
 
     /// Sends the `message` to the `channel`
+    ///
+    /// This ensures the channel name is lowercased and begins with a '#'.
+    ///
+    /// Same as [`privmsg`](./struct.Client.html#method.privmsg)
     pub fn send<C, S>(&mut self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
@@ -542,7 +671,18 @@ where
 
 /// Client extensions
 pub trait ClientExt {
-    /// When this is set, all "raw" reads from the Read portion of the client will be copied to the provided function
+    /// When this is set, all "raw" reads from the Read portion of the client
+    /// will be copied to the provided function
+    ///
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client, twitch::ClientExt};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// client.inspect(|msg: String| {
+    ///     println!("<-- {}", msg)
+    /// });
+    /// ```
     fn inspect<F>(&mut self, f: F)
     where
         F: Fn(String) + Send + Sync + 'static;
@@ -551,6 +691,27 @@ pub trait ClientExt {
     fn remove_inspect(&mut self);
 
     /// Join a (huge) list of channels
+    ///
+    /// This will efficiently partition all of the JOIN commands into max-sized
+    /// messages
+    ///
+    /// Ensuring the channel names are properly formatted and doing the least
+    /// amount of actual writes as possible
+    ///
+    /// ```no_run
+    /// # use twitchchat::{TestStream, twitch::Client, twitch::ClientExt};
+    /// # let mut stream = TestStream::new();
+    /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let mut client = Client::new(r, w);
+    /// client
+    ///     .join_many(
+    ///         std::fs::read_to_string("active.txt")
+    ///             .unwrap()
+    ///             .split('\n')
+    ///             .map(str::trim),
+    ///     )
+    ///     .unwrap();
+    /// ```
     fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = S> + 'a,
