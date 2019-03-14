@@ -11,7 +11,18 @@ use crate::UserConfig;
 
 type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
 
-/// Client is the IRC client for interacting with Twitch's chat.
+/// Client for interacting with Twitch's chat.
+///
+/// It wraps a [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
+/// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
+///
+/// ```no_run
+/// let stream = twitchchat::TestStream::new();
+/// let (r,w) = (stream.clone(), stream.clone());
+/// let mut client = Client::new(r,w); // moves the r,w
+/// // register, join, on, etc
+/// client.run().unwrap();
+/// ```
 // TODO write usage
 pub struct Client<R, W> {
     read: Arc<Mutex<BufReader<R>>>,
@@ -42,6 +53,8 @@ where
     /// Create a new Client from a
     /// [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
     /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
+    ///
+    /// This client is clonable, and thread safe.
     pub fn new(read: R, write: W) -> Self {
         Self {
             read: Arc::new(Mutex::new(BufReader::new(read))),
