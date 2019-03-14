@@ -58,7 +58,7 @@
 //! ```no_run
 //! use std::net::TcpStream;
 //! use twitchchat::twitch::{commands::PrivMsg, Capability, Client};
-//! use twitchchat::UserConfig;
+//! use twitchchat::{TWITCH_IRC_ADDRESS, UserConfig};
 //! # fn main() {
 //! // create a simple TcpStream
 //! let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("to connect");
