@@ -19,20 +19,13 @@ environment:
     PROJECT_NAME: twitchchat
     RUST_BACKTRACE: full
   matrix:
+    - TARGET: x86_64-pc-windows-msvc
+      CHANNEL: stable
+      BITS: "64"
     - TARGET: x86_64-pc-windows-gnu
       CHANNEL: stable
       BITS: "64"
       MSYS2: "1"
-    - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: stable
-      BITS: "64"
-    - TARGET: i686-pc-windows-gnu
-      CHANNEL: stable
-      BITS: "32"
-      MSYS2: "1"
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: stable
-      BITS: "32"
 
 matrix:
   fast_finish: true
@@ -47,6 +40,8 @@ install:
   - rustc --version
   - cargo --version
   - rustup --version
+
+build: "off"
 
 # Equivalent to Travis' `script` phase
 test_script:
