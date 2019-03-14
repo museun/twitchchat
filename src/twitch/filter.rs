@@ -1,4 +1,60 @@
 use super::{commands, Message};
+use hashbrown::HashMap;
+use log::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+pub type FilterFn = Box<dyn Fn(Message) + Send + Sync>;
+
+/// A Token returned by the `on` message filter
+///
+/// Keep this around if you want to remove the filter.
+/// To remove one, use this with the `off` method.
+#[derive(Copy, Clone, PartialEq)]
+pub struct Token(pub(super) usize);
+
+struct TokenGen(AtomicUsize);
+
+impl Default for TokenGen {
+    fn default() -> Self {
+        Self(AtomicUsize::new(0))
+    }
+}
+
+impl TokenGen {
+    fn next(&mut self) -> Token {
+        Token(self.0.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
+pub struct FilterId(pub(super) FilterFn, pub(super) Token);
+
+#[derive(Default)]
+pub struct FilterMap(HashMap<Filter, Vec<FilterId>>, TokenGen);
+
+impl FilterMap {
+    pub fn insert(&mut self, filter: Filter, f: FilterFn) -> Token {
+        let token = self.1.next();
+        self.0.entry(filter).or_default().push(FilterId(f, token));
+        trace!("added filter for {:?} (id: {})", filter, token.0);
+        token
+    }
+
+    pub fn try_remove(&mut self, token: Token) -> bool {
+        for (filter, vals) in self.0.iter_mut() {
+            if let Some(pos) = vals.iter().position(|d| d.1 == token) {
+                trace!("removed filter for {:?} (id: {})", filter, token.0);
+                vals.remove(pos);
+                return true;
+            }
+        }
+        trace!("could not find a matching filter for id: {}", token.0);
+        false
+    }
+
+    pub fn get(&self, filter: Filter) -> Option<&Vec<FilterId>> {
+        self.0.get(&filter)
+    }
+}
 
 macro_rules! filter_this {
     ($($t:ident),+ $(,)?) => {

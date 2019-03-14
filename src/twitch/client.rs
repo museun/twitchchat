@@ -1,16 +1,13 @@
-use hashbrown::HashMap;
 use log::*;
 use parking_lot::{Mutex, RwLock};
-
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
 
 use super::channel::Channel;
+use super::filter::{FilterMap, MessageFilter, Token};
 use super::{commands, Capability, Color, Error, LocalUser, Message};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
-
-type FilterMap = HashMap<super::dumb::Filter, Vec<Box<dyn Fn(Message) + Send + Sync>>>;
 
 type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
 
@@ -47,7 +44,7 @@ where
         Self {
             read: Arc::new(Mutex::new(BufReader::new(read))),
             write: Arc::new(Mutex::new(write)),
-            filters: Arc::new(RwLock::new(FilterMap::new())),
+            filters: Arc::new(RwLock::new(FilterMap::default())),
             inspect: None,
         }
     }
@@ -156,10 +153,10 @@ where
         {
             let filter_map = &*self.filters.read();
             let key = msg.what_filter();
-            if let Some(filters) = filter_map.get(&key) {
+            if let Some(filters) = filter_map.get(key) {
                 for filter in filters {
-                    trace!("sending msg to filter: {:?}", key);
-                    (filter)(msg.clone()) // when in doubt
+                    trace!("sending msg to filter (id: {}): {:?}", (filter.1).0, key);
+                    (filter.0)(msg.clone()) // when in doubt
                 }
             }
         }
@@ -171,19 +168,23 @@ where
 
 impl<R, W> Client<R, W> {
     /// When a message, matching the type of the closure, is received run this function with it.
-    pub fn on<F, T>(&mut self, f: F)
+    pub fn on<F, T>(&mut self, f: F) -> Token
     where
         F: Fn(T) + 'static + Send + Sync, // hmm
         T: From<Message>,
-        T: super::dumb::MessageFilter,
+        T: MessageFilter,
     {
         let filter = T::to_filter();
-
         self.filters
             .write()
-            .entry(filter)
-            .or_default()
-            .push(Box::new(move |msg| f(msg.into())))
+            .insert(filter, Box::new(move |msg| f(msg.into())))
+    }
+
+    /// Remove a previously registered message filter, using the token returned by `on`
+    ///
+    /// Returns true if this filter existed
+    pub fn off(&mut self, tok: Token) -> bool {
+        self.filters.write().try_remove(tok)
     }
 }
 
@@ -592,6 +593,56 @@ impl<R, W: Write> ClientExt for Client<R, W> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn filter() {
+        let mut stream = crate::TestStream::new();
+        let (r, w) = (stream.clone(), stream.clone());
+        let mut client = Client::new(r, w);
+
+        let msg = ":museun!~user@localhost PRIVMSG #museun :this is a test";
+
+        let ok = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let tok = {
+            let ok = Arc::clone(&ok);
+            client.on(move |_: super::commands::PrivMsg| {
+                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
+            })
+        };
+
+        stream.write_message(&msg);
+        client.read_message().unwrap();
+        assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
+
+        assert!(client.off(tok));
+
+        stream.write_message(&msg);
+        client.read_message().unwrap();
+        assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
+
+        // try it again with a new one
+
+        let tok = {
+            let ok = Arc::clone(&ok);
+            client.on(move |_: super::commands::PrivMsg| {
+                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
+            })
+        };
+
+        stream.write_message(&msg);
+        client.read_message().unwrap();
+        assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
+
+        assert!(client.off(tok));
+
+        stream.write_message(&msg);
+        client.read_message().unwrap();
+        assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
+
+        assert!(!client.off(tok));
+    }
 
     #[test]
     fn inspect() {

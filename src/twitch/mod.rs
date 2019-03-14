@@ -77,4 +77,5 @@ pub enum Message {
     GlobalUserState(commands::GlobalUserState),
 }
 
-pub(crate) mod dumb;
+pub(crate) mod filter;
+pub use filter::Token;
