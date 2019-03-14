@@ -1,6 +1,6 @@
 //! # A simple "connection-less" twitch chat crate
-//! This crate simply read lines from an [std::io::Read]() and produces data
-//! types for the corresponding messages, and takes an [std::io::Write]() which
+//! This crate simply read lines from an [`std::io::Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and produces data
+//! types for the corresponding messages, and takes an [`std::io::Write`](https://doc.rust-lang.org/std/io/trait.Write.html) which
 //! can produce messages that twitch understands.
 //!
 //! # Organization of project
@@ -20,9 +20,9 @@
 //! [`Client::register`](./twitch/struct.Client.html#method.register) with a
 //! filled-out [`UserConfig`](./struct.UserConfig.html) will connect you to
 //! Twitch. Once connected, you can
-//! [`Client::wait_for_ready`](./twitch/struct.Client.html#method.
-//! wait_for_ready) and the client will read (blocking) until Twitch sends a
-//! [`GlobalUserState`](twitch/commands/struct.GlobalUserState.html) message,
+//! [`Client::wait_for_ready`](./twitch/struct.Client.html#method.wait_for_ready)
+//!  and the client will read **(blocking)** until Twitch sends a
+//! [`GlobalUserState`](./twitch/commands/struct.GlobalUserState.html) message,
 //! which it'll fill out a [`LocalUser`](./twitch/struct.LocalUser.html) with
 //! various information.
 //!
@@ -31,8 +31,8 @@
 //!   channel.
 //! - use [`Client::on`](./twitch/struct.Client.html#method.on) to set up a
 //!   message filter.
-//! - use [`Client::read_message`](./twitch/struct.Client.html#method.
-//!   read_message) to read a message (and pump the filters).
+//! - use [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//!   to read a message (and pump the filters).
 //! - or do various [*other things*](./twitch/struct.Client.html#method.host)
 //!
 //! # Message filters, and why blocking in them is a bad idea
@@ -41,9 +41,10 @@
 //! To use it, you simply just `register` a closure with the client via its
 //! [`Client::on`](./twitch/struct.Client.html#method.on) method. It uses the
 //! type of the closures argument, one of
-//! [*these*](./twitch/commands/index.html#structs) to create a filter When
-//! [`Client::read_message`](./twitch/struct.Client.html#method.read_message) is
-//! called, it'll check these filters and send a clone of the requested message
+//! [*these*](./twitch/commands/index.html#structs) to create a filter
+//!
+//! When [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//! is called, it'll check these filters and send a clone of the requested message
 //! to the callback. Because it does this on same thread as the
 //! [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
 //! call, you can lock up the system by simplying diverging.
@@ -60,7 +61,7 @@
 //! use twitchchat::UserConfig;
 //! # fn main() {
 //! // create a simple TcpStream
-//! let read = TcpStream::connect("irc.chat.twitch.tv:6667").expect("to connect");
+//! let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("to connect");
 //! let write = read
 //!     .try_clone()
 //!     .expect("must be able to clone the tcpstream");
@@ -90,6 +91,7 @@
 //! );
 //!
 //! // when we receive a commands::PrivMsg print out who sent it, and the message
+//! // this can be done at any time, but its best to do it early
 //! client.on(|msg: PrivMsg| {
 //!     // print out name: msg
 //!     let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
