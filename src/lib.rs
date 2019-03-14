@@ -68,7 +68,7 @@
 //!
 //! // your password and your nickname
 //! // the twitch oauth token must be prefixed with `oauth:your_token_here`
-//! let (nick, pass) = (std::env::var("MY_TWITCH_OAUTH_TOKEN").unwrap(), "my_name");
+//! let (pass, nick) = (std::env::var("MY_TWITCH_OAUTH_TOKEN").unwrap(), "my_name");
 //! let config = UserConfig::builder()
 //!                 .token(pass)
 //!                 .nick(nick)
@@ -93,10 +93,16 @@
 //! // when we receive a commands::PrivMsg print out who sent it, and the message
 //! // this can be done at any time, but its best to do it early
 //! client.on(|msg: PrivMsg| {
-//!     // print out name: msg
+//!     // this prints out name: msg
 //!     let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
 //!     println!("{}: {}", name, msg.message())
 //! });
+//!
+//! // join a channel
+//! client.join("museun").unwrap();
+//!
+//! // sends a message to the channel
+//! client.send("museun", "VoHiYo").unwrap();
 //!
 //! // blocks the thread, but any callbacks set in the .on handlers will get their messages
 //! client.run();
