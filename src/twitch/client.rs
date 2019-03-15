@@ -9,7 +9,7 @@ mod mutex_wrapper {
     #[cfg(not(features = "parking_lot"))]
     use std::sync::Mutex;
 
-    pub struct MutexWrapper<T>(Mutex<T>);
+    pub struct MutexWrapper<T: ?Sized>(Mutex<T>);
 
     impl<T> MutexWrapper<T> {
         pub fn new(data: T) -> Self {
@@ -26,7 +26,6 @@ mod mutex_wrapper {
             self.0.lock().unwrap()
         }
     }
-
 }
 
 use mutex_wrapper::MutexWrapper as Mutex;
@@ -37,7 +36,7 @@ use super::{commands, Capability, Error, LocalUser, Message, TwitchColor};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
-type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
+type InspectFn = Box<dyn FnMut(String) + 'static + Send + Sync>;
 
 /// Client for interacting with Twitch's chat.
 ///
@@ -54,21 +53,20 @@ type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
 /// ```
 // TODO write usage
 pub struct Client<R, W> {
-    read: Arc<Mutex<BufReader<R>>>,
-    write: Arc<Mutex<W>>,
-
-    // TODO use an Inner struct for these 2
-    // They can share a mutex
-    filters: Arc<Mutex<FilterMap>>,
+    inner: Arc<Inner<R, W>>,
     inspect: Option<Arc<Mutex<InspectFn>>>,
+}
+
+struct Inner<R, W> {
+    read: Mutex<BufReader<R>>,
+    write: Mutex<W>,
+    filters: Mutex<FilterMap>,
 }
 
 impl<R, W> Clone for Client<R, W> {
     fn clone(&self) -> Self {
         Self {
-            read: Arc::clone(&self.read),
-            write: Arc::clone(&self.write),
-            filters: Arc::clone(&self.filters),
+            inner: Arc::clone(&self.inner),
             inspect: self.inspect.clone(),
         }
     }
@@ -86,9 +84,11 @@ where
     /// This client is clonable, and thread safe.
     pub fn new(read: R, write: W) -> Self {
         Self {
-            read: Arc::new(Mutex::new(BufReader::new(read))),
-            write: Arc::new(Mutex::new(write)),
-            filters: Arc::new(Mutex::new(FilterMap::default())),
+            inner: Arc::new(Inner {
+                read: Mutex::new(BufReader::new(read)),
+                write: Mutex::new(write),
+                filters: Mutex::new(FilterMap::default()),
+            }),
             inspect: None,
         }
     }
@@ -232,7 +232,7 @@ where
         // using https://docs.rs/bytes/0.4.11/bytes/
         let mut buf = String::new();
         {
-            let mut read = self.read.lock();
+            let mut read = self.inner.read.lock();
             let _ = read.read_line(&mut buf).map_err(Error::Read)?;
         }
         let buf = buf.trim_end();
@@ -241,8 +241,9 @@ where
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
 
-        if let Some(ref inspect) = self.inspect {
-            (inspect.lock())(buf.to_string())
+        if let Some(inspect) = self.inspect.as_mut() {
+            let func = &mut *inspect.lock();
+            (func)(buf.to_string())
         };
 
         // handle PINGs automatically
@@ -274,9 +275,9 @@ where
 
         let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
         {
-            let filter_map = &*self.filters.lock();
+            let mut filter_map = self.inner.filters.lock();
             let key = msg.what_filter();
-            if let Some(filters) = filter_map.get(key) {
+            if let Some(filters) = filter_map.get_mut(key) {
                 for filter in filters {
                     trace!("sending msg to filter (id: {}): {:?}", (filter.1).0, key);
                     (filter.0)(msg.clone()) // when in doubt
@@ -322,14 +323,15 @@ impl<R, W> Client<R, W> {
     ///
     /// Use the returned token to remove the filter, by passing it to the
     /// [`Client::off`](./struct.Client.html#method.off) method
-    pub fn on<F, T>(&mut self, f: F) -> Token
+    pub fn on<F, T>(&mut self, mut f: F) -> Token
     where
-        F: Fn(T) + 'static + Send + Sync, // hmm
+        F: FnMut(T) + 'static + Send + Sync, // hmm
         T: From<Message>,
         T: MessageFilter,
     {
         let filter = T::to_filter();
-        self.filters
+        self.inner
+            .filters
             .lock()
             .insert(filter, Box::new(move |msg| f(msg.into())))
     }
@@ -338,7 +340,7 @@ impl<R, W> Client<R, W> {
     ///
     /// Returns true if this filter existed
     pub fn off(&mut self, tok: Token) -> bool {
-        self.filters.lock().try_remove(tok)
+        self.inner.filters.lock().try_remove(tok)
     }
 }
 
@@ -352,7 +354,7 @@ where
         } else {
             trace!("-> {}", data);
         }
-        let mut write = self.write.lock();
+        let mut write = self.inner.write.lock();
         write
             .write_all(data.as_bytes())
             .and_then(|_| write.write_all(b"\r\n"))
@@ -728,7 +730,7 @@ pub trait ClientExt {
     /// ```
     fn inspect<F>(&mut self, f: F)
     where
-        F: Fn(String) + Send + Sync + 'static;
+        F: FnMut(String) + Send + Sync + 'static;
 
     /// Remove the inspection function, if it exists
     fn remove_inspect(&mut self);
@@ -764,7 +766,7 @@ pub trait ClientExt {
 impl<R, W: Write> ClientExt for Client<R, W> {
     fn inspect<F>(&mut self, f: F)
     where
-        F: Fn(String) + Send + Sync + 'static,
+        F: FnMut(String) + Send + Sync + 'static,
     {
         let _ = self.inspect.replace(Arc::new(Mutex::new(Box::new(f))));
     }

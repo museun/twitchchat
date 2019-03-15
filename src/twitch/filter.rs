@@ -7,7 +7,7 @@ use hashbrown::HashMap;
 #[cfg(not(feature = "hashbrown"))]
 use std::collections::HashMap;
 
-pub type FilterFn = Box<dyn Fn(Message) + Send + Sync>;
+pub type FilterFn = Box<dyn FnMut(Message) + Send + Sync>;
 
 /// A Token returned by the [`Client::on`](./struct.CLient.html#method.on) message filter
 ///
@@ -56,8 +56,13 @@ impl FilterMap {
         false
     }
 
-    pub fn get(&self, filter: Filter) -> Option<&Vec<FilterId>> {
+    #[allow(dead_code)]
+    pub(crate) fn get(&self, filter: Filter) -> Option<&Vec<FilterId>> {
         self.0.get(&filter)
+    }
+
+    pub(crate) fn get_mut(&mut self, filter: Filter) -> Option<&mut Vec<FilterId>> {
+        self.0.get_mut(&filter)
     }
 }
 
