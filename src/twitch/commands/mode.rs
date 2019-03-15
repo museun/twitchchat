@@ -14,6 +14,8 @@ pub struct Mode {
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ModeStatus {
+    /// Moderator status gained
     Gained,
+    /// Moderator status lost
     Lost,
 }

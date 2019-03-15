@@ -4,6 +4,7 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GlobalUserState {
+    /// IRC tags
     pub tags: Tags,
 }
 

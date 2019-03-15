@@ -4,12 +4,18 @@
 pub enum Prefix {
     /// User prefix. i.e nick!user@host
     User {
+        /// Nickname
         nick: String,
+        /// Username
         user: String,
+        /// Hostname
         host: String,
     },
     /// Server prefix. i.e. tmi.twitch.tv
-    Server { host: String },
+    Server {
+        /// Hostname
+        host: String,
+    },
 }
 
 impl Prefix {

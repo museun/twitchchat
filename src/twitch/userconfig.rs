@@ -19,7 +19,7 @@ pub struct UserConfig {
 
 impl UserConfig {
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) enabled
-    pub fn builder() -> self::UserConfigBuilder {
+    pub fn builder() -> UserConfigBuilder {
         UserConfigBuilder::new()
     }
 }
@@ -55,7 +55,7 @@ impl UserConfigBuilder {
 
     /// Use this nickname in the configuration
     pub fn nick<S: ToString>(mut self, nick: S) -> Self {
-        self.nick.replace(nick.to_string());
+        let _ = self.nick.replace(nick.to_string());
         self
     }
 
@@ -63,7 +63,7 @@ impl UserConfigBuilder {
     // check for the leading 'oauth:'
     // and probably the length (its probably 64 bytes)
     pub fn token<S: ToString>(mut self, token: S) -> Self {
-        self.token.replace(token.to_string());
+        let _ = self.token.replace(token.to_string());
         self
     }
 
@@ -105,9 +105,9 @@ impl UserConfigBuilder {
 
     fn toggle_cap(&mut self, cap: Capability) {
         if self.caps.contains(&cap) {
-            self.caps.remove(&cap);
+            let _ = self.caps.remove(&cap);
         } else {
-            self.caps.insert(cap);
+            let _ = self.caps.insert(cap);
         }
     }
 }

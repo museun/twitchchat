@@ -4,6 +4,7 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Notice {
+    /// IRC tags
     pub tags: Tags,
     /// The channel this event happened on
     pub channel: String,

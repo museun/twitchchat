@@ -4,6 +4,7 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrivMsg {
+    /// IRC tags
     pub tags: Tags,
     /// The IRC user that sent this message
     pub prefix: Option<Prefix>,

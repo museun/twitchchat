@@ -48,7 +48,7 @@ impl FilterMap {
         for (filter, vals) in self.0.iter_mut() {
             if let Some(pos) = vals.iter().position(|d| d.1 == token) {
                 trace!("removed filter for {:?} (id: {})", filter, token.0);
-                vals.remove(pos);
+                let _ = vals.remove(pos);
                 return true;
             }
         }

@@ -5,14 +5,23 @@
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BadgeKind {
+    /// Admin badge
     Admin,
+    /// Bits badge
     Bits,
+    /// Broadcaster badge
     Broadcaster,
+    /// Global moderator badge
     GlobalMod,
+    /// Channel moderator badge
     Moderator,
+    /// Subscriber badge
     Subscriber,
+    /// Twitch staff badge
     Staff,
+    /// Turbo badge
     Turbo,
+    /// An Unknown badge
     Unknown(String),
 }
 

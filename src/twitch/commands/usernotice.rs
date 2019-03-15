@@ -4,6 +4,7 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserNotice {
+    /// IRC tags
     pub tags: Tags,
     /// THe channel this event is for
     pub channel: String,
@@ -65,9 +66,9 @@ impl UserNotice {
             .unwrap()
     }
     // TODO maybe parse this into a struct
-    //  (Sent only on sub, resub) The total number of months the user has
-    //  subscribed. This is the same as msg-param-months but sent for different
-    //  types of user notices.
+    /// (Sent only on sub, resub) The total number of months the user has
+    /// subscribed. This is the same as msg-param-months but sent for different
+    /// types of user notices.
     pub fn msg_param_cumulative_months(&self) -> Option<u64> {
         self.get_parsed("msg-param-cumulative-months")
     }
@@ -223,19 +224,25 @@ pub enum NoticeType {
     /// - msg-param-sub-plan
     /// - msg-param-sub-plan-name
     AnonSubGift,
+    /// -- not documented
     SubMysteryGift,
+    /// -- not documented
     GiftPaidUpgrade,
+    /// -- not documented
     RewardGift,
+    /// -- not documented
     AnonGiftPaidUpgrade,
     /// Enables:
     /// - msg-param-displayName,
     /// - msg-param-login,
     /// - msg-param-viewerCount
     Raid,
+    /// -- not documented
     Unraid,
     /// Enables:
     /// - msg-param-ritual-name
     Ritual,
+    /// -- not documented
     BitsBadgeTier,
     /// An unknown message type
     Unknown(String),
@@ -263,7 +270,7 @@ r#"@badges=;color=;display-name=SevenTest1;emotes=30259:0-6;id=37feed0f-b9c7-4c3
         for (input, &output) in input.iter().zip(output.iter()) {
             let msg = crate::irc::types::Message::parse(input).unwrap();
             if let crate::twitch::Message::UserNotice(msg @ UserNotice { .. }) =
-                super::parse(&msg).unwrap()
+                parse(&msg).unwrap()
             {
                 assert_eq!(msg.system_msg(), output);
             }

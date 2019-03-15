@@ -127,6 +127,12 @@
 //! The [`irc`](./irc/index.html) module contains a **very** simplistic
 //! representation of the IRC protocol.
 //!
+#![warn(missing_docs)]
+#![deny(unsafe_code)]
+#![deny(unused_lifetimes)]
+#![deny(unused_qualifications)]
+#![deny(unused_results)]
+
 /// IRC-related stuff
 pub mod irc;
 

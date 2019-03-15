@@ -22,7 +22,7 @@ mod mutex_wrapper {
         }
 
         #[cfg(not(features = "parking_lot"))]
-        pub fn lock(&self) -> std::sync::MutexGuard<T> {
+        pub fn lock(&self) -> std::sync::MutexGuard<'_, T> {
             self.0.lock().unwrap()
         }
     }
@@ -233,7 +233,7 @@ where
         let mut buf = String::new();
         {
             let mut read = self.read.lock();
-            read.read_line(&mut buf).map_err(Error::Read)?;
+            let _ = read.read_line(&mut buf).map_err(Error::Read)?;
         }
         let buf = buf.trim_end();
 
@@ -362,6 +362,7 @@ where
 }
 
 // TODO decide on AsRef or just &str
+#[allow(missing_docs)] // while we work things out
 impl<R, W> Client<R, W>
 where
     W: Write,
@@ -765,11 +766,11 @@ impl<R, W: Write> ClientExt for Client<R, W> {
     where
         F: Fn(String) + Send + Sync + 'static,
     {
-        self.inspect.replace(Arc::new(Mutex::new(Box::new(f))));
+        let _ = self.inspect.replace(Arc::new(Mutex::new(Box::new(f))));
     }
 
     fn remove_inspect(&mut self) {
-        self.inspect.take();
+        let _ = self.inspect.take();
     }
 
     fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
@@ -828,19 +829,19 @@ mod tests {
         let tok = {
             let ok = Arc::clone(&ok);
             client.on(move |_: super::commands::PrivMsg| {
-                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
                 assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
             })
         };
 
         stream.write_message(&msg);
-        client.read_message().unwrap();
+        let _ = client.read_message().unwrap();
         assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
 
         assert!(client.off(tok));
 
         stream.write_message(&msg);
-        client.read_message().unwrap();
+        let _ = client.read_message().unwrap();
         assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
 
         // try it again with a new one
@@ -848,19 +849,19 @@ mod tests {
         let tok = {
             let ok = Arc::clone(&ok);
             client.on(move |_: super::commands::PrivMsg| {
-                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
                 assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
             })
         };
 
         stream.write_message(&msg);
-        client.read_message().unwrap();
+        let _ = client.read_message().unwrap();
         assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
 
         assert!(client.off(tok));
 
         stream.write_message(&msg);
-        client.read_message().unwrap();
+        let _ = client.read_message().unwrap();
         assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
 
         assert!(!client.off(tok));
@@ -879,19 +880,19 @@ mod tests {
             let msg = msg.clone();
             client.inspect(move |s| {
                 assert_eq!(s, msg);
-                ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
+                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
                 assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
             });
         }
 
         stream.write_message(&msg);
-        client.read_message().unwrap();
+        let _ = client.read_message().unwrap();
 
         client.remove_inspect();
 
         for _ in 0..10 {
             stream.write_message(&msg);
-            client.read_message().unwrap();
+            let _ = client.read_message().unwrap();
             assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
         }
     }
