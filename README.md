@@ -14,6 +14,7 @@ you provide the `std::io::Read` and the `std::io::Write` <br>
 see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
 
 optional features: 
+
 |feature | description | --- |
 |--- | --- | --- |
 | serde | enables serde derives | allowing you to turn stuff to json, and load it from json |
