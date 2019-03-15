@@ -3,61 +3,50 @@
 //! types for the corresponding messages, and takes an [`std::io::Write`](https://doc.rust-lang.org/std/io/trait.Write.html) which
 //! can produce messages that twitch understands.
 //!
-//! # Organization of project
-//! This crate is split into two top-level modules, `irc` and `twitch`.
-//!
-//! The [`irc`](./irc/index.html) module contains a **very** simplistic
-//! representation of the IRC protocol, but can be used to write simplistic
-//! clients for interacting with the twitch module
-//!
-//! The [`twitch`](./twitch/index.html) module contains many data types that
-//! encapsulate the various functionality of the irc-portion of Twitch's chat
-//! system
-//!
 //! # 'Theory' of operation
-//! First, by creating a [`Client`](./twitch/struct.Client.html) from a
+//! First, by creating a [`Client`](./struct.Client.html) from a
 //! Read/Write pair (such as a cloned TcpStream) then calling
-//! [`Client::register`](./twitch/struct.Client.html#method.register) with a
-//! filled-out [`UserConfig`](./struct.UserConfig.html) will connect you to
+//! [`Client::register`](./struct.Client.html#method.register) with a
+//! filled-out [`UserConfig`](./userconfig/struct.UserConfig.html) will connect you to
 //! Twitch. Once connected, you can
-//! [`Client::wait_for_ready`](./twitch/struct.Client.html#method.wait_for_ready)
+//! [`Client::wait_for_ready`](./struct.Client.html#method.wait_for_ready)
 //!  and the client will read **(blocking)** until Twitch sends a
 //! [`GlobalUserState`](./twitch/commands/struct.GlobalUserState.html) message,
 //! which it'll fill out a [`LocalUser`](./twitch/struct.LocalUser.html) with
 //! various information.
 //!
 //! Once connected, you can
-//! - use [`Client::join`](./twitch/struct.Client.html#method.join) to join a
+//! - use [`Client::join`](./struct.Client.html#method.join) to join a
 //!   channel.
-//! - use [`Client::on`](./twitch/struct.Client.html#method.on) to set up a
+//! - use [`Client::on`](./struct.Client.html#method.on) to set up a
 //!   message filter.
-//! - use [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//! - use [`Client::read_message`](./struct.Client.html#method.read_message)
 //!   to read a message (and pump the filters).
-//! - or do various [*other things*](./twitch/struct.Client.html#method.host)
+//! - or do various [*other things*](./struct.Client.html#method.host)
 //!
 //! # Message filters, and why blocking in them is a bad idea
 //! The client provides a very simplistic callback registration system
 //!
 //! To use it, you simply just `register` a closure with the client via its
-//! [`Client::on`](./twitch/struct.Client.html#method.on) method. It uses the
+//! [`Client::on`](./struct.Client.html#method.on) method. It uses the
 //! type of the closures argument, one of
 //! [*these*](./twitch/commands/index.html#structs) to create a filter
 //!
-//! When [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//! When [`Client::read_message`](./struct.Client.html#method.read_message)
 //! is called, it'll check these filters and send a clone of the requested message
 //! to the callback. Because it does this on same thread as the
-//! [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//! [`Client::read_message`](./struct.Client.html#method.read_message)
 //! call, you can lock up the system by simplying diverging.
 //!
 //! The client is thread safe, and clonable so one could call
-//! [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
+//! [`Client::read_message`](./struct.Client.html#method.read_message)
 //! with ones own sychronization scheme to allow for a simplistic thread pool,
 //! but its best just to send the message off to a channel elsewhere
 //!
 //! # A simple example
 //! ```no_run
 //! use std::net::TcpStream;
-//! use twitchchat::twitch::{commands::PrivMsg, Capability, Client};
+//! use twitchchat::{commands::PrivMsg, Capability, Client};
 //! use twitchchat::{TWITCH_IRC_ADDRESS, UserConfig};
 //! # fn main() {
 //! // create a simple TcpStream
@@ -113,10 +102,10 @@
 //! [`TestStream`](./struct.TestStream.html) is a simple TcpStream-like mock.
 //!
 //! It lets you inject/read its internal buffers, allowing you to easily write
-//! unit tests for the [`Client`](./twitch/struct.Client.html)
+//! unit tests for the [`Client`](./struct.Client.html)
 //!
 //! # UserConfig
-//! [`UserConfig`](./struct.UserConfig.html) is required to [`Client::register`](./twitch/struct.Client.html#method.register)
+//! [`UserConfig`](./struct.UserConfig.html) is required to [`Client::register`](./struct.Client.html#method.register)
 //! (e.g. complete the connection) with Twitch
 //!
 //! ```no_run
@@ -133,17 +122,26 @@
 //!     .build()         // create the config
 //!     .unwrap();       // returns an Option, None if nick/token aren't semi-valid
 //! ```
+//!
+//! # The irc module
+//! The [`irc`](./irc/index.html) module contains a **very** simplistic
+//! representation of the IRC protocol.
+//!
 /// IRC-related stuff
 pub mod irc;
 
 /// Types associated with twitch
-pub mod twitch;
+mod twitch;
+pub use twitch::*;
 
-mod userconfig;
-pub use self::userconfig::UserConfig;
+pub use self::twitch::UserConfig;
 
 mod teststream;
-pub use teststream::TestStream;
+
+/// Helpers for writing tests
+pub mod helpers {
+    pub use super::teststream::TestStream;
+}
 
 #[allow(dead_code)]
 pub(crate) const VERSION_STR: &str =

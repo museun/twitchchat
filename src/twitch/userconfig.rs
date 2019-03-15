@@ -17,7 +17,14 @@ pub struct UserConfig {
     pub caps: Vec<Capability>,
 }
 
-/// A _builder_ type to create a `UserConfig` without dumb errors (like swapping nick/token)
+impl UserConfig {
+    /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) enabled
+    pub fn builder() -> self::UserConfigBuilder {
+        UserConfigBuilder::new()
+    }
+}
+
+/// A _builder_ type to create a [`UserConfig`](./struct.UserConfig.html) without dumb errors (like swapping nick/token)
 pub struct UserConfigBuilder {
     nick: Option<String>,
     token: Option<String>,
@@ -102,12 +109,5 @@ impl UserConfigBuilder {
         } else {
             self.caps.insert(cap);
         }
-    }
-}
-
-impl UserConfig {
-    /// Create a `UserConfigBuilder`, defaults with all of the `Capability` enabled
-    pub fn builder() -> UserConfigBuilder {
-        UserConfigBuilder::new()
     }
 }

@@ -1,9 +1,9 @@
-/// An error that [`Client`](./struct.Client.html) can return
+/// An error that the [`Client`](./struct.Client.html) can return
 #[derive(Debug)]
 pub enum Error {
     /// Connection could not be established
     Connect(std::io::Error),
-    /// Could not register with the provided [UserConfig](../struct.UserConfig.html)
+    /// Could not register with the provided [UserConfig](./struct.UserConfig.html)
     Register(Box<Self>),
     /// Could not write
     Write(std::io::Error),

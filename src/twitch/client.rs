@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use super::channel::Channel;
 use super::filter::{FilterMap, MessageFilter, Token};
-use super::{commands, Capability, Color, Error, LocalUser, Message};
+use super::{commands, Capability, Error, LocalUser, Message, TwitchColor};
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
@@ -17,7 +17,7 @@ type InspectFn = Box<dyn Fn(String) + 'static + Send + Sync>;
 /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
 ///
 /// ```no_run
-/// # use {twitchchat::TestStream, twitchchat::twitch::Client};
+/// use twitchchat::{helpers::TestStream, Client};
 /// let stream = TestStream::new();
 /// let (r,w) = (stream.clone(), stream.clone());
 /// let mut client = Client::new(r,w); // moves the r,w
@@ -75,7 +75,7 @@ where
         }
     }
 
-    /// Registers with the server uses the provided [`UserConfig`](../struct.UserConfig.html)
+    /// Registers with the server uses the provided [`UserConfig`](./struct.UserConfig.html)
     ///
     /// This is a **very** useful step, after you make the client and set up your initial filters
     ///
@@ -85,7 +85,7 @@ where
     ///
     /// Usage
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client, UserConfig};
+    /// # use twitchchat::{helpers::TestStream, Client, UserConfig};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -119,7 +119,7 @@ where
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -155,7 +155,7 @@ where
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -185,7 +185,7 @@ where
     /// Using this will drive the client (blocking for a read, then producing messages).
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -267,11 +267,11 @@ impl<R, W> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
-    /// use twitchchat::twitch::commands::*;    
+    /// use twitchchat::commands::*;    
     /// let pm_tok = client.on(|msg: PrivMsg| {
     ///     // msg is now a `twitchchat::commands::PrivMsg`
     /// });
@@ -409,7 +409,7 @@ where
     // hex (#000000) or one of the following: Blue, BlueViolet, CadetBlue,
     // Chocolate, Coral, DodgerBlue, Firebrick, GoldenRod, Green, HotPink,
     // OrangeRed, Red, SeaGreen, SpringGreen, YellowGreen.
-    pub fn color<C: Into<Color>>(&mut self, color: C) -> Result<(), Error> {
+    pub fn color<C: Into<TwitchColor>>(&mut self, color: C) -> Result<(), Error> {
         self.command(&format!("/color {}", color.into()))
     }
 
@@ -593,7 +593,7 @@ where
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -613,7 +613,7 @@ where
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client};
+    /// # use twitchchat::{helpers::TestStream, Client};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -689,7 +689,7 @@ pub trait ClientExt {
     /// will be copied to the provided function
     ///
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client, twitch::ClientExt};
+    /// # use twitchchat::{helpers::TestStream, Client, ClientExt};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -713,7 +713,7 @@ pub trait ClientExt {
     /// amount of actual writes as possible
     ///
     /// ```no_run
-    /// # use twitchchat::{TestStream, twitch::Client, twitch::ClientExt};
+    /// # use twitchchat::{helpers::TestStream, Client, ClientExt};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
@@ -790,7 +790,7 @@ mod tests {
 
     #[test]
     fn filter() {
-        let mut stream = crate::TestStream::new();
+        let mut stream = crate::teststream::TestStream::new();
         let (r, w) = (stream.clone(), stream.clone());
         let mut client = Client::new(r, w);
 
@@ -840,7 +840,7 @@ mod tests {
 
     #[test]
     fn inspect() {
-        let mut stream = crate::TestStream::new();
+        let mut stream = crate::teststream::TestStream::new();
         let (r, w) = (stream.clone(), stream.clone());
         let mut client = Client::new(r, w);
 

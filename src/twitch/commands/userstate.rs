@@ -12,7 +12,7 @@ impl UserState {
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())
     }
-    pub fn color(&self) -> Option<Color> {
+    pub fn color(&self) -> Option<TwitchColor> {
         self.get("color").map(RGB::from_hex).map(Into::into)
     }
     pub fn display_name(&self) -> Option<&str> {

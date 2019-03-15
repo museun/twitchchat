@@ -71,7 +71,7 @@ impl RGB {
 }
 
 impl From<Twitch> for RGB {
-    /// Tries to turn the [`Color`](./enum.Color.html) color into an [`RGB`](./struct.RGB.html)
+    /// Tries to turn the [`TwitchColor`](./enum.TwitchColor.html) color into an [`RGB`](./struct.RGB.html)
     ///
     /// If the color is, somehow, unknown, it'll use [`RGB::default`](./struct.RGB.html#method.default)
     fn from(color: Twitch) -> Self {
@@ -197,7 +197,7 @@ impl std::fmt::Display for Twitch {
     }
 }
 
-/// A helper method that returns a const array of [`Twitch`](./enum.Twitch.html) colors to [`RGB`](./struct.RGB.html)
+/// A helper method that returns a const array of [`TwitchColor`](./enum.TwitchColor.html) colors to [`RGB`](./struct.RGB.html)
 pub const fn twitch_colors() -> [(Twitch, RGB); 15] {
     use Twitch::*;
     [

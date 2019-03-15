@@ -9,10 +9,11 @@ use std::collections::HashMap;
 
 pub type FilterFn = Box<dyn Fn(Message) + Send + Sync>;
 
-/// A Token returned by the `on` message filter
+/// A Token returned by the [`Client::on`](./struct.CLient.html#method.on) message filter
 ///
 /// Keep this around if you want to remove the filter.
-/// To remove one, use this with the `off` method.
+///
+/// To remove one, use this with the [`Client::off`](./struct.CLient.html#method.off) method.
 #[derive(Copy, Clone, PartialEq)]
 pub struct Token(pub(super) usize);
 

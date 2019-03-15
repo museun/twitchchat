@@ -3,10 +3,10 @@ use super::*;
 #[test]
 fn parse_bad_auth() {
     let input = ":tmi.twitch.tv NOTICE * :Improperly formatted auth";
-    let mut stream = crate::TestStream::new();
+    let mut stream = crate::teststream::TestStream::new();
     stream.write_message(input);
 
-    let mut client = crate::twitch::Client::new(stream.clone(), stream.clone());
+    let mut client = crate::Client::new(stream.clone(), stream.clone());
 
     let err = client.read_message().unwrap_err();
     if let crate::twitch::Error::InvalidRegistration = err {

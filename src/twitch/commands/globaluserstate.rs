@@ -13,7 +13,7 @@ impl GlobalUserState {
         badges(self.get("badges").unwrap_or_default())
     }
     /// Your color, if set
-    pub fn color(&self) -> Option<Color> {
+    pub fn color(&self) -> Option<TwitchColor> {
         self.get("color").map(RGB::from_hex).map(Into::into)
     }
     /// Your dusplay name, if set

@@ -24,7 +24,7 @@ impl PrivMsg {
         self.get_parsed("bits").unwrap()
     }
     /// The color of the user who sent this message, if set
-    pub fn color(&self) -> Option<Color> {
+    pub fn color(&self) -> Option<TwitchColor> {
         self.get("color").map(RGB::from_hex).map(Into::into)
     }
     /// The irc name of the user (generally same as their twitch account name)
