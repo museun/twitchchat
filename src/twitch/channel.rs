@@ -16,26 +16,24 @@ impl Channel {
     }
 }
 
-impl From<String> for Channel {
-    fn from(s: String) -> Self {
-        if s.is_empty() {
+impl<T> From<T> for Channel
+where
+    T: ToString,
+{
+    fn from(name: T) -> Self {
+        let name = name.to_string();
+        if name.is_empty() {
             return Self("".into());
         }
 
-        let s = s.to_lowercase();
-        let s = if !s.starts_with('#') {
-            ["#", s.as_str()].concat()
+        let name = name.to_lowercase();
+        let name = if !name.starts_with('#') {
+            ["#", name.as_str()].concat()
         } else {
-            s.to_string()
+            name.to_string()
         };
 
-        Self(s)
-    }
-}
-
-impl From<&str> for Channel {
-    fn from(s: &str) -> Self {
-        s.to_string().into()
+        Self(name)
     }
 }
 
@@ -43,12 +41,6 @@ impl std::ops::Deref for Channel {
     type Target = String;
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl std::fmt::Display for Channel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
@@ -66,6 +58,25 @@ mod tests {
         if let Error::EmptyChannelName = err {
         } else {
             panic!("wrong error: {}", err)
+        }
+    }
+
+    #[test]
+    fn into_channel() {
+        let s = String::from("museun");
+
+        let channels: Vec<Channel> = vec![
+            s.as_str().into(),
+            (&s).into(),
+            s.clone().into(),
+            s.into(),
+            "museun".into(),
+            String::from("museun").into(),
+            (&String::from("museun")).into(),
+        ];
+
+        for name in channels {
+            assert_eq!(*name, "#museun");
         }
     }
 }

@@ -604,7 +604,7 @@ where
     /// ```    
     pub fn join<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("JOIN {}", channel))
+        self.raw(&format!("JOIN {}", *channel))
     }
 
     /// Parts a `channel`
@@ -624,7 +624,7 @@ where
     /// ```    
     pub fn part<C: Into<Channel>>(&mut self, channel: C) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PART {}", channel))
+        self.raw(&format!("PART {}", *channel))
     }
 
     /// Sends an "emote" `message` in the third person to the `channel`
@@ -649,7 +649,7 @@ where
         S: AsRef<str>,
     {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PRIVMSG {} :{}", channel, message.as_ref()))
+        self.raw(&format!("PRIVMSG {} :{}", *channel, message.as_ref()))
     }
 
     /// Sends the `message` to the `channel`
@@ -663,7 +663,7 @@ where
         S: AsRef<str>,
     {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PRIVMSG {} :{}", channel, message.as_ref()))
+        self.raw(&format!("PRIVMSG {} :{}", *channel, message.as_ref()))
     }
 
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)
