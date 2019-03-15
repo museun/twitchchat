@@ -21,10 +21,9 @@ parking_lot = "0.7.1"
 version = "0.7.2"
 features = ["v4"]
 
-# this will be removed when it gets merged into the std lib
 [dependencies.hashbrown]
 version = "0.1.8"
-features = ["serde"] 
+optional = true
 
 [dependencies.serde]
 version = "1.0.89"
@@ -32,6 +31,5 @@ features = ["derive"]
 optional = true
 
 [features]
-default = ["teststream", "serde_derive"]
-teststream = []
-serde_derive = ["serde"]
+default = []
+serde_hashbrown = ["serde", "hashbrown/serde"]

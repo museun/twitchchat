@@ -1,12 +1,10 @@
 use super::*;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 /// Simple channel wrapper.
 ///
 /// This ensures the twitch channels align with IRC naming scheme.
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Channel(String);
 
 impl Channel {

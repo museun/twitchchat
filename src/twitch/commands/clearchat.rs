@@ -4,7 +4,7 @@ use super::*;
 ///
 /// Typically after a user is banned from chat or timed out.
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearChat {
     pub tags: Tags,
     /// The channel this event happened on

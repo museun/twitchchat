@@ -1,8 +1,6 @@
-use super::*;
-
 /// When a channel starts host mode.
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HostTargetStart {
     /// The hosting channel
     pub source: String,

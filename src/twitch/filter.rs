@@ -1,7 +1,11 @@
 use super::{commands, Message};
-use hashbrown::HashMap;
 use log::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashMap;
 
 pub type FilterFn = Box<dyn Fn(Message) + Send + Sync>;
 

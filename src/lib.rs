@@ -52,7 +52,7 @@
 //! The client is thread safe, and clonable so one could call
 //! [`Client::read_message`](./twitch/struct.Client.html#method.read_message)
 //! with ones own sychronization scheme to allow for a simplistic thread pool,
-//! but its best just to send the message off to a channel elsehwere
+//! but its best just to send the message off to a channel elsewhere
 //!
 //! # A simple example
 //! ```no_run
@@ -110,10 +110,29 @@
 //! ```
 //!
 //! # TestStream
-//! [`TestStream`](./struct.TestStream.html) is a simple TcpStream-like thing
-//! that lets you inject/read its internal buffers, allowing you to easily write
+//! [`TestStream`](./struct.TestStream.html) is a simple TcpStream-like mock.
+//!
+//! It lets you inject/read its internal buffers, allowing you to easily write
 //! unit tests for the [`Client`](./twitch/struct.Client.html)
-
+//!
+//! # UserConfig
+//! [`UserConfig`](./struct.UserConfig.html) is required to [`Client::register`](./twitch/struct.Client.html#method.register)
+//! (e.g. complete the connection) with Twitch
+//!
+//! ```no_run
+//! use twitchchat::UserConfig;
+//! let my_token = std::env::var("MY_TWITCH_OAUTH_TOKEN").unwrap();
+//! let my_name = "my_name_123";
+//! let config = UserConfig::builder()
+//!     .nick(my_name)   // sets you nick
+//!     .token(my_token) // sets you password (e.g. oauth token. must start with `oauth:`)
+//!     // capabilities these are enabled by default. so using these "toggles" the flag (e.g. flips a boolean)
+//!     .membership()    // this disables the membership CAP
+//!     .commands()      // this disables the commands CAP
+//!     .tags()          // this disables the tags CAP
+//!     .build()         // create the config
+//!     .unwrap();       // returns an Option, None if nick/token aren't semi-valid
+//! ```
 /// IRC-related stuff
 pub mod irc;
 
@@ -121,19 +140,16 @@ pub mod irc;
 pub mod twitch;
 
 mod userconfig;
-pub use self::userconfig::{UserConfig, UserConfigBuilder};
+pub use self::userconfig::UserConfig;
 
-#[cfg(feature = "teststream")]
 mod teststream;
-
-#[cfg(feature = "teststream")]
 pub use teststream::TestStream;
 
 #[allow(dead_code)]
 pub(crate) const VERSION_STR: &str =
     concat!(env!("CARGO_PKG_NAME"), ":", env!("CARGO_PKG_VERSION"));
 
-/// The twitch irc address for non-TLS connections
+/// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
-/// The twitch irc address for TLS connections
+/// The Twitch IRC address for TLS connections
 pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";

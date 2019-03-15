@@ -2,7 +2,7 @@ use super::*;
 
 /// General notices from the server.
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Notice {
     pub tags: Tags,
     /// The channel this event happened on
@@ -28,7 +28,7 @@ impl Tag for Notice {
 
 /// These tags apply to both the NOTICE (Twitch Commands) and NOTICE (Twitch Chat Rooms) commands.
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MessageId {
     /// <user> is already banned in this channel.
     AlreadyBanned,

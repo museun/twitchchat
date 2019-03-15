@@ -1,5 +1,10 @@
 use crate::twitch::Capability;
 
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashSet;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashSet;
+
 /// Configuration used to complete the 'registration' with the irc server
 pub struct UserConfig {
     /// OAuth token from twitch, it must have the
@@ -16,7 +21,7 @@ pub struct UserConfig {
 pub struct UserConfigBuilder {
     nick: Option<String>,
     token: Option<String>,
-    caps: hashbrown::HashSet<Capability>,
+    caps: HashSet<Capability>,
 }
 
 impl Default for UserConfigBuilder {

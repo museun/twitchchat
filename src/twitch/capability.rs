@@ -1,13 +1,10 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Capabilities allow you to get more data from twitch
 ///
 /// The default, `generic` is very simplistic (basically just read/write PRIVMSGs for a channel)
 ///
 /// While enabling `membership` + `commands` + `tags` will allow you to get a much more rich set of messages
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Capability {
     /// Generic capability, the default.
     ///

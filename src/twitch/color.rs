@@ -1,9 +1,6 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RGB(pub u8, pub u8, pub u8);
 
 impl Default for RGB {
@@ -92,7 +89,7 @@ impl From<Twitch> for RGB {
 
 /// These are the default Twitch colors
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Twitch {
     /// RGB (hex): #0000FF
     Blue,

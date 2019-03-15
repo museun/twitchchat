@@ -2,7 +2,7 @@ use super::*;
 
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GlobalUserState {
     pub tags: Tags,
 }

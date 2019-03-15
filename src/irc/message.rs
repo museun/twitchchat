@@ -1,6 +1,3 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use super::types::{Prefix, Tags};
 use log::*;
 
@@ -8,7 +5,7 @@ use log::*;
 ///
 /// Twitch messages will be part of the Unknown variant.
 #[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Message {
     /// Ping command. The client should respond to this with a `PONG :${token}\r\n` message        
     Ping {
