@@ -1,7 +1,35 @@
 use log::*;
-use parking_lot::{Mutex, RwLock};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
+
+mod mutex_wrapper {
+    #[cfg(features = "parking_lot")]
+    use parking_lot::Mutex;
+
+    #[cfg(not(features = "parking_lot"))]
+    use std::sync::Mutex;
+
+    pub struct MutexWrapper<T>(Mutex<T>);
+
+    impl<T> MutexWrapper<T> {
+        pub fn new(data: T) -> Self {
+            Self(Mutex::new(data))
+        }
+
+        #[cfg(features = "parking_lot")]
+        pub fn lock(&self) -> lock_api::MutexGuard<T> {
+            self.0.lock()
+        }
+
+        #[cfg(not(features = "parking_lot"))]
+        pub fn lock(&self) -> std::sync::MutexGuard<T> {
+            self.0.lock().unwrap()
+        }
+    }
+
+}
+
+use mutex_wrapper::MutexWrapper as Mutex;
 
 use super::channel::Channel;
 use super::filter::{FilterMap, MessageFilter, Token};
@@ -31,7 +59,7 @@ pub struct Client<R, W> {
 
     // TODO use an Inner struct for these 2
     // They can share a mutex
-    filters: Arc<RwLock<FilterMap>>,
+    filters: Arc<Mutex<FilterMap>>,
     inspect: Option<Arc<Mutex<InspectFn>>>,
 }
 
@@ -60,7 +88,7 @@ where
         Self {
             read: Arc::new(Mutex::new(BufReader::new(read))),
             write: Arc::new(Mutex::new(write)),
-            filters: Arc::new(RwLock::new(FilterMap::default())),
+            filters: Arc::new(Mutex::new(FilterMap::default())),
             inspect: None,
         }
     }
@@ -246,7 +274,7 @@ where
 
         let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
         {
-            let filter_map = &*self.filters.read();
+            let filter_map = &*self.filters.lock();
             let key = msg.what_filter();
             if let Some(filters) = filter_map.get(key) {
                 for filter in filters {
@@ -302,7 +330,7 @@ impl<R, W> Client<R, W> {
     {
         let filter = T::to_filter();
         self.filters
-            .write()
+            .lock()
             .insert(filter, Box::new(move |msg| f(msg.into())))
     }
 
@@ -310,7 +338,7 @@ impl<R, W> Client<R, W> {
     ///
     /// Returns true if this filter existed
     pub fn off(&mut self, tok: Token) -> bool {
-        self.filters.write().try_remove(tok)
+        self.filters.lock().try_remove(tok)
     }
 }
 

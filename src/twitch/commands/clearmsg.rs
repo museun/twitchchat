@@ -23,8 +23,8 @@ impl ClearMsg {
         self.get("message")
     }
     /// UUID of the message.
-    pub fn target_msg_id(&self) -> Option<uuid::Uuid> {
-        self.get_parsed("target-msg-id")
+    pub fn target_msg_id(&self) -> Option<&str> {
+        self.get("target-msg-id")
     }
 }
 

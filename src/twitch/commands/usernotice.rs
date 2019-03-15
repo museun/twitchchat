@@ -29,8 +29,8 @@ impl UserNotice {
         emotes(self.get("emotes").unwrap_or_default())
     }
     /// A unique id (UUID) attached to this message (used for Localization)
-    pub fn id(&self) -> Option<uuid::Uuid> {
-        self.get_parsed("id")
+    pub fn id(&self) -> Option<&str> {
+        self.get("id")
     }
     /// The name of the user who sent the notice.
     pub fn login(&self) -> Option<&str> {

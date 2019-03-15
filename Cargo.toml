@@ -14,12 +14,10 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 log = "0.4.6"
-parking_lot = "0.7.1"
 
-# twitch doesn't technially use uuid-v4, but something that resembles it 
-[dependencies.uuid]
-version = "0.7.2"
-features = ["v4"]
+[dependencies.parking_lot]
+version = "0.7.1"
+optional = true
 
 [dependencies.hashbrown]
 version = "0.1.8"
@@ -33,3 +31,4 @@ optional = true
 [features]
 default = []
 serde_hashbrown = ["serde", "hashbrown/serde"]
+all = ["serde_hashbrown", "parking_lot"]

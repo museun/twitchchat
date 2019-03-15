@@ -44,8 +44,8 @@ impl PrivMsg {
         emotes(self.get("emotes").unwrap_or_default())
     }
     /// The unique UUID for this mesage
-    pub fn id(&self) -> uuid::Uuid {
-        self.get_parsed("id").unwrap()
+    pub fn id(&self) -> &str {
+        self.get("id").unwrap()
     }
     /// The message body
     pub fn message(&self) -> &str {
