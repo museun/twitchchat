@@ -1,3 +1,5 @@
+use super::*;
+
 /// List current chatters in a channel. (marks the start begin)
 ///
 /// If there are more than 1000 chatters in a room, NAMES return only the list
@@ -8,6 +10,7 @@
 /// Listen for this and keep track of the users and once you received NamedEnd
 /// you've gotten all of the users
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NamesStart {
     /// Your user for this event
     pub user: String,

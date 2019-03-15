@@ -1,3 +1,5 @@
+use super::*;
+
 /// Signals that you should reconnect and rejoin channels after a restart.
 ///
 /// Twitch IRC processes occasionally need to be restarted. When this happens,
@@ -6,4 +8,5 @@
 /// case, reconnect and rejoin channels that were on the connection, as you
 /// would normally.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Reconnect;

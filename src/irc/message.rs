@@ -1,10 +1,14 @@
-use crate::irc::types::{Prefix, Tags};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use super::types::{Prefix, Tags};
 use log::*;
 
 /// A simple IRC message
 ///
 /// Twitch messages will be part of the Unknown variant.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Message {
     /// Ping command. The client should respond to this with a `PONG :${token}\r\n` message        
     Ping {

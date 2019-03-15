@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 mod clearchat;
 mod clearmsg;
 mod globaluserstate;

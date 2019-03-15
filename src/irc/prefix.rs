@@ -1,5 +1,9 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// IRC Prefix, not really used by Twitch once capabilities are enabled
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Prefix {
     /// User prefix. i.e nick!user@host
     User {

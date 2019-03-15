@@ -1,5 +1,8 @@
+use super::*;
+
 /// List current chatters in a channel. (marks the end)
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NamesEnd {
     /// Your user for this event
     pub user: String,

@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 mod badge;
 mod color;
 mod emotes;
@@ -22,7 +25,8 @@ pub use self::client::{Client, ClientExt};
 pub mod channel;
 
 /// Information gathered during the `GLOBALUSERSTATE` event
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LocalUser {
     /// Your user id
     pub user_id: u64,
@@ -38,6 +42,7 @@ pub struct LocalUser {
 
 /// Messages created by the client.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Message {
     /// An irc Message
     Irc(crate::irc::types::Message),

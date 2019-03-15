@@ -4,6 +4,7 @@ use super::*;
 ///
 /// This is triggered via /delete <target-msg-id> on IRC.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ClearMsg {
     pub tags: Tags,
     /// The channel this event happened on

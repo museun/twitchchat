@@ -2,6 +2,7 @@ use super::*;
 
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct UserNotice {
     pub tags: Tags,
     /// THe channel this event is for
@@ -176,6 +177,7 @@ impl Tag for UserNotice {
 
 /// A paid subscription to the channel
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SubPlan {
     /// A `Prime` subscription    
     Prime,
@@ -189,6 +191,7 @@ pub enum SubPlan {
 
 /// The type of message this User Notice is
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum NoticeType {
     /// Enables:
     /// - msg-param-cumulative-months,

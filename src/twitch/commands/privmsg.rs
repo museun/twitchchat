@@ -2,6 +2,7 @@ use super::*;
 
 /// Send a message to a channel.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PrivMsg {
     pub tags: Tags,
     /// The IRC user that sent this message

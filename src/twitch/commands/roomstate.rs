@@ -2,6 +2,7 @@ use super::*;
 
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RoomState {
     pub tags: Tags,
     /// The channel this event came from
@@ -46,6 +47,7 @@ impl Tag for RoomState {
 
 /// Followers-only mode
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum FollowersOnly {
     /// `Disabled` signifies that anyone can chat
     Disabled,

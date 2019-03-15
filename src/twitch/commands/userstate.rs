@@ -2,6 +2,7 @@ use super::*;
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct UserState {
     pub tags: Tags,
     pub channel: String,
