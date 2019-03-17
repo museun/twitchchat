@@ -1,9 +1,5 @@
 use crate::twitch::Capability;
-
-#[cfg(feature = "hashbrown")]
-use hashbrown::HashSet;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 /// Configuration used to complete the 'registration' with the irc server
 #[derive(Clone)]
@@ -18,6 +14,16 @@ pub struct UserConfig {
     pub caps: Vec<Capability>,
 }
 
+impl std::fmt::Debug for UserConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UserConfig")
+            .field("nick", &self.nick)
+            .field("token", &"************ (redacted)")
+            .field("caps", &self.caps)
+            .finish()
+    }
+}
+
 impl UserConfig {
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) enabled
     pub fn builder() -> UserConfigBuilder {
@@ -29,7 +35,7 @@ impl UserConfig {
 pub struct UserConfigBuilder {
     nick: Option<String>,
     token: Option<String>,
-    caps: HashSet<Capability>,
+    caps: BTreeSet<Capability>,
 }
 
 impl Default for UserConfigBuilder {
@@ -110,5 +116,21 @@ impl UserConfigBuilder {
         } else {
             let _ = self.caps.insert(cap);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn print_userconfig() {
+        let c = UserConfig::builder()
+            .nick("justinfan12345")
+            .token("justinfan12345")
+            .build()
+            .unwrap();
+
+        let good = r#"UserConfig { nick: "justinfan12345", token: "************ (redacted)", caps: [Membership, Commands, Tags] }"#;
+        assert_eq!(format!("{:?}", c), good);
     }
 }
