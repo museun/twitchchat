@@ -61,6 +61,9 @@
 //! let config = UserConfig::builder()
 //!                 .token(pass)
 //!                 .nick(nick)
+//!                 .membership()    // this enables the membership CAP
+//!                 .commands()      // this enables the commands CAP
+//!                 .tags()          // this enables the tags CAP
 //!                 .build()
 //!                 .unwrap();
 //!
@@ -115,10 +118,10 @@
 //! let config = UserConfig::builder()
 //!     .nick(my_name)   // sets you nick
 //!     .token(my_token) // sets you password (e.g. oauth token. must start with `oauth:`)
-//!     // capabilities these are enabled by default. so using these "toggles" the flag (e.g. flips a boolean)
-//!     .membership()    // this disables the membership CAP
-//!     .commands()      // this disables the commands CAP
-//!     .tags()          // this disables the tags CAP
+//!     // capabilities these are disabled by default. so using these "toggles" the flag (e.g. flips a boolean)
+//!     .membership()    // this enables the membership CAP
+//!     .commands()      // this enables the commands CAP
+//!     .tags()          // this enables the tags CAP
 //!     .build()         // create the config
 //!     .unwrap();       // returns an Option, None if nick/token aren't semi-valid
 //! ```

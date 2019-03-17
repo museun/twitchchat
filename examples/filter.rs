@@ -52,7 +52,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
 fn user_config() -> UserConfig {
     let (nick, pass) = (var("MY_TWITCH_NICK"), var("MY_TWITCH_PASS"));
-    let config = UserConfig::builder().nick(nick).token(pass);
+    let config = UserConfig::builder()
+        .nick(nick)
+        .token(pass)
+        .membership()
+        .commands()
+        .tags();
     config.build().unwrap()
 }
 

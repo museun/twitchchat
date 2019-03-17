@@ -43,14 +43,7 @@ impl Default for UserConfigBuilder {
         Self {
             nick: None,
             token: None,
-            caps: [
-                Capability::Membership,
-                Capability::Commands,
-                Capability::Tags,
-            ]
-            .iter()
-            .cloned()
-            .collect(),
+            caps: BTreeSet::default(),
         }
     }
 }
@@ -76,7 +69,7 @@ impl UserConfigBuilder {
 
     /// Enable or disable the membership capability
     ///
-    /// Enabled by default
+    /// Disabled by default
     pub fn membership(mut self) -> Self {
         self.toggle_cap(Capability::Membership);
         self
@@ -84,7 +77,7 @@ impl UserConfigBuilder {
 
     /// Enable or disable the commands capability
     ///
-    /// Enabled by default
+    /// Disabled by default
 
     pub fn commands(mut self) -> Self {
         self.toggle_cap(Capability::Commands);
@@ -93,7 +86,7 @@ impl UserConfigBuilder {
 
     /// Enable or disable the tags capability
     ///
-    /// Enabled by default
+    /// Disabled by default
     pub fn tags(mut self) -> Self {
         self.toggle_cap(Capability::Tags);
         self
@@ -127,6 +120,9 @@ mod tests {
         let c = UserConfig::builder()
             .nick("justinfan12345")
             .token("justinfan12345")
+            .tags()
+            .membership()
+            .commands()
             .build()
             .unwrap();
 

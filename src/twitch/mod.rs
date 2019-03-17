@@ -25,6 +25,7 @@ pub use self::channel::Channel;
 #[doc(hidden)]
 pub mod userconfig;
 pub use self::userconfig::UserConfig;
+pub use self::userconfig::UserConfigBuilder;
 
 /// Information gathered during the [`GLOBALUSERSTATE`](./commands/struct.GlobalUserState.html) event
 #[derive(Debug, Clone, PartialEq)]
