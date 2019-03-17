@@ -53,10 +53,7 @@ type InspectFn = Box<dyn FnMut(String) + 'static + Send + Sync>;
 /// client.run().unwrap();
 /// ```
 // TODO write usage
-pub struct Client<R, W> {
-    inner: Arc<Inner<R, W>>,
-    inspect: Option<Arc<Mutex<InspectFn>>>,
-}
+pub struct Client<R, W>(Arc<Inner<R, W>>);
 
 struct Inner<R, W> {
     read: Mutex<BufReader<R>>,
@@ -66,10 +63,7 @@ struct Inner<R, W> {
 
 impl<R, W> Clone for Client<R, W> {
     fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-            inspect: self.inspect.clone(),
-        }
+        Self(Arc::clone(&self.0))
     }
 }
 
@@ -84,14 +78,11 @@ where
     ///
     /// This client is clonable, and thread safe.
     pub fn new(read: R, write: W) -> Self {
-        Self {
-            inner: Arc::new(Inner {
-                read: Mutex::new(BufReader::new(read)),
-                write: Mutex::new(write),
-                filters: Mutex::new(FilterMap::default()),
-            }),
-            inspect: None,
-        }
+        Self(Arc::new(Inner {
+            read: Mutex::new(BufReader::new(read)),
+            write: Mutex::new(write),
+            filters: Mutex::new(FilterMap::default()),
+        }))
     }
 
     /// Runs, consuming all messages.
@@ -241,7 +232,7 @@ where
 
         let mut buf = String::new();
         {
-            let mut read = self.inner.read.lock();
+            let mut read = self.0.read.lock();
             let len = read.read_line(&mut buf).map_err(Error::Read)?;
             // 0 == EOF
             if len == 0 {
@@ -257,11 +248,6 @@ where
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
-
-        if let Some(inspect) = self.inspect.as_mut() {
-            let func = &mut *inspect.lock();
-            (func)(buf.to_string())
-        };
 
         // handle PINGs automatically
         if let IrcMessage::Ping { token } = &msg {
@@ -292,7 +278,7 @@ where
 
         let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
         {
-            let mut filter_map = self.inner.filters.lock();
+            let mut filter_map = self.0.filters.lock();
             let key = msg.what_filter();
             if let Some(filters) = filter_map.get_mut(key) {
                 for filter in filters {
@@ -347,7 +333,7 @@ impl<R, W> Client<R, W> {
         T: MessageFilter,
     {
         let filter = T::to_filter();
-        self.inner
+        self.0
             .filters
             .lock()
             .insert(filter, Box::new(move |msg| f(msg.into())))
@@ -357,7 +343,7 @@ impl<R, W> Client<R, W> {
     ///
     /// Returns true if this filter existed
     pub fn off(&mut self, tok: Token) -> bool {
-        self.inner.filters.lock().try_remove(tok)
+        self.0.filters.lock().try_remove(tok)
     }
 }
 
@@ -371,7 +357,7 @@ where
         // } else {
         //     trace!("-> {}", data);
         // }
-        let mut write = self.inner.write.lock();
+        let mut write = self.0.write.lock();
         write
             .write_all(data.as_ref())
             .and_then(|_| write.write_all(b"\r\n"))
@@ -733,25 +719,6 @@ where
 
 /// Client extensions
 pub trait ClientExt {
-    /// When this is set, all "raw" reads from the Read portion of the client
-    /// will be copied to the provided function
-    ///
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, ClientExt};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let mut client = Client::new(r, w);
-    /// client.inspect(|msg: String| {
-    ///     println!("<-- {}", msg)
-    /// });
-    /// ```
-    fn inspect<F>(&mut self, f: F)
-    where
-        F: FnMut(String) + Send + Sync + 'static;
-
-    /// Remove the inspection function, if it exists
-    fn remove_inspect(&mut self);
-
     /// Join a (huge) list of channels
     ///
     /// This will efficiently partition all of the JOIN commands into max-sized
@@ -792,6 +759,28 @@ pub trait ClientExt {
     where
         I: IntoIterator<Item = S> + 'a,
         S: AsRef<str> + 'a;
+}
+
+impl<R, W: Write> ClientExt for Client<R, W> {
+    fn join_many_limited<'a, I, S>(
+        &mut self,
+        channels: I,
+        rate: Option<RateLimit>,
+    ) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a,
+    {
+        self.join_limited(channels, true, rate)
+    }
+
+    fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a,
+    {
+        self.join_limited(channels, false, None)
+    }
 }
 
 impl<R, W: Write> Client<R, W> {
@@ -854,123 +843,5 @@ impl<R, W: Write> Client<R, W> {
         }
 
         Ok(())
-    }
-}
-
-impl<R, W: Write> ClientExt for Client<R, W> {
-    fn inspect<F>(&mut self, f: F)
-    where
-        F: FnMut(String) + Send + Sync + 'static,
-    {
-        let _ = self.inspect.replace(Arc::new(Mutex::new(Box::new(f))));
-    }
-
-    fn remove_inspect(&mut self) {
-        let _ = self.inspect.take();
-    }
-
-    fn join_many_limited<'a, I, S>(
-        &mut self,
-        channels: I,
-        rate: Option<RateLimit>,
-    ) -> Result<(), Error>
-    where
-        I: IntoIterator<Item = S> + 'a,
-        S: AsRef<str> + 'a,
-    {
-        self.join_limited(channels, true, rate)
-    }
-
-    fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
-    where
-        I: IntoIterator<Item = S> + 'a,
-        S: AsRef<str> + 'a,
-    {
-        self.join_limited(channels, false, None)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn filter() {
-        let mut stream = crate::teststream::TestStream::new();
-        let (r, w) = (stream.clone(), stream.clone());
-        let mut client = Client::new(r, w);
-
-        let msg = ":museun!~user@localhost PRIVMSG #museun :this is a test";
-
-        let ok = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let tok = {
-            let ok = Arc::clone(&ok);
-            client.on(move |_: super::commands::PrivMsg| {
-                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
-                assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
-            })
-        };
-
-        stream.write_message(&msg);
-        let _ = client.read_message().unwrap();
-        assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
-
-        assert!(client.off(tok));
-
-        stream.write_message(&msg);
-        let _ = client.read_message().unwrap();
-        assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
-
-        // try it again with a new one
-
-        let tok = {
-            let ok = Arc::clone(&ok);
-            client.on(move |_: super::commands::PrivMsg| {
-                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
-                assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
-            })
-        };
-
-        stream.write_message(&msg);
-        let _ = client.read_message().unwrap();
-        assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
-
-        assert!(client.off(tok));
-
-        stream.write_message(&msg);
-        let _ = client.read_message().unwrap();
-        assert!(!ok.load(std::sync::atomic::Ordering::Relaxed));
-
-        assert!(!client.off(tok));
-    }
-
-    #[test]
-    fn inspect() {
-        let mut stream = crate::teststream::TestStream::new();
-        let (r, w) = (stream.clone(), stream.clone());
-        let mut client = Client::new(r, w);
-
-        let ok = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let msg = ":museun!~user@localhost PRIVMSG #museun :this is a test";
-        {
-            let ok = Arc::clone(&ok);
-            let msg = msg.clone();
-            client.inspect(move |s| {
-                assert_eq!(s, msg);
-                let _ = ok.fetch_xor(true, std::sync::atomic::Ordering::Relaxed);
-                assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
-            });
-        }
-
-        stream.write_message(&msg);
-        let _ = client.read_message().unwrap();
-
-        client.remove_inspect();
-
-        for _ in 0..10 {
-            stream.write_message(&msg);
-            let _ = client.read_message().unwrap();
-            assert!(ok.load(std::sync::atomic::Ordering::Relaxed));
-        }
     }
 }
