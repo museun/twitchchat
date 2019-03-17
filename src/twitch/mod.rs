@@ -22,6 +22,8 @@ pub use self::client::{Client, ClientExt};
 mod channel;
 pub use self::channel::Channel;
 
+pub(crate) mod mutex;
+
 #[doc(hidden)]
 pub mod userconfig;
 pub use self::userconfig::UserConfig;

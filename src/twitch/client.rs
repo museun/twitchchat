@@ -2,33 +2,7 @@ use log::*;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
 
-mod mutex_wrapper {
-    #[cfg(features = "parking_lot")]
-    use parking_lot::Mutex;
-
-    #[cfg(not(features = "parking_lot"))]
-    use std::sync::Mutex;
-
-    pub struct MutexWrapper<T: ?Sized>(Mutex<T>);
-
-    impl<T> MutexWrapper<T> {
-        pub fn new(data: T) -> Self {
-            Self(Mutex::new(data))
-        }
-
-        #[cfg(features = "parking_lot")]
-        pub fn lock(&self) -> lock_api::MutexGuard<T> {
-            self.0.lock()
-        }
-
-        #[cfg(not(features = "parking_lot"))]
-        pub fn lock(&self) -> std::sync::MutexGuard<'_, T> {
-            self.0.lock().unwrap()
-        }
-    }
-}
-
-use mutex_wrapper::MutexWrapper as Mutex;
+use crate::mutex::mutex_wrapper::MutexWrapper as Mutex;
 
 use super::channel::Channel;
 use super::filter::{FilterMap, MessageFilter, Token};
@@ -37,7 +11,8 @@ use crate::helpers::RateLimit;
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
-type InspectFn = Box<dyn FnMut(String) + 'static + Send + Sync>;
+// 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
+// 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
 
 /// Client for interacting with Twitch's chat.
 ///
@@ -352,11 +327,6 @@ where
     W: Write,
 {
     pub(crate) fn write_line<S: AsRef<[u8]>>(&mut self, data: S) -> Result<(), Error> {
-        // if data.starts_with("PASS") {
-        //     trace!("-> PASS ************* (redacted)");
-        // } else {
-        //     trace!("-> {}", data);
-        // }
         let mut write = self.0.write.lock();
         write
             .write_all(data.as_ref())
@@ -696,8 +666,7 @@ where
         C: Into<Channel>,
         S: AsRef<str>,
     {
-        let channel = Channel::validate(channel)?;
-        self.raw(&format!("PRIVMSG {} :{}", *channel, message.as_ref()))
+        self.privmsg(channel, message)
     }
 
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)
