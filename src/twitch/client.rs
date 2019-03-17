@@ -99,7 +99,14 @@ where
     /// [`Client::on`](./struct.Client.html#method.on) filters
     pub fn run(mut self) -> Result<(), Error> {
         loop {
-            let _ = self.read_message()?;
+            match self.read_message() {
+                Ok(..) => (),
+                Err(Error::InvalidMessage(msg)) => {
+                    warn!("read an invalid message: {}", msg);
+                    continue;
+                }
+                Err(err) => return Err(err),
+            }
         }
     }
 
