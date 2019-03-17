@@ -1,6 +1,6 @@
 use std::io::{Read, Result, Write};
 
-/// TeeReader takes in an [std::io::Read](https://doc.rust-lang.org/std/io/trait.Read.html) and a [std::io::Write](https://doc.rust-lang.org/std/io/trait.Write.html) and mirrors all "reads" to the writer
+/// TeeReader takes in a [std::io::Read](https://doc.rust-lang.org/std/io/trait.Read.html) and a [std::io::Write](https://doc.rust-lang.org/std/io/trait.Write.html) and mirrors all "reads" to the writer
 ///
 /// This is useful if you want to log all reads from a `Read`er to some file (the `Write`r)
 pub struct TeeReader<R, W> {
@@ -40,5 +40,33 @@ impl<R: Read + Clone, W: Write + Clone> Clone for TeeReader<R, W> {
             output: self.output.clone(),
             force_flush: self.force_flush,
         }
+    }
+}
+
+/// TeeWriter takes two [std::io::Write](https://doc.rust-lang.org/std/io/trait.Write.html) and mirrors all "writes" to the other writer
+///
+/// This is useful if you want to log all writes from a `Write`er to some file (the `Write`r)
+///
+pub struct TeeWriter<L, R> {
+    write: L,
+    output: R,
+}
+
+impl<L, R> TeeWriter<L, R> {
+    /// Create a new TeeWriter from two Write impls.
+    pub fn new(write: L, output: R) -> Self {
+        Self { write, output }
+    }
+}
+
+impl<L: Write, R: Write> Write for TeeWriter<L, R> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let n = self.write.write(buf)?;
+        let _ = self.output.write(&buf[..n])?;
+        Ok(n)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        self.write.flush()
     }
 }

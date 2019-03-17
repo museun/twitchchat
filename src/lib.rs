@@ -145,7 +145,7 @@ pub use twitch::*;
 
 pub use self::twitch::UserConfig;
 
-mod teereader;
+mod tee;
 mod teststream;
 
 mod ratelimit;
@@ -153,7 +153,7 @@ mod ratelimit;
 /// Helpers for writing tests
 pub mod helpers {
     pub use super::ratelimit::RateLimit;
-    pub use super::teereader::TeeReader;
+    pub use super::tee::{TeeReader, TeeWriter};
     pub use super::teststream::TestStream;
 }
 
