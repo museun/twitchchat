@@ -22,7 +22,7 @@ impl PrivMsg {
     /// How many bits were attached (0 for None)
     // TODO make this optional
     pub fn bits(&self) -> u64 {
-        self.get_parsed("bits").unwrap()
+        self.get_parsed("bits").unwrap_or_default()
     }
     /// The color of the user who sent this message, if set
     pub fn color(&self) -> Option<TwitchColor> {
@@ -45,8 +45,8 @@ impl PrivMsg {
         emotes(self.get("emotes").unwrap_or_default())
     }
     /// The unique UUID for this mesage
-    pub fn id(&self) -> &str {
-        self.get("id").unwrap()
+    pub fn id(&self) -> Option<&str> {
+        self.get("id")
     }
     /// The message body
     pub fn message(&self) -> &str {
@@ -57,16 +57,16 @@ impl PrivMsg {
         self.get_as_bool("mod")
     }
     /// The id for the room
-    pub fn room_id(&self) -> u64 {
-        self.get_parsed("room-id").unwrap()
+    pub fn room_id(&self) -> Option<u64> {
+        self.get_parsed("room-id")
     }
     /// The timestamp that this message was received by Twitch
-    pub fn tmi_sent_ts(&self) -> u64 {
-        self.get_parsed("tmi-sent-ts").unwrap()
+    pub fn tmi_sent_ts(&self) -> Option<u64> {
+        self.get_parsed("tmi-sent-ts")
     }
     /// The id of the user who sent this message
-    pub fn user_id(&self) -> u64 {
-        self.get_parsed("user-id").unwrap()
+    pub fn user_id(&self) -> Option<u64> {
+        self.get_parsed("user-id")
     }
 }
 

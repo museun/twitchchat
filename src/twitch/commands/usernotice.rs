@@ -145,8 +145,8 @@ impl UserNotice {
         self.get("msg-param-ritual-name")
     }
     /// The id for the room for this notice
-    pub fn room_id(&self) -> u64 {
-        self.get_parsed("room-id").unwrap()
+    pub fn room_id(&self) -> Option<u64> {
+        self.get_parsed("room-id")
     }
     /// The message printed in chat along with this notice.
     pub fn system_msg(&self) -> String {
@@ -161,12 +161,12 @@ impl UserNotice {
             .unwrap()
     }
     /// Timestamp of when the notice was sent
-    pub fn tmi_sent_ts(&self) -> u64 {
-        self.get_parsed("tmi-sent-ts").unwrap()
+    pub fn tmi_sent_ts(&self) -> Option<u64> {
+        self.get_parsed("tmi-sent-ts")
     }
     /// The id of the user who sent the notice
-    pub fn user_id(&self) -> u64 {
-        self.get_parsed("user-id").unwrap()
+    pub fn user_id(&self) -> Option<u64> {
+        self.get_parsed("user-id")
     }
 }
 
