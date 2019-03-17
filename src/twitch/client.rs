@@ -33,6 +33,7 @@ use mutex_wrapper::MutexWrapper as Mutex;
 use super::channel::Channel;
 use super::filter::{FilterMap, MessageFilter, Token};
 use super::{commands, Capability, Error, LocalUser, Message, TwitchColor};
+use crate::helpers::RateLimit;
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
@@ -364,15 +365,15 @@ impl<R, W> Client<R, W>
 where
     W: Write,
 {
-    pub(crate) fn write_line(&mut self, data: &str) -> Result<(), Error> {
-        if data.starts_with("PASS") {
-            trace!("-> PASS ************* (redacted)");
-        } else {
-            trace!("-> {}", data);
-        }
+    pub(crate) fn write_line<S: AsRef<[u8]>>(&mut self, data: S) -> Result<(), Error> {
+        // if data.starts_with("PASS") {
+        //     trace!("-> PASS ************* (redacted)");
+        // } else {
+        //     trace!("-> {}", data);
+        // }
         let mut write = self.inner.write.lock();
         write
-            .write_all(data.as_bytes())
+            .write_all(data.as_ref())
             .and_then(|_| write.write_all(b"\r\n"))
             .and_then(|_| write.flush())
             .map_err(Error::Write)
@@ -777,6 +778,83 @@ pub trait ClientExt {
     where
         I: IntoIterator<Item = S> + 'a,
         S: AsRef<str> + 'a;
+
+    /// Join a (huge) list of channels but using a [`RateLimit`](./helpers/struct.RateLimit.html)
+    ///
+    /// Same as [`ClientExt::join_many`](./trait.ClientExt.html#method.join_many), but takes in an optional RateLimit
+    ///
+    /// If no rate limiter is provided then a default is used (50 channels per 15 seconds)
+    fn join_many_limited<'a, I, S>(
+        &mut self,
+        channels: I,
+        rate: Option<RateLimit>,
+    ) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a;
+}
+
+impl<R, W: Write> Client<R, W> {
+    fn join_limited<'a, I, S>(
+        &mut self,
+        channels: I,
+        try_rate: bool,
+        rate: Option<RateLimit>,
+    ) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a,
+    {
+        let mut rate = if try_rate {
+            Some(rate.unwrap_or_else(|| RateLimit::new(50, 15)))
+        } else {
+            None
+        };
+
+        let mut buf = String::with_capacity(512);
+
+        let mut count = 0;
+        let mut prev = 0;
+        for channel in channels.into_iter() {
+            let channel = channel.as_ref();
+            if buf.len() + channel.len() + 1 > 510
+                || Some(count) == rate.as_ref().map(RateLimit::cap)
+            {
+                self.write_line(&buf)?;
+                buf.clear();
+
+                if let Some(ref mut rate) = &mut rate {
+                    for _ in 0..if prev != 0 { prev } else { count } {
+                        rate.take();
+                    }
+                }
+
+                if let Some(cap) = rate.as_ref().map(RateLimit::cap) {
+                    prev = 0;
+                    if count == cap {
+                        count = 0
+                    } else {
+                        prev = cap - prev
+                    }
+                }
+            }
+
+            if buf.is_empty() {
+                buf.push_str("JOIN ");
+            } else {
+                buf.push(',');
+            }
+
+            if !channel.starts_with('#') {
+                buf.push_str(&["#", channel].concat());
+            } else {
+                buf.push_str(&channel);
+            }
+            count += 1;
+        }
+
+        Ok(())
+    }
 }
 
 impl<R, W: Write> ClientExt for Client<R, W> {
@@ -791,43 +869,24 @@ impl<R, W: Write> ClientExt for Client<R, W> {
         let _ = self.inspect.take();
     }
 
+    fn join_many_limited<'a, I, S>(
+        &mut self,
+        channels: I,
+        rate: Option<RateLimit>,
+    ) -> Result<(), Error>
+    where
+        I: IntoIterator<Item = S> + 'a,
+        S: AsRef<str> + 'a,
+    {
+        self.join_limited(channels, true, rate)
+    }
+
     fn join_many<'a, I, S>(&mut self, channels: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = S> + 'a,
         S: AsRef<str> + 'a,
     {
-        let mut tmp = String::with_capacity(512);
-        for name in channels {
-            let name = name.as_ref();
-            let upper = tmp.capacity() - 2; // the \r\n
-            let lower = {
-                let name = name.len() + 1; // then #
-                let trailing = if tmp.is_empty() { 0 } else { 1 }; // then ,
-                name + trailing
-            };
-
-            let length = tmp.len();
-            if length + lower > upper {
-                self.raw(std::mem::replace(&mut tmp, String::with_capacity(512)))?;
-            }
-
-            if tmp.is_empty() {
-                tmp.push_str("JOIN ")
-            } else {
-                tmp.push(',')
-            }
-
-            if !name.starts_with('#') {
-                tmp.push('#');
-            }
-            tmp.push_str(&name.to_lowercase());
-        }
-
-        if !tmp.is_empty() {
-            self.raw(tmp)?;
-        }
-
-        Ok(())
+        self.join_limited(channels, false, None)
     }
 }
 
