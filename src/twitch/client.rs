@@ -237,11 +237,17 @@ where
     pub fn read_message(&mut self) -> Result<Message, Error> {
         // TODO provide an internal buffer to prevent this dumb allocation
         // using https://docs.rs/bytes/0.4.11/bytes/
+
         let mut buf = String::new();
         {
             let mut read = self.inner.read.lock();
-            let _len = read.read_line(&mut buf).map_err(Error::Read)?;
+            let len = read.read_line(&mut buf).map_err(Error::Read)?;
+            // 0 == EOF
+            if len == 0 {
+                return Err(Error::CannotRead);
+            }
         }
+
         let buf = buf.trim_end();
         if buf.is_empty() {
             return Err(Error::CannotRead);

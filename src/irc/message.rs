@@ -51,7 +51,8 @@ pub enum Message {
 }
 
 impl Message {
-    pub(crate) fn parse(input: &str) -> Option<Self> {
+    /// Parses an irc message
+    pub fn parse(input: &str) -> Option<Self> {
         let input = input.trim(); // sanity check
         if input.is_empty() {
             return None;

@@ -73,7 +73,8 @@ fn emotes(s: &str) -> Vec<Emotes> {
     Emotes::parse(s).collect()
 }
 
-pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
+/// Parses a Twitch commands from an IRC Message
+pub fn parse(msg: &Message) -> Option<super::Message> {
     use super::Message;
 
     struct Rev(Vec<String>);
