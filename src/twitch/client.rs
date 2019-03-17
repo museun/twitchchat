@@ -240,7 +240,7 @@ where
         let mut buf = String::new();
         {
             let mut read = self.inner.read.lock();
-            let _ = read.read_line(&mut buf).map_err(Error::Read)?;
+            let _len = read.read_line(&mut buf).map_err(Error::Read)?;
         }
         let buf = buf.trim_end();
 
