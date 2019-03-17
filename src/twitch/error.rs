@@ -15,6 +15,8 @@ pub enum Error {
     InvalidRegistration,
     /// Channel name provided was empty
     EmptyChannelName,
+    /// Cannot read. This probably means you need to reconnect.
+    CannotRead,
 }
 
 impl std::fmt::Display for Error {
@@ -31,6 +33,7 @@ impl std::fmt::Display for Error {
                 write!(f, "invalid registration. check the `token` and `nick`")
             }
             Error::EmptyChannelName => write!(f, "empty channel name provided"),
+            Error::CannotRead => write!(f, "cannot read, client should quit now"),
         }
     }
 }

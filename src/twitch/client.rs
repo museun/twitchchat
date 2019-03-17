@@ -243,6 +243,9 @@ where
             let _len = read.read_line(&mut buf).map_err(Error::Read)?;
         }
         let buf = buf.trim_end();
+        if buf.is_empty() {
+            return Err(Error::CannotRead);
+        }
 
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
