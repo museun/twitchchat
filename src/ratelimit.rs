@@ -154,7 +154,10 @@ impl RateLimit {
         }
 
         match self.bucket {
-            Bucket::Sync(ref sync) => consume!(sync.lock()),
+            Bucket::Sync(ref sync) => {
+                let mut sync = sync.lock();
+                consume!(sync)
+            }
             Bucket::Unsync(ref unsync) => {
                 let mut unsync = unsync.borrow_mut();
                 consume!(unsync)
