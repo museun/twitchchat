@@ -16,13 +16,20 @@ mod error;
 pub use self::error::Error;
 
 mod client;
-pub use self::client::{Client, ClientExt};
+pub use self::client::Client;
+
+mod writer;
+pub use self::writer::Writer;
+
+mod extension;
+pub use self::extension::ClientExt;
 
 /// Twitch channel types
 mod channel;
 pub use self::channel::Channel;
 
-pub(crate) mod mutex;
+mod mutex;
+pub(crate) use self::mutex::mutex_wrapper::MutexWrapper;
 
 #[doc(hidden)]
 pub mod userconfig;

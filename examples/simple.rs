@@ -21,10 +21,11 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let local = client.wait_for_ready()?;
     let mention = format!("@{}", local.display_name.unwrap());
 
+    let w = client.writer();
     // join a channel
-    client.join("museun")?;
+    w.join("museun")?;
     // send a message to the channel
-    client.send("museun", "HeyGuys")?;
+    w.send("museun", "HeyGuys")?;
 
     // read until the connection ends
     while let Ok(msg) = client.read_message() {
@@ -32,7 +33,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         if let Message::PrivMsg(msg) = msg {
             println!("{}: {}", msg.irc_name(), msg.message());
             if msg.message().contains(&mention) {
-                client.send(msg.channel, "VoHiYo")?;
+                w.send(msg.channel, "VoHiYo")?;
             }
         }
     }

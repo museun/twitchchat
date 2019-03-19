@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::mutex::mutex_wrapper::MutexWrapper as Mutex;
+use super::MutexWrapper as Mutex;
 
 /** RateLimit is a simple token bucket-style rate limiter
 

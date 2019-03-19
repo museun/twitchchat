@@ -25,8 +25,8 @@ fn main() -> Result<(), Box<std::error::Error>> {
     // wait until the server tells us who we are
     let _local = client.wait_for_ready()?;
 
-    // clone the client and spawn a thread
-    let mut kappas = client.clone();
+    // get a thread-safe writer
+    let w = client.writer();
     thread::spawn(move || {
         const EMOTES: [&str; 9] = [
             "Kappa",
@@ -47,14 +47,14 @@ fn main() -> Result<(), Box<std::error::Error>> {
             // pick 3 random emotes
             let poop: Vec<_> = EMOTES.choose_multiple(&mut rng, 3).map(|s| *s).collect();
             // and send them
-            if kappas.send("museun", poop.join(" ")).is_err() {
+            if w.send("museun", poop.join(" ")).is_err() {
                 return;
             };
         }
     });
 
     // join a channel
-    client.join("museun")?;
+    client.writer().join("museun")?;
 
     // run until an error
     client.run()?;

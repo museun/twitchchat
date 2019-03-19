@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use twitchchat::{commands::PrivMsg, Client, UserConfig};
+use twitchchat::{commands::PrivMsg, Client, UserConfig, Writer};
 
 fn main() -> Result<(), Box<std::error::Error>> {
     // connect to twitch via a tcp stream, creating a read/write pair
@@ -23,24 +23,26 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     // use a message filter. you can store the `Token` this returns
     // and remove this filter later on with the `Client::off` method
-    client.on(move |msg: PrivMsg| {
+    client.on(move |msg: PrivMsg, _: Writer<_>| {
         println!("{}: {}", msg.irc_name(), msg.message());
     });
 
     // multiple filters for the same type of message is allowed
-    // clone so we can move it into the closure
-    let mut clone = client.clone();
-    client.on(move |msg: PrivMsg| {
+
+    client.on(move |msg: PrivMsg, w: Writer<_>| {
         if msg.message().contains(&mention) {
-            clone.send(msg.channel, "VoHiYo").unwrap();
+            w.send(msg.channel, "VoHiYo").unwrap();
         }
     });
 
+    // get the writer, this is threadsafe and writers to the same internal buffer
+    let w = client.writer();
+
     // join a channel
-    client.join("museun")?;
+    w.join("museun")?;
 
     // send a message to the channel
-    client.send("museun", "HeyGuys")?;
+    w.send("museun", "HeyGuys")?;
 
     // run until an error
     client.run()?;
