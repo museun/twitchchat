@@ -1,38 +1,7 @@
-# twitchchat
-![Crates.io](https://img.shields.io/crates/l/twitchchat/0.1.7.svg?style=flat-square) 
-[![doc.rs](https://docs.rs/twitchchat/badge.svg)](https://docs.rs/twitchchat/latest/twitchchat/)
-[![Crates.io](https://img.shields.io/crates/v/twitchchat.svg)](https://crates.io/crates/twitchchat)
-[![CircleCI](https://circleci.com/gh/museun/twitchchat.svg?style=svg)](https://circleci.com/gh/museun/twitchchat)
-![AppVeyor](https://img.shields.io/appveyor/ci/museun/twitchchat.svg)
-
-
-interface to the irc portion of twitch's chat
-
-you provide the `std::io::Read` and the `std::io::Write` <br>
-...and this provides all of the types for Twitch chat message.
-
-see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
-
-optional features: 
-
-|feature | description | --- |
-|--- | --- | --- |
-| serde | enables serde derives | allowing you to turn stuff to json, and load it from json |
-| hashbrown | enables hashbrown types | faster hashmaps, lower memory allocations |
-| serde_hashbrown | enables serde and hashbrown+serde | basically serde+hashbrown. **use this if you want serde and hashbrown** |
-| parking_lot | enables faster mutexes | --- |
-| --- | --- |
-| all | enables all of the above | --- |
-
-they are disabled by default.
-
-
-a demo of it:
-```rust
 fn main() {
     use std::net::TcpStream;
     use twitchchat::commands::PrivMsg;
-    use twitchchat::{Client, Writer, UserConfig};
+    use twitchchat::{Client, UserConfig, Writer};
 
     // create a userconfig
     let userconfig = UserConfig::builder()
@@ -71,7 +40,6 @@ fn main() {
 
         // if someone sent more than 3 Kappas, send a Kappa back
         if kappas >= 3 {
-            // using the provided W
             w.send(msg.channel, "Kappa").unwrap();
         }
     });
@@ -129,7 +97,7 @@ fn main() {
     {
         // not needed here, but the writer is clonable
         // you can also get another one from the `client`
-        let w = w.clone(); 
+        let w = w.clone();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_secs(3));
             w.send("museun", "VoHiYo").unwrap();
@@ -143,4 +111,3 @@ fn main() {
         std::process::exit(1);
     }
 }
-```
