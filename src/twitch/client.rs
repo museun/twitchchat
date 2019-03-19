@@ -763,8 +763,10 @@ impl<R, W: Write> Client<R, W> {
         I: IntoIterator<Item = S> + 'a,
         S: AsRef<str> + 'a,
     {
+        use std::time::Duration;
+
         let mut rate = if try_rate {
-            Some(rate.unwrap_or_else(|| RateLimit::new(50, 15)))
+            Some(rate.unwrap_or_else(|| RateLimit::full_unsync(50, Duration::from_secs(15))))
         } else {
             None
         };
@@ -783,7 +785,7 @@ impl<R, W: Write> Client<R, W> {
 
                 if let Some(ref mut rate) = &mut rate {
                     for _ in 0..if prev != 0 { prev } else { count } {
-                        rate.take();
+                        let _ = rate.take();
                     }
                 }
 
