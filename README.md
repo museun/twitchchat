@@ -1,5 +1,5 @@
 # twitchchat
-![Crates.io](https://img.shields.io/crates/l/twitchchat/0.1.7.svg?style=flat-square) 
+![Crates.io](https://img.shields.io/crates/l/twitchchat/0.1.7.svg?style=flat-square)
 [![doc.rs](https://docs.rs/twitchchat/badge.svg)](https://docs.rs/twitchchat/latest/twitchchat/)
 [![Crates.io](https://img.shields.io/crates/v/twitchchat.svg)](https://crates.io/crates/twitchchat)
 [![CircleCI](https://circleci.com/gh/museun/twitchchat.svg?style=svg)](https://circleci.com/gh/museun/twitchchat)
@@ -13,7 +13,7 @@ you provide the `std::io::Read` and the `std::io::Write` <br>
 
 see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
 
-optional features: 
+optional features:
 
 |feature | description | --- |
 |--- | --- | --- |
@@ -38,9 +38,11 @@ fn main() {
     let userconfig = UserConfig::builder()
         .nick(env!("MY_TWITCH_NAME"))
         .token(env!("MY_TWITCH_PASS"))
+        // enable these capbilities
         .tags()
         .membership()
         .commands()
+        // build the config
         .build()
         .expect("semi-valid config");
 
@@ -55,7 +57,6 @@ fn main() {
     // when we receive a PrivMsg run this function
     // tok allows us to remove this later, if we want
     let _tok = client.on(move |msg: PrivMsg, w: Writer<_>| {
-        // moves the 'kappa' client clone into this thread
         const KAPPA: usize = 25;
         // print out `user: message`
         println!("{}: {}", msg.display_name().unwrap(), msg.message());
@@ -71,7 +72,7 @@ fn main() {
 
         // if someone sent more than 3 Kappas, send a Kappa back
         if kappas >= 3 {
-            // using the provided W
+            // using the provided Writer
             w.send(msg.channel, "Kappa").unwrap();
         }
     });
@@ -122,6 +123,7 @@ fn main() {
         Err(err) => panic!(err),
     };
 
+    // get a clone of the writer, this allows you to write to the connection
     let w = client.writer();
     // join a channel
     w.join("museun").unwrap();
@@ -129,7 +131,7 @@ fn main() {
     {
         // not needed here, but the writer is clonable
         // you can also get another one from the `client`
-        let w = w.clone(); 
+        let w = w.clone();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_secs(3));
             w.send("museun", "VoHiYo").unwrap();

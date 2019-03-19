@@ -7,10 +7,12 @@ fn main() {
     let userconfig = UserConfig::builder()
         .nick(env!("MY_TWITCH_NAME"))
         .token(env!("MY_TWITCH_PASS"))
+        // enable these capbilities
         .tags()
         .membership()
         .commands()
-        .build()
+        // build the config
+        .build() // enable these tags
         .expect("semi-valid config");
 
     // connect to twitch
@@ -24,7 +26,6 @@ fn main() {
     // when we receive a PrivMsg run this function
     // tok allows us to remove this later, if we want
     let _tok = client.on(move |msg: PrivMsg, w: Writer<_>| {
-        // moves the 'kappa' client clone into this thread
         const KAPPA: usize = 25;
         // print out `user: message`
         println!("{}: {}", msg.display_name().unwrap(), msg.message());
@@ -40,6 +41,7 @@ fn main() {
 
         // if someone sent more than 3 Kappas, send a Kappa back
         if kappas >= 3 {
+            // using the provided Writer
             w.send(msg.channel, "Kappa").unwrap();
         }
     });
@@ -90,6 +92,7 @@ fn main() {
         Err(err) => panic!(err),
     };
 
+    // get a clone of the writer, this allows you to write to the connection
     let w = client.writer();
     // join a channel
     w.join("museun").unwrap();
