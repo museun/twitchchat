@@ -38,7 +38,7 @@ impl std::fmt::Display for Error {
             Error::CannotRead => write!(f, "cannot read, client should quit now"),
             Error::CapabilityRequired(list) => {
                 let caps = list
-                    .into_iter()
+                    .iter()
                     .map(|f| format!("{:?}", f))
                     .collect::<Vec<_>>()
                     .join(", ");
