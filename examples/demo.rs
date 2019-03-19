@@ -5,8 +5,8 @@ fn main() {
 
     // create a userconfig
     let userconfig = UserConfig::builder()
-        .nick(env!("MY_TWITCH_NAME"))
-        .token(env!("MY_TWITCH_PASS"))
+        .nick(std::env::var("MY_TWITCH_NAME").unwrap())
+        .token(std::env::var("MY_TWITCH_PASS").unwrap())
         // enable these capbilities
         .tags()
         .membership()

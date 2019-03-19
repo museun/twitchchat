@@ -50,6 +50,8 @@ pub struct LocalUser {
     pub badges: Vec<Badge>,
     /// Your list of emote sets
     pub emote_sets: Vec<u64>,
+    /// The capabilities the server acknowledged
+    pub caps: Vec<Capability>,
 }
 
 /// Messages created by the [`Client`](./struct.Client.html).

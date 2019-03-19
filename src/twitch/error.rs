@@ -17,6 +17,8 @@ pub enum Error {
     EmptyChannelName,
     /// Cannot read. This probably means you need to reconnect.
     CannotRead,
+    /// Tags are required for this functionality
+    TagsRequired,
 }
 
 impl std::fmt::Display for Error {
@@ -34,6 +36,7 @@ impl std::fmt::Display for Error {
             }
             Error::EmptyChannelName => write!(f, "empty channel name provided"),
             Error::CannotRead => write!(f, "cannot read, client should quit now"),
+            Error::TagsRequired => write!(f, "tags are required to do that"),
         }
     }
 }

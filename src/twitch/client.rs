@@ -118,8 +118,27 @@ impl<R: Read, W: Write> Client<R, W> {
     /// client.writer().join("some_channel").unwrap();
     /// ```
     pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
+        use crate::irc::types::Message as IRCMessage;
+        let mut caps = vec![];
+
         loop {
             match self.read_message()? {
+                Message::Irc(IRCMessage::Cap {
+                    acknowledge: true,
+                    cap,
+                }) => match cap.as_str() {
+                    "twitch.tv/tags" => caps.push(Capability::Tags),
+                    "twitch.tv/membership" => caps.push(Capability::Membership),
+                    "twitch.tv/commands" => caps.push(Capability::Commands),
+                    _ => {}
+                },
+
+                Message::Irc(IRCMessage::Ready { .. }) => {
+                    if !caps.contains(&Capability::Tags) {
+                        return Err(Error::TagsRequired);
+                    }
+                }
+
                 Message::GlobalUserState(state) => {
                     return Ok(LocalUser {
                         user_id: state.user_id(),
@@ -127,6 +146,7 @@ impl<R: Read, W: Write> Client<R, W> {
                         color: state.color(),
                         badges: state.badges(),
                         emote_sets: state.emote_sets(),
+                        caps,
                     });
                 }
                 _ => continue,
@@ -234,6 +254,7 @@ impl<R: Read, W: Write> Client<R, W> {
         }
 
         let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
+        trace!("<- {:?}", msg);
         {
             let w = self.writer();
             let key = msg.what_filter();
