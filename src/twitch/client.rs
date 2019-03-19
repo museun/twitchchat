@@ -134,8 +134,23 @@ impl<R: Read, W: Write> Client<R, W> {
                 },
 
                 Message::Irc(IRCMessage::Ready { .. }) => {
-                    if !caps.contains(&Capability::Tags) {
-                        return Err(Error::TagsRequired);
+                    let mut bad = vec![];
+                    match (
+                        caps.contains(&Capability::Tags),
+                        caps.contains(&Capability::Commands),
+                    ) {
+                        (true, true) => continue,
+
+                        (false, true) => bad.push(Capability::Tags),
+                        (true, false) => bad.push(Capability::Commands),
+                        _ => {
+                            bad.push(Capability::Tags);
+                            bad.push(Capability::Commands);
+                        }
+                    };
+
+                    if !bad.is_empty() {
+                        return Err(Error::CapabilityRequired(bad));
                     }
                 }
 

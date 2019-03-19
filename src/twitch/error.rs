@@ -17,8 +17,8 @@ pub enum Error {
     EmptyChannelName,
     /// Cannot read. This probably means you need to reconnect.
     CannotRead,
-    /// Tags are required for this functionality
-    TagsRequired,
+    /// Capability is required for this functionality
+    CapabilityRequired(Vec<crate::Capability>),
 }
 
 impl std::fmt::Display for Error {
@@ -36,7 +36,14 @@ impl std::fmt::Display for Error {
             }
             Error::EmptyChannelName => write!(f, "empty channel name provided"),
             Error::CannotRead => write!(f, "cannot read, client should quit now"),
-            Error::TagsRequired => write!(f, "tags are required to do that"),
+            Error::CapabilityRequired(list) => {
+                let caps = list
+                    .into_iter()
+                    .map(|f| format!("{:?}", f))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "{} are required to do that", caps)
+            }
         }
     }
 }
