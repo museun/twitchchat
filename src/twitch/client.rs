@@ -86,8 +86,12 @@ impl<R: Read, W: Write> Client<R, W> {
     /// // this'll block until everything is read
     /// let _ = client.wait_for_ready().unwrap();
     /// ```
-    pub fn register(&mut self, config: UserConfig) -> Result<(), Error> {
-        for cap in config.caps.into_iter().filter_map(Capability::get_command) {
+    pub fn register<U>(&mut self, config: U) -> Result<(), Error>
+    where
+        U: std::borrow::Borrow<UserConfig>,
+    {
+        let config = config.borrow();
+        for cap in config.caps.iter().filter_map(|c| c.get_command()) {
             self.writer.write_line(cap)?;
         }
 
