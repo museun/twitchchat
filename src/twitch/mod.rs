@@ -22,7 +22,7 @@ mod writer;
 pub use self::writer::Writer;
 
 mod extension;
-pub use self::extension::ClientExt;
+pub use self::extension::WriterExt;
 
 /// Twitch channel types
 mod channel;
