@@ -85,13 +85,15 @@ where
         None
     };
 
+    let cap = rate.as_ref().map(RateLimit::cap);
+
     let mut buf = String::with_capacity(512);
 
     let mut count = 0;
     let mut prev = 0;
     for channel in channels.into_iter() {
         let channel = channel.as_ref();
-        if buf.len() + channel.len() + 1 > 510 || Some(count) == rate.as_ref().map(RateLimit::cap) {
+        if buf.len() + channel.len() + 1 > 510 || Some(count) == cap {
             // TODO have writer return a MutexGuard
             w.write_line(&buf)?;
             buf.clear();
@@ -102,7 +104,7 @@ where
                 }
             }
 
-            if let Some(cap) = rate.as_ref().map(RateLimit::cap) {
+            if let Some(cap) = cap {
                 prev = 0;
                 if count == cap {
                     count = 0
