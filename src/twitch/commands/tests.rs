@@ -27,7 +27,7 @@ fn parse_commands() {
 
     let input = ":museun!museun@museun.tmi.twitch.tv JOIN #museun";
     let expected = Command::Join(Join {
-        prefix: prefix.clone(),
+        user: "museun".to_string(),
         channel: "#museun".into(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);

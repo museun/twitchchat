@@ -87,6 +87,15 @@ pub fn parse(msg: &Message) -> Option<super::Message> {
         }
     }
 
+    macro_rules! get_user {
+        ($prefix:expr) => {
+            match $prefix.unwrap() {
+                crate::irc::types::Prefix::User { nick, .. } => nick,
+                _ => unreachable!(),
+            }
+        };
+    }
+
     if let crate::irc::types::Message::Unknown {
         prefix,
         tags,
@@ -100,7 +109,7 @@ pub fn parse(msg: &Message) -> Option<super::Message> {
         let mut args = Rev(args);
         let cmd = match head.as_str() {
             "JOIN" => Message::Join(Join {
-                prefix,
+                user: get_user!(prefix),
                 channel: args.next()?,
             }),
             "PART" => Message::Part(Part {
