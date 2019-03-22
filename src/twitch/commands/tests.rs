@@ -17,12 +17,6 @@ fn parse_bad_auth() {
 
 #[test]
 fn parse_commands() {
-    let prefix = Some(Prefix::User {
-        nick: "museun".to_string(),
-        user: "museun".to_string(),
-        host: "museun.tmi.twitch.tv".to_string(),
-    });
-
     use crate::twitch::Message as Command;
 
     let input = ":museun!museun@museun.tmi.twitch.tv JOIN #museun";
@@ -191,7 +185,7 @@ fn parse_commands() {
 
     let input = ":museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :VoHiYo";
     let expected = Command::PrivMsg(PrivMsg {
-        prefix: prefix.clone(),
+        user: "museun".into(),
         tags: Tags::default(),
         channel: "#museun".into(),
         message: "VoHiYo".into(),

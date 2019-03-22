@@ -6,8 +6,8 @@ use super::*;
 pub struct PrivMsg {
     /// IRC tags
     pub tags: Tags,
-    /// The IRC user that sent this message
-    pub prefix: Option<Prefix>,
+    /// The User that sent this message
+    pub user: String,
     /// The channel this message was sent to
     pub channel: String,
     /// The message body
@@ -30,11 +30,7 @@ impl PrivMsg {
     }
     /// The irc name of the user (generally same as their twitch account name)
     pub fn irc_name(&self) -> &str {
-        if let Some(crate::irc::types::Prefix::User { ref nick, .. }) = self.prefix {
-            &nick
-        } else {
-            unreachable!("must have a valid irc name")
-        }
+        &self.user
     }
     /// The display name of the user, if set
     pub fn display_name(&self) -> Option<&str> {
