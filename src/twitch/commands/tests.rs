@@ -82,7 +82,7 @@ fn parse_commands() {
 
     let input = ":museun!museun@museun.tmi.twitch.tv PART #museun";
     let expected = Command::Part(Part {
-        prefix: prefix.clone(),
+        user: "museun".into(),
         channel: "#museun".into(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);

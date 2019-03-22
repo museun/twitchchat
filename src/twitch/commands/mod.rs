@@ -113,7 +113,7 @@ pub fn parse(msg: &Message) -> Option<super::Message> {
                 channel: args.next()?,
             }),
             "PART" => Message::Part(Part {
-                prefix,
+                user: get_user!(prefix),
                 channel: args.next()?,
             }),
             "PRIVMSG" => Message::PrivMsg(PrivMsg {
