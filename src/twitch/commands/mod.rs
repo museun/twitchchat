@@ -116,12 +116,22 @@ pub fn parse(msg: &Message) -> Option<super::Message> {
                 user: get_user!(prefix),
                 channel: args.next()?,
             }),
-            "PRIVMSG" => Message::PrivMsg(PrivMsg {
-                user: get_user!(prefix),
-                tags,
-                channel: args.next()?,
-                message: tail?,
-            }),
+            "PRIVMSG" => {
+                let body = tail?;
+                let (message, action) = if body.starts_with('\x01') {
+                    (body[8..body.len() - 1].to_string(), true)
+                } else {
+                    (body, false)
+                };
+
+                Message::PrivMsg(PrivMsg {
+                    user: get_user!(prefix),
+                    tags,
+                    channel: args.next()?,
+                    message,
+                    action,
+                })
+            }
             "353" => {
                 let user = args.next()?;
                 let _ = args.next()?; // out here to ignore the

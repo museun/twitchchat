@@ -189,6 +189,17 @@ fn parse_commands() {
         tags: Tags::default(),
         channel: "#museun".into(),
         message: "VoHiYo".into(),
+        action: false,
+    });
+    assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
+
+    let input = ":museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :ACTION VoHiYo";
+    let expected = Command::PrivMsg(PrivMsg {
+        user: "museun".into(),
+        tags: Tags::default(),
+        channel: "#museun".into(),
+        message: "VoHiYo".into(),
+        action: true,
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 }

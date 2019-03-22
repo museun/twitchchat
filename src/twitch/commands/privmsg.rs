@@ -12,9 +12,15 @@ pub struct PrivMsg {
     pub channel: String,
     /// The message body
     pub message: String,
+    /// Whether this message was an action (someone doing `/me message`)
+    pub action: bool,
 }
 
 impl PrivMsg {
+    /// Whether this message was an action (eg `/me data`)
+    pub fn is_action(&self) -> bool {
+        self.action
+    }
     /// List of badges attached to the user/message
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())
