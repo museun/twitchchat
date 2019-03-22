@@ -1,9 +1,8 @@
 use super::Writer;
-use super::{commands, Message};
+use super::{commands, Message, Token, TokenGen};
 
 use log::*;
 use std::io::Write;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
@@ -11,28 +10,6 @@ use hashbrown::HashMap;
 use std::collections::HashMap;
 
 pub type FilterFn<W> = Box<dyn FnMut(Message, Writer<W>) + Send + Sync>;
-
-/// A Token returned by the [`Client::on`](./struct.CLient.html#method.on) message filter
-///
-/// Keep this around if you want to remove the filter.
-///
-/// To remove one, use this with the [`Client::off`](./struct.CLient.html#method.off) method.
-#[derive(Copy, Clone, PartialEq)]
-pub struct Token(pub(super) usize);
-
-struct TokenGen(AtomicUsize);
-
-impl Default for TokenGen {
-    fn default() -> Self {
-        Self(AtomicUsize::new(0))
-    }
-}
-
-impl TokenGen {
-    fn next(&mut self) -> Token {
-        Token(self.0.fetch_add(1, Ordering::Relaxed))
-    }
-}
 
 pub struct FilterId<W>(pub(super) FilterFn<W>, pub(super) Token);
 

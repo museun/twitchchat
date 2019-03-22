@@ -2,6 +2,8 @@ mod badge;
 mod color;
 mod emotes;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 pub use self::badge::{Badge, BadgeKind};
 pub use self::color::{twitch_colors as colors, Twitch as TwitchColor, RGB};
 pub use self::emotes::Emotes;
@@ -99,4 +101,31 @@ pub enum Message {
 }
 
 pub(crate) mod filter;
-pub use filter::Token;
+
+mod handler;
+pub use handler::Handler;
+
+/// Token allows you to keep track of things
+///
+/// Keep this around if you want to remove the thing.
+///
+/// This is used in both the simple filters ([`Client::on`](./struct.Client.html#method.on) and [`Client::off`](./struct.Client.html#method.off))
+///
+/// and in the more flexible handler system ([`Client::handler`](./struct.Client.html#method.handler), [`Client::remove_handler`](./struct.Client.html#method.remove_handler))
+#[derive(Copy, Clone, PartialEq)]
+pub struct Token(pub(super) usize);
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct TokenGen(AtomicUsize);
+
+impl TokenGen {
+    pub fn next(&mut self) -> Token {
+        Token(self.0.fetch_add(1, Ordering::Relaxed))
+    }
+}

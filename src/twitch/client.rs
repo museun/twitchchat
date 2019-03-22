@@ -2,11 +2,14 @@ use log::*;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::Arc;
 
-use super::filter::{FilterMap, MessageFilter, Token};
+use super::filter::{FilterMap, MessageFilter};
 use super::{commands, Capability, Error, LocalUser, Message, MutexWrapper as Mutex, Writer};
 
 use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
+
+use super::handler::Handlers;
+use super::Token;
 
 // 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
 // 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
@@ -28,6 +31,7 @@ use crate::UserConfig;
 pub struct Client<R, W> {
     reader: BufReader<R>,
     filters: FilterMap<W>,
+    handlers: Handlers,
     writer: Writer<W>,
 }
 
@@ -41,6 +45,7 @@ impl<R: Read, W: Write> Client<R, W> {
         Self {
             reader: BufReader::new(read),
             filters: FilterMap::default(),
+            handlers: Handlers::default(),
             writer: Writer(Arc::new(Mutex::new(write))),
         }
     }
@@ -244,6 +249,7 @@ impl<R: Read, W: Write> Client<R, W> {
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
+        trace!("parsed message");
 
         // handle PINGs automatically
         if let IrcMessage::Ping { token } = &msg {
@@ -285,7 +291,10 @@ impl<R: Read, W: Write> Client<R, W> {
             }
         }
 
-        trace!("read a message");
+        trace!("begin dispatch");
+        self.handlers.handle(msg.clone());
+        trace!("end dispatch");
+
         Ok(msg)
     }
 }
@@ -342,6 +351,34 @@ impl<R, W: Write> Client<R, W> {
     /// Returns true if this filter existed
     pub fn off(&mut self, tok: Token) -> bool {
         self.filters.try_remove(tok)
+    }
+
+    /**
+    Add a [`Handler`](./trait.Handler.html) to the internal filtering
+
+    When [`Client::read_message`](./struct.Client.html#method.read_message)
+    is called, it'll send a RC message to the appropriate function.
+
+    Use the returned token to remove the filter, by passing it to the
+    [`Client::remove_handler`](./struct.Client.html#method.remove_handler) method
+
+    */
+    pub fn handler<H>(&mut self, handler: H) -> Token
+    where
+        H: super::Handler + Send + Sync + 'static,
+    {
+        let tok = self.handlers.add(handler);
+        trace!("add handler, id: {}", tok);
+        tok
+    }
+
+    /// Remove a previously added handler, using the returned token
+    ///
+    /// Returns true if this handler existed
+    pub fn remove_handler<H>(&mut self, tok: Token) -> bool {
+        let ok = self.handlers.remove(tok);
+        trace!("tried to remove handler, id: {}, status: {}", tok, ok);
+        ok
     }
 
     /// Get a clone of the internal writer
