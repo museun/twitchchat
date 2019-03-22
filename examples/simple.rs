@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     while let Ok(msg) = client.read_message() {
         // if its a user message on a channel
         if let Message::PrivMsg(msg) = msg {
-            println!("{}: {}", msg.irc_name(), msg.message());
+            println!("{}: {}", msg.user(), msg.message());
             if msg.message().contains(&mention) {
                 w.send(msg.channel, "VoHiYo")?;
             }

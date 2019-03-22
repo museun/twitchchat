@@ -6,10 +6,23 @@ use super::*;
 pub struct UserNotice {
     /// IRC tags
     pub tags: Tags,
-    /// THe channel this event is for
+    /// The channel this event is for
     pub channel: String,
     /// Extra data provided by twitch
     pub message: Option<String>,
+}
+
+impl UserNotice {
+    /// The channel this event is for
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+    /// The message. This is omitted if the user did not enter a message.
+    pub fn message(&self) -> Option<&str> {
+        // TODO technically this won't ever be in the tags
+        self.get("message")
+            .or_else(|| self.message.as_ref().map(|s| s.as_ref()))
+    }
 }
 
 impl UserNotice {
@@ -37,10 +50,7 @@ impl UserNotice {
     pub fn login(&self) -> Option<&str> {
         self.get("login")
     }
-    /// The message. This is omitted if the user did not enter a message.
-    pub fn message(&self) -> Option<&str> {
-        self.get("message")
-    }
+
     /// Whether this user is a moderator
     pub fn moderator(&self) -> bool {
         self.get_as_bool("mod")

@@ -7,3 +7,14 @@ pub struct HostTargetEnd {
     /// Optional number of viewers watch the host
     pub viewers: Option<usize>,
 }
+
+impl HostTargetEnd {
+    /// The hosting channel
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+    /// Optional number of viewers watch the host
+    pub fn viewers(&self) -> Option<usize> {
+        self.viewers.clone()
+    }
+}

@@ -73,7 +73,7 @@ println!(
 // this can be done at any time, but its best to do it early
 client.on(|msg: PrivMsg, _: Writer<_>| {
     // this prints out name: msg
-    let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
+    let name = msg.display_name().unwrap_or_else(|| msg.user());
     println!("{}: {}", name, msg.message())
 });
 

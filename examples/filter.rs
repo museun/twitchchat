@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     // use a message filter. you can store the `Token` this returns
     // and remove this filter later on with the `Client::off` method
     client.on(move |msg: PrivMsg, _: Writer<_>| {
-        println!("{}: {}", msg.irc_name(), msg.message());
+        println!("{}: {}", msg.user(), msg.message());
     });
 
     // multiple filters for the same type of message is allowed

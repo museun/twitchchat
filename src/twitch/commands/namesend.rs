@@ -7,3 +7,14 @@ pub struct NamesEnd {
     /// The channel this event happened on
     pub channel: String,
 }
+
+impl NamesEnd {
+    /// Your user for this event
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+    /// The channel this event happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+}

@@ -17,10 +17,25 @@ pub struct PrivMsg {
 }
 
 impl PrivMsg {
-    /// Whether this message was an action (eg `/me data`)
+    /// The irc name of the user (generally same as their twitch account name)
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+    /// The channel this message was sent to
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+    /// The message body
+    pub fn message(&self) -> &str {
+        self.message.as_str()
+    }
+    /// Whether this message was an action (someone doing `/me message`)
     pub fn is_action(&self) -> bool {
         self.action
     }
+}
+
+impl PrivMsg {
     /// List of badges attached to the user/message
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())
@@ -34,10 +49,6 @@ impl PrivMsg {
     pub fn color(&self) -> Option<TwitchColor> {
         self.get("color").map(RGB::from_hex).map(Into::into)
     }
-    /// The irc name of the user (generally same as their twitch account name)
-    pub fn irc_name(&self) -> &str {
-        &self.user
-    }
     /// The display name of the user, if set
     pub fn display_name(&self) -> Option<&str> {
         self.get("display-name")
@@ -49,10 +60,6 @@ impl PrivMsg {
     /// The unique UUID for this mesage
     pub fn id(&self) -> Option<&str> {
         self.get("id")
-    }
-    /// The message body
-    pub fn message(&self) -> &str {
-        self.message.as_str()
     }
     /// Whether this user was a moderator
     pub fn moderator(&self) -> bool {

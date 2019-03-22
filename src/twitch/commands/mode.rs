@@ -10,6 +10,21 @@ pub struct Mode {
     pub user: String,
 }
 
+impl Mode {
+    /// The channel this event happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+    /// Whether they lost or gained the status
+    pub fn status(&self) -> ModeStatus {
+        self.status
+    }
+    /// Which user was effected by this
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+}
+
 /// Status of gaining or losing moderator (operator) status
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

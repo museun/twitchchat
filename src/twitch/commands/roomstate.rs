@@ -11,6 +11,13 @@ pub struct RoomState {
 }
 
 impl RoomState {
+    /// The channel this event came from
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+}
+
+impl RoomState {
     /// Whether this room is in emote-only mode
     pub fn emote_only(&self) -> bool {
         self.get_as_bool("emote-only")

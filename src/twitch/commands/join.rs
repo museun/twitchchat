@@ -7,3 +7,14 @@ pub struct Join {
     /// The channel that they joined
     pub channel: String,
 }
+
+impl Join {
+    /// Name of the user that joined
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+    /// The channel that they joined
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+}

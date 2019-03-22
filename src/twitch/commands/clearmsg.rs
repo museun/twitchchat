@@ -10,8 +10,15 @@ pub struct ClearMsg {
     pub tags: Tags,
     /// The channel this event happened on
     pub channel: String,
-    /// The message being moreved
+    /// The message being removed
     pub message: Option<String>,
+}
+
+impl ClearMsg {
+    /// The channel this event happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
 }
 
 impl ClearMsg {
@@ -22,6 +29,7 @@ impl ClearMsg {
     /// The message.
     pub fn message(&self) -> Option<&str> {
         self.get("message")
+            .or_else(|| self.message.as_ref().map(|s| s.as_str()))
     }
     /// UUID of the message.
     pub fn target_msg_id(&self) -> Option<&str> {

@@ -11,6 +11,13 @@ pub struct UserState {
 }
 
 impl UserState {
+    /// Channel this even happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+}
+
+impl UserState {
     /// Badges attached to this message
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())

@@ -50,7 +50,7 @@ fn main() {
     client.on(move |msg: PrivMsg, _: Writer<_>| {
         use twitchchat::BadgeKind::{Broadcaster, Subscriber};
 
-        let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
+        let name = msg.display_name().unwrap_or_else(|| msg.user());
         let badges = msg
             .badges()
             .iter()

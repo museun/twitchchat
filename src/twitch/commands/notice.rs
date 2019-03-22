@@ -13,6 +13,17 @@ pub struct Notice {
 }
 
 impl Notice {
+    /// The channel this event happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+    /// The message from the server
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl Notice {
     /// A message ID string. Can be used for i18ln. Valid values: see Twitch IRC: [msg-id Tags](https://dev.twitch.tv/docs/irc/msg-id/).
     pub fn msg_id(&self) -> MessageId {
         self.get("msg-id")

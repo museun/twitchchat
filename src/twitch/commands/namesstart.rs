@@ -17,3 +17,18 @@ pub struct NamesStart {
     /// List of users returned by this
     pub users: Vec<String>,
 }
+
+impl NamesStart {
+    /// Your user for this event
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+    /// The channel this event is happening on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+    /// List of users returned by this
+    pub fn users(&self) -> &[String] {
+        &self.users
+    }
+}
