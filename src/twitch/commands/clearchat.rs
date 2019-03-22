@@ -15,6 +15,18 @@ pub struct ClearChat {
 }
 
 impl ClearChat {
+    /// The owner of the message. Empty if its the entire channel
+    pub fn user(&self) -> Option<&String> {
+        self.user.as_ref()
+    }
+
+    /// The channel this event happened on
+    pub fn channel(&self) -> &str {
+        &self.channel
+    }
+}
+
+impl ClearChat {
     /// (Optional) Duration of the timeout, in seconds. If omitted, the ban is permanent.
     pub fn ban_duration(&self) -> Option<u64> {
         self.get("ban-duration")?.parse().ok()

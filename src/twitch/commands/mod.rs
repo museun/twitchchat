@@ -103,8 +103,6 @@ pub fn parse(msg: &Message) -> Option<super::Message> {
         args,
         tail,
     } = msg.clone()
-    // TODO not this
-    // whats wrong with this?
     {
         let mut args = Rev(args);
         let cmd = match head.as_str() {
