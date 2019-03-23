@@ -54,23 +54,22 @@ impl UserNotice {
     }
     /// The type of notice, see NoticeType
     pub fn msg_id(&self) -> NoticeType {
-        self.get("msg-id")
-            .map(|k| match k {
-                "sub" => NoticeType::Sub,
-                "resub" => NoticeType::Resub,
-                "subgift" => NoticeType::SubGift,
-                "anonsubgift" => NoticeType::AnonSubGift,
-                "submysterygift" => NoticeType::SubMysteryGift,
-                "giftpaidupgrade" => NoticeType::GiftPaidUpgrade,
-                "rewardgift" => NoticeType::RewardGift,
-                "anongiftpaidupgrade" => NoticeType::AnonGiftPaidUpgrade,
-                "raid" => NoticeType::Raid,
-                "unraid" => NoticeType::Unraid,
-                "ritual" => NoticeType::Ritual,
-                "bitsbadgetier" => NoticeType::BitsBadgeTier,
-                e => NoticeType::Unknown(e.to_string()),
-            })
-            .unwrap()
+        let kind = self.get("msg-id").unwrap();
+        match kind {
+            "sub" => NoticeType::Sub,
+            "resub" => NoticeType::Resub,
+            "subgift" => NoticeType::SubGift,
+            "anonsubgift" => NoticeType::AnonSubGift,
+            "submysterygift" => NoticeType::SubMysteryGift,
+            "giftpaidupgrade" => NoticeType::GiftPaidUpgrade,
+            "rewardgift" => NoticeType::RewardGift,
+            "anongiftpaidupgrade" => NoticeType::AnonGiftPaidUpgrade,
+            "raid" => NoticeType::Raid,
+            "unraid" => NoticeType::Unraid,
+            "ritual" => NoticeType::Ritual,
+            "bitsbadgetier" => NoticeType::BitsBadgeTier,
+            e => NoticeType::Unknown(e.to_string()),
+        }
     }
     // TODO maybe parse this into a struct
     /// (Sent only on sub, resub) The total number of months the user has
@@ -157,15 +156,12 @@ impl UserNotice {
     }
     /// The message printed in chat along with this notice.
     pub fn system_msg(&self) -> String {
-        self.get("system-msg")
-            .map(|s| {
-                s.replace("\\s", " ")
-                    .replace("\\r", "\r")
-                    .replace("\\n", "\n")
-                    .replace("\\\\", "\\")
-                    .replace("\\:", ":")
-            })
-            .unwrap()
+        let msg = self.get("system-msg").unwrap();
+        msg.replace("\\s", " ")
+            .replace("\\r", "\r")
+            .replace("\\n", "\n")
+            .replace("\\\\", "\\")
+            .replace("\\:", ":")
     }
     /// Timestamp of when the notice was sent
     pub fn tmi_sent_ts(&self) -> Option<u64> {
