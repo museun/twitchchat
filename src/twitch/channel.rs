@@ -8,7 +8,10 @@ use super::*;
 pub struct Channel(String);
 
 impl Channel {
-    pub(crate) fn validate<C: Into<Channel>>(channel: C) -> Result<Channel, Error> {
+    pub(crate) fn validate<C>(channel: C) -> Result<Channel, Error>
+    where
+        C: Into<Channel>,
+    {
         let channel = channel.into();
         if channel.0.is_empty() {
             return Err(Error::EmptyChannelName);

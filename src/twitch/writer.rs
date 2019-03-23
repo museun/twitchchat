@@ -12,8 +12,6 @@ impl<W: Write> Clone for Writer<W> {
     }
 }
 
-// TODO decide on AsRef or just &str
-#[allow(missing_docs)] // while we work things out
 impl<W: Write> Writer<W> {
     pub(crate) fn write_line<S: AsRef<[u8]>>(&self, data: S) -> Result<(), Error> {
         let mut write = self.0.lock();
@@ -48,25 +46,25 @@ impl<W: Write> Writer<W> {
     // /vip,         /unvip	           channel:moderate
     // /w	                           whispers:edit
 
-    // TODO make this into a rust-doc format (e.g. contextual)
-    // Usage: "/host <channel>" - Host another channel. Use "/unhost" to unset
-    // host mode.
+    /// Host another channel.
+    ///
+    /// Use [`Writer::unhost`](./struct.Writer.html#method.unhost) to unset host mode.
     pub fn host<C>(&self, channel: C) -> Result<(), Error>
     where
         C: Into<Channel>,
     {
         let channel = Channel::validate(channel)?;
-        self.command(format!("/host {}", channel.into()))
+        self.command(format!("/host {}", *channel))
     }
 
-    // Usage: "/unhost" - Stop hosting another channel.
+    /// Stop hosting another channel.
     pub fn unhost(&self) -> Result<(), Error> {
         self.command("/unhost")
     }
 
-    // Usage: "/marker" - Adds a stream marker (with an optional comment, max
-    // 140 characters) at the current timestamp. You can use markers in the
-    // Highlighter for easier editing.
+    /// Adds a stream marker (with an optional comment, max 140 characters) at the current timestamp.
+    ///
+    /// You can use markers in the Highlighter for easier editing.
     pub fn marker(&self, comment: Option<&str>) -> Result<(), Error> {
         match comment {
             Some(comment) => {
@@ -83,25 +81,23 @@ impl<W: Write> Writer<W> {
         }
     }
 
-    // Usage: "/raid <channel>" - Raid another channel. Use "/unraid" to cancel
-    // the Raid.
+    /// Raid another channel.
+    ///
+    /// Use [`Writer::unraid`](./struct.Writer.html#method.unraid) to cancel the Raid.
     pub fn raid<C>(&self, channel: C) -> Result<(), Error>
     where
         C: Into<Channel>,
     {
         let channel = Channel::validate(channel)?;
-        self.command(format!("/raid {}", channel.into()))
+        self.command(format!("/raid {}", *channel))
     }
 
-    // Usage: "/unraid" - Cancel the Raid.
+    /// Cancel the Raid.
     pub fn unraid(&self) -> Result<(), Error> {
         self.command("/unraid")
     }
 
-    // Usage: "/color <color>" - Change your username color. Color must be in
-    // hex (#000000) or one of the following: Blue, BlueViolet, CadetBlue,
-    // Chocolate, Coral, DodgerBlue, Firebrick, GoldenRod, Green, HotPink,
-    // OrangeRed, Red, SeaGreen, SpringGreen, YellowGreen.
+    /// Change your username color.
     pub fn color<C>(&self, color: C) -> Result<(), Error>
     where
         C: Into<TwitchColor>,
@@ -109,28 +105,29 @@ impl<W: Write> Writer<W> {
         self.command(format!("/color {}", color.into()))
     }
 
-    // Usage: "/disconnect" - Reconnects to chat.
+    /// Reconnects to chat.
     pub fn disconnect(&self) -> Result<(), Error> {
         self.command("/disconnect")
     }
 
-    // Usage: "/help" - Lists the commands available to you in this room.
+    /// Lists the commands available to you in this room.
     pub fn help(&self) -> Result<(), Error> {
         self.command("/help")
     }
 
-    // Usage: "/mods" - Lists the moderators of this channel.
+    /// Lists the moderators of this channel.
     pub fn mods(&self) -> Result<(), Error> {
         self.command("/mods")
     }
 
-    // Usage: "/vips" - Lists the VIPs of this channel.
+    /// Lists the VIPs of this channel.
     pub fn vips(&self) -> Result<(), Error> {
         self.command("/vips")
     }
 
-    // Usage: "/commercial [length]" - Triggers a commercial. Length (optional)
-    // must be a positive number of seconds.
+    /// Triggers a commercial.
+    ///
+    /// Length (optional) must be a positive number of seconds.
     pub fn commercial(&self, length: Option<usize>) -> Result<(), Error> {
         match length {
             Some(n) => self.command(format!("/commercial {}", n)),
@@ -138,9 +135,10 @@ impl<W: Write> Writer<W> {
         }
     }
 
-    // Usage: "/ban <username> [reason]" - Permanently prevent a user from
-    // chatting. Reason is optional and will be shown to the target user and
-    // other moderators. Use "unban" to remove a ban.
+    /// Permanently prevent a user from chatting.
+    /// Reason is optional and will be shown to the target user and other moderators.
+    ///
+    /// Use [`Writer::unban`](./struct.Writer.html#method.unban) to remove a ban.
     pub fn ban(&self, username: &str, reason: Option<&str>) -> Result<(), Error> {
         match reason {
             Some(reason) => self.command(format!("/ban {} {}", username, reason)),
@@ -148,12 +146,12 @@ impl<W: Write> Writer<W> {
         }
     }
 
-    // Usage: "/unban <username>" - Removes a ban on a user.
+    /// Removes a ban on a user.
     pub fn unban(&self, username: &str) -> Result<(), Error> {
         self.command(format!("/unban {}", username))
     }
 
-    // Usage: "/clear" - Clear chat history for all users in this room.
+    /// Clear chat history for all users in this room.
     pub fn clear(&self) -> Result<(), Error> {
         self.command("/clear")
     }
@@ -163,57 +161,67 @@ impl<W: Write> Writer<W> {
     //     unimplemented!()
     // }
 
-    // Usage: "/emoteonly" - Enables emote-only mode (only emoticons may be used
-    // in chat). Use "emoteonlyoff" to disable.
+    /// Enables emote-only mode (only emoticons may be used in chat).
+    ///
+    /// Use [`Writer::emoteonlyoff`](./struct.Writer.html#method.emoteonlyoff) to disable.
     pub fn emoteonly(&self) -> Result<(), Error> {
         self.command("/emoteonly")
     }
 
-    // Usage: "/emoteonlyoff" - Disables emote-only mode.
+    /// Disables emote-only mode.
     pub fn emoteonlyoff(&self) -> Result<(), Error> {
         self.command("/emoteonlyoff")
     }
 
-    // Usage: "/followers [duration]" - Enables followers-only mode (only users
-    // who have followed for 'duration' may chat). Examples: "30m", "1 week", "5
-    // days 12 hours". Must be less than 3 months.
+    /// Enables followers-only mode (only users who have followed for 'duration' may chat).
+    ///
+    /// Examples: "30m", "1 week", "5 days 12 hours".
+    ///
+    /// Must be less than 3 months.
     pub fn followers(&self, duration: &str) -> Result<(), Error> {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         // and verify its < 3 months
         self.command(&format!("/followers {}", duration))
     }
 
-    // Usage: "/followersoff - Disables followers-only mode.
+    /// Disables followers-only mode.
     pub fn followersoff(&self) -> Result<(), Error> {
         self.command("/followersoff")
     }
 
-    // Usage: "/mod <username>" - Grant moderator status to a user. Use "mods"
-    // to list the moderators of this channel.
-    // (NOTE: renamed to 'op' because r#mod is annoying to type)
+    /// Grant moderator status to a user.
+    ///
+    /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
+    ///
+    /// (**NOTE**: renamed to `op` because r#mod is annoying to type)
     pub fn op(&self, username: &str) -> Result<(), Error> {
         self.command(&format!("/mod {}", username))
     }
 
-    // Usage: "/unmod <username>" - Revoke moderator status from a user. Use
-    // "mods" to list the moderators of this channel.
+    /// Revoke moderator status from a user.
+    ///
+    /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
     pub fn unmod(&self, username: &str) -> Result<(), Error> {
         self.command(&format!("/unmod {}", username))
     }
 
-    // Usage: "/r9kbeta" - Enables r9k mode. Use "r9kbetaoff" to disable.
+    /// Enables r9k mode.
+    ///
+    /// Use [`Writer::r9kbetaoff`](./struct.Writer.html#method.r9kbetaoff) to disable.
     pub fn r9kbeta(&self) -> Result<(), Error> {
         self.command("/r9kbeta")
     }
 
-    // Usage: "/r9kbetaoff" - Disables r9k mode.
+    /// Disables r9k mode.
     pub fn r9kbetaoff(&self) -> Result<(), Error> {
         self.command("/r9kbetaoff")
     }
 
-    // Usage: "/slow [duration]" - Enables slow mode (limit how often users may
-    // send messages). Duration (optional, default=120) must be a positive
-    // number of seconds. Use "slowoff" to disable.
+    /// Enables slow mode (limit how often users may send messages).
+    ///
+    /// Duration (optional, default=120) must be a positive number of seconds.
+    ///
+    /// Use [`Writer::slowoff`](./struct.Writer.html#method.slowoff) to disable.
     pub fn slow(&self, duration: Option<usize>) -> Result<(), Error> {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         match duration {
@@ -222,28 +230,39 @@ impl<W: Write> Writer<W> {
         }
     }
 
-    // Usage: "/slowoff" - Disables slow mode.
+    /// Disables slow mode.
     pub fn slowoff(&self) -> Result<(), Error> {
         self.command("/slowoff")
     }
 
-    // Usage: "/subscribers" - Enables subscribers-only mode (only subscribers
-    // may chat in this channel). Use "subscribersoff" to disable.
+    /// Enables subscribers-only mode (only subscribers may chat in this channel).
+    ///
+    /// Use [`Writer::subscribersoff`](./struct.Writer.html#method.subscribersoff) to disable.
     pub fn subscribers(&self) -> Result<(), Error> {
         self.command("/subscribers")
     }
 
-    // Usage: "/subscribersoff" - Disables subscribers-only mode.
+    /// Disables subscribers-only mode.
     pub fn subscribersoff(&self) -> Result<(), Error> {
         self.command("/subscribersoff")
     }
 
-    // Usage: "/timeout <username> [duration][time unit] [reason]" - Temporarily
-    // prevent a user from chatting. Duration (optional, default=10 minutes)
-    // must be a positive integer; time unit (optional, default=s) must be one
-    // of s, m, h, d, w; maximum duration is 2 weeks. Combinations like 1d2h are
-    // also allowed. Reason is optional and will be shown to the target user and
-    // other moderators. Use "untimeout" to remove a timeout.
+    /// Temporarily prevent a user from chatting.
+    ///
+    /// * duration (*optional*, default=`10 minutes`) must be a positive integer.
+    /// * time unit (*optional*, default=`s`) must be one of
+    ///   * s
+    ///   * m
+    ///   * h
+    ///   * d
+    ///   * w
+    /// * maximum duration is `2 weeks`.
+    ///
+    /// Combinations like `1d2h` are also allowed.
+    ///
+    /// Reason is optional and will be shown to the target user and other moderators.
+    ///
+    /// Use [`Writer::untimeout`](./struct.Writer.html#method.untimeout) to remove a timeout.
     pub fn timeout(
         &self,
         username: &str,
@@ -261,24 +280,26 @@ impl<W: Write> Writer<W> {
         self.command(timeout)
     }
 
-    // Usage: "/untimeout <username>" - Removes a timeout on a user.
+    /// Removes a timeout on a user.
     pub fn untimeout(&self, username: &str) -> Result<(), Error> {
         self.command(format!("/untimeout {}", username))
     }
 
-    // Usage: "/vip <username>" - Grant VIP status to a user. Use "vips" to list
-    // the VIPs of this channel.
+    /// Grant VIP status to a user.
+    ///
+    /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
     pub fn vip(&self, username: &str) -> Result<(), Error> {
         self.command(format!("/vip {}", username))
     }
 
-    // Usage: "/unvip <username>" - Revoke VIP status from a user. Use "vips" to
-    // list the VIPs of this channel.
+    /// Revoke VIP status from a user.
+    ///
+    /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
     pub fn unvip(&self, username: &str) -> Result<(), Error> {
         self.command(format!("/unvip {}", username))
     }
 
-    // Usage: "/w <username> <message>" - Whispers the message to the username.
+    /// Whispers the message to the username.
     pub fn whisper(&self, username: &str, message: &str) -> Result<(), Error> {
         self.command(format!("/w {} {}", username, message))
     }
