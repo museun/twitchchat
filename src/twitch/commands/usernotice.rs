@@ -19,9 +19,7 @@ impl UserNotice {
     }
     /// The message. This is omitted if the user did not enter a message.
     pub fn message(&self) -> Option<&str> {
-        // TODO technically this won't ever be in the tags
-        self.get("message")
-            .or_else(|| self.message.as_ref().map(|s| s.as_ref()))
+        self.message.as_ref().map(|s| s.as_ref())
     }
 }
 
