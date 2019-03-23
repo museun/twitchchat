@@ -50,7 +50,6 @@ impl UserNotice {
     pub fn login(&self) -> Option<&str> {
         self.get("login")
     }
-
     /// Whether this user is a moderator
     pub fn moderator(&self) -> bool {
         self.get_as_bool("mod")

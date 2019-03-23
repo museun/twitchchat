@@ -19,17 +19,16 @@ impl ClearMsg {
     pub fn channel(&self) -> &str {
         &self.channel
     }
+    /// The message.
+    pub fn message(&self) -> Option<&str> {
+        self.message.as_ref().map(|s| s.as_str())
+    }
 }
 
 impl ClearMsg {
     /// Name of the user who sent the message.
     pub fn login(&self) -> Option<&str> {
         self.get("login")
-    }
-    /// The message.
-    pub fn message(&self) -> Option<&str> {
-        self.get("message")
-            .or_else(|| self.message.as_ref().map(|s| s.as_str()))
     }
     /// UUID of the message.
     pub fn target_msg_id(&self) -> Option<&str> {
