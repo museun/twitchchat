@@ -4,7 +4,7 @@ use std::sync::Arc;
 use super::{Channel, Error, MutexWrapper as Mutex, TwitchColor};
 
 /// A thread-safe, clonable writer for the Twitch client
-pub struct Writer<W>(pub Arc<Mutex<W>>);
+pub struct Writer<W>(pub(crate) Arc<Mutex<W>>);
 
 impl<W: Write> Clone for Writer<W> {
     fn clone(&self) -> Self {
