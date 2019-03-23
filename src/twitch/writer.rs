@@ -51,8 +51,12 @@ impl<W: Write> Writer<W> {
     // TODO make this into a rust-doc format (e.g. contextual)
     // Usage: "/host <channel>" - Host another channel. Use "/unhost" to unset
     // host mode.
-    pub fn host(&self, channel: &str) -> Result<(), Error> {
-        self.command(&format!("/host {}", channel))
+    pub fn host<C>(&self, channel: C) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+    {
+        let channel = Channel::validate(channel)?;
+        self.command(format!("/host {}", channel.into()))
     }
 
     // Usage: "/unhost" - Stop hosting another channel.
@@ -73,7 +77,7 @@ impl<W: Write> Writer<W> {
                     let comment = comment.chars().take(140).collect::<String>();
                     format!("/marker {}", comment)
                 };
-                self.command(&cmd)
+                self.command(cmd)
             }
             _ => self.command("/marker"),
         }
@@ -81,8 +85,12 @@ impl<W: Write> Writer<W> {
 
     // Usage: "/raid <channel>" - Raid another channel. Use "/unraid" to cancel
     // the Raid.
-    pub fn raid(&self, channel: &str) -> Result<(), Error> {
-        self.command(&format!("/raid {}", channel))
+    pub fn raid<C>(&self, channel: C) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+    {
+        let channel = Channel::validate(channel)?;
+        self.command(format!("/raid {}", channel.into()))
     }
 
     // Usage: "/unraid" - Cancel the Raid.
@@ -94,8 +102,11 @@ impl<W: Write> Writer<W> {
     // hex (#000000) or one of the following: Blue, BlueViolet, CadetBlue,
     // Chocolate, Coral, DodgerBlue, Firebrick, GoldenRod, Green, HotPink,
     // OrangeRed, Red, SeaGreen, SpringGreen, YellowGreen.
-    pub fn color<C: Into<TwitchColor>>(&self, color: C) -> Result<(), Error> {
-        self.command(&format!("/color {}", color.into()))
+    pub fn color<C>(&self, color: C) -> Result<(), Error>
+    where
+        C: Into<TwitchColor>,
+    {
+        self.command(format!("/color {}", color.into()))
     }
 
     // Usage: "/disconnect" - Reconnects to chat.
@@ -122,7 +133,7 @@ impl<W: Write> Writer<W> {
     // must be a positive number of seconds.
     pub fn commercial(&self, length: Option<usize>) -> Result<(), Error> {
         match length {
-            Some(n) => self.command(&format!("/commercial {}", n)),
+            Some(n) => self.command(format!("/commercial {}", n)),
             None => self.command("/commercial"),
         }
     }
@@ -132,14 +143,14 @@ impl<W: Write> Writer<W> {
     // other moderators. Use "unban" to remove a ban.
     pub fn ban(&self, username: &str, reason: Option<&str>) -> Result<(), Error> {
         match reason {
-            Some(reason) => self.command(&format!("/ban {} {}", username, reason)),
-            None => self.command(&format!("/ban {}", username)),
+            Some(reason) => self.command(format!("/ban {} {}", username, reason)),
+            None => self.command(format!("/ban {}", username)),
         }
     }
 
     // Usage: "/unban <username>" - Removes a ban on a user.
     pub fn unban(&self, username: &str) -> Result<(), Error> {
-        self.command(&format!("/unban {}", username))
+        self.command(format!("/unban {}", username))
     }
 
     // Usage: "/clear" - Clear chat history for all users in this room.
@@ -206,7 +217,7 @@ impl<W: Write> Writer<W> {
     pub fn slow(&self, duration: Option<usize>) -> Result<(), Error> {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         match duration {
-            Some(dur) => self.command(&format!("/slow {}", dur)),
+            Some(dur) => self.command(format!("/slow {}", dur)),
             None => self.command("/slow"),
         }
     }
@@ -247,29 +258,29 @@ impl<W: Write> Writer<W> {
             (Some(dur), None) => format!("/timeout {} {}", username, dur),
             (None, None) => format!("/timeout {}", username),
         };
-        self.command(&timeout)
+        self.command(timeout)
     }
 
     // Usage: "/untimeout <username>" - Removes a timeout on a user.
     pub fn untimeout(&self, username: &str) -> Result<(), Error> {
-        self.command(&format!("/untimeout {}", username))
+        self.command(format!("/untimeout {}", username))
     }
 
     // Usage: "/vip <username>" - Grant VIP status to a user. Use "vips" to list
     // the VIPs of this channel.
     pub fn vip(&self, username: &str) -> Result<(), Error> {
-        self.command(&format!("/vip {}", username))
+        self.command(format!("/vip {}", username))
     }
 
     // Usage: "/unvip <username>" - Revoke VIP status from a user. Use "vips" to
     // list the VIPs of this channel.
     pub fn unvip(&self, username: &str) -> Result<(), Error> {
-        self.command(&format!("/unvip {}", username))
+        self.command(format!("/unvip {}", username))
     }
 
     // Usage: "/w <username> <message>" - Whispers the message to the username.
     pub fn whisper(&self, username: &str, message: &str) -> Result<(), Error> {
-        self.command(&format!("/w {} {}", username, message))
+        self.command(format!("/w {} {}", username, message))
     }
 
     /// Joins a `channel`
@@ -288,9 +299,12 @@ impl<W: Write> Writer<W> {
     /// w.join("Museun").unwrap();
     /// w.join("#MUSEUN").unwrap();
     /// ```    
-    pub fn join<C: Into<Channel>>(&self, channel: C) -> Result<(), Error> {
+    pub fn join<C>(&self, channel: C) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+    {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("JOIN {}", *channel))
+        self.raw(format!("JOIN {}", *channel))
     }
 
     /// Parts a `channel`
@@ -309,9 +323,12 @@ impl<W: Write> Writer<W> {
     /// w.part("Museun").unwrap();
     /// w.part("#MUSEUN").unwrap();
     /// ```    
-    pub fn part<C: Into<Channel>>(&self, channel: C) -> Result<(), Error> {
+    pub fn part<C>(&self, channel: C) -> Result<(), Error>
+    where
+        C: Into<Channel>,
+    {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PART {}", *channel))
+        self.raw(format!("PART {}", *channel))
     }
 
     /// Sends an "emote" `message` in the third person to the `channel`
@@ -322,7 +339,8 @@ impl<W: Write> Writer<W> {
         C: Into<Channel>,
         S: AsRef<str>,
     {
-        self.send(channel, &format!("/me {}", message.as_ref()))
+        let channel = Channel::validate(channel)?;
+        self.send(channel, format!("/me {}", message.as_ref()))
     }
 
     /// Sends the `message` to the `channel`
@@ -336,7 +354,7 @@ impl<W: Write> Writer<W> {
         S: AsRef<str>,
     {
         let channel = Channel::validate(channel)?;
-        self.raw(&format!("PRIVMSG {} :{}", *channel, message.as_ref()))
+        self.raw(format!("PRIVMSG {} :{}", *channel, message.as_ref()))
     }
 
     /// Sends the `message` to the `channel`
@@ -357,7 +375,7 @@ impl<W: Write> Writer<W> {
     where
         S: AsRef<str>,
     {
-        self.raw(&format!("PRIVMSG jtv :{}", data.as_ref()))
+        self.raw(format!("PRIVMSG jtv :{}", data.as_ref()))
     }
 
     /// Sends a raw line (appends the required `\r\n`)
