@@ -17,7 +17,7 @@ pub struct ClearChat {
 impl ClearChat {
     /// The owner of the message. Empty if its the entire channel
     pub fn user(&self) -> Option<&str> {
-        self.user.as_ref().map(|s| s.as_str())
+        self.user.as_ref().map(String::as_str)
     }
     /// The channel this event happened on
     pub fn channel(&self) -> &str {

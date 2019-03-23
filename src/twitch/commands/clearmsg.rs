@@ -21,7 +21,7 @@ impl ClearMsg {
     }
     /// The message.
     pub fn message(&self) -> Option<&str> {
-        self.message.as_ref().map(|s| s.as_str())
+        self.message.as_ref().map(String::as_str)
     }
 }
 

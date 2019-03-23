@@ -19,7 +19,7 @@ impl UserNotice {
     }
     /// The message. This is omitted if the user did not enter a message.
     pub fn message(&self) -> Option<&str> {
-        self.message.as_ref().map(|s| s.as_ref())
+        self.message.as_ref().map(String::as_str)
     }
 }
 

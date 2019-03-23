@@ -27,6 +27,8 @@ impl Handlers {
         false
     }
 
+    // its seeing this after the macro has been expanded.
+    #[allow(clippy::cognitive_complexity)]
     pub fn handle(&mut self, msg: Message) {
         macro_rules! dispatch {
             ($msg:expr, $func:tt) => {{
@@ -61,7 +63,6 @@ impl Handlers {
         dispatch!(msg, on_message)
     }
 }
-
 /// Handler allows you to implement message filtering with a struct
 #[allow(unused_variables)]
 pub trait Handler {

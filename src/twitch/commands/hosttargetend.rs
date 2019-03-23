@@ -15,6 +15,6 @@ impl HostTargetEnd {
     }
     /// Optional number of viewers watch the host
     pub fn viewers(&self) -> Option<usize> {
-        self.viewers.clone()
+        self.viewers
     }
 }
