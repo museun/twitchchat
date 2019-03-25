@@ -1,7 +1,32 @@
 /// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RGB(pub u8, pub u8, pub u8);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for RGB {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let RGB(r, g, b) = *self;
+        let mut rgb = serializer.serialize_struct("rgb", 3)?;
+        rgb.serialize_field("r", &r)?;
+        rgb.serialize_field("g", &g)?;
+        rgb.serialize_field("b", &b)?;
+        rgb.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for RGB {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        String::deserialize(deserializer).map(Into::into)
+    }
+}
 
 impl Default for RGB {
     /// Default color of #FFFFFF (White)
@@ -44,12 +69,12 @@ impl RGB {
         };
 
         u32::from_str_radix(&input, 16)
-            .and_then(|s| {
-                Ok(RGB(
+            .map(|s| {
+                RGB(
                     ((s >> 16) & 0xFF) as u8,
                     ((s >> 8) & 0xFF) as u8,
                     (s & 0xFF) as u8,
-                ))
+                )
             })
             .unwrap_or_default()
     }
@@ -89,7 +114,6 @@ impl From<Twitch> for RGB {
 
 /// These are the default Twitch colors
 #[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Twitch {
     /// RGB (hex): #0000FF
     Blue,
@@ -121,8 +145,54 @@ pub enum Twitch {
     SpringGreen,
     /// RGB (hex): #ADFF2F
     YellowGreen,
-    /// Turbo colors are custom user-selected colors
+    /// Turbo colors are custom user-selected colors    
     Turbo(RGB),
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Twitch {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let RGB(r, g, b) = (*self).into();
+        let mut rgb = serializer.serialize_struct("color", 4)?;
+
+        match self {
+            Twitch::Turbo(..) => rgb.serialize_field("name", &"Turbo")?,
+            e => rgb.serialize_field("name", &e.to_string())?,
+        }
+
+        rgb.serialize_field("r", &r)?;
+        rgb.serialize_field("g", &g)?;
+        rgb.serialize_field("b", &b)?;
+        rgb.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Twitch {
+    fn deserialize<D>(deserializer: D) -> Result<Twitch, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Serialize, serde::Deserialize)]
+        struct C<'a> {
+            name: &'a str,
+            r: u8,
+            g: u8,
+            b: u8,
+        }
+
+        C::deserialize(deserializer).map(|c| {
+            if c.name == "Turbo" {
+                Twitch::Turbo(RGB(c.r, c.g, c.b))
+            } else {
+                c.name.into()
+            }
+        })
+    }
 }
 
 impl Default for Twitch {
