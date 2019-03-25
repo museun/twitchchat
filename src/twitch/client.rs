@@ -50,6 +50,11 @@ impl<R: Read, W: Write> Client<R, W> {
         }
     }
 
+    /// Consumes the client, returning the reader
+    pub fn into_reader(self) -> R {
+        self.reader.into_inner()
+    }
+
     /// Runs, consuming all messages.
     ///
     /// This also pumping them through
