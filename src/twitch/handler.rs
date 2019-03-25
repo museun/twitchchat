@@ -4,10 +4,10 @@ use std::sync::Arc;
 use crate::twitch::commands::*;
 use crate::twitch::Message;
 
-use super::Token;
+use super::{Token, TokenGen};
 
 #[derive(Default)]
-pub(crate) struct Handlers(Vec<(Token, Box<Handler>)>, super::TokenGen);
+pub(crate) struct Handlers(Vec<(Token, Box<Handler>)>, TokenGen);
 
 impl Handlers {
     pub fn add<H>(&mut self, h: H) -> Token
