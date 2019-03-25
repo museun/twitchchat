@@ -178,18 +178,18 @@ impl<'de> serde::Deserialize<'de> for Twitch {
         D: serde::Deserializer<'de>,
     {
         #[derive(serde::Serialize, serde::Deserialize)]
-        struct C<'a> {
-            name: &'a str,
+        struct C {
+            name: String,
             r: u8,
             g: u8,
             b: u8,
         }
 
         C::deserialize(deserializer).map(|c| {
-            if c.name == "Turbo" {
+            if c.name.as_str() == "Turbo" {
                 Twitch::Turbo(RGB(c.r, c.g, c.b))
             } else {
-                c.name.into()
+                c.name.as_str().into()
             }
         })
     }
