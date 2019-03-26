@@ -5,8 +5,9 @@ mod emotes;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub use self::badge::{Badge, BadgeKind};
-pub use self::color::{twitch_colors as colors, Twitch as TwitchColor, RGB};
 pub use self::emotes::Emotes;
+
+pub use self::color::{twitch_colors as colors, Color, TwitchColor, RGB};
 
 /// An assortment of Twitch commands
 pub mod commands;
@@ -47,7 +48,7 @@ pub struct LocalUser {
     /// Your display name, if set
     pub display_name: Option<String>,
     /// Your color, if set
-    pub color: Option<TwitchColor>,
+    pub color: Option<Color>,
     /// Your badges
     pub badges: Vec<Badge>,
     /// Your list of emote sets

@@ -1,6 +1,59 @@
+use std::str::FromStr;
+/// An error returned from the FromStr impls of RGB and Color
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ColorError {
+    /// An invalid Hex string for `RGB`
+    InvalidHexString,
+    /// Unknown color name
+    UnknownColor,
+}
+
+impl std::fmt::Display for ColorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ColorError::InvalidHexString => write!(f, "invalid hex string"),
+            ColorError::UnknownColor => write!(f, "unknown color"),
+        }
+    }
+}
+
+impl std::error::Error for ColorError {}
+
 /// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct RGB(pub u8, pub u8, pub u8);
+
+impl RGB {
+    /// Returns the `red` field
+    pub fn red(self) -> u8 {
+        self.0
+    }
+
+    /// Returns the `green` field
+    pub fn green(self) -> u8 {
+        self.1
+    }
+
+    /// Returns the `blue` field
+    pub fn blue(self) -> u8 {
+        self.2
+    }
+}
+
+impl Default for RGB {
+    /// Default color of `#FFFFFF` (White)
+    fn default() -> Self {
+        RGB(255, 255, 255)
+    }
+}
+
+impl std::fmt::Display for RGB {
+    /// Formats the RGB as `#RRGGBB` (in hex)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self(r, g, b) = self;
+        write!(f, "#{:02X}{:02X}{:02X}", r, g, b)
+    }
+}
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for RGB {
@@ -24,48 +77,27 @@ impl<'de> serde::Deserialize<'de> for RGB {
     where
         D: serde::Deserializer<'de>,
     {
-        String::deserialize(deserializer).map(Into::into)
+        #[derive(serde::Deserialize)]
+        struct Inner {
+            r: u8,
+            g: u8,
+            b: u8,
+        }
+        let Inner { r, g, b } = Inner::deserialize(deserializer)?;
+        Ok(Self(r, g, b))
     }
 }
 
-impl Default for RGB {
-    /// Default color of #FFFFFF (White)
-    fn default() -> Self {
-        RGB(255, 255, 255)
-    }
-}
+impl FromStr for RGB {
+    type Err = ColorError;
 
-impl std::fmt::Display for RGB {
-    /// Formats the RGB as #RRGGBB (in hex)
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self(r, g, b) = self;
-        write!(f, "#{:02X}{:02X}{:02X}", r, g, b)
-    }
-}
-
-impl From<&str> for RGB {
-    /// Tries to parse an RGB from the str, defaulting if invalid
-    fn from(s: &str) -> Self {
-        RGB::from_hex(s)
-    }
-}
-
-impl From<String> for RGB {
-    /// Tries to parse an RGB from the String, defaulting if invalid
-    fn from(s: String) -> Self {
-        RGB::from_hex(&s)
-    }
-}
-
-impl RGB {
-    /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into the RGB,
-    /// `default`s if it can't
-    pub fn from_hex(input: &str) -> Self {
+    /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into RGB.
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let input = input.trim();
         let input = match (input.chars().next(), input.len()) {
             (Some('#'), 7) => &input[1..],
             (_, 6) => input,
-            _ => return Self::default(),
+            _ => return Err(ColorError::InvalidHexString),
         };
 
         u32::from_str_radix(&input, 16)
@@ -76,45 +108,116 @@ impl RGB {
                     (s & 0xFF) as u8,
                 )
             })
-            .unwrap_or_default()
-    }
-
-    /// Returns the `red` field
-    pub fn red(self) -> u8 {
-        self.0
-    }
-
-    /// Returns the `green` field
-    pub fn green(self) -> u8 {
-        self.1
-    }
-
-    /// Returns the `blue` field
-    pub fn blue(self) -> u8 {
-        self.2
+            .map_err(|_| ColorError::InvalidHexString)
     }
 }
 
-impl From<Twitch> for RGB {
-    /// Tries to turn the [`TwitchColor`](./enum.TwitchColor.html) color into an [`RGB`](./struct.RGB.html)
-    ///
-    /// If the color is, somehow, unknown, it'll use [`RGB::default`](./struct.RGB.html#method.default)
-    fn from(color: Twitch) -> Self {
-        if let Twitch::Turbo(rgb) = color {
-            return rgb;
-        }
+/// Color represents a Twitch color
+///
+/// Twitch has named colors, and those with `Turbo` enabled accounts can set custom colors
+///
+/// A table of colors:
+///
+/// Name|Color|Alternative name *(can be parsed from name and these)*
+/// ---|---|---
+/// Blue |`#0000FF`| blue
+/// BlueViolet |`#8A2BE2`| blueviolet, blue_violet, blue violet
+/// CadetBlue |`#5F9EA0`| cadetblue, cadet_blue, cadet blue
+/// Chocolate |`#D2691E`| chocolate
+/// Coral |`#FF7F50`| coral
+/// DodgerBlue |`#1E90FF`| dodgerblue, dodger_blue, dodger blue
+/// Firebrick |`#B22222`| firebrick
+/// GoldenRod |`#DAA520`| goldenrod, golden_rod, golden rod
+/// Green |`#008000`| green
+/// HotPink |`#FF69B4`| hotpink, hot_pink, hot pink
+/// OrangeRed |`#FF4500`| orangered, orange_red, orange red
+/// Red |`#FF0000`| red
+/// SeaGreen |`#2E8B57`| seagreen, sea_green, sea green
+/// SpringGreen |`#00FF7F`| springgreen, spring_green, spring green
+/// YellowGreen |`#ADFF2F`| yellowgreen, yellow_green, yellow green
+/// Turbo |*custom*| ---
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Color {
+    /// The name of the Twitch color
+    pub kind: TwitchColor,
+    /// The RGB triplet for this color    
+    pub rgb: RGB,
+}
 
-        twitch_colors()
-            .iter()
-            .find(|(c, _)| *c == color)
-            .map(|&(_, rgb)| rgb)
-            .unwrap_or_default()
+impl std::fmt::Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use TwitchColor::*;
+        let name = match self.kind {
+            Blue => "Blue",
+            BlueViolet => "BlueViolet",
+            CadetBlue => "CadetBlue",
+            Chocolate => "Chocolate",
+            Coral => "Coral",
+            DodgerBlue => "DodgerBlue",
+            Firebrick => "Firebrick",
+            GoldenRod => "GoldenRod",
+            Green => "Green",
+            HotPink => "HotPink",
+            OrangeRed => "OrangeRed",
+            Red => "Red",
+            SeaGreen => "SeaGreen",
+            SpringGreen => "SpringGreen",
+            YellowGreen => "YellowGreen",
+            Turbo => return write!(f, "{}", self.rgb.to_string()),
+        };
+        write!(f, "{}", name)
+    }
+}
+
+impl Default for Color {
+    /// Defaults to having a kind of `TwitchColor::Turbo` and an RGB of `#FFFFFF`
+    fn default() -> Self {
+        Self {
+            kind: TwitchColor::Turbo,
+            rgb: RGB::default(),
+        }
+    }
+}
+
+impl FromStr for Color {
+    type Err = ColorError;
+    /// Tries to parse the twitch color name
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        use TwitchColor::*;
+
+        let find = |color| {
+            let colors = twitch_colors();
+            colors[colors.iter().position(|(d, _)| *d == color).unwrap()]
+        };
+
+        let (kind, rgb) = match input {
+            "Blue" | "blue" => find(Blue),
+            "BlueViolet" | "blue_violet" | "blueviolet" | "blue violet" => find(BlueViolet),
+            "CadetBlue" | "cadet_blue" | "cadetblue" | "cadet blue" => find(CadetBlue),
+            "Chocolate" | "chocolate" => find(Chocolate),
+            "Coral" | "coral" => find(Coral),
+            "DodgerBlue" | "dodger_blue" | "dodgerblue" | "dodger blue" => find(DodgerBlue),
+            "Firebrick" | "firebrick" => find(Firebrick),
+            "GoldenRod" | "golden_rod" | "goldenrod" | "golden rod" => find(GoldenRod),
+            "Green" | "green" => find(Green),
+            "HotPink" | "hot_pink" | "hotpink" | "hot pink" => find(HotPink),
+            "OrangeRed" | "orange_red" | "orangered" | "orange red" => find(OrangeRed),
+            "Red" | "red" => find(Red),
+            "SeaGreen" | "sea_green" | "seagreen" | "sea green" => find(SeaGreen),
+            "SpringGreen" | "spring_green" | "springgreen" | "spring green" => find(SpringGreen),
+            "YellowGreen" | "yellow_green" | "yellowgreen" | "yellow green" => find(YellowGreen),
+            _ => (Turbo, input.parse::<RGB>()?),
+        };
+
+        Ok(Self { kind, rgb })
     }
 }
 
 /// These are the default Twitch colors
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub enum Twitch {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TwitchColor {
     /// RGB (hex): #0000FF
     Blue,
     /// RGB (hex): #8A2BE2
@@ -145,131 +248,48 @@ pub enum Twitch {
     SpringGreen,
     /// RGB (hex): #ADFF2F
     YellowGreen,
-    /// Turbo colors are custom user-selected colors    
-    Turbo(RGB),
+    /// Turbo colors are custom user-selected colors
+    Turbo,
 }
 
-#[cfg(feature = "serde")]
-impl serde::Serialize for Twitch {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let RGB(r, g, b) = (*self).into();
-        let mut rgb = serializer.serialize_struct("color", 4)?;
-
-        match self {
-            Twitch::Turbo(..) => rgb.serialize_field("name", &"Turbo")?,
-            e => rgb.serialize_field("name", &e.to_string())?,
-        }
-
-        rgb.serialize_field("r", &r)?;
-        rgb.serialize_field("g", &g)?;
-        rgb.serialize_field("b", &b)?;
-        rgb.end()
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for Twitch {
-    fn deserialize<D>(deserializer: D) -> Result<Twitch, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(serde::Serialize, serde::Deserialize)]
-        struct C {
-            name: String,
-            r: u8,
-            g: u8,
-            b: u8,
-        }
-
-        C::deserialize(deserializer).map(|c| {
-            if c.name.as_str() == "Turbo" {
-                Twitch::Turbo(RGB(c.r, c.g, c.b))
-            } else {
-                c.name.as_str().into()
-            }
-        })
-    }
-}
-
-impl Default for Twitch {
-    /// Defaults to Twitch::Turbo(RGB(0xFF,0xFF,0xFF))
-    fn default() -> Self {
-        Twitch::Turbo(RGB::default())
-    }
-}
-
-impl From<&str> for Twitch {
-    /// Tries to parse the twitch color name from a string, or as a #RRGGBB/RRGGBB string
-    ///
-    /// view source to see valid strings
-    fn from(input: &str) -> Self {
-        use Twitch::*;
-        match input {
-            "Blue" | "blue" => Blue,
-            "BlueViolet" | "blue_violet" | "blueviolet" | "blue violet" => BlueViolet,
-            "CadetBlue" | "cadet_blue" | "cadetblue" | "cadet blue" => CadetBlue,
-            "Chocolate" | "chocolate" => Chocolate,
-            "Coral" | "coral" => Coral,
-            "DodgerBlue" | "dodger_blue" | "dodgerblue" | "dodger blue" => DodgerBlue,
-            "Firebrick" | "firebrick" => Firebrick,
-            "GoldenRod" | "golden_rod" | "goldenrod" | "golden rod" => GoldenRod,
-            "Green" | "green" => Green,
-            "HotPink" | "hot_pink" | "hotpink" | "hot pink" => HotPink,
-            "OrangeRed" | "orange_red" | "orangered" | "orange red" => OrangeRed,
-            "Red" | "red" => Red,
-            "SeaGreen" | "sea_green" | "seagreen" | "sea green" => SeaGreen,
-            "SpringGreen" | "spring_green" | "springgreen" | "spring green" => SpringGreen,
-            "YellowGreen" | "yellow_green" | "yellowgreen" | "yellow green" => YellowGreen,
-            s => Turbo(RGB::from_hex(s)),
+impl From<RGB> for Color {
+    fn from(rgb: RGB) -> Self {
+        Color {
+            kind: rgb.into(),
+            rgb,
         }
     }
 }
 
-impl From<RGB> for Twitch {
-    /// Tries to turn the RGB Color into a Twitch Color
-    ///
-    /// Defaults to a Turbo(RGB(0xFF,0xFF,0xFF))
+impl From<Color> for RGB {
+    fn from(color: Color) -> Self {
+        color.rgb
+    }
+}
+
+impl From<RGB> for TwitchColor {
     fn from(rgb: RGB) -> Self {
         twitch_colors()
             .iter()
             .find(|(_, color)| *color == rgb)
             .map(|&(c, _)| c)
-            .unwrap_or_else(|| Twitch::Turbo(rgb))
+            .unwrap_or_else(|| TwitchColor::Turbo)
     }
 }
 
-impl std::fmt::Display for Twitch {
-    /// Gets the Twitch color name as a string, as those listed on the Twitch site
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use Twitch::*;
-        match self {
-            Blue => write!(f, "Blue"),
-            BlueViolet => write!(f, "BlueViolet"),
-            CadetBlue => write!(f, "CadetBlue"),
-            Chocolate => write!(f, "Chocolate"),
-            Coral => write!(f, "Coral"),
-            DodgerBlue => write!(f, "DodgerBlue"),
-            Firebrick => write!(f, "Firebrick"),
-            GoldenRod => write!(f, "GoldenRod"),
-            Green => write!(f, "Green"),
-            HotPink => write!(f, "HotPink"),
-            OrangeRed => write!(f, "OrangeRed"),
-            Red => write!(f, "Red"),
-            SeaGreen => write!(f, "SeaGreen"),
-            SpringGreen => write!(f, "SpringGreen"),
-            YellowGreen => write!(f, "YellowGreen"),
-            Turbo(rgb) => write!(f, "{}", rgb),
-        }
+impl From<TwitchColor> for RGB {
+    fn from(color: TwitchColor) -> Self {
+        twitch_colors()
+            .iter()
+            .find(|(c, _)| *c == color)
+            .map(|&(_, r)| r)
+            .unwrap_or_default()
     }
 }
 
 /// A helper method that returns a const array of [`TwitchColor`](./enum.TwitchColor.html) colors to [`RGB`](./struct.RGB.html)
-pub const fn twitch_colors() -> [(Twitch, RGB); 15] {
-    use Twitch::*;
+pub const fn twitch_colors() -> [(TwitchColor, RGB); 15] {
+    use TwitchColor::*;
     [
         (Blue, RGB(0x00, 0x00, 0xFF)),
         (BlueViolet, RGB(0x8A, 0x2B, 0xE2)),
@@ -287,4 +307,61 @@ pub const fn twitch_colors() -> [(Twitch, RGB); 15] {
         (SpringGreen, RGB(0x00, 0xFF, 0x7F)),
         (YellowGreen, RGB(0xAD, 0xFF, 0x2F)),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn parse_color() {
+        let color: Color = "blue".parse().unwrap();
+        assert_eq!(color.kind, TwitchColor::Blue);
+        assert_eq!(color.rgb, RGB(0, 0, 255));
+        assert_eq!(color.to_string(), "Blue");
+    }
+
+    #[test]
+    fn parse_turbo_color() {
+        let color: Color = "#FAFAFA".parse().unwrap();
+        assert_eq!(color.kind, TwitchColor::Turbo);
+        assert_eq!(color.rgb, RGB(250, 250, 250));
+        assert_eq!(color.to_string(), "#FAFAFA");
+
+        let color: Color = "FAFAFA".parse().unwrap();
+        assert_eq!(color.kind, TwitchColor::Turbo);
+        assert_eq!(color.rgb, RGB(250, 250, 250));
+        assert_eq!(color.to_string(), "#FAFAFA");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn round_trip_color() {
+        let color: Color = "blue".parse().unwrap();
+        let json = serde_json::to_string(&color).unwrap();
+        let parsed: Color = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, color);
+        assert_eq!(color.kind, TwitchColor::Blue);
+        assert_eq!(color.rgb, RGB(0, 0, 255));
+        assert_eq!(color.to_string(), "Blue");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn round_trip_turbo_color() {
+        let color: Color = "#FAFAFA".parse().unwrap();
+        let json = serde_json::to_string(&color).unwrap();
+        let parsed: Color = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, color);
+        assert_eq!(color.kind, TwitchColor::Turbo);
+        assert_eq!(color.rgb, RGB(250, 250, 250));
+        assert_eq!(color.to_string(), "#FAFAFA");
+
+        let color: Color = "FAFAFA".parse().unwrap();
+        let json = serde_json::to_string(&color).unwrap();
+        let parsed: Color = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, color);
+        assert_eq!(color.kind, TwitchColor::Turbo);
+        assert_eq!(color.rgb, RGB(250, 250, 250));
+        assert_eq!(color.to_string(), "#FAFAFA");
+    }
 }

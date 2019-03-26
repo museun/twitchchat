@@ -30,9 +30,10 @@ features = ["derive"]
 optional = true
 
 [features]
-default = []
+default = [ "all" ]
 serde_hashbrown = ["serde", "hashbrown/serde"]
 all = ["serde_hashbrown", "parking_lot"]
 
 [dev-dependencies]
 rand = "0.6.5"
+serde_json = "1.0.39"

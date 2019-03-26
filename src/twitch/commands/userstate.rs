@@ -23,8 +23,10 @@ impl UserState {
         badges(self.get("badges").unwrap_or_default())
     }
     /// The user's color, if set
-    pub fn color(&self) -> Option<TwitchColor> {
-        self.get("color").map(RGB::from_hex).map(Into::into)
+    pub fn color(&self) -> Option<Color> {
+        self.get("color")
+            .and_then(|s| s.parse::<RGB>().ok())
+            .map(Into::into)
     }
     /// The user's display name, if set
     pub fn display_name(&self) -> Option<&str> {

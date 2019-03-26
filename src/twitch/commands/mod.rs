@@ -33,7 +33,7 @@ pub use self::usernotice::{NoticeType, SubPlan, UserNotice};
 pub use self::userstate::UserState;
 
 use crate::irc::types::*;
-use crate::twitch::{Badge, Emotes, TwitchColor, RGB};
+use crate::twitch::{Badge, Color, Emotes, RGB};
 
 /// Tag allows access to the Tags part of the Message
 pub trait Tag {

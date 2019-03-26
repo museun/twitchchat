@@ -46,8 +46,10 @@ impl PrivMsg {
         self.get_parsed("bits").unwrap_or_default()
     }
     /// The color of the user who sent this message, if set
-    pub fn color(&self) -> Option<TwitchColor> {
-        self.get("color").map(RGB::from_hex).map(Into::into)
+    pub fn color(&self) -> Option<Color> {
+        self.get("color")
+            .and_then(|s| s.parse::<RGB>().ok())
+            .map(Into::into)
     }
     /// The display name of the user, if set
     pub fn display_name(&self) -> Option<&str> {
