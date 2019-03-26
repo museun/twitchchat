@@ -24,7 +24,7 @@ optional features:
 | --- | --- |
 | all | enables all of the above | --- |
 
-they are disabled by default.
+they are enabled by default.
 
 
 a demo of it:
