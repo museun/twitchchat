@@ -21,6 +21,12 @@ pub enum BadgeKind {
     Staff,
     /// Turbo badge
     Turbo,
+    /// Twitch Prime badge
+    Premium,
+    /// VIP Badge
+    VIP,
+    /// Partner badge
+    Partner,
     /// An Unknown badge
     Unknown(String),
 }
@@ -51,6 +57,9 @@ impl Badge {
             "subscriber" => Subscriber,
             "staff" => Staff,
             "turbo" => Turbo,
+            "premium" => Premium,
+            "vip" => VIP,
+            "partner" => Partner,
             badge => Unknown(badge.to_string()),
         };
         Some(Badge {
