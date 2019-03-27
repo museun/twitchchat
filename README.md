@@ -38,7 +38,7 @@ fn main() {
     let userconfig = UserConfig::builder()
         .nick(env!("MY_TWITCH_NAME"))
         .token(env!("MY_TWITCH_PASS"))
-        // enable these capbilities
+        // enable these capabilities
         .tags()
         .membership()
         .commands()
