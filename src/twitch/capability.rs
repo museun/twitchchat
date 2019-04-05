@@ -22,6 +22,9 @@ pub enum Capability {
     ///
     /// Provides metadata attached to each message
     Tags,
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl Capability {
@@ -31,6 +34,7 @@ impl Capability {
             Capability::Membership => Some("CAP REQ :twitch.tv/membership"),
             Capability::Commands => Some("CAP REQ :twitch.tv/commands"),
             Capability::Tags => Some("CAP REQ :twitch.tv/tags"),
+            Capability::__Nonexhaustive => unreachable!(),
         }
     }
 }

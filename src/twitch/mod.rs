@@ -99,6 +99,9 @@ pub enum Message {
     UserState(commands::UserState),
     /// On successful login.
     GlobalUserState(commands::GlobalUserState),
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 pub(crate) mod filter;

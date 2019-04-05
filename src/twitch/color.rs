@@ -165,6 +165,7 @@ impl std::fmt::Display for Color {
             SpringGreen => "SpringGreen",
             YellowGreen => "YellowGreen",
             Turbo => return write!(f, "{}", self.rgb.to_string()),
+            __Nonexhaustive => unreachable!(),
         };
         write!(f, "{}", name)
     }
@@ -250,6 +251,8 @@ pub enum TwitchColor {
     YellowGreen,
     /// Turbo colors are custom user-selected colors
     Turbo,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl From<RGB> for Color {

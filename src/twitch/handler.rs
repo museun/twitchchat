@@ -58,6 +58,7 @@ impl Handlers {
             Message::UserNotice(msg) => dispatch!(msg, on_user_notice),
             Message::UserState(msg) => dispatch!(msg, on_user_state),
             Message::GlobalUserState(msg) => dispatch!(msg, on_global_user_state),
+            Message::__Nonexhaustive => unreachable!(),
         };
 
         dispatch!(msg, on_message)

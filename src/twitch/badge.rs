@@ -29,6 +29,9 @@ pub enum BadgeKind {
     Partner,
     /// An Unknown badge
     Unknown(String),
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 /// Badges attached to a message
@@ -39,7 +42,7 @@ pub struct Badge {
     pub kind: BadgeKind,
     /// Any associated data with the badge
     ///
-    /// May be the version, the number of bits, the number of months in a substreak
+    /// May be the version, the number of bits, the number of months needed for the subscriber badge, etc.
     pub data: String,
 }
 
