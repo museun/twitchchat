@@ -68,3 +68,6 @@ impl Badge {
         })
     }
 }
+
+/// Metadata related to the chat badges.
+pub type BadgeInfo = Badge;
