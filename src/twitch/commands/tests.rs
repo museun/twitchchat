@@ -203,3 +203,24 @@ fn parse_commands() {
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 }
+
+#[test]
+fn parse_badge_info() {
+    let input = "@badge-info=subscriber/13;badges=subscriber/12;color=#0000FF;display-name=emilgardis;emote-sets=0;mod=0;subscriber=1;user-type=";
+    let tags = crate::irc::types::Tags::parse(&input);
+    assert_eq!(
+        badges(tags.get("badge-info").unwrap_or_default()),
+        vec![Badge {
+            kind: crate::BadgeKind::Subscriber,
+            data: "13".into(),
+        }],
+    );
+
+    assert_eq!(
+        badges(tags.get("badges").unwrap_or_default()),
+        vec![Badge {
+            kind: crate::BadgeKind::Subscriber,
+            data: "12".into(),
+        }],
+    );
+}

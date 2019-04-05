@@ -71,3 +71,7 @@ impl Badge {
         })
     }
 }
+
+/// Metadata related to the chat badges.
+// TODO verify that this is mirrored
+pub type BadgeInfo = Badge;

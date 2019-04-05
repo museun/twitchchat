@@ -18,6 +18,13 @@ impl UserState {
 }
 
 impl UserState {
+    /// Metadata related to the chat badges
+    ///
+    /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber.
+    pub fn badge_info(&self) -> Vec<BadgeInfo> {
+        badges(self.get("badge-info").unwrap_or_default())
+    }
+
     /// Badges attached to this message
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())

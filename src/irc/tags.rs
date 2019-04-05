@@ -9,7 +9,7 @@ use std::collections::HashMap;
 pub struct Tags(pub(crate) HashMap<String, String>);
 
 impl Tags {
-    pub(super) fn parse(input: &str) -> Self {
+    pub(crate) fn parse(input: &str) -> Self {
         debug_assert!(input.starts_with('@'));
         let map = input[1..].split_terminator(';').filter_map(|p| {
             let pos = p.find('=')?;
