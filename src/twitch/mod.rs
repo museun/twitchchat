@@ -4,6 +4,11 @@ mod emotes;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashMap;
+
 pub use self::badge::{Badge, BadgeInfo, BadgeKind};
 pub use self::emotes::Emotes;
 
@@ -20,6 +25,9 @@ pub use self::error::Error;
 
 mod client;
 pub use self::client::Client;
+
+mod adapter;
+pub use self::adapter::{ReadAdapter, ReadError, SyncReadAdapter};
 
 mod writer;
 pub use self::writer::Writer;
@@ -102,6 +110,42 @@ pub enum Message {
     // Reserve the right to add more fields to this enum
     #[doc(hidden)]
     __Nonexhaustive,
+}
+
+impl Message {
+    /// Converts a message into the internal message type, then into the Twitch 'command'
+    pub fn parse(msg: impl crate::ToMessage) -> Self {
+        // TODO be smarter about this
+        use crate::irc::types::{Message as IrcMessage, Prefix};
+        let msg = IrcMessage::Unknown {
+            prefix: msg.prefix().map(|nick| Prefix::User {
+                nick: nick.to_string(),
+                user: nick.to_string(),
+                host: nick.to_string(),
+            }),
+            tags: match msg.tags() {
+                Some(crate::TagType::Raw(raw)) => crate::Tags::parse(raw),
+                Some(crate::TagType::List(list)) => crate::Tags(
+                    list.clone()
+                        .into_iter()
+                        .collect::<HashMap<String, String>>(),
+                ),
+                Some(crate::TagType::Map(map)) => crate::Tags(map.clone()),
+                None => crate::Tags::default(),
+            },
+            head: msg.command().map(ToString::to_string).unwrap_or_default(),
+            args: match msg.args() {
+                Some(crate::ArgsType::Raw(raw)) => {
+                    raw.split(' ').map(ToString::to_string).collect()
+                }
+                Some(crate::ArgsType::List(list)) => list.clone(),
+                None => vec![],
+            },
+            tail: msg.data().map(ToString::to_string),
+        };
+
+        commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg))
+    }
 }
 
 pub(crate) mod filter;

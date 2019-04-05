@@ -34,6 +34,7 @@ pub use self::userstate::UserState;
 
 use crate::irc::types::*;
 use crate::twitch::{Badge, BadgeInfo, Color, Emotes, RGB};
+use crate::Tags;
 
 /// Tag allows access to the Tags part of the Message
 pub trait Tag {
@@ -74,7 +75,7 @@ fn emotes(s: &str) -> Vec<Emotes> {
 }
 
 /// Parses a Twitch commands from an IRC Message
-pub fn parse(msg: &Message) -> Option<super::Message> {
+pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
     use super::Message;
 
     struct Rev(Vec<String>);

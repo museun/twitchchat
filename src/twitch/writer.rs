@@ -307,9 +307,10 @@ impl<W: Write> Writer<W> {
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client};
+    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// let w = client.writer();
     /// w.join("museun").unwrap();
@@ -331,9 +332,10 @@ impl<W: Write> Writer<W> {
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client};
+    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// let w = client.writer();
     /// w.part("museun").unwrap();

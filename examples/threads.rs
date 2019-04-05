@@ -13,6 +13,9 @@ fn main() -> Result<(), Box<std::error::Error>> {
         (stream.try_clone()?, stream)
     };
 
+    // create the read adapter from the TcpStream
+    let read = twitchchat::SyncReadAdapter::new(read);
+
     // create a config
     let conf = user_config();
 

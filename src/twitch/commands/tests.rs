@@ -6,10 +6,11 @@ fn parse_bad_auth() {
     let mut stream = crate::teststream::TestStream::new();
     stream.write_message(input);
 
-    let mut client = crate::Client::new(stream.clone(), stream.clone());
+    let reader = crate::SyncReadAdapter::new(stream.clone());
+    let mut client = crate::Client::new(reader, stream.clone());
 
     let err = client.read_message().unwrap_err();
-    if let crate::twitch::Error::InvalidRegistration = err {
+    if let crate::ReadError::Inner(crate::twitch::Error::InvalidRegistration) = err {
         return;
     }
     panic!("unexpected error: {}", err)
@@ -207,7 +208,7 @@ fn parse_commands() {
 #[test]
 fn parse_badge_info() {
     let input = "@badge-info=subscriber/13;badges=subscriber/12;color=#0000FF;display-name=emilgardis;emote-sets=0;mod=0;subscriber=1;user-type=";
-    let tags = crate::irc::types::Tags::parse(&input);
+    let tags = crate::Tags::parse(&input);
     assert_eq!(
         badges(tags.get("badge-info").unwrap_or_default()),
         vec![Badge {

@@ -20,6 +20,9 @@ fn main() {
     // clone the tcpstream
     let write = read.try_clone().expect("must be able to clone");
 
+    // create the read adapter from the TcpStream
+    let read = twitchchat::SyncReadAdapter::new(read);
+
     // create a new client from the read, write pairs
     let mut client = Client::new(read, write);
 
@@ -85,7 +88,7 @@ fn main() {
                 user.user_id, user.display_name, user.color
             )
         }
-        Err(twitchchat::Error::InvalidRegistration) => {
+        Err(twitchchat::ReadError::Inner(twitchchat::Error::InvalidRegistration)) => {
             eprintln!("invalid nick/pass");
             std::process::exit(1);
         }

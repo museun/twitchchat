@@ -1,4 +1,4 @@
-use super::types::{Prefix, Tags};
+use super::types::Prefix;
 use log::*;
 
 /// A simple IRC message
@@ -40,7 +40,7 @@ pub enum Message {
         /// Optional prefix. The sender of the message
         prefix: Option<Prefix>,
         /// Any parsed tags
-        tags: Tags,
+        tags: crate::Tags,
         /// the `COMMAND` portion of the IRC message
         head: String,
         /// The argument list that follows the commands
@@ -61,9 +61,9 @@ impl Message {
         trace!("parsing: {}", input);
         let (tags, input) = if input.starts_with('@') {
             let pos = input.find(' ')?;
-            (Tags::parse(&input[..pos]), &input[pos + 1..])
+            (crate::Tags::parse(&input[..pos]), &input[pos + 1..])
         } else {
-            (Tags::default(), input)
+            (crate::Tags::default(), input)
         };
 
         // :prefix command

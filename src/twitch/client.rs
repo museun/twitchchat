@@ -1,13 +1,13 @@
 use log::*;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::Write;
 use std::sync::Arc;
 
 use super::filter::{FilterMap, MessageFilter};
-use super::{commands, Capability, Error, LocalUser, Message, MutexWrapper as Mutex, Writer};
+use super::{Capability, Error, LocalUser, Message, MutexWrapper as Mutex, Writer};
 
-use crate::irc::types::Message as IrcMessage;
 use crate::UserConfig;
 
+use super::adapter::{ReadAdapter, ReadError};
 use super::handler::Handlers;
 use super::Token;
 
@@ -20,30 +20,31 @@ use super::Token;
 /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
 ///
 /// ```no_run
-/// use twitchchat::{helpers::TestStream, Client};
+/// use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
 /// let stream = TestStream::new();
 /// let (r,w) = (stream.clone(), stream.clone());
+/// let r = SyncReadAdapter::new(r);
 /// let mut client = Client::new(r,w); // moves the r,w
 /// // register, join, on, etc
 /// client.run().unwrap();
 /// ```
 // TODO write usage
 pub struct Client<R, W> {
-    reader: BufReader<R>,
+    reader: R,
     filters: FilterMap<W>,
     handlers: Handlers,
     writer: Writer<W>,
 }
 
-impl<R: Read, W: Write> Client<R, W> {
+impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// Create a new Client from a
     /// [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
     /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
     ///
     /// This client is clonable, and thread safe.
-    pub fn new(read: R, write: W) -> Self {
+    pub fn new(reader: R, write: W) -> Self {
         Self {
-            reader: BufReader::new(read),
+            reader: reader,
             filters: FilterMap::default(),
             handlers: Handlers::default(),
             writer: Writer(Arc::new(Mutex::new(write))),
@@ -51,7 +52,7 @@ impl<R: Read, W: Write> Client<R, W> {
     }
 
     /// Consumes the client, returning the reader
-    pub fn into_reader(self) -> R {
+    pub fn into_reader(self) -> R::Reader {
         self.reader.into_inner()
     }
 
@@ -59,12 +60,12 @@ impl<R: Read, W: Write> Client<R, W> {
     ///
     /// This also pumping them through
     /// [`Client::on`](./struct.Client.html#method.on) filters
-    pub fn run(mut self) -> Result<(), Error> {
+    pub fn run(mut self) -> Result<(), ReadError<R::Error>> {
         loop {
             match self.read_message() {
                 Ok(..) => (),
-                Err(Error::InvalidMessage(msg)) => {
-                    warn!("read an invalid message: {}", msg);
+                Err(ReadError::InvalidMessage(msg)) => {
+                    warn!("invalid message: `{}`", msg);
                     continue;
                 }
                 Err(err) => return Err(err),
@@ -82,9 +83,10 @@ impl<R: Read, W: Write> Client<R, W> {
     ///
     /// Usage
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, UserConfig};
+    /// # use twitchchat::{helpers::TestStream, Client, UserConfig, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// let config = UserConfig::builder()
     ///                 .token(std::env::var("MY_PASSWORD").unwrap())
@@ -120,9 +122,10 @@ impl<R: Read, W: Write> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client};
+    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// match client.wait_for_ready() {
     ///     Ok(user) => println!("user id: {}", user.user_id),
@@ -131,7 +134,7 @@ impl<R: Read, W: Write> Client<R, W> {
     /// // we can be sure that we're ready to join
     /// client.writer().join("some_channel").unwrap();
     /// ```
-    pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
+    pub fn wait_for_ready(&mut self) -> Result<LocalUser, ReadError<R::Error>> {
         use crate::irc::types::Message as IRCMessage;
         let mut caps = vec![];
 
@@ -164,7 +167,7 @@ impl<R: Read, W: Write> Client<R, W> {
                     };
 
                     if !bad.is_empty() {
-                        return Err(Error::CapabilityRequired(bad));
+                        return Err(ReadError::CapabilityRequired(bad));
                     }
                 }
 
@@ -191,9 +194,10 @@ impl<R: Read, W: Write> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client};
+    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// match client.wait_for_irc_ready() {
     ///     Ok(name) => println!("end of motd, our name is: {}", name),
@@ -202,7 +206,7 @@ impl<R: Read, W: Write> Client<R, W> {
     /// // we can be sure that we're ready to join
     /// client.writer().join("some_channel").unwrap();
     /// ```
-    pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
+    pub fn wait_for_irc_ready(&mut self) -> Result<String, ReadError<R::Error>> {
         use crate::irc::types::Message as IrcMessage;
         loop {
             match self.read_message()? {
@@ -214,16 +218,15 @@ impl<R: Read, W: Write> Client<R, W> {
 
     /// Reads a [`Message`](./enum.Message.html#variants)
     ///
-    /// This will automatically handle some *tedious* messages, like the _heartbeat_ (PING)
-    ///
-    /// This also 'pumps' the messages through the filter
+    /// This 'pumps' the messages through the filter system
     ///
     /// Using this will drive the client (blocking for a read, then producing messages).
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client};
+    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
     /// # let mut stream = TestStream::new();
     /// # let (r, w) = (stream.clone(), stream.clone());
+    /// # let r = SyncReadAdapter::new(r);
     /// # let mut client = Client::new(r, w);
     /// // block the thread (i.e. wait for the client to close down)    
     /// while let Ok(msg) = client.read_message() {
@@ -235,55 +238,8 @@ impl<R: Read, W: Write> Client<R, W> {
     /// // or incrementally calling `client.read_message()`
     /// // when you want the next message
     /// ```
-    pub fn read_message(&mut self) -> Result<Message, Error> {
-        // TODO provide an internal buffer to prevent this dumb allocation
-        // using https://docs.rs/bytes/0.4.11/bytes/
-
-        let mut buf = String::new();
-        let len = self.reader.read_line(&mut buf).map_err(Error::Read)?;
-        // 0 == EOF
-        if len == 0 {
-            return Err(Error::CannotRead);
-        }
-
-        let buf = buf.trim_end();
-        if buf.is_empty() {
-            return Err(Error::CannotRead);
-        }
-
-        trace!("trying to parse message");
-        let msg = IrcMessage::parse(&buf) //
-            .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
-        trace!("parsed message");
-
-        // handle PINGs automatically
-        if let IrcMessage::Ping { token } = &msg {
-            self.writer.write_line(&format!("PONG :{}", token))?;
-        }
-
-        // sanity check, doing it here instead of after its been re-parsed to fail early
-        if let IrcMessage::Unknown {
-            prefix,
-            head,
-            args,
-            tail,
-            ..
-        } = &msg
-        {
-            if let (Some(crate::irc::types::Prefix::Server { host }), Some(data)) = (prefix, tail) {
-                if head == "NOTICE"
-                    && host == "tmi.twitch.tv"
-                    && data == "Improperly formatted auth"
-                    // excellent
-                    && args.get(0) == Some(&"*".into())
-                {
-                    trace!("got a registartion error");
-                    return Err(Error::InvalidRegistration);
-                }
-            }
-        }
-
-        let msg = commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg));
+    pub fn read_message(&mut self) -> Result<Message, ReadError<R::Error>> {
+        let msg = self.reader.read_message()?;
         trace!("<- {:?}", msg);
         {
             let w = self.writer();
@@ -295,11 +251,9 @@ impl<R: Read, W: Write> Client<R, W> {
                 }
             }
         }
-
         trace!("begin dispatch");
         self.handlers.handle(msg.clone());
         trace!("end dispatch");
-
         Ok(msg)
     }
 }
@@ -312,9 +266,10 @@ impl<R, W: Write> Client<R, W> {
 
     Usage:
     ```no_run
-    # use twitchchat::{helpers::TestStream, Client, Writer};
+    # use twitchchat::{helpers::TestStream, Client, Writer, SyncReadAdapter};
     # let mut stream = TestStream::new();
     # let (r, w) = (stream.clone(), stream.clone());
+    # let r = SyncReadAdapter::new(r);
     # let mut client = Client::new(r, w);
     use twitchchat::commands::*;
     let pm_tok = client.on(|msg: PrivMsg, w: Writer<_>| {

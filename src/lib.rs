@@ -33,7 +33,7 @@ The client is thread safe, and clonable so one could call [`Client::read_message
 # A simple example
 ```no_run
 use std::net::TcpStream;
-use twitchchat::{commands::PrivMsg, Capability, Client, Writer};
+use twitchchat::{commands::PrivMsg, Capability, Client, Writer, SyncReadAdapter};
 use twitchchat::{TWITCH_IRC_ADDRESS, UserConfig};
 # fn main() {
 // create a simple TcpStream
@@ -54,7 +54,10 @@ let config = UserConfig::builder()
                 .build()
                 .unwrap();
 
-// client takes a std::io::Read and an std::io::Write
+// a sync read adapter (for wrapping std::io::Read into something the client will use)
+let read = SyncReadAdapter::new(read);
+
+// client takes a ReadAdapter and an std::io::Write
 let mut client = Client::new(read, write);
 
 // register with the user configuration
@@ -126,6 +129,10 @@ The [`irc`](./irc/index.html) module contains a **very** simplistic representati
 /// IRC-related stuff
 pub mod irc;
 
+mod tags;
+/// IRCv3 Tags
+pub use tags::Tags;
+
 /// Types associated with twitch
 mod twitch;
 pub use twitch::*;
@@ -152,3 +159,81 @@ pub(crate) const VERSION_STR: &str =
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 /// The Twitch IRC address for TLS connections
 pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";
+
+/// Convert an IRC-like message type into something that the Twitch commands can be parsed from
+///
+/// Refer to this form when implementing this trait:
+///
+/// raw string form: `@tags :prefix command args :data\r\n`
+pub trait ToMessage {
+    /// Get the tags portion of the IRC message
+    fn tags(&self) -> Option<TagType<'_>>;
+    /// Get the prefix portion of the IRC message
+    fn prefix(&self) -> Option<&str>;
+    /// Get the command portion of the IRC message
+    fn command(&self) -> Option<&str>;
+    /// Get the args portion of the IRC message
+    fn args(&self) -> Option<ArgsType<'_>>;
+    /// Get the data portion of the IRC message
+    fn data(&self) -> Option<&str>;
+}
+
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashMap;
+
+/// A representation of IRCv3 tags, a raw string or a Vec of Key-Vals
+pub enum TagType<'a> {
+    /// Raw string
+    Raw(&'a str),
+    /// List of Key -> Values (owned)
+    List(&'a Vec<(String, String)>),
+    /// Map of Key -> Values (owned)
+    Map(&'a HashMap<String, String>),
+}
+
+/// A representation of the args list portion of the IRC message
+pub enum ArgsType<'a> {
+    /// A raw string
+    Raw(&'a str),
+    /// A list of parts parsed from the whitespace-separated raw string
+    List(&'a Vec<String>),
+}
+
+use crate::irc::types::Message as IrcMessage;
+impl ToMessage for IrcMessage {
+    fn tags(&self) -> Option<TagType<'_>> {
+        match self {
+            IrcMessage::Unknown { tags, .. } => Some(TagType::Map(&tags.0)),
+            _ => None,
+        }
+    }
+    fn prefix(&self) -> Option<&str> {
+        match self {
+            IrcMessage::Unknown {
+                prefix: Some(crate::irc::types::Prefix::User { nick, .. }),
+                ..
+            } => Some(&nick),
+            _ => None,
+        }
+    }
+    fn command(&self) -> Option<&str> {
+        match self {
+            IrcMessage::Unknown { head, .. } => Some(&head),
+            _ => None,
+        }
+    }
+    fn args(&self) -> Option<ArgsType<'_>> {
+        match self {
+            IrcMessage::Unknown { args, .. } => Some(ArgsType::List(&args)),
+            _ => None,
+        }
+    }
+    fn data(&self) -> Option<&str> {
+        match self {
+            IrcMessage::Unknown { tail, .. } => tail.as_ref().map(|s| s.as_str()),
+            _ => None,
+        }
+    }
+}
