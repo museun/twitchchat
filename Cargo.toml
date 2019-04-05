@@ -10,7 +10,7 @@ keywords = [ "twitch", "irc" ]
 license = "0BSD"
 
 [badges]
-circle-ci = { repository = "https://github.com/museun/twitchchat", branch = "master" }
+circle-ci = { repository = "museun/twitchchat", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
