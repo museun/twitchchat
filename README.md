@@ -50,6 +50,9 @@ fn main() {
     let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect");
     // clone the tcpstream
     let write = read.try_clone().expect("must be able to clone");
+    
+    // create a read adapter
+    let read = SyncReadAdapter::new(read);
 
     // create a new client from the read, write pairs
     let mut client = Client::new(read, write);
