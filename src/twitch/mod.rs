@@ -99,6 +99,9 @@ pub enum Message {
     UserState(commands::UserState),
     /// On successful login.
     GlobalUserState(commands::GlobalUserState),
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 pub(crate) mod filter;
@@ -113,7 +116,7 @@ pub use handler::Handler;
 /// This is used in both the simple filters ([`Client::on`](./struct.Client.html#method.on) and [`Client::off`](./struct.Client.html#method.off))
 ///
 /// and in the more flexible handler system ([`Client::handler`](./struct.Client.html#method.handler), [`Client::remove_handler`](./struct.Client.html#method.remove_handler))
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Token(pub(super) usize);
 
 impl std::fmt::Display for Token {

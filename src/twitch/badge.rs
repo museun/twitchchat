@@ -2,7 +2,7 @@
 ///
 /// Any unknown (e.g. custom badges/sub events, etc) are placed into the
 /// `Unknown` variant
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BadgeKind {
     /// Admin badge
@@ -29,17 +29,20 @@ pub enum BadgeKind {
     Partner,
     /// An Unknown badge
     Unknown(String),
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 /// Badges attached to a message
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Badge {
     /// The kind of Badge
     pub kind: BadgeKind,
     /// Any associated data with the badge
     ///
-    /// May be the version, the number of bits, the number of months in a substreak
+    /// May be the version, the number of bits, the number of months needed for the subscriber badge, etc.
     pub data: String,
 }
 

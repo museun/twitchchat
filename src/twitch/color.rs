@@ -1,6 +1,6 @@
 use std::str::FromStr;
 /// An error returned from the FromStr impls of RGB and Color
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ColorError {
     /// An invalid Hex string for `RGB`
     InvalidHexString,
@@ -20,7 +20,7 @@ impl std::fmt::Display for ColorError {
 impl std::error::Error for ColorError {}
 
 /// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct RGB(pub u8, pub u8, pub u8);
 
 impl RGB {
@@ -136,7 +136,7 @@ impl FromStr for RGB {
 /// SpringGreen |`#00FF7F`| springgreen, spring_green, spring green
 /// YellowGreen |`#ADFF2F`| yellowgreen, yellow_green, yellow green
 /// Turbo |*custom*| ---
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Color {
     /// The name of the Twitch color
@@ -165,6 +165,7 @@ impl std::fmt::Display for Color {
             SpringGreen => "SpringGreen",
             YellowGreen => "YellowGreen",
             Turbo => return write!(f, "{}", self.rgb.to_string()),
+            __Nonexhaustive => unreachable!(),
         };
         write!(f, "{}", name)
     }
@@ -215,7 +216,7 @@ impl FromStr for Color {
 }
 
 /// These are the default Twitch colors
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TwitchColor {
     /// RGB (hex): #0000FF
@@ -250,6 +251,8 @@ pub enum TwitchColor {
     YellowGreen,
     /// Turbo colors are custom user-selected colors
     Turbo,
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl From<RGB> for Color {

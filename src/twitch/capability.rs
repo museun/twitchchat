@@ -3,7 +3,7 @@
 /// The default, `generic` is very simplistic (basically just read/write PRIVMSGs for a channel)
 ///
 /// While enabling `membership` + `commands` + `tags` will allow you to get a much more rich set of messages
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Capability {
     /// Generic capability, the default.
@@ -22,6 +22,9 @@ pub enum Capability {
     ///
     /// Provides metadata attached to each message
     Tags,
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl Capability {
@@ -31,6 +34,7 @@ impl Capability {
             Capability::Membership => Some("CAP REQ :twitch.tv/membership"),
             Capability::Commands => Some("CAP REQ :twitch.tv/commands"),
             Capability::Tags => Some("CAP REQ :twitch.tv/tags"),
+            Capability::__Nonexhaustive => unreachable!(),
         }
     }
 }

@@ -108,6 +108,9 @@ pub enum Filter {
     UserNotice,
     UserState,
     GlobalUserState,
+    // Reserve the right to add more fields to this enum
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 pub trait MessageFilter {
@@ -135,6 +138,7 @@ impl Message {
             Message::UserState { .. } => UserState,
             Message::GlobalUserState { .. } => GlobalUserState,
             Message::Irc { .. } => Irc,
+            Message::__Nonexhaustive => unreachable!(),
         }
     }
 }

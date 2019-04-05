@@ -3,7 +3,7 @@ use super::*;
 /// Simple channel wrapper.
 ///
 /// This ensures the twitch channels align with IRC naming scheme.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Channel(String);
 
