@@ -10,7 +10,7 @@ use std::ops::Range;
 ///
 /// `"testing Kappa"` would be `25:8-13`
 /// `"Kappa testing Kappa"` would be `25:0-5,14-19`
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Emotes {
     /// The emote id, e.g. `Kappa = 25`

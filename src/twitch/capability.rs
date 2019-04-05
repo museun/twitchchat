@@ -3,7 +3,7 @@
 /// The default, `generic` is very simplistic (basically just read/write PRIVMSGs for a channel)
 ///
 /// While enabling `membership` + `commands` + `tags` will allow you to get a much more rich set of messages
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Capability {
     /// Generic capability, the default.

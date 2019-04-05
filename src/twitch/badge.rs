@@ -2,7 +2,7 @@
 ///
 /// Any unknown (e.g. custom badges/sub events, etc) are placed into the
 /// `Unknown` variant
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BadgeKind {
     /// Admin badge
@@ -32,7 +32,7 @@ pub enum BadgeKind {
 }
 
 /// Badges attached to a message
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Badge {
     /// The kind of Badge
