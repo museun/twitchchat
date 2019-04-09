@@ -19,7 +19,7 @@ pub mod mutex_wrapper {
 
         #[cfg(not(features = "parking_lot"))]
         pub fn lock(&self) -> std::sync::MutexGuard<'_, T> {
-            self.0.lock().unwrap()
+            self.0.lock().expect("acquire the lock")
         }
     }
 }

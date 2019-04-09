@@ -62,7 +62,7 @@ impl UserNotice {
     }
     /// The type of notice, see NoticeType
     pub fn msg_id(&self) -> NoticeType {
-        let kind = self.get("msg-id").unwrap();
+        let kind = self.get("msg-id").expect("msg-id on usernotice");
         match kind {
             "sub" => NoticeType::Sub,
             "resub" => NoticeType::Resub,
@@ -164,7 +164,7 @@ impl UserNotice {
     }
     /// The message printed in chat along with this notice.
     pub fn system_msg(&self) -> String {
-        let msg = self.get("system-msg").unwrap();
+        let msg = self.get("system-msg").expect("system-msg on usernotice");
         msg.replace("\\s", " ")
             .replace("\\r", "\r")
             .replace("\\n", "\n")

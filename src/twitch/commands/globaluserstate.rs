@@ -35,7 +35,8 @@ impl GlobalUserState {
     }
     /// Your user id
     pub fn user_id(&self) -> u64 {
-        self.get_parsed("user-id").unwrap()
+        self.get_parsed("user-id")
+            .expect("user-id on globaluserstate")
     }
 }
 

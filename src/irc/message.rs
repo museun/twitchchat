@@ -84,7 +84,10 @@ impl Message {
                     .first()
                     .map(|d| *d == "ACK")
                     .unwrap_or_else(|| false),
-                cap: parts.tail.map(str::to_string).unwrap(),
+                cap: parts
+                    .tail
+                    .map(str::to_string)
+                    .expect("tail to exist on cap message"),
             },
             "001" => Message::Connected {
                 name: parts.next()?,
@@ -117,10 +120,12 @@ impl<'a> Parts<'a> {
         let mut iter = input.split_terminator(" :");
         let index = input.find(" :");
         let (mut iter, tail) = (
-            iter.next().map(|s| s.split_terminator(' ')).unwrap(), // TODO handle these potential panics
-            index.map(|i| &input[i + 2..]).filter(|s| !s.is_empty()), // TODO handle these potential panics
+            iter.next()
+                .map(|s| s.split_terminator(' '))
+                .expect("iter to exist on parts"),
+            index.map(|i| &input[i + 2..]).filter(|s| !s.is_empty()),
         );
-        let head = iter.next().unwrap(); // TODO handle these potential panics
+        let head = iter.next().expect("head to exist on parts");
         let args = iter.rev().collect();
         Self { head, args, tail }
     }

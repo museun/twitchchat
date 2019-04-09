@@ -42,12 +42,14 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
     ///
     /// This client is clonable, and thread safe.
-    pub fn new(reader: R, write: W) -> Self {
+    pub fn new(mut reader: R, write: W) -> Self {
+        let writer = Writer(Arc::new(Mutex::new(write)));
+        reader.give_writer(writer.clone());
         Self {
             reader: reader,
             filters: FilterMap::default(),
             handlers: Handlers::default(),
-            writer: Writer(Arc::new(Mutex::new(write))),
+            writer: writer,
         }
     }
 

@@ -189,7 +189,7 @@ impl FromStr for Color {
 
         let find = |color| {
             let colors = twitch_colors();
-            colors[colors.iter().position(|(d, _)| *d == color).unwrap()]
+            colors[dbg!(colors.iter().position(|(d, _)| *d == color)).unwrap()]
         };
 
         let (kind, rgb) = match input {

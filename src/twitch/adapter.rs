@@ -109,6 +109,8 @@ impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
             return Err(Error::CannotRead.into());
         }
 
+        trace!("<- {}", buf);
+
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
@@ -118,7 +120,7 @@ impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
         if let IrcMessage::Ping { token } = &msg {
             self.writer
                 .as_ref()
-                .unwrap()
+                .expect("writer must have been set")
                 .write_line(&format!("PONG :{}", token))?;
         }
 
