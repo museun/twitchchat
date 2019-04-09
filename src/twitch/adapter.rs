@@ -114,39 +114,40 @@ impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
         trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf) //
             .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
-        trace!("parsed message");
+        trace!("parsed message: {:?}", msg);
 
-        // handle PINGs automatically
-        if let IrcMessage::Ping { token } = &msg {
-            self.writer
-                .as_ref()
-                .expect("writer must have been set")
-                .write_line(&format!("PONG :{}", token))?;
-        }
-
-        // sanity check, doing it here instead of after its been re-parsed to fail early
-        if let IrcMessage::Unknown {
-            prefix,
-            head,
-            args,
-            tail,
-            ..
-        } = &msg
-        {
-            if let (Some(crate::irc::types::Prefix::Server { host }), Some(data)) = (prefix, tail) {
-                if head == "NOTICE"
+        match &msg {
+            IrcMessage::Ping { token } => {
+                self.writer
+                    .as_ref()
+                    .expect("writer must have been set")
+                    .write_line(&format!("PONG :{}", token))?;
+                Ok(Message::Irc(msg))
+            }
+            IrcMessage::Unknown {
+                prefix,
+                head,
+                args,
+                tail,
+                ..
+            } => {
+                if let (Some(crate::irc::types::Prefix::Server { host }), Some(data)) =
+                    (prefix, tail)
+                {
+                    if head == "NOTICE"
                     && host == "tmi.twitch.tv"
                     && data == "Improperly formatted auth"
                     // excellent
                     && args.get(0) == Some(&"*".into())
-                {
-                    trace!("got a registartion error");
-                    return Err(Error::InvalidRegistration.into());
+                    {
+                        trace!("got a registartion error");
+                        return Err(Error::InvalidRegistration.into());
+                    }
                 }
+                Ok(Message::parse(msg))
             }
+            _ => Ok(Message::Irc(msg)),
         }
-
-        Ok(Message::parse(msg))
     }
 
     fn into_inner(self) -> Self::Reader {
