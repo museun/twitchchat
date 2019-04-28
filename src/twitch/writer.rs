@@ -6,7 +6,7 @@ use super::{Channel, Color, Error, MutexWrapper as Mutex};
 /// A thread-safe, clonable writer for the Twitch client
 pub struct Writer<W>(pub(crate) Arc<Mutex<W>>);
 
-impl<W: Write> Clone for Writer<W> {
+impl<W> Clone for Writer<W> {
     fn clone(&self) -> Self {
         Self(Arc::clone(&self.0))
     }
