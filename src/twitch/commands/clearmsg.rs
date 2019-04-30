@@ -6,15 +6,16 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearMsg {
-    /// IRC tags
-    pub tags: Tags,
-    /// The channel this event happened on
-    pub channel: Channel,
-    /// The message being removed
-    pub message: Option<String>,
+    pub(super) tags: Tags,
+    pub(super) channel: Channel,
+    pub(super) message: Option<String>,
 }
 
 impl ClearMsg {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// The channel this event happened on
     pub fn channel(&self) -> &Channel {
         &self.channel

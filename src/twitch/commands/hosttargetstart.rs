@@ -2,12 +2,9 @@
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HostTargetStart {
-    /// The hosting channel
-    pub source: String,
-    /// The hosted channel
-    pub target: String,
-    /// Optional number of viewers watching
-    pub viewers: Option<usize>,
+    pub(super) source: String,
+    pub(super) target: String,
+    pub(super) viewers: Option<usize>,
 }
 
 impl HostTargetStart {

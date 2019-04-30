@@ -12,12 +12,9 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NamesStart {
-    /// Your user for this event
-    pub user: String,
-    /// The channel this event is happening on
-    pub channel: Channel,
-    /// List of users returned by this
-    pub users: Vec<String>,
+    pub(super) user: String,
+    pub(super) channel: Channel,
+    pub(super) users: Vec<String>,
 }
 
 impl NamesStart {

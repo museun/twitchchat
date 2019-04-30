@@ -4,12 +4,9 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mode {
-    /// The channel this event happened on
-    pub channel: Channel,
-    /// Whether they lost or gained the status
-    pub status: ModeStatus,
-    /// Which user was effected by this
-    pub user: String,
+    pub(super) channel: Channel,
+    pub(super) status: ModeStatus,
+    pub(super) user: String,
 }
 
 impl Mode {

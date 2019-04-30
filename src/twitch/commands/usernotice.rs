@@ -4,15 +4,16 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserNotice {
-    /// IRC tags
-    pub tags: Tags,
-    /// The channel this event is for
-    pub channel: Channel,
-    /// Extra data provided by twitch
-    pub message: Option<String>,
+    pub(super) tags: Tags,
+    pub(super) channel: Channel,
+    pub(super) message: Option<String>,
 }
 
 impl UserNotice {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// The channel this event is for
     pub fn channel(&self) -> &Channel {
         &self.channel

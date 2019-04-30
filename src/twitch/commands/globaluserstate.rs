@@ -4,11 +4,14 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GlobalUserState {
-    /// IRC tags
-    pub tags: Tags,
+    pub(super) tags: Tags,
 }
 
 impl GlobalUserState {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// List of badges your user has
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())

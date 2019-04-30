@@ -4,13 +4,15 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RoomState {
-    /// IRC tags
-    pub tags: Tags,
-    /// The channel this event came from
-    pub channel: Channel,
+    pub(super) tags: Tags,
+    pub(super) channel: Channel,
 }
 
 impl RoomState {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// The channel this event came from
     pub fn channel(&self) -> &Channel {
         &self.channel

@@ -6,15 +6,16 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearChat {
-    /// IRC tags
-    pub tags: Tags,
-    /// The channel this event happened on
-    pub channel: Channel,
-    /// The owner of the message. Empty if its the entire channel
-    pub user: Option<String>,
+    pub(super) tags: Tags,
+    pub(super) channel: Channel,
+    pub(super) user: Option<String>,
 }
 
 impl ClearChat {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// The owner of the message. Empty if its the entire channel
     pub fn user(&self) -> Option<&str> {
         self.user.as_ref().map(String::as_str)

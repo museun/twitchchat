@@ -4,19 +4,18 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrivMsg {
-    /// IRC tags
-    pub tags: Tags,
-    /// The User that sent this message
-    pub user: String,
-    /// The channel this message was sent to
-    pub channel: Channel,
-    /// The message body
-    pub message: String,
-    /// Whether this message was an action (someone doing `/me message`)
-    pub action: bool,
+    pub(super) tags: Tags,
+    pub(super) user: String,
+    pub(super) channel: Channel,
+    pub(super) message: String,
+    pub(super) action: bool,
 }
 
 impl PrivMsg {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// The irc name of the user (generally same as their twitch account name)
     pub fn user(&self) -> &str {
         &self.user

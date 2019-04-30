@@ -4,13 +4,15 @@ use super::*;
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserState {
-    /// IRC tags
-    pub tags: Tags,
-    /// Channel this even happened on
-    pub channel: Channel,
+    pub(super) tags: Tags,
+    pub(super) channel: Channel,
 }
 
 impl UserState {
+    /// IRC tags
+    pub fn tags(&self) -> &Tags {
+        &self.tags
+    }
     /// Channel this even happened on
     pub fn channel(&self) -> &Channel {
         &self.channel
