@@ -7,12 +7,12 @@ pub struct UserState {
     /// IRC tags
     pub tags: Tags,
     /// Channel this even happened on
-    pub channel: String,
+    pub channel: Channel,
 }
 
 impl UserState {
     /// Channel this even happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
 }

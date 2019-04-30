@@ -1,3 +1,5 @@
+use super::*;
+
 /// When a user joins a channel
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -5,7 +7,7 @@ pub struct Join {
     /// Name of the user that joined
     pub user: String,
     /// The channel that they joined
-    pub channel: String,
+    pub channel: Channel,
 }
 
 impl Join {
@@ -14,7 +16,7 @@ impl Join {
         &self.user
     }
     /// The channel that they joined
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
 }

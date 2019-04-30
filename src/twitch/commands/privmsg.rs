@@ -9,7 +9,7 @@ pub struct PrivMsg {
     /// The User that sent this message
     pub user: String,
     /// The channel this message was sent to
-    pub channel: String,
+    pub channel: Channel,
     /// The message body
     pub message: String,
     /// Whether this message was an action (someone doing `/me message`)
@@ -22,7 +22,7 @@ impl PrivMsg {
         &self.user
     }
     /// The channel this message was sent to
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// The message body

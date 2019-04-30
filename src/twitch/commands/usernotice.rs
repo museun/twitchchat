@@ -7,14 +7,14 @@ pub struct UserNotice {
     /// IRC tags
     pub tags: Tags,
     /// The channel this event is for
-    pub channel: String,
+    pub channel: Channel,
     /// Extra data provided by twitch
     pub message: Option<String>,
 }
 
 impl UserNotice {
     /// The channel this event is for
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// The message. This is omitted if the user did not enter a message.

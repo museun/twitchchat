@@ -1,3 +1,5 @@
+use super::*;
+
 /// List current chatters in a channel. (marks the end)
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -5,7 +7,7 @@ pub struct NamesEnd {
     /// Your user for this event
     pub user: String,
     /// The channel this event happened on
-    pub channel: String,
+    pub channel: Channel,
 }
 
 impl NamesEnd {
@@ -14,7 +16,7 @@ impl NamesEnd {
         &self.user
     }
     /// The channel this event happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
 }

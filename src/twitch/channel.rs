@@ -41,6 +41,18 @@ where
     }
 }
 
+impl PartialEq<&str> for Channel {
+    fn eq(&self, other: &&str) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<String> for Channel {
+    fn eq(&self, other: &String) -> bool {
+        self.0.eq(other)
+    }
+}
+
 impl std::ops::Deref for Channel {
     type Target = String;
     fn deref(&self) -> &Self::Target {
@@ -54,6 +66,14 @@ mod tests {
     #[test]
     fn good_channel() {
         assert_eq!(Channel::validate("museun").unwrap().0, "#museun");
+    }
+
+    #[test]
+    fn equals() {
+        let s = "foobar";
+        let ch: Channel = s.into();
+        assert!(ch == "#foobar");
+        assert!(ch == "#foobar".to_string());
     }
 
     #[test]

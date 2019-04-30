@@ -7,12 +7,12 @@ pub struct RoomState {
     /// IRC tags
     pub tags: Tags,
     /// The channel this event came from
-    pub channel: String,
+    pub channel: Channel,
 }
 
 impl RoomState {
     /// The channel this event came from
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
 }

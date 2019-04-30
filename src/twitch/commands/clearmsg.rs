@@ -9,14 +9,14 @@ pub struct ClearMsg {
     /// IRC tags
     pub tags: Tags,
     /// The channel this event happened on
-    pub channel: String,
+    pub channel: Channel,
     /// The message being removed
     pub message: Option<String>,
 }
 
 impl ClearMsg {
     /// The channel this event happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// The message.

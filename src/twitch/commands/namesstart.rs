@@ -1,3 +1,5 @@
+use super::*;
+
 /// List current chatters in a channel. (marks the start begin)
 ///
 /// If there are more than 1000 chatters in a room, NAMES return only the list
@@ -13,7 +15,7 @@ pub struct NamesStart {
     /// Your user for this event
     pub user: String,
     /// The channel this event is happening on
-    pub channel: String,
+    pub channel: Channel,
     /// List of users returned by this
     pub users: Vec<String>,
 }
@@ -24,7 +26,7 @@ impl NamesStart {
         &self.user
     }
     /// The channel this event is happening on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// List of users returned by this

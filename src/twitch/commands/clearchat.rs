@@ -9,7 +9,7 @@ pub struct ClearChat {
     /// IRC tags
     pub tags: Tags,
     /// The channel this event happened on
-    pub channel: String,
+    pub channel: Channel,
     /// The owner of the message. Empty if its the entire channel
     pub user: Option<String>,
 }
@@ -20,7 +20,7 @@ impl ClearChat {
         self.user.as_ref().map(String::as_str)
     }
     /// The channel this event happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
 }

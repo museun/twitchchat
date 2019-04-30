@@ -1,9 +1,11 @@
+use super::*;
+
 /// When a user gains or loses moderator (operator) status in a channel.
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mode {
     /// The channel this event happened on
-    pub channel: String,
+    pub channel: Channel,
     /// Whether they lost or gained the status
     pub status: ModeStatus,
     /// Which user was effected by this
@@ -12,7 +14,7 @@ pub struct Mode {
 
 impl Mode {
     /// The channel this event happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// Whether they lost or gained the status

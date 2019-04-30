@@ -7,14 +7,14 @@ pub struct Notice {
     /// IRC tags
     pub tags: Tags,
     /// The channel this event happened on
-    pub channel: String,
+    pub channel: Channel,
     /// The message from the server
     pub message: String,
 }
 
 impl Notice {
     /// The channel this event happened on
-    pub fn channel(&self) -> &str {
+    pub fn channel(&self) -> &Channel {
         &self.channel
     }
     /// The message from the server
