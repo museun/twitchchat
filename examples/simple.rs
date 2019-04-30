@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         if let Message::PrivMsg(msg) = msg {
             println!("{}: {}", msg.user(), msg.message());
             if msg.message().contains(&mention) {
-                w.send(msg.channel, "VoHiYo")?;
+                w.send(msg.channel(), "VoHiYo")?;
             }
         }
     }

@@ -49,12 +49,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
     impl<W: io::Write> Handler for Bar<W> {
         fn on_priv_msg(&mut self, msg: Arc<PrivMsg>) {
             if msg.message().contains(&self.mention) {
-                self.writer.send(&msg.channel, "VoHiYo").unwrap();
+                self.writer.send(msg.channel(), "VoHiYo").unwrap();
             }
         }
         fn on_join(&mut self, msg: Arc<Join>) {
-            if msg.channel == "#museun" {
-                eprintln!("{:?} joined.", msg.user);
+            if msg.channel() == "#museun" {
+                eprintln!("{:?} joined.", msg.user());
             }
         }
     }

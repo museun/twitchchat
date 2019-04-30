@@ -45,7 +45,7 @@ fn main() {
         // if someone sent more than 3 Kappas, send a Kappa back
         if kappas >= 3 {
             // using the provided Writer
-            w.send(msg.channel, "Kappa").unwrap();
+            w.send(msg.channel(), "Kappa").unwrap();
         }
     });
 

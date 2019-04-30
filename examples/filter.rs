@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     client.on(move |msg: PrivMsg, w: Writer<_>| {
         if msg.message().contains(&mention) {
-            w.send(msg.channel, "VoHiYo").unwrap();
+            w.send(msg.channel(), "VoHiYo").unwrap();
         }
     });
 

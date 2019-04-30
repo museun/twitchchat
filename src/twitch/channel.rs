@@ -20,12 +20,20 @@ impl Channel {
     }
 }
 
+// TODO these are atrocious
+
+impl From<&Channel> for Channel {
+    fn from(ch: &Channel) -> Self {
+        ch.clone()
+    }
+}
+
 impl<T> From<T> for Channel
 where
-    T: ToString,
+    T: Into<String>,
 {
     fn from(name: T) -> Self {
-        let name = name.to_string();
+        let name = name.into();
         if name.is_empty() {
             return Self("".into());
         }
@@ -38,6 +46,18 @@ where
         };
 
         Self(name)
+    }
+}
+
+impl std::fmt::Display for Channel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl PartialEq<str> for Channel {
+    fn eq(&self, other: &str) -> bool {
+        self.0.eq(other)
     }
 }
 
@@ -91,12 +111,10 @@ mod tests {
 
         let channels: Vec<Channel> = vec![
             s.as_str().into(),
-            (&s).into(),
             s.clone().into(),
             s.into(),
             "museun".into(),
             String::from("museun").into(),
-            (&String::from("museun")).into(),
         ];
 
         for name in channels {
