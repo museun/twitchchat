@@ -28,7 +28,11 @@ impl Handlers {
     }
 
     // its seeing this after the macro has been expanded.
-    #[allow(clippy::cognitive_complexity)]
+    #[allow(
+        clippy::unknown_clippy_lints,
+        clippy::cyclomatic_complexity,
+        clippy::cognitive_complexity
+    )]
     pub fn handle(&mut self, msg: Message) {
         macro_rules! dispatch {
             ($msg:expr, $func:tt) => {{

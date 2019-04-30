@@ -232,7 +232,7 @@ impl ToMessage for IrcMessage {
     }
     fn data(&self) -> Option<&str> {
         match self {
-            IrcMessage::Unknown { tail, .. } => tail.as_ref().map(|s| s.as_str()),
+            IrcMessage::Unknown { tail, .. } => tail.as_ref().map(String::as_str),
             _ => None,
         }
     }

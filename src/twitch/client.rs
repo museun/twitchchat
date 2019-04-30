@@ -46,10 +46,10 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
         let writer = Writer(Arc::new(Mutex::new(write)));
         reader.give_writer(writer.clone());
         Self {
-            reader: reader,
+            reader,
             filters: FilterMap::default(),
             handlers: Handlers::default(),
-            writer: writer,
+            writer,
         }
     }
 
