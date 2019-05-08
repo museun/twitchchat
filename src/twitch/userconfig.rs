@@ -78,7 +78,6 @@ impl UserConfigBuilder {
     /// Enable or disable the commands capability
     ///
     /// Disabled by default
-
     pub fn commands(mut self) -> Self {
         self.toggle_cap(Capability::Commands);
         self

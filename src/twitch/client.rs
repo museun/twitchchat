@@ -337,7 +337,7 @@ impl<R, W: Write> Client<R, W> {
     /// Remove a previously added handler, using the returned token
     ///
     /// Returns true if this handler existed
-    pub fn remove_handler<H>(&mut self, tok: Token) -> bool {
+    pub fn remove_handler(&mut self, tok: Token) -> bool {
         let ok = self.handlers.remove(tok);
         trace!("tried to remove handler, id: {}, status: {}", tok, ok);
         ok
