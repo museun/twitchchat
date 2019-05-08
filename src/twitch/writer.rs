@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::io::Write;
 use std::sync::Arc;
 
@@ -136,7 +137,10 @@ impl<W: Write> Writer<W> {
     /// Reason is optional and will be shown to the target user and other moderators.
     ///
     /// Use [`Writer::unban`](./struct.Writer.html#method.unban) to remove a ban.
-    pub fn ban(&self, username: &str, reason: Option<&str>) -> Result<(), Error> {
+    pub fn ban<S>(&self, username: S, reason: Option<&str>) -> Result<(), Error>
+    where
+        S: Display,
+    {
         match reason {
             Some(reason) => self.command(format!("/ban {} {}", username, reason)),
             None => self.command(format!("/ban {}", username)),
@@ -144,7 +148,10 @@ impl<W: Write> Writer<W> {
     }
 
     /// Removes a ban on a user.
-    pub fn unban(&self, username: &str) -> Result<(), Error> {
+    pub fn unban<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(format!("/unban {}", username))
     }
 
@@ -191,14 +198,20 @@ impl<W: Write> Writer<W> {
     /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
     ///
     /// (**NOTE**: renamed to `op` because r#mod is annoying to type)
-    pub fn op(&self, username: &str) -> Result<(), Error> {
+    pub fn op<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(&format!("/mod {}", username))
     }
 
     /// Revoke moderator status from a user.
     ///
     /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
-    pub fn unmod(&self, username: &str) -> Result<(), Error> {
+    pub fn unmod<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(&format!("/unmod {}", username))
     }
 
@@ -260,12 +273,15 @@ impl<W: Write> Writer<W> {
     /// Reason is optional and will be shown to the target user and other moderators.
     ///
     /// Use [`Writer::untimeout`](./struct.Writer.html#method.untimeout) to remove a timeout.
-    pub fn timeout(
+    pub fn timeout<S>(
         &self,
-        username: &str,
+        username: S,
         duration: Option<&str>,
         reason: Option<&str>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), Error>
+    where
+        S: Display,
+    {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         // and verify the duration stuff
         let timeout = match (duration, reason) {
@@ -278,26 +294,38 @@ impl<W: Write> Writer<W> {
     }
 
     /// Removes a timeout on a user.
-    pub fn untimeout(&self, username: &str) -> Result<(), Error> {
+    pub fn untimeout<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(format!("/untimeout {}", username))
     }
 
     /// Grant VIP status to a user.
     ///
     /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
-    pub fn vip(&self, username: &str) -> Result<(), Error> {
+    pub fn vip<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(format!("/vip {}", username))
     }
 
     /// Revoke VIP status from a user.
     ///
     /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
-    pub fn unvip(&self, username: &str) -> Result<(), Error> {
+    pub fn unvip<S>(&self, username: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(format!("/unvip {}", username))
     }
 
     /// Whispers the message to the username.
-    pub fn whisper(&self, username: &str, message: &str) -> Result<(), Error> {
+    pub fn whisper<S>(&self, username: S, message: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         self.command(format!("/w {} {}", username, message))
     }
 
@@ -357,10 +385,10 @@ impl<W: Write> Writer<W> {
     pub fn me<C, S>(&self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
-        S: AsRef<str>,
+        S: Display,
     {
         let channel = Channel::validate(channel)?;
-        self.send(channel, format!("/me {}", message.as_ref()))
+        self.send(channel, format!("/me {}", message))
     }
 
     /// Sends the `message` to the `channel`
@@ -371,10 +399,10 @@ impl<W: Write> Writer<W> {
     pub fn privmsg<C, S>(&self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
-        S: AsRef<str>,
+        S: Display,
     {
         let channel = Channel::validate(channel)?;
-        self.raw(format!("PRIVMSG {} :{}", *channel, message.as_ref()))
+        self.raw(format!("PRIVMSG {} :{}", *channel, message))
     }
 
     /// Sends the `message` to the `channel`
@@ -385,7 +413,7 @@ impl<W: Write> Writer<W> {
     pub fn send<C, S>(&self, channel: C, message: S) -> Result<(), Error>
     where
         C: Into<Channel>,
-        S: AsRef<str>,
+        S: Display,
     {
         self.privmsg(channel, message)
     }
@@ -393,15 +421,15 @@ impl<W: Write> Writer<W> {
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)
     pub fn command<S>(&self, data: S) -> Result<(), Error>
     where
-        S: AsRef<str>,
+        S: Display,
     {
-        self.raw(format!("PRIVMSG jtv :{}", data.as_ref()))
+        self.raw(format!("PRIVMSG jtv :{}", data))
     }
 
     /// Sends a raw line (appends the required `\r\n`)
     pub fn raw<S>(&self, data: S) -> Result<(), Error>
     where
-        S: AsRef<str>,
+        S: AsRef<[u8]>,
     {
         self.write_line(data.as_ref())
     }
