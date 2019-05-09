@@ -14,18 +14,18 @@ circle-ci = { repository = "museun/twitchchat", branch = "master", service = "gi
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-log = "0.4.6"
+log = "~0.4"
 
 [dependencies.parking_lot]
-version = "0.7.1"
+version = "~0.8"
 optional = true
 
 [dependencies.hashbrown]
-version = "0.2.0"
+version = "~0.3"
 optional = true
 
 [dependencies.serde]
-version = "1.0.90"
+version = "~1.0"
 features = ["derive"]
 optional = true
 
