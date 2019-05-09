@@ -261,8 +261,7 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
 }
 
 impl<R, W: Write> Client<R, W> {
-    /**
-    When a message is received run this function with it and a clone of the Writer.
+    /** When a message is received run this function with it and a clone of the Writer.
 
     The type of the closure determines what is filtered
 
@@ -323,7 +322,6 @@ impl<R, W: Write> Client<R, W> {
 
     Use the returned token to remove the filter, by passing it to the
     [`Client::remove_handler`](./struct.Client.html#method.remove_handler) method
-
     */
     pub fn handler<H>(&mut self, handler: H) -> Token
     where

@@ -165,6 +165,65 @@ pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";
 /// Refer to this form when implementing this trait:
 ///
 /// raw string form: `@tags :prefix command args :data\r\n`
+///
+/// Example:
+/** ```
+struct MyPrivMsg {
+    tags: hashbrown::HashMap<String, String>,
+    sender: String,
+    channel: String,
+    data: String,
+}
+impl MyPrivMsg {
+    pub fn new<S: ToString>(channel: S, sender: S, data: S, tags: &[(S, S)]) -> Self {
+        Self {
+            tags: tags
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+            channel: channel.to_string(),
+            sender: sender.to_string(),
+            data: data.to_string(),
+        }
+    }
+}
+
+impl twitchchat::ToMessage for MyPrivMsg {
+    fn tags(&self) -> Option<twitchchat::TagType<'_>> {
+        Some(twitchchat::TagType::Map(&self.tags))
+    }
+    fn prefix(&self) -> Option<&str> {
+        Some(self.sender.as_str())
+    }
+    fn command(&self) -> Option<&str> {
+        Some("PRIVMSG")
+    }
+    fn args(&self) -> Option<twitchchat::ArgsType<'_>> {
+        Some(twitchchat::ArgsType::Raw(self.channel.as_str()))
+    }
+    fn data(&self) -> Option<&str> {
+        Some(self.data.as_str())
+    }
+}
+
+let msg = MyPrivMsg::new(
+    "test_channel",
+    "museun",
+    "hello world",
+    &[("color", "#FF4500"), ("display-name", "Museun")],
+);
+let twitch_msg = twitchchat::Message::parse(msg);
+let pm = match twitch_msg {
+    twitchchat::Message::PrivMsg(pm) => pm,
+    _ => unreachable!(),
+};
+assert_eq!(pm.user(), "museun");
+assert_eq!(pm.channel(), "#test_channel");
+assert_eq!(pm.message(), "hello world");
+assert_eq!(pm.color().unwrap().kind, twitchchat::TwitchColor::OrangeRed);
+```
+**/
+
 pub trait ToMessage {
     /// Get the tags portion of the IRC message
     fn tags(&self) -> Option<TagType<'_>>;
