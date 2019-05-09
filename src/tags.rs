@@ -9,7 +9,11 @@ use std::collections::HashMap;
 pub struct Tags(pub(crate) HashMap<String, String>);
 
 impl Tags {
-    pub(crate) fn parse(input: &str) -> Self {
+    /// Parses a `@k=v;k=v` string into the `Tags` type
+    ///
+    /// Use this with caution because it doesn't validate any of the parsing logic and may panic.
+    /// This is only made public for convenience of constructing `Tags` outside the normal use-case for the crate
+    pub fn parse(input: &str) -> Self {
         debug_assert!(input.starts_with('@'));
         let map = input[1..].split_terminator(';').filter_map(|p| {
             let pos = p.find('=')?;
