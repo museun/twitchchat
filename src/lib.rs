@@ -41,11 +41,12 @@ The client is thread safe, and clonable so one could call [`Client::read_message
 # A simple example
 ```no_run
 use std::net::TcpStream;
-use twitchchat::{commands::PrivMsg, Capability, Client, Writer, SyncReadAdapter, SyncWriteAdapter};
+use twitchchat::{commands::PrivMsg, Capability};
+use twitchchat::{Client, Writer, SyncReadAdapter, SyncWriteAdapter};
 use twitchchat::{TWITCH_IRC_ADDRESS, UserConfig};
 # fn main() {
 // create a simple TcpStream
-let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("to connect");
+let read = TcpStream::connect(TWITCH_IRC_ADDRESS).expect("connect");
 let write = read
     .try_clone()
     .expect("must be able to clone the tcpstream");
@@ -53,20 +54,15 @@ let write = read
 // your password and your nickname
 // the twitch oauth token must be prefixed with `oauth:your_token_here`
 let (pass, nick) = (std::env::var("MY_TWITCH_OAUTH_TOKEN").unwrap(), "my_name");
-let config = UserConfig::builder()
+let config = UserConfig::with_caps() // if you need or only want specific capabilities, use .builder(), or toggle them after this call
                 .token(pass)
                 .nick(nick)
-                .membership()    // this enables the membership CAP
-                .commands()      // this enables the commands CAP
-                .tags()          // this enables the tags CAP
                 .build()
                 .unwrap();
 
-// a sync read adapter (for wrapping std::io::Read into something the client will use)
-let read = SyncReadAdapter::new(read);
-// a sync write adapter (for wrapping std::io::Write into something the client will use)
-let write = SyncWriteAdapter::new(write);
-// or use the shorthand: twitchchat::sync_adapters(Read, Write);
+// shorthand for SyncReadAdapter::new(read) and SyncWriteAdapter::new(write)
+// which impl the Adapters for std::io::Read and std::io::Write
+let (read, write) = twitchchat::sync_adapters(read, write);
 
 // client takes a ReadAdapter and an std::io::Write
 let mut client = Client::new(read, write);
@@ -155,6 +151,7 @@ mod teststream;
 /// Helpers for writing tests
 pub mod helpers {
     pub use super::teststream::TestStream;
+    pub use ratelimit::RateLimit;
     pub use tee::{TeeReader, TeeWriter};
 }
 

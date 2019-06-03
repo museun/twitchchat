@@ -25,9 +25,14 @@ impl std::fmt::Debug for UserConfig {
 }
 
 impl UserConfig {
-    /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) enabled
+    /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) disabled
     pub fn builder() -> UserConfigBuilder {
         UserConfigBuilder::new()
+    }
+
+    /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), with all of the [`Capabilities`](./enum.Capability.html) enabled
+    pub fn with_caps() -> UserConfigBuilder {
+        UserConfigBuilder::default().membership().commands().tags()
     }
 }
 

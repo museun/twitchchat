@@ -1,4 +1,3 @@
-use log::*;
 use std::sync::Arc;
 
 use crate::twitch::commands::*;
@@ -38,7 +37,7 @@ impl Handlers {
             ($msg:expr, $func:tt) => {{
                 let msg = Arc::new($msg);
                 for (id, hn) in self.0.iter_mut() {
-                    trace!("dispatching to: {} -> {}", id, stringify!($func));
+                    log::trace!("dispatching to: {} -> {}", id, stringify!($func));
                     Handler::$func(&mut **hn, Arc::clone(&msg))
                 }
             }};
@@ -74,91 +73,91 @@ pub trait Handler {
     /// Called when a [`Message`](./enum.Message.html) message is received
     #[inline]
     fn on_message(&mut self, msg: Arc<Message>) {
-        debug!("on_message: {:?}", msg)
+        log::debug!("on_message: {:?}", msg)
     }
     /// Called when a [`irc::types::Message`](./irc/types/enum.Message.html) message is received
     #[inline]
     fn on_irc_message(&mut self, msg: Arc<crate::irc::types::Message>) {
-        debug!("on_irc_message: {:?}", msg)
+        log::debug!("on_irc_message: {:?}", msg)
     }
     /// Called when a [`Join`](./commands/struct.Join.html) message is received
     #[inline]
     fn on_join(&mut self, msg: Arc<Join>) {
-        debug!("on_join: {:?}", msg)
+        log::debug!("on_join: {:?}", msg)
     }
     /// Called when a [`Part`](./commands/struct.Part.html) message is received
     #[inline]
     fn on_part(&mut self, msg: Arc<Part>) {
-        debug!("on_part: {:?}", msg)
+        log::debug!("on_part: {:?}", msg)
     }
     /// Called when a [`PrivMsg`](./commands/struct.PrivMsg.html) message is received
     #[inline]
     fn on_priv_msg(&mut self, msg: Arc<PrivMsg>) {
-        debug!("on_priv_msg: {:?}", msg)
+        log::debug!("on_priv_msg: {:?}", msg)
     }
     /// Called when a [`Mode`](./commands/struct.Mode.html) message is received
     #[inline]
     fn on_mode(&mut self, msg: Arc<Mode>) {
-        debug!("on_mode: {:?}", msg)
+        log::debug!("on_mode: {:?}", msg)
     }
     /// Called when a [`NamesStart`](./commands/struct.NamesStart.html) message is received
     #[inline]
     fn on_names_start(&mut self, msg: Arc<NamesStart>) {
-        debug!("on_names_start: {:?}", msg)
+        log::debug!("on_names_start: {:?}", msg)
     }
     /// Called when a [`NamesEnd`](./commands/struct.NamesEnd.html) message is received
     #[inline]
     fn on_names_end(&mut self, msg: Arc<NamesEnd>) {
-        debug!("on_names_end: {:?}", msg)
+        log::debug!("on_names_end: {:?}", msg)
     }
     /// Called when a [`ClearChat`](./commands/struct.ClearChat.html) message is received
     #[inline]
     fn on_clear_chat(&mut self, msg: Arc<ClearChat>) {
-        debug!("on_clear_chat: {:?}", msg)
+        log::debug!("on_clear_chat: {:?}", msg)
     }
     /// Called when a [`ClearMsg`](./commands/struct.ClearMsg.html) message is received
     #[inline]
     fn on_clear_msg(&mut self, msg: Arc<ClearMsg>) {
-        debug!("on_clear_msg: {:?}", msg)
+        log::debug!("on_clear_msg: {:?}", msg)
     }
     /// Called when a [`HostTargetStart`](./commands/struct.HostTargetStart.html) message is received
     #[inline]
     fn on_host_target_start(&mut self, msg: Arc<HostTargetStart>) {
-        debug!("on_host_target_start: {:?}", msg)
+        log::debug!("on_host_target_start: {:?}", msg)
     }
     /// Called when a [`HostTargetEnd`](./commands/struct.HostTargetEnd.html) message is received
     #[inline]
     fn on_host_target_end(&mut self, msg: Arc<HostTargetEnd>) {
-        debug!("on_host_target_end: {:?}", msg)
+        log::debug!("on_host_target_end: {:?}", msg)
     }
     /// Called when a [`Notice`](./commands/struct.Notice.html) message is received
     #[inline]
     fn on_notice(&mut self, msg: Arc<Notice>) {
-        debug!("on_notice: {:?}", msg)
+        log::debug!("on_notice: {:?}", msg)
     }
     /// Called when a [`Reconnect`](./commands/struct.Reconnect.html) message is received
     #[inline]
     fn on_reconnect(&mut self, msg: Arc<Reconnect>) {
-        debug!("on_reconnect: {:?}", msg)
+        log::debug!("on_reconnect: {:?}", msg)
     }
     /// Called when a [`RoomState`](./commands/struct.RoomState.html) message is received
     #[inline]
     fn on_room_state(&mut self, msg: Arc<RoomState>) {
-        debug!("on_room_state: {:?}", msg)
+        log::debug!("on_room_state: {:?}", msg)
     }
     /// Called when a [`UserNotice`](./commands/struct.UserNotice.html) message is received
     #[inline]
     fn on_user_notice(&mut self, msg: Arc<UserNotice>) {
-        debug!("on_user_notice: {:?}", msg)
+        log::debug!("on_user_notice: {:?}", msg)
     }
     /// Called when a [`UserState`](./commands/struct.UserState.html) message is received
     #[inline]
     fn on_user_state(&mut self, msg: Arc<UserState>) {
-        debug!("on_user_state: {:?}", msg)
+        log::debug!("on_user_state: {:?}", msg)
     }
     /// Called when a [`GlobalUserState`](./commands/struct.GlobalUserState.html) message is received
     #[inline]
     fn on_global_user_state(&mut self, msg: Arc<GlobalUserState>) {
-        debug!("on_global_user_state: {:?}", msg)
+        log::debug!("on_global_user_state: {:?}", msg)
     }
 }

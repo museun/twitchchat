@@ -118,7 +118,8 @@ impl UserNotice {
         self.get("msg-param-recipient-user-name")
     }
     /// (Sent only on sub, resub) Boolean indicating whether users want their
-    /// streaks to be shared. TODO option?
+    /// streaks to be shared.
+    // TODO option?
     pub fn msg_param_should_share_streak(&self) -> bool {
         self.get_as_bool("msg-param-should-share-streak")
     }

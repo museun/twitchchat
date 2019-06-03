@@ -51,14 +51,6 @@ impl Emotes {
     }
 }
 
-// impl Emotes {
-//     // TODO look up the emote id https://twitchemotes.com/emotes/{id}
-//     // https://static-cdn.jtvnw.net/emoticons/v1/{id}/3.0
-//     pub fn lookup(&self) -> String {
-//         unimplemented!()
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;

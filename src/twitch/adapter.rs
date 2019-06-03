@@ -1,4 +1,3 @@
-use log::*;
 use std::io::{BufRead, BufReader, Read, Write};
 
 use super::{Error, Message};
@@ -66,13 +65,13 @@ impl<R: Read> ReadAdapter for SyncReadAdapter<R> {
             // TODO: this technically isn't an error (empty lines are allowed by the spec)
             return Err(Error::CannotRead);
         }
-        trace!("<- {}", buf);
+        log::trace!("<- {}", buf);
 
-        trace!("trying to parse message");
+        log::trace!("trying to parse message");
         let msg = IrcMessage::parse(&buf).ok_or_else(
             || Error::InvalidMessage(buf.to_string()), //
         )?;
-        trace!("parsed message: {:?}", msg);
+        log::trace!("parsed message: {:?}", msg);
 
         match &msg {
             IrcMessage::Unknown {
@@ -90,7 +89,7 @@ impl<R: Read> ReadAdapter for SyncReadAdapter<R> {
                     // excellent
                     && args.get(0).map(|k| k.as_str()) == Some("*")
                     {
-                        trace!("got a registration error");
+                        log::trace!("got a registration error");
                         return Err(Error::InvalidRegistration);
                     }
                 }

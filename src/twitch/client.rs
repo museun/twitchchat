@@ -1,5 +1,3 @@
-use log::*;
-
 use super::adapter::{ReadAdapter, WriteAdapter};
 use super::filter::{FilterMap, MessageFilter};
 use super::handler::Handlers;
@@ -19,7 +17,6 @@ use super::{Capability, Error, LocalUser, Message, Token, UserConfig, Writer};
 /// // register, join, on, etc
 /// client.run().unwrap();
 /// ```
-// TODO write usage
 pub struct Client<R> {
     reader: R,
 
@@ -42,14 +39,14 @@ impl<R: ReadAdapter> Client<R> {
         let (writer_, rx) = Writer::new();
 
         let _ = std::thread::spawn(move || {
-            trace!("starting write loop");
+            log::trace!("starting write loop");
             let mut w = writer;
             for msg in rx {
                 if w.write_line(msg.as_bytes()).is_err() {
                     break;
                 }
             }
-            trace!("ending write loop");
+            log::trace!("ending write loop");
         });
 
         Self {
@@ -76,7 +73,7 @@ impl<R: ReadAdapter> Client<R> {
             match self.read_message() {
                 Ok(..) => (),
                 Err(Error::InvalidMessage(msg)) => {
-                    warn!("invalid message: `{}`", msg);
+                    log::warn!("invalid message: `{}`", msg);
                     continue;
                 }
                 Err(err) => return Err(err),
@@ -247,7 +244,7 @@ impl<R: ReadAdapter> Client<R> {
     /// ```
     pub fn read_message(&mut self) -> Result<Message, Error> {
         let msg = self.reader.read_message()?;
-        trace!("<- {:?}", msg);
+        log::trace!("<- {:?}", msg);
         {
             let w = self.writer();
             if let Message::Irc(crate::irc::types::Message::Ping { token }) = &msg {
@@ -259,14 +256,14 @@ impl<R: ReadAdapter> Client<R> {
             let key = msg.what_filter();
             if let Some(filters) = self.filters.get_mut(key) {
                 for filter in filters.iter_mut() {
-                    trace!("sending msg to filter (id: {}): {:?}", (filter.1).0, key);
+                    log::trace!("sending msg to filter (id: {}): {:?}", (filter.1).0, key);
                     (filter.0)(msg.clone(), w.clone()) // when in doubt
                 }
             }
         }
-        trace!("begin dispatch");
+        log::trace!("begin dispatch");
         self.handlers.handle(msg.clone());
-        trace!("end dispatch");
+        log::trace!("end dispatch");
         Ok(msg)
     }
 }
@@ -338,7 +335,7 @@ impl<R> Client<R> {
         H: super::Handler + Send + Sync + 'static,
     {
         let tok = self.handlers.add(handler);
-        trace!("add handler, id: {}", tok);
+        log::trace!("add handler, id: {}", tok);
         tok
     }
 
@@ -347,7 +344,7 @@ impl<R> Client<R> {
     /// Returns true if this handler existed
     pub fn remove_handler(&mut self, tok: Token) -> bool {
         let ok = self.handlers.remove(tok);
-        trace!("tried to remove handler, id: {}, status: {}", tok, ok);
+        log::trace!("tried to remove handler, id: {}, status: {}", tok, ok);
         ok
     }
 

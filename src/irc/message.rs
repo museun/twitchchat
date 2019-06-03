@@ -1,5 +1,4 @@
 use super::types::Prefix;
-use log::*;
 
 /// A simple IRC message
 ///
@@ -58,7 +57,7 @@ impl Message {
             return None;
         }
 
-        trace!("parsing: {}", input);
+        log::trace!("parsing: {}", input);
         let (tags, input) = if input.starts_with('@') {
             let pos = input.find(' ')?;
             (crate::Tags::parse(&input[..pos]), &input[pos + 1..])
