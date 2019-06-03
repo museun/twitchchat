@@ -17,14 +17,6 @@ maintenance = { status = "actively-developed" }
 log = "0.4.6"
 crossbeam-channel = "0.3.8"
 
-[dependencies.ratelimit]
-version = "0.1"
-path = "./ratelimit"
-
-[dependencies.tee]
-version = "0.1"
-path = "./tee"
-
 [dependencies.parking_lot]
 version = "0.8.0"
 

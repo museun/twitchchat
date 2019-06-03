@@ -1,9 +1,0 @@
-[package]
-name = "ratelimit"
-version = "0.1.0"
-authors = ["museun <museun@outlook.com>"]
-edition = "2018"
-LICENSE = "0BSD"
-
-[dependencies]
-parking_lot = "0.8.0"

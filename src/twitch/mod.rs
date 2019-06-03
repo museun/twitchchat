@@ -113,7 +113,9 @@ impl Message {
     /// Converts a message into the internal message type, then into the Twitch 'command'
     pub fn parse(msg: impl crate::ToMessage) -> Self {
         // TODO be smarter about this
+        use crate::conversion::{ArgsType, TagType};
         use crate::irc::types::{Message as IrcMessage, Prefix};
+
         let msg = IrcMessage::Unknown {
             prefix: msg.prefix().map(|nick| Prefix::User {
                 nick: nick.to_string(),
@@ -121,21 +123,19 @@ impl Message {
                 host: nick.to_string(),
             }),
             tags: match msg.tags() {
-                Some(crate::TagType::Raw(raw)) => crate::Tags::parse(raw),
-                Some(crate::TagType::List(list)) => crate::Tags(
+                Some(TagType::Raw(raw)) => crate::Tags::parse(raw),
+                Some(TagType::List(list)) => crate::Tags(
                     list.clone()
                         .into_iter()
                         .collect::<HashMap<String, String>>(),
                 ),
-                Some(crate::TagType::Map(map)) => crate::Tags(map.clone()),
+                Some(TagType::Map(map)) => crate::Tags(map.clone()),
                 None => crate::Tags::default(),
             },
             head: msg.command().map(ToString::to_string).unwrap_or_default(),
             args: match msg.args() {
-                Some(crate::ArgsType::Raw(raw)) => {
-                    raw.split(' ').map(ToString::to_string).collect()
-                }
-                Some(crate::ArgsType::List(list)) => list.clone(),
+                Some(ArgsType::Raw(raw)) => raw.split(' ').map(ToString::to_string).collect(),
+                Some(ArgsType::List(list)) => list.clone(),
                 None => vec![],
             },
             tail: msg.data().map(ToString::to_string),

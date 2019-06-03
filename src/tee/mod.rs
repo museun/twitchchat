@@ -1,5 +1,5 @@
 /*!
-This crate allows you to mirror read/writes to another read/write (like POSIX tee)
+This module allows you to mirror read/writes to another read/write (like POSIX tee)
 
 # Examples
 ## TeeReader

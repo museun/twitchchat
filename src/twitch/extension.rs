@@ -1,5 +1,5 @@
 use super::{Error, Writer};
-use ratelimit::RateLimit;
+use crate::helpers::RateLimit;
 
 /// Writer extensions
 pub trait WriterExt {
