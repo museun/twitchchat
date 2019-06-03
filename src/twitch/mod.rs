@@ -31,7 +31,8 @@ pub use self::adapter::{
 mod writer;
 pub use self::writer::Writer;
 
-mod extension;
+/// Extensions for the various types
+pub mod extension;
 pub use self::extension::WriterExt;
 
 /// Twitch channel types

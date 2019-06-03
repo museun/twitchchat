@@ -16,16 +16,15 @@ impl TestStream {
         Self::default()
     }
 
-    /// Reads a line from the stream (e.g. read what has written to the client)
+    /// Drains the internal from the stream (e.g. read what has written to the client)
     ///
     /// **NOTE** Keeps the trailing \r\n
-    pub fn read_message(&mut self) -> Option<String> {
+    pub fn drain_buffer(&mut self) -> Option<String> {
         let mut w = self.write.lock().unwrap();
         if w.is_empty() {
             return None;
         }
-        let w = w.drain(..).collect::<Vec<_>>();
-        String::from_utf8(w).ok()
+        String::from_utf8(w.drain(..).collect::<Vec<_>>()).ok()
     }
 
     /// Writes a line to the stream (e.g. what should be read from the client)
@@ -60,15 +59,11 @@ impl std::io::Write for TestStream {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        use std::io::{copy, Cursor};
         let mut buf = self.buf.lock().unwrap();
         if buf.is_empty() {
             return Ok(());
         }
-
-        let mut w = buf.drain(..).collect::<Vec<_>>();
-        w.push(b'\r');
-        w.push(b'\n');
-        copy(&mut Cursor::new(w), &mut *self.write.lock().unwrap()).map(|_| ())
+        self.write.lock().unwrap().extend(buf.drain(..));
+        Ok(())
     }
 }
