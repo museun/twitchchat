@@ -4,10 +4,7 @@ mod emotes;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
 
 pub use self::badge::{Badge, BadgeInfo, BadgeKind};
 pub use self::emotes::Emotes;
@@ -38,9 +35,6 @@ pub use self::extension::WriterExt;
 /// Twitch channel types
 mod channel;
 pub use self::channel::Channel;
-
-mod mutex;
-pub(crate) use self::mutex::mutex_wrapper::MutexWrapper;
 
 #[doc(hidden)]
 pub mod userconfig;

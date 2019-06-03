@@ -233,10 +233,7 @@ pub trait ToMessage {
     fn data(&self) -> Option<&str>;
 }
 
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
 
 /// A representation of IRCv3 tags, a raw string or a Vec of Key-Vals
 pub enum TagType<'a> {

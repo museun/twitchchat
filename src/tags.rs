@@ -1,7 +1,4 @@
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
 
 /// Tags are IRCv3 message tags. Twitch uses them extensively
 #[derive(Debug, Default, PartialEq, Clone)]

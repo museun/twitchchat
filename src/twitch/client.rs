@@ -2,14 +2,15 @@ use log::*;
 use std::io::Write;
 use std::sync::Arc;
 
-use super::filter::{FilterMap, MessageFilter};
-use super::{Capability, Error, LocalUser, Message, MutexWrapper as Mutex, Writer};
+use parking_lot::Mutex;
 
 use crate::UserConfig;
 
 use super::adapter::{ReadAdapter, ReadError};
+use super::filter::{FilterMap, MessageFilter};
 use super::handler::Handlers;
 use super::Token;
+use super::{Capability, Error, LocalUser, Message, Writer};
 
 // 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
 // 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status

@@ -4,10 +4,7 @@ use super::{commands, Message, Token, TokenGen};
 use log::*;
 use std::io::Write;
 
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
 
 pub type FilterFn<W> = Box<dyn FnMut(Message, Writer<W>) + Send + Sync>;
 

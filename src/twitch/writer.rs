@@ -2,7 +2,8 @@ use std::fmt::Display;
 use std::io::Write;
 use std::sync::Arc;
 
-use super::{Channel, Color, Error, MutexWrapper as Mutex};
+use super::{Channel, Color, Error};
+use parking_lot::Mutex;
 
 /// A thread-safe, clonable writer for the Twitch client
 pub struct Writer<W>(pub(crate) Arc<Mutex<W>>);

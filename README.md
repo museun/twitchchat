@@ -13,19 +13,7 @@ you provide the `std::io::Read` and the `std::io::Write` <br>
 
 see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
 
-optional features:
-
-|feature | description | --- |
-|--- | --- | --- |
-| serde | enables serde derives | allowing you to turn stuff to json, and load it from json |
-| hashbrown | enables hashbrown types | faster hashmaps, lower memory allocations |
-| serde_hashbrown | enables serde and hashbrown+serde | basically serde+hashbrown. **use this if you want serde and hashbrown** |
-| parking_lot | enables faster mutexes | --- |
-| --- | --- |
-| all | enables all of the above | --- |
-
-they are enabled by default.
-
+if you don't want serde support, then include `default-features = false` in your `Cargo.toml`
 
 a demo of it:
 ```rust

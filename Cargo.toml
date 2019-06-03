@@ -14,7 +14,7 @@ circle-ci = { repository = "museun/twitchchat", branch = "master", service = "gi
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-log = "~0.4"
+log = "0.4.6"
 
 [dependencies.ratelimit]
 version = "0.1"
@@ -25,22 +25,18 @@ version = "0.1"
 path = "./crates/tee"
 
 [dependencies.parking_lot]
-version = "~0.8"
-optional = true
+version = "0.8.0"
 
 [dependencies.hashbrown]
-version = "~0.3"
-optional = true
+version = "0.4.0"
 
 [dependencies.serde]
-version = "~1.0"
+version = "1.0.92"
 features = ["derive"]
 optional = true
 
 [features]
-default = [ "all" ]
-serde_hashbrown = ["serde", "hashbrown/serde"]
-all = ["serde_hashbrown", "parking_lot"]
+default = ["serde", "hashbrown/serde"]
 
 [dev-dependencies]
 rand = "0.6.5"
