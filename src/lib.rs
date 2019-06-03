@@ -139,13 +139,12 @@ pub use twitch::*;
 
 pub use self::twitch::UserConfig;
 
-mod tee;
 mod teststream;
 
 /// Helpers for writing tests
 pub mod helpers {
-    pub use super::tee::{TeeReader, TeeWriter};
     pub use super::teststream::TestStream;
+    pub use tee::{TeeReader, TeeWriter};
 }
 
 #[allow(dead_code)]

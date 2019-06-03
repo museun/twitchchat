@@ -20,6 +20,10 @@ log = "~0.4"
 version = "0.1"
 path = "./crates/ratelimit"
 
+[dependencies.tee]
+version = "0.1"
+path = "./crates/tee"
+
 [dependencies.parking_lot]
 version = "~0.8"
 optional = true
