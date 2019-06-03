@@ -20,15 +20,15 @@ fn main() {
     // clone the tcpstream
     let write = read.try_clone().expect("must be able to clone");
 
-    // create the read adapter from the TcpStream
-    let read = twitchchat::SyncReadAdapter::new(read);
+    // create synchronous 'adapters' for the tcpstream
+    let (read, write) = twitchchat::sync_adapters(read, write);
 
     // create a new client from the read, write pairs
     let mut client = Client::new(read, write);
 
     // when we receive a PrivMsg run this function
     // tok allows us to remove this later, if we want
-    let _tok = client.on(move |msg: PrivMsg, w: Writer<_>| {
+    let _tok = client.on(move |msg: PrivMsg, w: Writer| {
         const KAPPA: usize = 25;
         // print out `user: message`
         println!("{}: {}", msg.display_name().unwrap(), msg.message());
@@ -50,7 +50,7 @@ fn main() {
     });
 
     // log if the broadcaster, a sub or a mod talks
-    client.on(move |msg: PrivMsg, _: Writer<_>| {
+    client.on(move |msg: PrivMsg, _: Writer| {
         use twitchchat::BadgeKind::{Broadcaster, Subscriber};
 
         let name = msg.display_name().unwrap_or_else(|| msg.user());
@@ -88,7 +88,7 @@ fn main() {
                 user.user_id, user.display_name, user.color
             )
         }
-        Err(twitchchat::ReadError::Inner(twitchchat::Error::InvalidRegistration)) => {
+        Err(twitchchat::Error::InvalidRegistration) => {
             eprintln!("invalid nick/pass");
             std::process::exit(1);
         }

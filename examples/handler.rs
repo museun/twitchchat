@@ -1,4 +1,3 @@
-use std::io;
 use std::net::TcpStream;
 use std::sync::Arc;
 
@@ -12,8 +11,8 @@ fn main() -> Result<(), Box<std::error::Error>> {
         (stream.try_clone()?, stream)
     };
 
-    // create the read adapter from the TcpStream
-    let read = twitchchat::SyncReadAdapter::new(read);
+    // create synchronous 'adapters' for the tcpstream
+    let (read, write) = twitchchat::sync_adapters(read, write);
 
     // create a config
     let conf = user_config();
@@ -41,12 +40,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
     }
 
     // reply to mentions, log if someone joins "#museun"
-    struct Bar<W: io::Write> {
+    struct Bar {
         mention: String,
-        writer: Writer<W>,
+        writer: Writer,
     }
 
-    impl<W: io::Write> Handler for Bar<W> {
+    impl Handler for Bar {
         fn on_priv_msg(&mut self, msg: Arc<PrivMsg>) {
             if msg.message().contains(&self.mention) {
                 self.writer.send(msg.channel(), "VoHiYo").unwrap();

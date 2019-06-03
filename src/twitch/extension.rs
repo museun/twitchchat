@@ -1,6 +1,7 @@
 use super::{Error, Writer};
 use ratelimit::RateLimit;
-use std::io::Write;
+
+// TODO redo all of this
 
 /// Writer extensions
 pub trait WriterExt {
@@ -13,10 +14,9 @@ pub trait WriterExt {
     /// amount of actual writes as possible
     ///
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
     /// use twitchchat::WriterExt as _;
     /// let writer = client.writer();
@@ -34,7 +34,7 @@ pub trait WriterExt {
         I: IntoIterator<Item = S> + 'a,
         S: AsRef<str> + 'a;
 
-    /// Join a (huge) list of channels but using a [`RateLimit`](./helpers/struct.RateLimit.html)
+    /// Join a (huge) list of channels but using a [`RateLimit`](../ratelimit/struct.RateLimit.html)
     ///
     /// Same as [`WriterExt::join_many`](./trait.WriterExt.html#method.join_many), but takes in an optional RateLimit
     ///
@@ -49,7 +49,7 @@ pub trait WriterExt {
         S: AsRef<str> + 'a;
 }
 
-impl<W: Write> WriterExt for Writer<W> {
+impl WriterExt for Writer {
     fn join_many_limited<'a, I, S>(&self, channels: I, rate: Option<RateLimit>) -> Result<(), Error>
     where
         I: IntoIterator<Item = S> + 'a,
@@ -67,16 +67,15 @@ impl<W: Write> WriterExt for Writer<W> {
     }
 }
 
-fn join_limited<'a, I, S, W>(
+fn join_limited<'a, I, S>(
     channels: I,
-    w: &Writer<W>,
+    w: &Writer,
     try_rate: bool,
     rate: Option<RateLimit>,
 ) -> Result<(), Error>
 where
     I: IntoIterator<Item = S> + 'a,
     S: AsRef<str> + 'a,
-    W: Write,
 {
     use std::time::Duration;
 

@@ -1,25 +1,23 @@
 use super::Writer;
 use super::{commands, Message, Token, TokenGen};
 
-use log::*;
-use std::io::Write;
-
 use hashbrown::HashMap;
+use log::*;
 
-pub type FilterFn<W> = Box<dyn FnMut(Message, Writer<W>) + Send + Sync>;
+pub type FilterFn = Box<dyn FnMut(Message, Writer) + Send + Sync>;
 
-pub struct FilterId<W>(pub(super) FilterFn<W>, pub(super) Token);
+pub struct FilterId(pub(super) FilterFn, pub(super) Token);
 
-pub struct FilterMap<W>(HashMap<Filter, Vec<FilterId<W>>>, TokenGen);
+pub struct FilterMap(HashMap<Filter, Vec<FilterId>>, TokenGen);
 
-impl<W> Default for FilterMap<W> {
+impl Default for FilterMap {
     fn default() -> Self {
         Self(HashMap::default(), TokenGen::default())
     }
 }
 
-impl<W: Write> FilterMap<W> {
-    pub fn insert(&mut self, filter: Filter, f: FilterFn<W>) -> Token {
+impl FilterMap {
+    pub fn insert(&mut self, filter: Filter, f: FilterFn) -> Token {
         let token = self.1.next();
         self.0.entry(filter).or_default().push(FilterId(f, token));
         trace!("added filter for {:?} (id: {})", filter, token.0);
@@ -39,11 +37,11 @@ impl<W: Write> FilterMap<W> {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn get(&self, filter: Filter) -> Option<&Vec<FilterId<W>>> {
+    pub(crate) fn get(&self, filter: Filter) -> Option<&Vec<FilterId>> {
         self.0.get(&filter)
     }
 
-    pub(crate) fn get_mut(&mut self, filter: Filter) -> Option<&mut Vec<FilterId<W>>> {
+    pub(crate) fn get_mut(&mut self, filter: Filter) -> Option<&mut Vec<FilterId>> {
         self.0.get_mut(&filter)
     }
 }

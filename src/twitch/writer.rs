@@ -1,27 +1,27 @@
 use std::fmt::Display;
-use std::io::Write;
-use std::sync::Arc;
 
 use super::{Channel, Color, Error};
-use parking_lot::Mutex;
+use crossbeam_channel as channel;
 
 /// A thread-safe, clonable writer for the Twitch client
-pub struct Writer<W>(pub(crate) Arc<Mutex<W>>);
+#[derive(Clone)]
+pub struct Writer(channel::Sender<String>);
 
-impl<W> Clone for Writer<W> {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
+impl Writer {
+    pub(crate) fn new() -> (Self, channel::Receiver<String>) {
+        let (tx, rx) = channel::unbounded();
+        (Self(tx), rx)
     }
-}
 
-impl<W: Write> Writer<W> {
-    pub(crate) fn write_line<S: AsRef<[u8]>>(&self, data: S) -> Result<(), Error> {
-        let mut write = self.0.lock();
-        write
-            .write_all(data.as_ref())
-            .and_then(|_| write.write_all(b"\r\n"))
-            .and_then(|_| write.flush())
-            .map_err(Error::Write)
+    pub(crate) fn write_line<S: Display>(&self, data: S) -> Result<(), Error> {
+        let data = format!("{}\r\n", data);
+        match self.0.try_send(data) {
+            Ok(..) => Ok(()),
+            Err(channel::TrySendError::Disconnected(..)) => Err(Error::NotConnected),
+            Err(channel::TrySendError::Full(..)) => {
+                unreachable!("channel shouldn't be buffered, or remotely full")
+            }
+        }
     }
 
     // TODO: https://dev.twitch.tv/docs/irc/guide/#scopes-for-irc-commands
@@ -183,7 +183,10 @@ impl<W: Write> Writer<W> {
     /// Examples: "30m", "1 week", "5 days 12 hours".
     ///
     /// Must be less than 3 months.
-    pub fn followers(&self, duration: &str) -> Result<(), Error> {
+    pub fn followers<S>(&self, duration: S) -> Result<(), Error>
+    where
+        S: Display,
+    {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         // and verify its < 3 months
         self.command(&format!("/followers {}", duration))
@@ -336,10 +339,9 @@ impl<W: Write> Writer<W> {
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
     /// let w = client.writer();
     /// w.join("museun").unwrap();
@@ -361,10 +363,9 @@ impl<W: Write> Writer<W> {
     ///
     /// The following are equivilant
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
     /// let w = client.writer();
     /// w.part("museun").unwrap();
@@ -430,8 +431,8 @@ impl<W: Write> Writer<W> {
     /// Sends a raw line (appends the required `\r\n`)
     pub fn raw<S>(&self, data: S) -> Result<(), Error>
     where
-        S: AsRef<[u8]>,
+        S: Display,
     {
-        self.write_line(data.as_ref())
+        self.write_line(data)
     }
 }

@@ -24,7 +24,9 @@ mod client;
 pub use self::client::Client;
 
 mod adapter;
-pub use self::adapter::{ReadAdapter, ReadError, SyncReadAdapter};
+pub use self::adapter::{
+    sync_adapters, ReadAdapter, SyncReadAdapter, SyncWriteAdapter, WriteAdapter,
+};
 
 mod writer;
 pub use self::writer::Writer;

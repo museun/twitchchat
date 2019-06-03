@@ -8,8 +8,8 @@ fn main() -> Result<(), Box<std::error::Error>> {
         (stream.try_clone()?, stream)
     };
 
-    // create the read adapter from the TcpStream
-    let read = twitchchat::SyncReadAdapter::new(read);
+    // create synchronous 'adapters' for the tcpstream
+    let (read, write) = twitchchat::sync_adapters(read, write);
 
     // create a config
     let conf = user_config();
@@ -26,13 +26,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     // use a message filter. you can store the `Token` this returns
     // and remove this filter later on with the `Client::off` method
-    client.on(move |msg: PrivMsg, _: Writer<_>| {
+    client.on(move |msg: PrivMsg, _: Writer| {
         println!("{}: {}", msg.user(), msg.message());
     });
 
     // multiple filters for the same type of message is allowed
-
-    client.on(move |msg: PrivMsg, w: Writer<_>| {
+    client.on(move |msg: PrivMsg, w: Writer| {
         if msg.message().contains(&mention) {
             w.send(msg.channel(), "VoHiYo").unwrap();
         }

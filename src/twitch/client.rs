@@ -1,19 +1,9 @@
 use log::*;
-use std::io::Write;
-use std::sync::Arc;
 
-use parking_lot::Mutex;
-
-use crate::UserConfig;
-
-use super::adapter::{ReadAdapter, ReadError};
+use super::adapter::{ReadAdapter, WriteAdapter};
 use super::filter::{FilterMap, MessageFilter};
 use super::handler::Handlers;
-use super::Token;
-use super::{Capability, Error, LocalUser, Message, Writer};
-
-// 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
-// 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
+use super::{Capability, Error, LocalUser, Message, Token, UserConfig, Writer};
 
 /// Client for interacting with Twitch's chat.
 ///
@@ -21,36 +11,54 @@ use super::{Capability, Error, LocalUser, Message, Writer};
 /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
 ///
 /// ```no_run
-/// use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+/// use twitchchat::{helpers::TestStream, Client, sync_adapters};
 /// let stream = TestStream::new();
-/// let (r,w) = (stream.clone(), stream.clone());
-/// let r = SyncReadAdapter::new(r);
+/// // create a synchronous read and write adapter (shorthand for SyncReadAdapter::new() and SyncWriteAdapter::new())
+/// let (r, w) = sync_adapters(stream.clone(), stream.clone());
 /// let mut client = Client::new(r,w); // moves the r,w
 /// // register, join, on, etc
 /// client.run().unwrap();
 /// ```
 // TODO write usage
-pub struct Client<R, W> {
+pub struct Client<R> {
     reader: R,
-    filters: FilterMap<W>,
+
+    filters: FilterMap,
     handlers: Handlers,
-    writer: Writer<W>,
+
+    writer: Writer,
 }
 
-impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
+impl<R: ReadAdapter> Client<R> {
     /// Create a new Client from a
     /// [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
     /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
     ///
     /// This client is clonable, and thread safe.
-    pub fn new(mut reader: R, write: W) -> Self {
-        let writer = Writer(Arc::new(Mutex::new(write)));
-        reader.give_writer(writer.clone());
+    pub fn new<W>(reader: R, writer: W) -> Self
+    where
+        W: WriteAdapter + Send + 'static,
+    {
+        let (writer_, rx) = Writer::new();
+
+        let _ = std::thread::spawn(move || {
+            trace!("starting write loop");
+            let mut w = writer;
+            for msg in rx {
+                if w.write_line(msg.as_bytes()).is_err() {
+                    break;
+                }
+            }
+            trace!("ending write loop");
+        });
+
         Self {
             reader,
+
             filters: FilterMap::default(),
             handlers: Handlers::default(),
-            writer,
+
+            writer: writer_,
         }
     }
 
@@ -63,11 +71,11 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     ///
     /// This also pumping them through
     /// [`Client::on`](./struct.Client.html#method.on) filters
-    pub fn run(mut self) -> Result<(), ReadError<R::Error>> {
+    pub fn run(mut self) -> Result<(), Error> {
         loop {
             match self.read_message() {
                 Ok(..) => (),
-                Err(ReadError::InvalidMessage(msg)) => {
+                Err(Error::InvalidMessage(msg)) => {
                     warn!("invalid message: `{}`", msg);
                     continue;
                 }
@@ -86,10 +94,9 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     ///
     /// Usage
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, UserConfig, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
     /// # let mut client = Client::new(r, w);
     /// let config = UserConfig::builder()
     ///                 .token(std::env::var("MY_PASSWORD").unwrap())
@@ -110,8 +117,8 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
             self.writer.write_line(cap)?;
         }
 
-        self.writer.write_line(&format!("PASS {}", config.token))?;
-        self.writer.write_line(&format!("NICK {}", config.nick))
+        self.writer.write_line(format!("PASS {}", config.token))?;
+        self.writer.write_line(format!("NICK {}", config.nick))
     }
 
     /// Waits for the
@@ -125,10 +132,9 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
     /// # let mut client = Client::new(r, w);
     /// match client.wait_for_ready() {
     ///     Ok(user) => println!("user id: {}", user.user_id),
@@ -137,7 +143,7 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// // we can be sure that we're ready to join
     /// client.writer().join("some_channel").unwrap();
     /// ```
-    pub fn wait_for_ready(&mut self) -> Result<LocalUser, ReadError<R::Error>> {
+    pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
         use crate::irc::types::Message as IRCMessage;
         let mut caps = vec![];
 
@@ -170,7 +176,7 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
                     };
 
                     if !bad.is_empty() {
-                        return Err(ReadError::CapabilityRequired(bad));
+                        return Err(Error::CapabilityRequired(bad));
                     }
                 }
 
@@ -197,10 +203,9 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     ///
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
     /// # let mut client = Client::new(r, w);
     /// match client.wait_for_irc_ready() {
     ///     Ok(name) => println!("end of motd, our name is: {}", name),
@@ -209,7 +214,7 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// // we can be sure that we're ready to join
     /// client.writer().join("some_channel").unwrap();
     /// ```
-    pub fn wait_for_irc_ready(&mut self) -> Result<String, ReadError<R::Error>> {
+    pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
         use crate::irc::types::Message as IrcMessage;
         loop {
             match self.read_message()? {
@@ -226,10 +231,9 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// Using this will drive the client (blocking for a read, then producing messages).
     /// Usage:
     /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, Client, SyncReadAdapter};
+    /// # use twitchchat::{helpers::TestStream, *};
     /// # let mut stream = TestStream::new();
-    /// # let (r, w) = (stream.clone(), stream.clone());
-    /// # let r = SyncReadAdapter::new(r);
+    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
     /// # let mut client = Client::new(r, w);
     /// // block the thread (i.e. wait for the client to close down)    
     /// while let Ok(msg) = client.read_message() {
@@ -241,11 +245,17 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     /// // or incrementally calling `client.read_message()`
     /// // when you want the next message
     /// ```
-    pub fn read_message(&mut self) -> Result<Message, ReadError<R::Error>> {
+    pub fn read_message(&mut self) -> Result<Message, Error> {
         let msg = self.reader.read_message()?;
         trace!("<- {:?}", msg);
         {
             let w = self.writer();
+            if let Message::Irc(crate::irc::types::Message::Ping { token }) = &msg {
+                return w
+                    .write_line(format!("PONG :{}", token))
+                    .and_then(|_| Ok(msg));
+            }
+
             let key = msg.what_filter();
             if let Some(filters) = self.filters.get_mut(key) {
                 for filter in filters.iter_mut() {
@@ -261,23 +271,22 @@ impl<R: ReadAdapter<W>, W: Write> Client<R, W> {
     }
 }
 
-impl<R, W: Write> Client<R, W> {
+impl<R> Client<R> {
     /** When a message is received run this function with it and a clone of the Writer.
 
     The type of the closure determines what is filtered
 
     Usage:
     ```no_run
-    # use twitchchat::{helpers::TestStream, Client, Writer, SyncReadAdapter};
+    # use twitchchat::{helpers::TestStream, *};
     # let mut stream = TestStream::new();
-    # let (r, w) = (stream.clone(), stream.clone());
-    # let r = SyncReadAdapter::new(r);
+    # let (r, w) = sync_adapters(stream.clone(), stream.clone());
     # let mut client = Client::new(r, w);
     use twitchchat::commands::*;
-    let pm_tok = client.on(|msg: PrivMsg, w: Writer<_>| {
+    let pm_tok = client.on(|msg: PrivMsg, w: Writer| {
         // msg is now a `twitchchat::commands::PrivMsg`
     });
-    let join_tok = client.on(|msg: Join, w: Writer<_>| {
+    let join_tok = client.on(|msg: Join, w: Writer| {
         // msg is now a `twitchchat::commands::Join`
     });
 
@@ -299,7 +308,7 @@ impl<R, W: Write> Client<R, W> {
     */
     pub fn on<F, T>(&mut self, mut f: F) -> Token
     where
-        F: FnMut(T, Writer<W>) + 'static + Send + Sync, // hmm
+        F: FnMut(T, Writer) + 'static + Send + Sync,
         T: From<Message>,
         T: MessageFilter,
     {
@@ -342,8 +351,12 @@ impl<R, W: Write> Client<R, W> {
         ok
     }
 
-    /// Get a clone of the internal writer
-    pub fn writer(&self) -> Writer<W> {
+    /// Get a clone of the writer
+    pub fn writer(&self) -> Writer {
         self.writer.clone()
     }
 }
+
+// TODO rate limit:
+// 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
+// 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status

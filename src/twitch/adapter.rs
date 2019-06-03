@@ -1,129 +1,80 @@
 use log::*;
 use std::io::{BufRead, BufReader, Read, Write};
 
-use super::{Capability, Error, Message, Writer};
+use super::{Error, Message};
 use crate::irc::types::Message as IrcMessage;
 
-/// An error returned by the ReadAdapter
-#[derive(Debug)]
-pub enum ReadError<E: std::fmt::Debug + std::fmt::Display + std::error::Error> {
-    /// An invalid message was read, containing the bad message
-    InvalidMessage(String),
-    /// Capability required, a list of which ones are required
-    CapabilityRequired(Vec<Capability>),
-    /// An inner error
-    Inner(E),
-}
-
-impl<E: std::fmt::Debug + std::fmt::Display + std::error::Error> std::fmt::Display
-    for ReadError<E>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ReadError::InvalidMessage(raw) => {
-                write!(f, "invalid message, from '{}' (trimmed)", raw.trim())
-            }
-            ReadError::CapabilityRequired(list) => {
-                let caps = list
-                    .iter()
-                    .map(|f| format!("{:?}", f))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                write!(f, "{} are required to do that", caps)
-            }
-            ReadError::Inner(err) => write!(f, "{}", err),
-        }
-    }
-}
-
-impl<E: std::fmt::Debug + std::fmt::Display + std::error::Error> std::error::Error
-    for ReadError<E>
-{
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // TODO this
-        None
-    }
-}
-
-impl From<Error> for ReadError<Error> {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::InvalidMessage(raw) => ReadError::InvalidMessage(raw),
-            Error::CapabilityRequired(list) => ReadError::CapabilityRequired(list),
-            e => ReadError::Inner(e),
-        }
-    }
-}
-
-/// ReadAdapter allows one to write different 'readers' for the twitch Client
-pub trait ReadAdapter<W> {
-    /// the Innr read type (can be a Unit)
+/// ReadAdapter allows you to provide your own "reader" for the client
+pub trait ReadAdapter {
+    /// the Inner read type (can be a Unit)
     type Reader;
-    /// An Error that can be returned when trying to read a message
-    type Error: std::fmt::Debug + std::fmt::Display + std::error::Error;
-
-    /// Give an instance of the Writer to the reader
-    fn give_writer(&mut self, writer: Writer<W>);
 
     /// Tries to read a message, otherwise returns a wrapped erro
-    fn read_message(&mut self) -> Result<Message, ReadError<Self::Error>>;
+    fn read_message(&mut self) -> Result<Message, Error>;
 
     /// Consume the adapter and returns the inner reader
     fn into_inner(self) -> Self::Reader;
 }
 
-/// Default Sync Reader that uses an std::io::Read implementation
-pub struct SyncReadAdapter<R, W> {
-    reader: BufReader<R>,
-    writer: Option<Writer<W>>,
+/// WriteAdapter allows you to provide your own "writer" for the client
+pub trait WriteAdapter {
+    /// The inner write type
+    type Writer;
+
+    /// The error writing to this type can cause
+    type Error;
+
+    /// Tries to write a byte array (a utf-8 encoded string ending with \r\n) to the writer
+    fn write_line(&mut self, line: &[u8]) -> Result<(), Self::Error>;
+
+    /// Consume the adapter and returns the inner writer
+    fn into_inner(self) -> Self::Writer;
 }
 
-impl<R: Read, W> SyncReadAdapter<R, W> {
+/// Default synchronous Reader that uses an std::io::Read implementation
+pub struct SyncReadAdapter<R> {
+    reader: BufReader<R>,
+}
+
+impl<R: Read> SyncReadAdapter<R> {
     /// Create a new SyncReadAdapter from an std::io::Read
     pub fn new(read: R) -> Self {
         Self {
             reader: BufReader::new(read),
-            writer: None,
         }
     }
 }
 
-impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
+impl<R: Read> ReadAdapter for SyncReadAdapter<R> {
     type Reader = R;
-    type Error = Error;
 
-    fn give_writer(&mut self, writer: Writer<W>) {
-        let _ = self.writer.replace(writer);
-    }
-
-    fn read_message(&mut self) -> Result<Message, ReadError<Self::Error>> {
+    fn read_message(&mut self) -> Result<Message, Error> {
         let mut buf = String::new();
-        let len = self.reader.read_line(&mut buf).map_err(Error::Read)?;
+        let len = self
+            .reader
+            .read_line(&mut buf)
+            .map_err(|_| Error::CannotRead)?;
+
         // 0 == EOF
         if len == 0 {
-            return Err(Error::CannotRead.into());
+            // TODO: this should be a different error ("disconnected?")
+            return Err(Error::CannotRead);
         }
 
         let buf = buf.trim_end();
         if buf.is_empty() {
-            return Err(Error::CannotRead.into());
+            // TODO: this technically isn't an error (empty lines are allowed by the spec)
+            return Err(Error::CannotRead);
         }
-
         trace!("<- {}", buf);
 
         trace!("trying to parse message");
-        let msg = IrcMessage::parse(&buf) //
-            .ok_or_else(|| Error::InvalidMessage(buf.to_string()))?;
+        let msg = IrcMessage::parse(&buf).ok_or_else(
+            || Error::InvalidMessage(buf.to_string()), //
+        )?;
         trace!("parsed message: {:?}", msg);
 
         match &msg {
-            IrcMessage::Ping { token } => {
-                self.writer
-                    .as_ref()
-                    .expect("writer must have been set")
-                    .write_line(&format!("PONG :{}", token))?;
-                Ok(Message::Irc(msg))
-            }
             IrcMessage::Unknown {
                 prefix,
                 head,
@@ -131,17 +82,16 @@ impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
                 tail,
                 ..
             } => {
-                if let (Some(crate::irc::types::Prefix::Server { host }), Some(data)) =
-                    (prefix, tail)
-                {
+                use crate::irc::types::Prefix::*;
+                if let (Some(Server { host }), Some(data)) = (prefix, tail) {
                     if head == "NOTICE"
                     && host == "tmi.twitch.tv"
                     && data == "Improperly formatted auth"
                     // excellent
-                    && args.get(0) == Some(&"*".into())
+                    && args.get(0).map(|k| k.as_str()) == Some("*")
                     {
-                        trace!("got a registartion error");
-                        return Err(Error::InvalidRegistration.into());
+                        trace!("got a registration error");
+                        return Err(Error::InvalidRegistration);
                     }
                 }
                 Ok(Message::parse(msg))
@@ -153,4 +103,42 @@ impl<R: Read, W: Write> ReadAdapter<W> for SyncReadAdapter<R, W> {
     fn into_inner(self) -> Self::Reader {
         self.reader.into_inner()
     }
+}
+
+/// Default synchronous Writer that uses an std::io::Write implementation
+pub struct SyncWriteAdapter<W> {
+    writer: W,
+}
+
+impl<W: Write> SyncWriteAdapter<W> {
+    /// Create a new SyncWriteAdapter from an std::io::Write
+    pub fn new(writer: W) -> Self {
+        Self { writer }
+    }
+}
+
+impl<W: Write> WriteAdapter for SyncWriteAdapter<W> {
+    type Writer = W;
+    type Error = Error;
+
+    fn write_line(&mut self, line: &[u8]) -> Result<(), Self::Error> {
+        self.writer
+            .write_all(line)
+            .and_then(|_| self.writer.write_all(b"\r\n"))
+            .and_then(|_| self.writer.flush())
+            .map_err(Error::Write)
+    }
+
+    fn into_inner(self) -> Self::Writer {
+        self.writer
+    }
+}
+
+/// Create a sync adapater from `std::io::{Read, Write}`
+pub fn sync_adapters<R, W>(read: R, write: W) -> (SyncReadAdapter<R>, SyncWriteAdapter<W>)
+where
+    R: Read,
+    W: Write,
+{
+    (SyncReadAdapter::new(read), SyncWriteAdapter::new(write))
 }

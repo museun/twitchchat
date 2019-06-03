@@ -6,11 +6,11 @@ fn parse_bad_auth() {
     let mut stream = crate::teststream::TestStream::new();
     stream.write_message(input);
 
-    let reader = crate::SyncReadAdapter::new(stream.clone());
-    let mut client = crate::Client::new(reader, stream.clone());
+    let (read, writer) = crate::sync_adapters(stream.clone(), stream);
+    let mut client = crate::Client::new(read, writer);
 
     let err = client.read_message().unwrap_err();
-    if let crate::ReadError::Inner(crate::twitch::Error::InvalidRegistration) = err {
+    if let crate::twitch::Error::InvalidRegistration = err {
         return;
     }
     panic!("unexpected error: {}", err)

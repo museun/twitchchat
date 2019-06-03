@@ -19,6 +19,8 @@ pub enum Error {
     CannotRead,
     /// Capability is required for this functionality
     CapabilityRequired(Vec<crate::Capability>),
+    /// Not connected to the server
+    NotConnected,
 }
 
 impl std::fmt::Display for Error {
@@ -44,6 +46,7 @@ impl std::fmt::Display for Error {
                     .join(", ");
                 write!(f, "{} are required to do that", caps)
             }
+            Error::NotConnected => write!(f, "not connected to server"),
         }
     }
 }

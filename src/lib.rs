@@ -1,9 +1,17 @@
 /*!
 # A simple "connection-less" twitch chat crate
-This crate simply read lines from an [`std::io::Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and produces data types for the corresponding messages, and takes an [`std::io::Write`](https://doc.rust-lang.org/std/io/trait.Write.html) which can produce messages that twitch understands.
+This crate produces types for twitch messages and gives you methods for sending messages.
 
 # 'Theory' of operation
-First, by creating a [`Client`](./struct.Client.html) from a Read/Write pair (such as a cloned TcpStream) then calling [`Client::register`](./struct.Client.html#method.register) with a filled-out [`UserConfig`](./userconfig/struct.UserConfig.html) will connect you to Twitch. Once connected, you can [`Client::wait_for_ready`](./struct.Client.html#method.wait_for_ready) and the client will read **(blocking)** until Twitch sends a [`GlobalUserState`](./commands/struct.GlobalUserState.html) message, which it'll fill out a [`LocalUser`](./struct.LocalUser.html) with various information.
+First, by creating a [`Client`](./struct.Client.html) from a [`ReadAdapter`](./trait.ReadAdapter.html) and a
+[`WriteAdapter`](./trait.WriteAdapter.html). This can be simple be done by using [`twitchchat::sync_adapters`](./fn.sync_adapters.html)
+on an [`std::io::TcpStream`](https://doc.rust-lang.org/std/net/struct.TcpStream.html).
+
+Then, calling [`Client::register`](./struct.Client.html#method.register) with a
+filled-out [`UserConfig`](./userconfig/struct.UserConfig.html) will connect you to Twitch.
+
+Once connected, you can [`Client::wait_for_ready`](./struct.Client.html#method.wait_for_ready) and the client will read **(blocking)** until Twitch sends a
+[`GlobalUserState`](./commands/struct.GlobalUserState.html) message, which it'll fill out a [`LocalUser`](./struct.LocalUser.html) with various information.
 
 Once connected, you can
 - use [`Writer::join`](./struct.Writer.html#method.join) to join a
@@ -33,7 +41,7 @@ The client is thread safe, and clonable so one could call [`Client::read_message
 # A simple example
 ```no_run
 use std::net::TcpStream;
-use twitchchat::{commands::PrivMsg, Capability, Client, Writer, SyncReadAdapter};
+use twitchchat::{commands::PrivMsg, Capability, Client, Writer, SyncReadAdapter, SyncWriteAdapter};
 use twitchchat::{TWITCH_IRC_ADDRESS, UserConfig};
 # fn main() {
 // create a simple TcpStream
@@ -56,6 +64,9 @@ let config = UserConfig::builder()
 
 // a sync read adapter (for wrapping std::io::Read into something the client will use)
 let read = SyncReadAdapter::new(read);
+// a sync write adapter (for wrapping std::io::Write into something the client will use)
+let write = SyncWriteAdapter::new(write);
+// or use the shorthand: twitchchat::sync_adapters(Read, Write);
 
 // client takes a ReadAdapter and an std::io::Write
 let mut client = Client::new(read, write);
@@ -74,7 +85,7 @@ println!(
 
 // when we receive a commands::PrivMsg print out who sent it, and the message
 // this can be done at any time, but its best to do it early
-client.on(|msg: PrivMsg, _: Writer<_>| {
+client.on(|msg: PrivMsg, _: Writer| {
     // this prints out name: msg
     let name = msg.display_name().unwrap_or_else(|| msg.user());
     println!("{}: {}", name, msg.message())

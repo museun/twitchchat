@@ -4,3 +4,4 @@ Cargo.lock
 TODO.txt
 *.txt
 *.json
+*.log

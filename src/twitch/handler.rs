@@ -7,7 +7,7 @@ use crate::twitch::Message;
 use super::{Token, TokenGen};
 
 #[derive(Default)]
-pub(crate) struct Handlers(Vec<(Token, Box<Handler>)>, TokenGen);
+pub(crate) struct Handlers(Vec<(Token, Box<dyn Handler>)>, TokenGen);
 
 impl Handlers {
     pub fn add<H>(&mut self, h: H) -> Token
