@@ -1,9 +1,7 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use super::MutexWrapper as Mutex;
+use parking_lot::Mutex;
 
 /** RateLimit is a simple token bucket-style rate limiter
 
@@ -13,10 +11,10 @@ The limiter is cheaply-clonable
 ```no_run
 # fn main() {
 use std::time::Duration;
-use twitchchat::helpers::RateLimit;
+use ratelimit::RateLimit;
 
 // limits to 3 `.take()` per 1 second
-let limiter = RateLimit::full(3, Duration::from_secs(1));
+let mut limiter = RateLimit::full(3, Duration::from_secs(1));
 for _ in 0..10 {
     // every 3 calls within 1 second will cause the next .take() to block
     // so this will take ~3 seconds to run (10 / 3 = ~3)
@@ -24,16 +22,15 @@ for _ in 0..10 {
 }
 
 // initially empty, it will block for 1 second then block for every 3 calls per 1 second
-let limiter = RateLimit::empty(3, Duration::from_secs(1));
+let mut limiter = RateLimit::empty(3, Duration::from_secs(1));
 for _ in 0..10 {
     limiter.take();
 }
 # }
 ```
 
-The `_unsync()` variants create a cheaper, single-threaded form
+The `_unsync()` variants create a cheaper, single-threaded variant
 **/
-#[derive(Clone)]
 pub struct RateLimit {
     cap: u64,
     bucket: Bucket,
@@ -131,7 +128,7 @@ impl RateLimit {
     /// Otherwise it returns how many tokens are left
     ///
     /// This error is the `Duration` of the next available time
-    pub fn consume(&self, tokens: u64) -> Result<u64, Duration> {
+    pub fn consume(&mut self, tokens: u64) -> Result<u64, Duration> {
         let now = Instant::now();
 
         // no specialization yet and I don't want to have the consumers pass in
@@ -158,8 +155,8 @@ impl RateLimit {
                 let mut sync = sync.lock();
                 consume!(sync)
             }
-            Bucket::Unsync(ref unsync) => {
-                let mut unsync = unsync.borrow_mut();
+            Bucket::Unsync(ref mut unsync) => {
+                let mut unsync = unsync;
                 consume!(unsync)
             }
         }
@@ -168,7 +165,7 @@ impl RateLimit {
     /// Consumes `tokens` blocking if its trying to consume more than available
     ///
     /// Returns how many tokens are available
-    pub fn throttle(&self, tokens: u64) -> u64 {
+    pub fn throttle(&mut self, tokens: u64) -> u64 {
         loop {
             match self.consume(tokens) {
                 Ok(rem) => return rem,
@@ -181,15 +178,14 @@ impl RateLimit {
     ///
     /// Returns how many tokens are available
     #[inline]
-    pub fn take(&self) -> u64 {
+    pub fn take(&mut self) -> u64 {
         self.throttle(1)
     }
 }
 
-#[derive(Clone)]
 enum Bucket {
     Sync(Arc<Mutex<Inner>>),
-    Unsync(Rc<RefCell<Inner>>),
+    Unsync(Inner),
 }
 
 impl Bucket {
@@ -197,7 +193,7 @@ impl Bucket {
         Bucket::Sync(Arc::new(Mutex::new(Inner::new(cap, initial, period))))
     }
     fn unsync(cap: u64, initial: u64, period: Duration) -> Self {
-        Bucket::Unsync(Rc::new(RefCell::new(Inner::new(cap, initial, period))))
+        Bucket::Unsync(Inner::new(cap, initial, period))
     }
 }
 

@@ -1,5 +1,5 @@
 use super::{Error, Writer};
-use crate::helpers::RateLimit;
+use ratelimit::RateLimit;
 use std::io::Write;
 
 /// Writer extensions

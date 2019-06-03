@@ -16,6 +16,10 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 log = "~0.4"
 
+[dependencies.ratelimit]
+version = "0.1"
+path = "./crates/ratelimit"
+
 [dependencies.parking_lot]
 version = "~0.8"
 optional = true
