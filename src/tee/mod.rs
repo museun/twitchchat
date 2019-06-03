@@ -5,9 +5,10 @@ This module allows you to mirror read/writes to another read/write (like POSIX t
 ## TeeReader
 ```rust
 # use std::io::prelude::*;
+use twitchchat::helpers::TeeReader;
 // make a new reader
 let reader = std::io::Cursor::new(vec![1,2,3]);
-let mut tee = tee::TeeReader::new(
+let mut tee = TeeReader::new(
     reader,
     vec![], // vec implements write
     false   // we don't care about flushing here
@@ -26,8 +27,9 @@ assert_eq!(results, output);
 ## TeeWriter
 ```rust
 # use std::io::prelude::*;
+use twitchchat::helpers::TeeWriter;
 let writer = vec![];
-let mut tee = tee::TeeWriter::new(writer, vec![]);
+let mut tee = TeeWriter::new(writer, vec![]);
 for i in 1..=3 {
     let _ = tee.write_all(&[i]);
 }

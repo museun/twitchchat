@@ -11,7 +11,7 @@ The limiter is cheaply-clonable
 ```no_run
 # fn main() {
 use std::time::Duration;
-use ratelimit::RateLimit;
+use twitchchat::helpers::RateLimit;
 
 // limits to 3 `.take()` per 1 second
 let mut limiter = RateLimit::full(3, Duration::from_secs(1));

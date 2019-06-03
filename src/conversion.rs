@@ -9,6 +9,7 @@ use hashbrown::HashMap;
 ///
 /// Example:
 /** ```
+use twitchchat::conversion::{TagType, ArgsType};
 struct MyPrivMsg {
     tags: hashbrown::HashMap<String, String>,
     sender: String,
@@ -30,8 +31,8 @@ impl MyPrivMsg {
 }
 
 impl twitchchat::ToMessage for MyPrivMsg {
-    fn tags(&self) -> Option<twitchchat::TagType<'_>> {
-        Some(twitchchat::TagType::Map(&self.tags))
+    fn tags(&self) -> Option<TagType<'_>> {
+        Some(TagType::Map(&self.tags))
     }
     fn prefix(&self) -> Option<&str> {
         Some(self.sender.as_str())
@@ -39,8 +40,8 @@ impl twitchchat::ToMessage for MyPrivMsg {
     fn command(&self) -> Option<&str> {
         Some("PRIVMSG")
     }
-    fn args(&self) -> Option<twitchchat::ArgsType<'_>> {
-        Some(twitchchat::ArgsType::Raw(self.channel.as_str()))
+    fn args(&self) -> Option<ArgsType<'_>> {
+        Some(ArgsType::Raw(self.channel.as_str()))
     }
     fn data(&self) -> Option<&str> {
         Some(self.data.as_str())
