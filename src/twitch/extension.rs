@@ -107,7 +107,7 @@ where
         };
 
         if buf.len() + len + 1 > 510 {
-            w.write_line(dbg!(&buf))?;
+            w.write_line(&buf)?;
             buf.clear();
 
             stats.messages += 1;
