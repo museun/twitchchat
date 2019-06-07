@@ -14,8 +14,7 @@ impl Writer {
     }
 
     pub(crate) fn write_line<S: Display>(&self, data: S) -> Result<(), Error> {
-        let data = format!("{}\r\n", data);
-        match self.0.try_send(data) {
+        match self.0.try_send(format!("{}\r\n", data)) {
             Ok(..) => Ok(()),
             Err(channel::TrySendError::Disconnected(..)) => Err(Error::NotConnected),
             Err(channel::TrySendError::Full(..)) => {

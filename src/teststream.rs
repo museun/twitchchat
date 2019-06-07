@@ -19,12 +19,13 @@ impl TestStream {
     /// Drains the internal from the stream (e.g. read what has written to the client)
     ///
     /// **NOTE** Keeps the trailing \r\n
-    pub fn drain_buffer(&mut self) -> Option<String> {
+    pub fn drain_buffer(&mut self) -> String {
         let mut w = self.write.lock().unwrap();
         if w.is_empty() {
-            return None;
+            return "".into();
         }
-        String::from_utf8(w.drain(..).collect::<Vec<_>>()).ok()
+        let v = w.drain(..).collect::<Vec<_>>();
+        String::from_utf8_lossy(&v).to_string()
     }
 
     /// Writes a line to the stream (e.g. what should be read from the client)

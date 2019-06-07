@@ -107,12 +107,8 @@ where
         };
 
         if buf.len() + len + 1 > 510 {
-            w.write_line(&buf)?;
+            w.write_line(dbg!(&buf))?;
             buf.clear();
-
-            if let Some(ref mut rate) = &mut rate {
-                let _ = rate.take();
-            }
 
             stats.messages += 1;
         }
@@ -127,6 +123,10 @@ where
             buf.push_str(&["#", channel].concat());
         } else {
             buf.push_str(&channel);
+        }
+
+        if let Some(ref mut rate) = &mut rate {
+            let _ = rate.take();
         }
         stats.channels += 1;
     }
@@ -172,12 +172,15 @@ mod tests {
         let (r, w) = sync_adapters(stream.clone(), stream.clone());
         let client = Client::new(r, w);
 
+        client.writer().join("#context_swap_Kappa");
+        while stream.drain_buffer().is_empty() {}
+
         let _ = client
             .writer()
             .join_many(make_channel_list().take(1000))
             .unwrap();
 
-        let line = stream.drain_buffer().unwrap();
+        let line = stream.drain_buffer();
 
         for line in line.split_terminator("\r\n") {
             let len = line.len();
@@ -186,31 +189,71 @@ mod tests {
     }
 
     #[test]
+    fn join_many_burst() {
+        let mut stream = helpers::TestStream::new();
+        let (r, w) = sync_adapters(stream.clone(), stream.clone());
+        let client = Client::new(r, w);
+
+        client.writer().join("#context_swap_Kappa");
+        while stream.drain_buffer().is_empty() {}
+
+        let start = std::time::Instant::now();
+        let _ = client
+            .writer()
+            .join_many_limited(
+                make_channel_list().take(50),
+                Some(RateLimit::full_unsync(
+                    50,
+                    std::time::Duration::from_millis(25),
+                )),
+            )
+            .unwrap();
+
+        let line = stream.drain_buffer();
+        for line in line.split_terminator("\r\n") {
+            let len = line.len();
+            assert!(len <= 510, "{} <= 510", len);
+        }
+        let end = std::time::Instant::now();
+        assert!(
+            end - start < std::time::Duration::from_millis(25),
+            "{:?}",
+            end - start
+        );
+    }
+
+    #[test]
     fn join_many_limited() {
         let mut stream = helpers::TestStream::new();
         let (r, w) = sync_adapters(stream.clone(), stream.clone());
         let client = Client::new(r, w);
 
-        let start = std::time::Instant::now();
+        client.writer().join("#context_swap_Kappa");
+        while stream.drain_buffer().is_empty() {}
 
+        let start = std::time::Instant::now();
         let _ = client
             .writer()
             .join_many_limited(
-                make_channel_list().take(1000),
+                make_channel_list().take(51),
                 Some(RateLimit::full_unsync(
-                    5,
-                    std::time::Duration::from_millis(10),
+                    50,
+                    std::time::Duration::from_secs(3),
                 )),
             )
             .unwrap();
 
-        let line = stream.drain_buffer().unwrap();
+        let line = stream.drain_buffer();
         for line in line.split_terminator("\r\n") {
             let len = line.len();
             assert!(len <= 510, "{} <= 510", len);
         }
 
         let end = std::time::Instant::now();
-        assert!(end - start > std::time::Duration::from_millis(50));
+        assert!(
+            end - start > std::time::Duration::from_secs(3),
+            "{:?}",
+            end - start
+        );
     }
 }
