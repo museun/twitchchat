@@ -325,10 +325,7 @@ impl Writer {
     }
 
     /// Whispers the message to the username.
-    pub fn whisper<S>(&self, username: S, message: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn whisper(&self, username: impl Display, message: impl Display) -> Result<(), Error> {
         self.command(format!("/w {} {}", username, message))
     }
 
