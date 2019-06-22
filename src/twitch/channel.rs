@@ -7,35 +7,26 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Channel(String);
 
-impl Channel {
-    pub(crate) fn validate<C>(channel: C) -> Result<Channel, Error>
-    where
-        C: Into<Channel>,
-    {
-        let channel = channel.into();
-        if channel.0.is_empty() {
-            return Err(Error::EmptyChannelName);
-        }
-        Ok(channel)
-    }
+/// A trait to convert types into [`Channel`](./struct.Channel.html)
+pub trait IntoChannel {
+    /// Tries to convert this type a channel
+    fn into_channel(self) -> Result<Channel, Error>;
 }
 
-// TODO these are atrocious
-
-impl From<&Channel> for Channel {
-    fn from(ch: &Channel) -> Self {
-        ch.clone()
-    }
-}
-
-impl<T> From<T> for Channel
+impl<T> IntoChannel for T
 where
-    T: Into<String>,
+    T: ToString,
 {
-    fn from(name: T) -> Self {
-        let name = name.into();
+    fn into_channel(self) -> Result<Channel, Error> {
+        Channel::validate(self.to_string())
+    }
+}
+
+impl Channel {
+    pub(crate) fn validate(name: impl ToString) -> Result<Channel, Error> {
+        let name = name.to_string();
         if name.is_empty() {
-            return Self("".into());
+            return Err(Error::EmptyChannelName);
         }
 
         let name = name.to_lowercase();
@@ -44,8 +35,7 @@ where
         } else {
             name.to_string()
         };
-
-        Self(name)
+        Ok(Channel(name))
     }
 }
 
@@ -91,7 +81,7 @@ mod tests {
     #[test]
     fn equals() {
         let s = "foobar";
-        let ch: Channel = s.into();
+        let ch: Channel = s.into_channel().unwrap();
         assert!(ch == "#foobar");
         assert!(ch == "#foobar".to_string());
     }
@@ -110,11 +100,22 @@ mod tests {
         let s = String::from("museun");
 
         let channels: Vec<Channel> = vec![
-            s.as_str().into(),
-            s.clone().into(),
-            s.into(),
-            "museun".into(),
-            String::from("museun").into(),
+            s.as_str().into_channel().unwrap(),
+            s.clone().into_channel().unwrap(),
+            s.into_channel().unwrap(),
+            "museun".into_channel().unwrap(),
+            String::from("museun").into_channel().unwrap(),
+            std::sync::Arc::new(String::from("museun"))
+                .into_channel()
+                .unwrap(),
+            std::rc::Rc::new(String::from("museun"))
+                .into_channel()
+                .unwrap(),
+            String::from("museun")
+                .into_channel()
+                .unwrap()
+                .into_channel()
+                .unwrap(),
         ];
 
         for name in channels {

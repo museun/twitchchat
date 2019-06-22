@@ -37,7 +37,7 @@ pub use self::extension::WriterExt;
 
 /// Twitch channel types
 mod channel;
-pub use self::channel::Channel;
+pub use self::channel::{Channel, IntoChannel};
 
 #[doc(hidden)]
 pub mod userconfig;

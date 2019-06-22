@@ -23,13 +23,13 @@ fn parse_commands() {
     let input = ":museun!museun@museun.tmi.twitch.tv JOIN #museun";
     let expected = Command::Join(Join {
         user: "museun".to_string(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 
     let input = ":jtv MODE #museun +o shaken_bot";
     let expected = Command::Mode(Mode {
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         status: ModeStatus::Gained,
         user: "shaken_bot".into(),
     });
@@ -37,7 +37,7 @@ fn parse_commands() {
 
     let input = ":jtv MODE #museun -o shaken_bot";
     let expected = Command::Mode(Mode {
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         status: ModeStatus::Lost,
         user: "shaken_bot".into(),
     });
@@ -46,7 +46,7 @@ fn parse_commands() {
     let input =
         ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :museun shaken_bot2 shaken_bot3";
     let expected = Command::NamesStart(NamesStart {
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         user: "museun".into(),
         users: ["museun", "shaken_bot2", "shaken_bot3"]
             .iter()
@@ -58,7 +58,7 @@ fn parse_commands() {
 
     let input = ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5";
     let expected = Command::NamesStart(NamesStart {
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         user: "museun".into(),
         users: ["shaken_bot4", "shaken_bot5"]
             .iter()
@@ -70,7 +70,7 @@ fn parse_commands() {
 
     let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list";
     let expected = Command::NamesEnd(NamesEnd {
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         user: "museun".into(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -78,14 +78,14 @@ fn parse_commands() {
     let input = ":museun!museun@museun.tmi.twitch.tv PART #museun";
     let expected = Command::Part(Part {
         user: "museun".into(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 
     let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot";
     let expected = Command::ClearChat(ClearChat {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         user: Some("shaken_bot".into()),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -93,7 +93,7 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv CLEARCHAT #museun";
     let expected = Command::ClearChat(ClearChat {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         user: None,
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -101,7 +101,7 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys";
     let expected = Command::ClearMsg(ClearMsg {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: Some("HeyGuys".into()),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -109,7 +109,7 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv CLEARMSG #museun";
     let expected = Command::ClearMsg(ClearMsg {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: None,
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -147,7 +147,7 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv NOTICE #museun :This room is no longer in slow mode.";
     let expected = Command::Notice(Notice {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: "This room is no longer in slow mode.".into(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -159,14 +159,14 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv ROOMSTATE #museun";
     let expected = Command::RoomState(RoomState {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 
     let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.";
     let expected = Command::UserNotice(UserNotice {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: Some("This room is no longer in slow mode.".into()),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
@@ -174,7 +174,7 @@ fn parse_commands() {
     let input = ":tmi.twitch.tv USERSTATE #museun";
     let expected = Command::UserState(UserState {
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
     });
     assert_eq!(parse(&Message::parse(input).unwrap()).unwrap(), expected);
 
@@ -188,7 +188,7 @@ fn parse_commands() {
     let expected = Command::PrivMsg(PrivMsg {
         user: "museun".into(),
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: "VoHiYo".into(),
         action: false,
     });
@@ -198,7 +198,7 @@ fn parse_commands() {
     let expected = Command::PrivMsg(PrivMsg {
         user: "museun".into(),
         tags: Tags::default(),
-        channel: "#museun".into(),
+        channel: "#museun".into_channel().unwrap(),
         message: "VoHiYo".into(),
         action: true,
     });

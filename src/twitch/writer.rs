@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::{Channel, Color, Error};
+use super::{Color, Error, IntoChannel};
 use crossbeam_channel as channel;
 
 /// A thread-safe, clonable writer for the Twitch client
@@ -50,8 +50,8 @@ impl Writer {
     /// Host another channel.
     ///
     /// Use [`Writer::unhost`](./struct.Writer.html#method.unhost) to unset host mode.
-    pub fn host(&self, channel: impl Into<Channel>) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn host(&self, channel: impl IntoChannel) -> Result<(), Error> {
+        let channel = channel.into_channel()?;
         self.command(format!("/host {}", *channel))
     }
 
@@ -82,8 +82,8 @@ impl Writer {
     /// Raid another channel.
     ///
     /// Use [`Writer::unraid`](./struct.Writer.html#method.unraid) to cancel the Raid.
-    pub fn raid(&self, channel: impl Into<Channel>) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn raid(&self, channel: impl IntoChannel) -> Result<(), Error> {
+        let channel = channel.into_channel()?;
         self.command(format!("/raid {}", *channel))
     }
 
@@ -320,8 +320,8 @@ impl Writer {
     /// w.join("Museun").unwrap();
     /// w.join("#MUSEUN").unwrap();
     /// ```    
-    pub fn join(&self, channel: impl Into<Channel>) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn join(&self, channel: impl IntoChannel) -> Result<(), Error> {
+        let channel = channel.into_channel()?;
         self.raw(format!("JOIN {}", *channel))
     }
 
@@ -341,16 +341,15 @@ impl Writer {
     /// w.part("Museun").unwrap();
     /// w.part("#MUSEUN").unwrap();
     /// ```    
-    pub fn part(&self, channel: impl Into<Channel>) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn part(&self, channel: impl IntoChannel) -> Result<(), Error> {
+        let channel = channel.into_channel()?;
         self.raw(format!("PART {}", *channel))
     }
 
     /// Sends an "emote" `message` in the third person to the `channel`
     ///
     /// This ensures the channel name is lowercased and begins with a '#'.
-    pub fn me(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn me(&self, channel: impl IntoChannel, message: impl Display) -> Result<(), Error> {
         self.send(channel, format!("/me {}", message))
     }
 
@@ -359,8 +358,8 @@ impl Writer {
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// Same as [`send`](./struct.Client.html#method.send)
-    pub fn privmsg(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
-        let channel = Channel::validate(channel)?;
+    pub fn privmsg(&self, channel: impl IntoChannel, message: impl Display) -> Result<(), Error> {
+        let channel = channel.into_channel()?;
         self.raw(format!("PRIVMSG {} :{}", *channel, message))
     }
 
@@ -369,7 +368,7 @@ impl Writer {
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// Same as [`privmsg`](./struct.Client.html#method.privmsg)
-    pub fn send(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
+    pub fn send(&self, channel: impl IntoChannel, message: impl Display) -> Result<(), Error> {
         self.privmsg(channel, message)
     }
 

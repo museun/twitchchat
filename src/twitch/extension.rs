@@ -172,7 +172,7 @@ mod tests {
         let (r, w) = sync_adapters(stream.clone(), stream.clone());
         let client = Client::new(r, w);
 
-        client.writer().join("#context_swap_Kappa");
+        client.writer().join("#context_swap_Kappa").unwrap();
         while stream.drain_buffer().is_empty() {}
 
         let _ = client
@@ -194,7 +194,7 @@ mod tests {
         let (r, w) = sync_adapters(stream.clone(), stream.clone());
         let client = Client::new(r, w);
 
-        client.writer().join("#context_swap_Kappa");
+        client.writer().join("#context_swap_Kappa").unwrap();
         while stream.drain_buffer().is_empty() {}
 
         let start = std::time::Instant::now();
@@ -228,7 +228,7 @@ mod tests {
         let (r, w) = sync_adapters(stream.clone(), stream.clone());
         let client = Client::new(r, w);
 
-        client.writer().join("#context_swap_Kappa");
+        client.writer().join("#context_swap_Kappa").unwrap();
         while stream.drain_buffer().is_empty() {}
 
         let start = std::time::Instant::now();

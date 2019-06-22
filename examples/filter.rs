@@ -1,7 +1,7 @@
 use std::net::TcpStream;
 use twitchchat::{commands::PrivMsg, Client, UserConfig, Writer};
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // connect to twitch via a tcp stream, creating a read/write pair
     let (read, write) = {
         let stream = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS)?;

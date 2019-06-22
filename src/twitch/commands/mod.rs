@@ -33,7 +33,7 @@ pub use self::usernotice::{NoticeType, SubPlan, UserNotice};
 pub use self::userstate::UserState;
 
 use crate::irc::types::*;
-use crate::twitch::{Badge, BadgeInfo, Channel, Color, Emotes, RGB};
+use crate::twitch::{Badge, BadgeInfo, Channel, Color, Emotes, IntoChannel, RGB};
 use crate::Tags;
 
 /// Tag allows access to the Tags part of the Message
@@ -109,11 +109,11 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
         let cmd = match head.as_str() {
             "JOIN" => Message::Join(Join {
                 user: get_user!(prefix),
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
             }),
             "PART" => Message::Part(Part {
                 user: get_user!(prefix),
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
             }),
             "PRIVMSG" => {
                 let body = tail?;
@@ -126,7 +126,7 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
                 Message::PrivMsg(PrivMsg {
                     user: get_user!(prefix),
                     tags,
-                    channel: args.next()?.into(),
+                    channel: args.next()?.into_channel().ok()?,
                     message,
                     action,
                 })
@@ -136,16 +136,16 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
                 let _ = args.next()?; // out here to ignore the
                 Message::NamesStart(NamesStart {
                     user,
-                    channel: args.next()?.into(),
+                    channel: args.next()?.into_channel().ok()?,
                     users: tail?.split(' ').map(str::to_string).collect(),
                 })
             }
             "366" => Message::NamesEnd(NamesEnd {
                 user: args.next()?,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
             }),
             "MODE" => Message::Mode(Mode {
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
                 status: match args.next()?.as_str() {
                     "+o" => ModeStatus::Gained,
                     "-o" => ModeStatus::Lost,
@@ -155,12 +155,12 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
             }),
             "CLEARCHAT" => Message::ClearChat(ClearChat {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
                 user: tail,
             }),
             "CLEARMSG" => Message::ClearMsg(ClearMsg {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
                 message: tail,
             }),
             "HOSTTARGET" => {
@@ -181,22 +181,22 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
             }
             "NOTICE" => Message::Notice(Notice {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
                 message: tail?,
             }),
             "RECONNECT" => Message::Reconnect(Reconnect),
             "ROOMSTATE" => Message::RoomState(RoomState {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
             }),
             "USERNOTICE" => Message::UserNotice(UserNotice {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
                 message: tail,
             }),
             "USERSTATE" => Message::UserState(UserState {
                 tags,
-                channel: args.next()?.into(),
+                channel: args.next()?.into_channel().ok()?,
             }),
             "GLOBALUSERSTATE" => Message::GlobalUserState(GlobalUserState { tags }),
             _ => return None,
