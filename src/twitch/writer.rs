@@ -13,7 +13,7 @@ impl Writer {
         (Self(tx), rx)
     }
 
-    pub(crate) fn write_line<S: Display>(&self, data: S) -> Result<(), Error> {
+    pub(crate) fn write_line(&self, data: impl Display) -> Result<(), Error> {
         match self.0.try_send(format!("{}\r\n", data)) {
             Ok(..) => Ok(()),
             Err(channel::TrySendError::Disconnected(..)) => Err(Error::NotConnected),
@@ -50,10 +50,7 @@ impl Writer {
     /// Host another channel.
     ///
     /// Use [`Writer::unhost`](./struct.Writer.html#method.unhost) to unset host mode.
-    pub fn host<C>(&self, channel: C) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-    {
+    pub fn host(&self, channel: impl Into<Channel>) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.command(format!("/host {}", *channel))
     }
@@ -85,10 +82,7 @@ impl Writer {
     /// Raid another channel.
     ///
     /// Use [`Writer::unraid`](./struct.Writer.html#method.unraid) to cancel the Raid.
-    pub fn raid<C>(&self, channel: C) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-    {
+    pub fn raid(&self, channel: impl Into<Channel>) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.command(format!("/raid {}", *channel))
     }
@@ -137,10 +131,7 @@ impl Writer {
     /// Reason is optional and will be shown to the target user and other moderators.
     ///
     /// Use [`Writer::unban`](./struct.Writer.html#method.unban) to remove a ban.
-    pub fn ban<S>(&self, username: S, reason: Option<&str>) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn ban(&self, username: impl Display, reason: Option<&str>) -> Result<(), Error> {
         match reason {
             Some(reason) => self.command(format!("/ban {} {}", username, reason)),
             None => self.command(format!("/ban {}", username)),
@@ -148,10 +139,7 @@ impl Writer {
     }
 
     /// Removes a ban on a user.
-    pub fn unban<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn unban(&self, username: impl Display) -> Result<(), Error> {
         self.command(format!("/unban {}", username))
     }
 
@@ -182,12 +170,10 @@ impl Writer {
     /// Examples: "30m", "1 week", "5 days 12 hours".
     ///
     /// Must be less than 3 months.
-    pub fn followers<S>(&self, duration: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
-        // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
-        // and verify its < 3 months
+    pub fn followers(&self, duration: impl Display) -> Result<(), Error> {
+        // TODO parse the `duration` and verify its < 3 months
+        // chrono doesn't have this parsing, but it'd not be difficult to write one
+        // an extra error variant would have to be added for "invalid timespec" (timestamp?)
         self.command(&format!("/followers {}", duration))
     }
 
@@ -201,20 +187,21 @@ impl Writer {
     /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
     ///
     /// (**NOTE**: renamed to `op` because r#mod is annoying to type)
-    pub fn op<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn op(&self, username: impl Display) -> Result<(), Error> {
+        self.command(&format!("/mod {}", username))
+    }
+
+    /// Grant moderator status to a user. (See [`Writer::op`](./struct.Writer.html#method.op) for an alternative name)
+    ///
+    /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.    
+    pub fn r#mod(&self, username: impl Display) -> Result<(), Error> {
         self.command(&format!("/mod {}", username))
     }
 
     /// Revoke moderator status from a user.
     ///
     /// Use [`Writer::mods`](./struct.Writer.html#method.mods) to list the moderators of this channel.
-    pub fn unmod<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn unmod(&self, username: impl Display) -> Result<(), Error> {
         self.command(&format!("/unmod {}", username))
     }
 
@@ -239,7 +226,7 @@ impl Writer {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         match duration {
             Some(dur) => self.command(format!("/slow {}", dur)),
-            None => self.command("/slow"),
+            None => self.command("/slow 120"),
         }
     }
 
@@ -276,15 +263,12 @@ impl Writer {
     /// Reason is optional and will be shown to the target user and other moderators.
     ///
     /// Use [`Writer::untimeout`](./struct.Writer.html#method.untimeout) to remove a timeout.
-    pub fn timeout<S>(
+    pub fn timeout(
         &self,
-        username: S,
+        username: impl Display,
         duration: Option<&str>,
         reason: Option<&str>,
-    ) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    ) -> Result<(), Error> {
         // TODO use https://docs.rs/chrono/0.4.6/chrono/#duration
         // and verify the duration stuff
         let timeout = match (duration, reason) {
@@ -297,30 +281,21 @@ impl Writer {
     }
 
     /// Removes a timeout on a user.
-    pub fn untimeout<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn untimeout(&self, username: impl Display) -> Result<(), Error> {
         self.command(format!("/untimeout {}", username))
     }
 
     /// Grant VIP status to a user.
     ///
     /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
-    pub fn vip<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn vip(&self, username: impl Display) -> Result<(), Error> {
         self.command(format!("/vip {}", username))
     }
 
     /// Revoke VIP status from a user.
     ///
     /// Use [`Writer::vips`](./struct.Writer.html#method.vips) to list the VIPs of this channel.
-    pub fn unvip<S>(&self, username: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn unvip(&self, username: impl Display) -> Result<(), Error> {
         self.command(format!("/unvip {}", username))
     }
 
@@ -345,10 +320,7 @@ impl Writer {
     /// w.join("Museun").unwrap();
     /// w.join("#MUSEUN").unwrap();
     /// ```    
-    pub fn join<C>(&self, channel: C) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-    {
+    pub fn join(&self, channel: impl Into<Channel>) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(format!("JOIN {}", *channel))
     }
@@ -369,10 +341,7 @@ impl Writer {
     /// w.part("Museun").unwrap();
     /// w.part("#MUSEUN").unwrap();
     /// ```    
-    pub fn part<C>(&self, channel: C) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-    {
+    pub fn part(&self, channel: impl Into<Channel>) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(format!("PART {}", *channel))
     }
@@ -380,11 +349,7 @@ impl Writer {
     /// Sends an "emote" `message` in the third person to the `channel`
     ///
     /// This ensures the channel name is lowercased and begins with a '#'.
-    pub fn me<C, S>(&self, channel: C, message: S) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-        S: Display,
-    {
+    pub fn me(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.send(channel, format!("/me {}", message))
     }
@@ -394,11 +359,7 @@ impl Writer {
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// Same as [`send`](./struct.Client.html#method.send)
-    pub fn privmsg<C, S>(&self, channel: C, message: S) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-        S: Display,
-    {
+    pub fn privmsg(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
         let channel = Channel::validate(channel)?;
         self.raw(format!("PRIVMSG {} :{}", *channel, message))
     }
@@ -408,27 +369,370 @@ impl Writer {
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// Same as [`privmsg`](./struct.Client.html#method.privmsg)
-    pub fn send<C, S>(&self, channel: C, message: S) -> Result<(), Error>
-    where
-        C: Into<Channel>,
-        S: Display,
-    {
+    pub fn send(&self, channel: impl Into<Channel>, message: impl Display) -> Result<(), Error> {
         self.privmsg(channel, message)
     }
 
     /// Sends the command: `data` (e.g. `/color #FFFFFF`)
-    pub fn command<S>(&self, data: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn command(&self, data: impl Display) -> Result<(), Error> {
         self.raw(format!("PRIVMSG jtv :{}", data))
     }
 
     /// Sends a raw line (appends the required `\r\n`)
-    pub fn raw<S>(&self, data: S) -> Result<(), Error>
-    where
-        S: Display,
-    {
+    pub fn raw(&self, data: impl Display) -> Result<(), Error> {
         self.write_line(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_writer(
+        f: impl FnOnce(&Writer) -> Result<(), Error>,
+        expected: impl PartialEq<String> + std::fmt::Debug,
+    ) {
+        let (w, rx) = Writer::new();
+        f(&w).unwrap();
+        assert_eq!(expected, rx.recv().unwrap())
+    }
+
+    struct TestDisplay<'a>(&'a dyn Display);
+
+    impl<'a> Display for TestDisplay<'a> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    #[test]
+    fn host() {
+        let expected = "PRIVMSG jtv :/host #museun\r\n";
+        test_writer(|w| w.host("museun"), expected);
+        test_writer(|w| w.host("#museun"), expected);
+
+        // TODO: AsChannel #45
+        test_writer(|w| w.host(TestDisplay(&"museun").to_string()), expected);
+    }
+
+    #[test]
+    fn unhost() {
+        let expected = "PRIVMSG jtv :/unhost\r\n";
+        test_writer(|w| w.unhost(), expected);
+    }
+
+    #[test]
+    fn marker() {
+        test_writer(|w| w.marker(None), "PRIVMSG jtv :/marker\r\n");
+        let short = "a".repeat(140);
+        test_writer(
+            |w| w.marker(Some(&short)),
+            format!("PRIVMSG jtv :/marker {}\r\n", short),
+        );
+
+        let long = "a".repeat(141);
+        test_writer(
+            |w| w.marker(Some(&long)),
+            format!("PRIVMSG jtv :/marker {}\r\n", &long[..140]),
+        );
+    }
+
+    #[test]
+    fn raid() {
+        let expected = "PRIVMSG jtv :/raid #museun\r\n";
+        test_writer(|w| w.raid("museun"), expected);
+        test_writer(|w| w.raid("#museun"), expected);
+
+        // TODO: AsChannel #45
+        test_writer(|w| w.raid(TestDisplay(&"museun").to_string()), expected);
+    }
+
+    #[test]
+    fn unraid() {
+        let expected = "PRIVMSG jtv :/unraid\r\n";
+        test_writer(|w| w.unraid(), expected);
+    }
+
+    #[test]
+    fn color() {
+        use std::str::FromStr as _;
+        let color = Color::from_str("blue").unwrap();
+        let expected = format!("PRIVMSG jtv :/color {}\r\n", &color);
+        test_writer(|w| w.color(color), expected);
+    }
+
+    #[test]
+    fn disconnect() {
+        let expected = "PRIVMSG jtv :/disconnect\r\n";
+        test_writer(|w| w.disconnect(), expected);
+    }
+
+    #[test]
+    fn help() {
+        let expected = "PRIVMSG jtv :/help\r\n";
+        test_writer(|w| w.help(), expected);
+    }
+
+    #[test]
+    fn mods() {
+        let expected = "PRIVMSG jtv :/mods\r\n";
+        test_writer(|w| w.mods(), expected);
+    }
+
+    #[test]
+    fn vips() {
+        let expected = "PRIVMSG jtv :/vips\r\n";
+        test_writer(|w| w.vips(), expected);
+    }
+
+    #[test]
+    fn commercial() {
+        let expected = "PRIVMSG jtv :/commercial\r\n";
+        test_writer(|w| w.commercial(None), expected);
+
+        let expected = "PRIVMSG jtv :/commercial 42\r\n";
+        test_writer(|w| w.commercial(Some(42)), expected);
+    }
+
+    #[test]
+    fn ban() {
+        let expected = "PRIVMSG jtv :/ban test_user\r\n";
+        test_writer(|w| w.ban("test_user", None), expected);
+
+        let expected = "PRIVMSG jtv :/ban test_user spamming\r\n";
+        test_writer(|w| w.ban("test_user", Some(&"spamming")), expected);
+
+        let expected = "PRIVMSG jtv :/ban test_user\r\n";
+        test_writer(|w| w.ban(TestDisplay(&"test_user"), None), expected);
+
+        let expected = "PRIVMSG jtv :/ban test_user spamming\r\n";
+        test_writer(
+            |w| w.ban(TestDisplay(&"test_user"), Some(&"spamming")),
+            expected,
+        );
+    }
+
+    #[test]
+    fn unban() {
+        let expected = "PRIVMSG jtv :/unban test_user\r\n";
+        test_writer(|w| w.unban("test_user"), expected);
+
+        let expected = "PRIVMSG jtv :/unban test_user\r\n";
+        test_writer(|w| w.unban(TestDisplay(&"test_user")), expected);
+    }
+
+    #[test]
+    fn clear() {
+        let expected = "PRIVMSG jtv :/clear\r\n";
+        test_writer(|w| w.clear(), expected);
+    }
+
+    #[test]
+    fn emoteonly() {
+        let expected = "PRIVMSG jtv :/emoteonly\r\n";
+        test_writer(|w| w.emoteonly(), expected);
+    }
+
+    #[test]
+    fn emoteonlyoff() {
+        let expected = "PRIVMSG jtv :/emoteonlyoff\r\n";
+        test_writer(|w| w.emoteonlyoff(), expected);
+    }
+
+    #[test]
+    fn followers() {
+        let expected = "PRIVMSG jtv :/followers 1 week\r\n";
+        test_writer(|w| w.followers("1 week"), expected);
+
+        let expected = "PRIVMSG jtv :/followers 1 week\r\n";
+        test_writer(|w| w.followers(TestDisplay(&"1 week")), expected);
+    }
+
+    #[test]
+    fn followersoff() {
+        let expected = "PRIVMSG jtv :/followersoff\r\n";
+        test_writer(|w| w.followersoff(), expected);
+    }
+
+    #[test]
+    fn op() {
+        let expected = "PRIVMSG jtv :/mod museun\r\n";
+        test_writer(|w| w.op("museun"), expected);
+        test_writer(|w| w.op(TestDisplay(&"museun")), expected);
+        test_writer(|w| w.r#mod("museun"), expected);
+        test_writer(|w| w.r#mod(TestDisplay(&"museun")), expected);
+    }
+
+    #[test]
+    fn unmod() {
+        let expected = "PRIVMSG jtv :/unmod museun\r\n";
+        test_writer(|w| w.unmod("museun"), expected);
+        test_writer(|w| w.unmod(TestDisplay(&"museun")), expected);
+    }
+
+    #[test]
+    fn r9kbeta() {
+        let expected = "PRIVMSG jtv :/r9kbeta\r\n";
+        test_writer(|w| w.r9kbeta(), expected);
+    }
+
+    #[test]
+    fn r9kbetaoff() {
+        let expected = "PRIVMSG jtv :/r9kbetaoff\r\n";
+        test_writer(|w| w.r9kbetaoff(), expected);
+    }
+
+    #[test]
+    fn slow() {
+        let expected = "PRIVMSG jtv :/slow 120\r\n";
+        test_writer(|w| w.slow(None), expected);
+        let expected = "PRIVMSG jtv :/slow 240\r\n";
+        test_writer(|w| w.slow(Some(240)), expected);
+    }
+
+    #[test]
+    fn slowoff() {
+        let expected = "PRIVMSG jtv :/slowoff\r\n";
+        test_writer(|w| w.slowoff(), expected);
+    }
+
+    #[test]
+    fn subscribers() {
+        let expected = "PRIVMSG jtv :/subscribers\r\n";
+        test_writer(|w| w.subscribers(), expected);
+    }
+
+    #[test]
+    fn subscribersoff() {
+        let expected = "PRIVMSG jtv :/subscribersoff\r\n";
+        test_writer(|w| w.subscribersoff(), expected);
+    }
+
+    #[test]
+    fn timeout() {
+        let expected = "PRIVMSG jtv :/timeout museun\r\n";
+        test_writer(|w| w.timeout("museun", None, None), expected);
+        test_writer(|w| w.timeout(TestDisplay(&"museun"), None, None), expected);
+
+        let expected = "PRIVMSG jtv :/timeout museun 1d2h\r\n";
+        test_writer(|w| w.timeout("museun", Some("1d2h"), None), expected);
+        test_writer(
+            |w| w.timeout(TestDisplay(&"museun"), Some("1d2h"), None),
+            expected,
+        );
+
+        let expected = "PRIVMSG jtv :/timeout museun spamming\r\n";
+        test_writer(|w| w.timeout("museun", None, Some("spamming")), expected);
+        test_writer(
+            |w| w.timeout(TestDisplay(&"museun"), None, Some("spamming")),
+            expected,
+        );
+
+        let expected = "PRIVMSG jtv :/timeout museun 1d2h spamming\r\n";
+        test_writer(
+            |w| w.timeout("museun", Some("1d2h"), Some("spamming")),
+            expected,
+        );
+        test_writer(
+            |w| w.timeout(TestDisplay(&"museun"), Some("1d2h"), Some("spamming")),
+            expected,
+        );
+    }
+
+    #[test]
+    fn untimeout() {
+        let expected = "PRIVMSG jtv :/untimeout museun\r\n";
+        test_writer(|w| w.untimeout("museun"), expected);
+        test_writer(|w| w.untimeout(TestDisplay(&"museun")), expected);
+    }
+
+    #[test]
+    fn vip() {
+        let expected = "PRIVMSG jtv :/vip museun\r\n";
+        test_writer(|w| w.vip("museun"), expected);
+        test_writer(|w| w.vip(TestDisplay(&"museun")), expected);
+    }
+
+    #[test]
+    fn unvip() {
+        let expected = "PRIVMSG jtv :/unvip museun\r\n";
+        test_writer(|w| w.unvip("museun"), expected);
+        test_writer(|w| w.unvip(TestDisplay(&"museun")), expected);
+    }
+
+    #[test]
+    fn whisper() {
+        let expected = "PRIVMSG jtv :/w museun foobar\r\n";
+        test_writer(|w| w.whisper("museun", "foobar"), expected);
+        test_writer(|w| w.whisper(TestDisplay(&"museun"), "foobar"), expected);
+        test_writer(|w| w.whisper("museun", TestDisplay(&"foobar")), expected);
+    }
+
+    #[test]
+    fn join() {
+        let expected = "JOIN #museun\r\n";
+        test_writer(|w| w.join("museun"), expected);
+        // TODO: AsChannel #45
+        test_writer(|w| w.join(TestDisplay(&"museun").to_string()), expected);
+    }
+
+    #[test]
+    fn part() {
+        let expected = "PART #museun\r\n";
+        test_writer(|w| w.part("museun"), expected);
+        // TODO: AsChannel #45
+        test_writer(|w| w.part(TestDisplay(&"museun").to_string()), expected);
+    }
+
+    #[test]
+    fn me() {
+        let expected = "PRIVMSG #museun :/me testing\r\n";
+        test_writer(|w| w.me("museun", "testing"), expected);
+        test_writer(|w| w.me("#museun", "testing"), expected);
+        // TODO: AsChannel #45
+        test_writer(
+            |w| w.me(TestDisplay(&"museun").to_string(), "testing"),
+            expected,
+        );
+        test_writer(|w| w.me("#museun", TestDisplay(&"testing")), expected);
+    }
+
+    #[test]
+    fn privmsg() {
+        let expected = "PRIVMSG #museun :testing\r\n";
+        test_writer(|w| w.privmsg("museun", "testing"), expected);
+        test_writer(|w| w.privmsg("#museun", "testing"), expected);
+        // TODO: AsChannel #45
+        test_writer(
+            |w| w.privmsg(TestDisplay(&"museun").to_string(), "testing"),
+            expected,
+        );
+        test_writer(|w| w.privmsg("#museun", TestDisplay(&"testing")), expected);
+    }
+
+    #[test]
+    fn send() {
+        let expected = "PRIVMSG #museun :testing\r\n";
+        test_writer(|w| w.send("museun", "testing"), expected);
+        test_writer(|w| w.send("#museun", "testing"), expected);
+        // TODO: AsChannel #45
+        test_writer(
+            |w| w.send(TestDisplay(&"museun").to_string(), "testing"),
+            expected,
+        );
+        test_writer(|w| w.send("#museun", TestDisplay(&"testing")), expected);
+    }
+
+    #[test]
+    fn command() {
+        let expected = "PRIVMSG jtv :testing\r\n";
+        test_writer(|w| w.command("testing"), expected);
+        test_writer(|w| w.command(TestDisplay(&"testing")), expected);
+    }
+
+    #[test]
+    fn raw() {
+        let expected = "PRIVMSG museun :this is a test\r\n";
+        test_writer(|w| w.raw(&expected[..expected.len() - 2]), expected);
     }
 }
