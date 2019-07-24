@@ -34,7 +34,7 @@ pub trait WriterExt {
         I: IntoIterator + 'a,
         I::Item: AsRef<str> + 'a;
 
-    /// Join a (huge) list of channels but using a [`RateLimit`](./helpers/struct.RateLimit.html)
+    /// Join a (huge) list of channels but using a [`RateLimit`](../helpers/struct.RateLimit.html)
     ///
     /// Same as [`WriterExt::join_many`](./trait.WriterExt.html#method.join_many), but takes in an optional RateLimit
     ///

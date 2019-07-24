@@ -30,9 +30,9 @@ pub use self::adapter::{
 mod writer;
 pub use self::writer::Writer;
 
-/// Extensions for the various types
-pub mod extension;
-pub use self::extension::WriterExt;
+mod extension;
+#[doc(inline)]
+pub use self::extension::{JoinStats, WriterExt};
 
 /// Twitch channel types
 mod channel;
