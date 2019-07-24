@@ -136,7 +136,7 @@ impl FromStr for RGB {
 /// SpringGreen |`#00FF7F`| springgreen, spring_green, spring green
 /// YellowGreen |`#ADFF2F`| yellowgreen, yellow_green, yellow green
 /// Turbo |*custom*| ---
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Color {
     /// The name of the Twitch color
