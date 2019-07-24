@@ -1,7 +1,7 @@
 use super::Writer;
 use super::{commands, Message, Token, TokenGen};
 
-use hashbrown::HashMap;
+use std::collections::HashMap;
 
 pub type FilterFn = Box<dyn FnMut(Message, Writer) + Send + Sync>;
 pub struct FilterId(pub(super) FilterFn, pub(super) Token);

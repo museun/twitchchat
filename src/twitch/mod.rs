@@ -2,9 +2,8 @@ mod badge;
 mod color;
 mod emotes;
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-
-use hashbrown::HashMap;
 
 pub use self::badge::{Badge, BadgeInfo, BadgeKind};
 pub use self::emotes::Emotes;
