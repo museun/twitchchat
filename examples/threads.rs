@@ -6,7 +6,7 @@ use twitchchat::{Client, UserConfig};
 
 use rand::prelude::*;
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // connect to twitch via a tcp stream, creating a read/write pair
     let (read, write) = {
         let stream = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS)?;
@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
             // every 5 to 10 seconds
             thread::sleep(Duration::from_secs(rng.gen_range(5, 10)));
             // pick 3 random emotes
-            let poop: Vec<_> = EMOTES.choose_multiple(&mut rng, 3).map(|s| *s).collect();
+            let poop: Vec<_> = EMOTES.choose_multiple(&mut rng, 3).cloned().collect();
             // and send them
             if w.send("museun", poop.join(" ")).is_err() {
                 return;

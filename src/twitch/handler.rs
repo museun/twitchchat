@@ -27,11 +27,7 @@ impl Handlers {
     }
 
     // its seeing this after the macro has been expanded.
-    #[allow(
-        clippy::unknown_clippy_lints,
-        clippy::cyclomatic_complexity,
-        clippy::cognitive_complexity
-    )]
+    #[allow(clippy::unknown_clippy_lints, clippy::cognitive_complexity)]
     pub fn handle(&mut self, msg: Message) {
         macro_rules! dispatch {
             ($msg:expr, $func:tt) => {{
@@ -44,7 +40,7 @@ impl Handlers {
         }
 
         match msg.clone() {
-            Message::Irc(msg) => dispatch!(msg, on_irc_message),
+            Message::Irc(msg) => dispatch!(*msg, on_irc_message),
             Message::Join(msg) => dispatch!(msg, on_join),
             Message::Part(msg) => dispatch!(msg, on_part),
             Message::PrivMsg(msg) => dispatch!(msg, on_priv_msg),

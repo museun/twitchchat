@@ -146,34 +146,39 @@ impl<R: ReadAdapter> Client<R> {
 
         loop {
             match self.read_message()? {
-                Message::Irc(IRCMessage::Cap {
-                    acknowledge: true,
-                    cap,
-                }) => match cap.as_str() {
-                    "twitch.tv/tags" => caps.push(Capability::Tags),
-                    "twitch.tv/membership" => caps.push(Capability::Membership),
-                    "twitch.tv/commands" => caps.push(Capability::Commands),
-                    _ => {}
-                },
+                Message::Irc(msg) => {
+                    match *msg {
+                        IRCMessage::Cap {
+                            // box patterns are nightly
+                            acknowledge: true,
+                            cap,
+                        } => match cap.as_str() {
+                            "twitch.tv/tags" => caps.push(Capability::Tags),
+                            "twitch.tv/membership" => caps.push(Capability::Membership),
+                            "twitch.tv/commands" => caps.push(Capability::Commands),
+                            _ => {}
+                        },
+                        IRCMessage::Ready { .. } => {
+                            let mut bad = vec![];
+                            match (
+                                caps.contains(&Capability::Tags),
+                                caps.contains(&Capability::Commands),
+                            ) {
+                                (true, true) => continue,
 
-                Message::Irc(IRCMessage::Ready { .. }) => {
-                    let mut bad = vec![];
-                    match (
-                        caps.contains(&Capability::Tags),
-                        caps.contains(&Capability::Commands),
-                    ) {
-                        (true, true) => continue,
+                                (false, true) => bad.push(Capability::Tags),
+                                (true, false) => bad.push(Capability::Commands),
+                                _ => {
+                                    bad.push(Capability::Tags);
+                                    bad.push(Capability::Commands);
+                                }
+                            };
 
-                        (false, true) => bad.push(Capability::Tags),
-                        (true, false) => bad.push(Capability::Commands),
-                        _ => {
-                            bad.push(Capability::Tags);
-                            bad.push(Capability::Commands);
+                            if !bad.is_empty() {
+                                return Err(Error::CapabilityRequired(bad));
+                            }
                         }
-                    };
-
-                    if !bad.is_empty() {
-                        return Err(Error::CapabilityRequired(bad));
+                        _ => {}
                     }
                 }
 
@@ -215,7 +220,11 @@ impl<R: ReadAdapter> Client<R> {
         use crate::irc::types::Message as IrcMessage;
         loop {
             match self.read_message()? {
-                Message::Irc(IrcMessage::Ready { name }) => return Ok(name),
+                Message::Irc(msg) => {
+                    if let IrcMessage::Ready { name } = *msg {
+                        return Ok(name);
+                    }
+                }
                 _ => continue,
             }
         }
@@ -247,10 +256,12 @@ impl<R: ReadAdapter> Client<R> {
         log::trace!("<- {:?}", msg);
         {
             let w = self.writer();
-            if let Message::Irc(crate::irc::types::Message::Ping { token }) = &msg {
-                return w
-                    .write_line(format!("PONG :{}", token))
-                    .and_then(|_| Ok(msg));
+            if let Message::Irc(ref ircmsg) = msg {
+                if let crate::irc::types::Message::Ping { token } = &**ircmsg {
+                    return w
+                        .write_line(format!("PONG :{}", token))
+                        .and_then(|_| Ok(msg));
+                }
             }
 
             let key = msg.what_filter();

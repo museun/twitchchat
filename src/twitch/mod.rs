@@ -68,7 +68,7 @@ pub struct LocalUser {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Message {
     /// An irc Message
-    Irc(crate::irc::types::Message),
+    Irc(Box<crate::irc::types::Message>),
     /// Join a channel.
     Join(commands::Join),
     /// Depart from a channel.
@@ -140,7 +140,7 @@ impl Message {
             tail: msg.data().map(ToString::to_string),
         };
 
-        commands::parse(&msg).unwrap_or_else(|| Message::Irc(msg))
+        commands::parse(&msg).unwrap_or_else(|| Message::Irc(Box::new(msg)))
     }
 }
 

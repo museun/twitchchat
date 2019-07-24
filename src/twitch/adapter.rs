@@ -95,7 +95,7 @@ impl<R: Read> ReadAdapter for SyncReadAdapter<R> {
                 }
                 Ok(Message::parse(msg))
             }
-            _ => Ok(Message::Irc(msg)),
+            _ => Ok(Message::Irc(Box::new(msg))),
         }
     }
 
