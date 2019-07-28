@@ -65,7 +65,7 @@ impl Handlers {
 }
 /// Handler allows you to implement message filtering with a struct
 #[allow(unused_variables)]
-pub trait Handler {
+pub trait Handler: Send {
     /// Called when a [`Message`](./enum.Message.html) message is received
     #[inline]
     fn on_message(&mut self, msg: Arc<Message>) {
