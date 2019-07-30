@@ -14,17 +14,17 @@ circle-ci = { repository = "museun/twitchchat", branch = "master", service = "gi
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-log = "0.4.7"
-crossbeam-channel = "0.3.8"
-parking_lot = "0.9.0"
+log = "0.4.8"
+crossbeam-channel = "0.3.9"
 
 [dependencies.serde]
-version = "1.0.97"
+version = "1.0.98"
 features = ["derive"]
 optional = true
 
 [features]
-default = ["serde" ]
+default = []
+serde_derive = [ "serde" ]
 
 [dev-dependencies]
 rand = "0.7.0"

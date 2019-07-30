@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use parking_lot::Mutex;
+use std::sync::Mutex;
 
 /** RateLimit is a simple token bucket-style rate limiter
 
@@ -152,7 +152,7 @@ impl RateLimit {
 
         match self.bucket {
             Bucket::Sync(ref sync) => {
-                let mut sync = sync.lock();
+                let mut sync = sync.lock().unwrap();
                 consume!(sync)
             }
             Bucket::Unsync(ref mut unsync) => {
