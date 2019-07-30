@@ -1,47 +1,4 @@
-use super::Writer;
-use super::{commands, Message, Token, TokenGen};
-
-use std::collections::HashMap;
-
-pub type FilterFn = Box<dyn FnMut(Message, Writer) + Send + Sync>;
-pub struct FilterId(pub(super) FilterFn, pub(super) Token);
-pub struct FilterMap(HashMap<Filter, Vec<FilterId>>, TokenGen);
-
-impl Default for FilterMap {
-    fn default() -> Self {
-        Self(HashMap::default(), TokenGen::default())
-    }
-}
-
-impl FilterMap {
-    pub fn insert(&mut self, filter: Filter, f: FilterFn) -> Token {
-        let token = self.1.next();
-        self.0.entry(filter).or_default().push(FilterId(f, token));
-        log::trace!("added filter for {:?} (id: {})", filter, token.0);
-        token
-    }
-
-    pub fn try_remove(&mut self, token: Token) -> bool {
-        for (filter, vals) in self.0.iter_mut() {
-            if let Some(pos) = vals.iter().position(|d| d.1 == token) {
-                log::trace!("removed filter for {:?} (id: {})", filter, token.0);
-                let _ = vals.remove(pos);
-                return true;
-            }
-        }
-        log::trace!("could not find a matching filter for id: {}", token.0);
-        false
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn get(&self, filter: Filter) -> Option<&Vec<FilterId>> {
-        self.0.get(&filter)
-    }
-
-    pub(crate) fn get_mut(&mut self, filter: Filter) -> Option<&mut Vec<FilterId>> {
-        self.0.get_mut(&filter)
-    }
-}
+use super::{commands, Message};
 
 macro_rules! filter_this {
     ($($t:ident),+ $(,)?) => {

@@ -16,6 +16,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 log = "0.4.8"
 crossbeam-channel = "0.3.9"
+rate_limit = "0.1.0"
 
 [dependencies.serde]
 version = "1.0.98"

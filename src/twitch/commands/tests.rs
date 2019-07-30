@@ -1,20 +1,20 @@
 use super::*;
 
-#[test]
-fn parse_bad_auth() {
-    let input = ":tmi.twitch.tv NOTICE * :Improperly formatted auth";
-    let mut stream = crate::teststream::TestStream::new();
-    stream.write_message(input);
+// #[test]
+// fn parse_bad_auth() {
+//     let input = ":tmi.twitch.tv NOTICE * :Improperly formatted auth";
+//     let mut stream = crate::teststream::TestStream::new();
+//     stream.write_message(input);
 
-    let (read, writer) = crate::sync_adapters(stream.clone(), stream);
-    let mut client = crate::Client::new(read, writer);
+//     let (read, writer) = crate::sync_adapters(stream.clone(), stream);
+//     let mut client = crate::Client::new(read, writer);
 
-    let err = client.read_message().unwrap_err();
-    if let crate::twitch::Error::InvalidRegistration = err {
-        return;
-    }
-    panic!("unexpected error: {}", err)
-}
+//     let err = client.read_message().unwrap_err();
+//     if let crate::twitch::Error::InvalidRegistration = err {
+//         return;
+//     }
+//     panic!("unexpected error: {}", err)
+// }
 
 #[test]
 fn parse_commands() {
