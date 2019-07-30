@@ -1,6 +1,8 @@
 use crate::twitch::Capability;
 use std::collections::BTreeSet;
 
+pub(crate) const JUSTINFAN1234: &'static str = "justinfan1234";
+
 /// Configuration used to complete the 'registration' with the irc server
 #[derive(Clone)]
 pub struct UserConfig {
@@ -27,7 +29,7 @@ impl std::fmt::Debug for UserConfig {
 impl UserConfig {
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) disabled
     pub fn builder() -> UserConfigBuilder {
-        UserConfigBuilder::new()
+        UserConfigBuilder::default()
     }
 
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), with all of the [`Capabilities`](./enum.Capability.html) enabled
@@ -54,10 +56,6 @@ impl Default for UserConfigBuilder {
 }
 
 impl UserConfigBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Use this nickname in the configuration
     pub fn nick<S: ToString>(mut self, nick: S) -> Self {
         let _ = self.nick.replace(nick.to_string());
@@ -69,7 +67,9 @@ impl UserConfigBuilder {
     // and probably the length (its probably 64 bytes)
     pub fn token<S: ToString>(mut self, token: S) -> Self {
         let token = token.to_string();
-        if token.starts_with("oauth") && token.len() == 36 {
+        if token == JUSTINFAN1234 {
+            let _ = self.token.replace(token.to_string());
+        } else if token.starts_with("oauth") && token.len() == 36 {
             let _ = self.token.replace(token.to_string());
         }
         self

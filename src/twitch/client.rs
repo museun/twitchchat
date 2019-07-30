@@ -23,18 +23,20 @@ pub struct Client<R> {
     state: ClientState,
 
     want_tags: bool,
-    irc_ready: bool, // other is implied if this is false
+    irc_ready: bool,
 
     quit: Arc<AtomicBool>,
 }
-
-// TODO quit channel
 
 impl<R> Client<R>
 where
     R: Read + Sync + Send,
 {
-    /// Create a new Client
+    /// Creates and registers a new Client with the IRC server.
+    ///
+    /// Takes a [`UserConfig`](./struct.UserConfig.html) and a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html)/[`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) pair
+    ///
+    /// Returns the Client, or an error if it cannot write to the `W`
     pub fn register<U, W>(config: U, read: R, write: W) -> Result<Self, Error>
     where
         U: std::borrow::Borrow<UserConfig>,
@@ -44,15 +46,20 @@ where
         let (writer, rx) = Writer::new(Arc::clone(&quit));
 
         let config = config.borrow();
-        let want_tags = config.caps.contains(&Capability::Tags);
+        // check for anonymous login ('justinfan1234')
+        let is_anonymous = config.nick == super::userconfig::JUSTINFAN1234
+            && config.token == super::userconfig::JUSTINFAN1234;
+
+        let want_tags = config.caps.contains(&Capability::Tags) && !is_anonymous;
         for cap in config.caps.iter().filter_map(|c| c.get_command()) {
             writer.write_line(cap)?;
         }
 
+        log::trace!("registering");
         writer.write_line(format!("PASS {}", config.token))?;
         writer.write_line(format!("NICK {}", config.nick))?;
+        log::trace!("registered");
 
-        // TODO keep this join handle around
         let handle = std::thread::spawn(move || {
             log::trace!("starting write loop");
             let mut w = write;
@@ -78,19 +85,59 @@ where
             state: ClientState::Start,
 
             want_tags,
-            irc_ready: false,
+            irc_ready: is_anonymous,
 
             quit,
         })
     }
 
     /// Add this filter to the iterator
+    ///
+    /// When this type of `command` is received, it'll be *produced* by the `Client Iterator` as a [`Event::Message`](./enum.Event.html#variant.Message)
+    ///
+    /// A MessageFilter is basically a magic type that represents a [`Command`](./commands/index.html)
+    ///
+    /// To use this simply:
+    /// ```ignore
+    /// use twitchchat::commands::*;
+    /// // client is created by Client::register()
+    /// client.filter::<PrivMsg>() // add a PrivMsg
+    ///       .filter::<Join>() // add a Join
+    /// // and so forth
+    /// ```
+    /// The 'Command' type is used as a turbofish argument    
     pub fn filter<F: MessageFilter>(mut self) -> Self {
-        let _ = self.filters.insert(F::to_filter());
+        let filter = F::to_filter();
+        log::trace!("adding filter: {:?}", filter);
+        let _ = self.filters.insert(filter);
         self
     }
 
+    /// Remove this filter
+    ///    
+    /// Returns whether this fitler was present
+    ///
+    /// **note** This type isn't chainable
+    ///
+    /// ```ignore
+    /// let client client.filter::<PrivMsg>();
+    /// assert!(client.remove_filter::<PrivMsg>());
+    /// assert!(!client.remove_filter::<PrivMsg());
+    /// ```
+    pub fn remove_filter<F: MessageFilter>(&mut self) -> bool {
+        let filter = F::to_filter();
+        log::trace!("removing filter: {:?}", filter);
+        self.filters.remove(&filter)
+    }
+
     /// Sets the iterator to start when we've received the 'ok' from the irc server
+    ///
+    /// When this event happens, a [`Event::IrcReady`](enum.Event.html#variant.IrcReady) is produced by the iterator
+    ///
+    /// - If the `tags` capability was not set, then this is automatically set.
+    /// - If this is not set and the `tags` capability was set, then a [`Event::TwitchReady`](enum.Event.html#variant.TwitchReady) is produced instead
+    ///
+    /// It will try to be smart and produce a `TwitchReady` event if desired, otherwise `IrcReady` was produced
     pub fn when_irc_ready(mut self) -> Self {
         self.irc_ready = true;
         self
@@ -98,30 +145,35 @@ where
 
     /// Get a clonable writer from the client
     pub fn writer(&self) -> Writer {
+        log::trace!("cloning writer");
         self.writer.clone()
     }
 
     /// This is useful to synchronize the closing of the 'Read'
     pub fn wait_for_close(self) {
+        log::trace!("waiting for thread to join");
         let _ = self.handle.join();
+        log::trace!("thread joined");
     }
 
     fn read_message(&mut self) -> Result<Option<Message>, Error> {
         if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
             return Ok(None);
         }
 
         let mut line = String::new(); // reuse this
-        if self
-            .reader
-            .read_line(&mut line)
-            .map_err(|_| Error::CannotRead)?
-            == 0
+        if self.reader.read_line(&mut line).map_err(|err| {
+            log::warn!("failed to read: {}", err);
+            Error::CannotRead
+        })? == 0
         {
+            log::warn!("cannot read (amount was empty)");
             return Err(Error::CannotRead);
         }
 
         if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
             return Ok(None);
         }
 
@@ -144,7 +196,7 @@ where
                         && data == "Improperly formatted auth"
                         && args.get(0).map(|k| k.as_str()) == Some("*")
                     {
-                        log::trace!("got a registration error");
+                        log::warn!("got a registration error");
                         return Err(Error::InvalidRegistration);
                     }
                 }
@@ -177,6 +229,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
             return None;
         }
 
@@ -196,6 +249,7 @@ where
                 match self.read_message() {
                     Ok(Some(msg)) => {
                         if self.quit.load(Ordering::SeqCst) {
+                            log::trace!("quitting");
                             return None;
                         }
                         msg
@@ -218,6 +272,7 @@ where
 
         match self.state {
             ClientState::Start => {
+                log::trace!("state is: {:?}", self.state);
                 let msg = read!();
                 match &msg {
                     Message::Irc(msg) => match &**msg {
@@ -235,12 +290,11 @@ where
                     _ => {}
                 };
 
-                // TODO this is 'smart' but we should report this as a configration error
-                // if the user doesn't want tags and doesn't set irc_ready then we should error out
                 self.state.next(ready);
                 return Some(Event::Message(msg));
             }
             ClientState::IrcReady => loop {
+                log::trace!("state is: {:?}", self.state);
                 match read!() {
                     Message::Irc(msg) => {
                         if let crate::irc::Message::Ready { name } = *msg {
@@ -252,6 +306,7 @@ where
                 }
             },
             ClientState::TwitchReady => loop {
+                log::trace!("state is: {:?}", &self.state);
                 match read!() {
                     Message::Irc(msg) => match *msg {
                         crate::irc::Message::Cap {
@@ -300,7 +355,9 @@ where
             },
             ClientState::Go => loop {
                 let msg = read!();
-                if self.filters.contains(&msg.what_filter()) {
+                let filter = msg.what_filter();
+                if self.filters.contains(&filter) {
+                    log::debug!("dispatching to a : {:?}", filter);
                     return Some(Event::Message(msg));
                 }
             },

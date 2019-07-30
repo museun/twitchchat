@@ -48,7 +48,7 @@ pub enum Message {
 }
 
 impl Message {
-    /// Parses an irc message
+    /// Parses an IRC message. This isn't intended to be valid for all IRC servers
     pub fn parse(input: &str) -> Option<Self> {
         let input = input.trim(); // sanity check
         if input.is_empty() {

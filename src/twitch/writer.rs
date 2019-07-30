@@ -8,7 +8,7 @@ use super::{Color, Error, IntoChannel};
 use crossbeam_channel as channel;
 use rate_limit::Limiter;
 
-// TODO rate limit:
+// TODO more accurate rate limit:
 // 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
 // 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
 
@@ -465,8 +465,6 @@ mod tests {
         let expected = "PRIVMSG jtv :/host #museun\r\n";
         test_writer(|w| w.host("museun"), expected);
         test_writer(|w| w.host("#museun"), expected);
-
-        // TODO: AsChannel #45
         test_writer(|w| w.host(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -497,8 +495,6 @@ mod tests {
         let expected = "PRIVMSG jtv :/raid #museun\r\n";
         test_writer(|w| w.raid("museun"), expected);
         test_writer(|w| w.raid("#museun"), expected);
-
-        // TODO: AsChannel #45
         test_writer(|w| w.raid(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -727,7 +723,6 @@ mod tests {
     fn join() {
         let expected = "JOIN #museun\r\n";
         test_writer(|w| w.join("museun"), expected);
-        // TODO: AsChannel #45
         test_writer(|w| w.join(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -735,7 +730,6 @@ mod tests {
     fn part() {
         let expected = "PART #museun\r\n";
         test_writer(|w| w.part("museun"), expected);
-        // TODO: AsChannel #45
         test_writer(|w| w.part(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -744,7 +738,6 @@ mod tests {
         let expected = "PRIVMSG #museun :/me testing\r\n";
         test_writer(|w| w.me("museun", "testing"), expected);
         test_writer(|w| w.me("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.me(TestDisplay(&"museun").to_string(), "testing"),
             expected,
@@ -757,7 +750,6 @@ mod tests {
         let expected = "PRIVMSG #museun :testing\r\n";
         test_writer(|w| w.privmsg("museun", "testing"), expected);
         test_writer(|w| w.privmsg("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.privmsg(TestDisplay(&"museun").to_string(), "testing"),
             expected,
@@ -770,7 +762,6 @@ mod tests {
         let expected = "PRIVMSG #museun :testing\r\n";
         test_writer(|w| w.send("museun", "testing"), expected);
         test_writer(|w| w.send("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.send(TestDisplay(&"museun").to_string(), "testing"),
             expected,
