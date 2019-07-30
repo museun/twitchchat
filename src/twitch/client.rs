@@ -1,171 +1,330 @@
-use super::adapter::{ReadAdapter, WriteAdapter};
-use super::filter::{FilterMap, MessageFilter};
-use super::handler::Handlers;
-use super::{Capability, Error, LocalUser, Message, Token, UserConfig, Writer};
+use std::collections::HashSet;
+use std::io::{BufRead, BufReader, Read, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+use super::{Capability, Error, LocalUser, Message, UserConfig, Writer};
+use crate::filter::{Filter, MessageFilter};
+
+// TODO handle shutdowns better
 
 /// Client for interacting with Twitch's chat.
-///
-/// It wraps a [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
-/// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
-///
-/// ```no_run
-/// use twitchchat::{helpers::TestStream, Client, sync_adapters};
-/// let stream = TestStream::new();
-/// // create a synchronous read and write adapter (shorthand for SyncReadAdapter::new() and SyncWriteAdapter::new())
-/// let (r, w) = sync_adapters(stream.clone(), stream.clone());
-/// let mut client = Client::new(r,w); // moves the r,w
-/// // register, join, on, etc
-/// client.run().unwrap();
-/// ```
 pub struct Client<R> {
-    reader: R,
-
-    filters: FilterMap,
-    handlers: Handlers,
-
+    reader: BufReader<R>,
     writer: Writer,
+    handle: std::thread::JoinHandle<()>,
+    filters: HashSet<Filter>,
+
+    desired_name: String,
+    caps: Vec<Capability>,
+    has_error: bool,
+
+    ready_state: Option<ReadyState>,
+    state: ClientState,
+
+    want_tags: bool,
+    irc_ready: bool,
+
+    quit: Arc<AtomicBool>,
 }
 
-impl<R: ReadAdapter> Client<R> {
-    /// Create a new Client from a
-    /// [Read](https://doc.rust-lang.org/std/io/trait.Read.html),
-    /// [Write](https://doc.rust-lang.org/std/io/trait.Write.html) pair
+impl<R> Client<R>
+where
+    R: Read + Sync + Send,
+{
+    /// Creates and registers a new Client with the IRC server.
     ///
-    /// This client is clonable, and thread safe.
-    pub fn new<W>(reader: R, writer: W) -> Self
+    /// Takes a [`UserConfig`](./struct.UserConfig.html) and a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html)/[`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) pair
+    ///
+    /// Returns the Client, or an error if it cannot write to the `W`
+    pub fn register<U, W>(config: U, read: R, write: W) -> Result<Self, Error>
     where
-        W: WriteAdapter + Send + 'static,
+        U: std::borrow::Borrow<UserConfig>,
+        W: Write + Sync + Send + 'static,
     {
-        let (writer_, rx) = Writer::new();
+        let quit = Arc::new(AtomicBool::new(false));
+        let (writer, rx) = Writer::new(Arc::clone(&quit));
 
-        let _ = std::thread::spawn(move || {
+        let config = config.borrow();
+        // check for anonymous login ('justinfan1234')
+        let is_anonymous = config.nick == super::userconfig::JUSTINFAN1234
+            && config.token == super::userconfig::JUSTINFAN1234;
+
+        let want_tags = config.caps.contains(&Capability::Tags) && !is_anonymous;
+        for cap in config.caps.iter().filter_map(|c| c.get_command()) {
+            writer.write_line(cap)?;
+        }
+
+        log::trace!("registering");
+        writer.write_line(format!("PASS {}", config.token))?;
+        writer.write_line(format!("NICK {}", config.nick))?;
+        log::trace!("registered");
+
+        let handle = std::thread::spawn(move || {
             log::trace!("starting write loop");
-            let mut w = writer;
+            let mut w = write;
             for msg in rx {
-                if w.write_line(msg.as_bytes()).is_err() {
+                if w.write_all(msg.as_bytes()).is_err() {
                     break;
                 }
             }
             log::trace!("ending write loop");
         });
 
-        Self {
-            reader,
+        Ok(Self {
+            reader: BufReader::new(read),
+            writer,
+            handle,
+            filters: HashSet::new(),
 
-            filters: FilterMap::default(),
-            handlers: Handlers::default(),
+            desired_name: config.nick.to_string(),
+            caps: vec![],
+            has_error: false,
 
-            writer: writer_,
-        }
+            ready_state: None,
+            state: ClientState::Start,
+
+            want_tags,
+            irc_ready: is_anonymous,
+
+            quit,
+        })
     }
 
-    /// Consumes the client, returning the reader
-    pub fn into_reader(self) -> R::Reader {
-        self.reader.into_inner()
-    }
-
-    /// Runs, consuming all messages.
+    /// Add this filter to the iterator
     ///
-    /// This also pumping them through
-    /// [`Client::on`](./struct.Client.html#method.on) filters
-    pub fn run(mut self) -> Result<(), Error> {
-        loop {
-            match self.read_message() {
-                Ok(..) => (),
-                Err(Error::InvalidMessage(msg)) => {
-                    log::warn!("invalid message: `{}`", msg);
-                    continue;
+    /// When this type of `command` is received, it'll be *produced* by the `Client Iterator` as a [`Event::Message`](./enum.Event.html#variant.Message)
+    ///
+    /// A MessageFilter is basically a magic type that represents a [`Command`](./commands/index.html)
+    ///
+    /// To use this simply:
+    /// ```ignore
+    /// use twitchchat::commands::*;
+    /// // client is created by Client::register()
+    /// client.filter::<PrivMsg>() // add a PrivMsg
+    ///       .filter::<Join>() // add a Join
+    /// // and so forth
+    /// ```
+    /// The 'Command' type is used as a turbofish argument    
+    pub fn filter<F: MessageFilter>(mut self) -> Self {
+        let filter = F::to_filter();
+        log::trace!("adding filter: {:?}", filter);
+        let _ = self.filters.insert(filter);
+        self
+    }
+
+    /// Remove this filter
+    ///    
+    /// Returns whether this fitler was present
+    ///
+    /// **note** This type isn't chainable
+    ///
+    /// ```ignore
+    /// let client client.filter::<PrivMsg>();
+    /// assert!(client.remove_filter::<PrivMsg>());
+    /// assert!(!client.remove_filter::<PrivMsg());
+    /// ```
+    pub fn remove_filter<F: MessageFilter>(&mut self) -> bool {
+        let filter = F::to_filter();
+        log::trace!("removing filter: {:?}", filter);
+        self.filters.remove(&filter)
+    }
+
+    /// Sets the iterator to start when we've received the 'ok' from the irc server
+    ///
+    /// When this event happens, a [`Event::IrcReady`](enum.Event.html#variant.IrcReady) is produced by the iterator
+    ///
+    /// - If the `tags` capability was not set, then this is automatically set.
+    /// - If this is not set and the `tags` capability was set, then a [`Event::TwitchReady`](enum.Event.html#variant.TwitchReady) is produced instead
+    ///
+    /// It will try to be smart and produce a `TwitchReady` event if desired, otherwise `IrcReady` was produced
+    pub fn when_irc_ready(mut self) -> Self {
+        self.irc_ready = true;
+        self
+    }
+
+    /// Get a clonable writer from the client
+    pub fn writer(&self) -> Writer {
+        log::trace!("cloning writer");
+        self.writer.clone()
+    }
+
+    /// This is useful to synchronize the closing of the 'Read'
+    pub fn wait_for_close(self) {
+        log::trace!("waiting for thread to join");
+        let _ = self.handle.join();
+        log::trace!("thread joined");
+    }
+
+    fn read_message(&mut self) -> Result<Option<Message>, Error> {
+        if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
+            return Ok(None);
+        }
+
+        let mut line = String::new(); // reuse this
+        if self.reader.read_line(&mut line).map_err(|err| {
+            log::warn!("failed to read: {}", err);
+            Error::CannotRead
+        })? == 0
+        {
+            log::warn!("cannot read (amount was empty)");
+            return Err(Error::CannotRead);
+        }
+
+        if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
+            return Ok(None);
+        }
+
+        let _ = line.remove(line.len() - 1);
+        assert!(!line.is_empty(), "line should not be just a '\r'");
+        log::trace!("<- {}", line);
+        let msg = crate::irc::Message::parse(&line).ok_or_else(|| Error::InvalidMessage(line))?;;
+
+        match &msg {
+            crate::irc::Message::Unknown {
+                prefix,
+                head,
+                args,
+                tail,
+                ..
+            } => {
+                if let (Some(crate::irc::Prefix::Server { host }), Some(data)) = (prefix, tail) {
+                    if head == "NOTICE"
+                        && host == "tmi.twitch.tv"
+                        && data == "Improperly formatted auth"
+                        && args.get(0).map(|k| k.as_str()) == Some("*")
+                    {
+                        log::warn!("got a registration error");
+                        return Err(Error::InvalidRegistration);
+                    }
                 }
-                Err(err) => return Err(err),
+                Ok(Some(Message::parse(msg)))
             }
+            _ => Ok(Some(Message::Irc(Box::new(msg)))),
         }
     }
+}
 
-    /// Registers with the server uses the provided [`UserConfig`](./struct.UserConfig.html)
-    ///
-    /// This is a **very** useful step, after you make the client and set up your initial filters
-    ///
-    /// You should call this to send your `OAuth token` and `Nickname`
-    ///
-    /// This also sends the [`Capabilities`](./enum.Capability.html) in the correct order
-    ///
-    /// Usage
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
-    /// # let mut client = Client::new(r, w);
-    /// let config = UserConfig::builder()
-    ///                 .token(std::env::var("MY_PASSWORD").unwrap())
-    ///                 .nick("museun")
-    ///                 .build()
-    ///                 .unwrap();
-    /// client.register(config).unwrap();
-    /// // we should be connected now
-    /// // this'll block until everything is read
-    /// let _ = client.wait_for_ready().unwrap();
-    /// ```
-    pub fn register<U>(&mut self, config: U) -> Result<(), Error>
-    where
-        U: std::borrow::Borrow<UserConfig>,
-    {
-        let config = config.borrow();
-        for cap in config.caps.iter().filter_map(|c| c.get_command()) {
-            self.writer.write_line(cap)?;
+/// An event received while reading from the client
+#[derive(Debug)]
+pub enum Event {
+    /// An IRC ready event was requested, returning the your IRC name
+    IrcReady(String),
+    /// A twitch ready event was requested, returning your twitch user
+    TwitchReady(LocalUser),
+    /// A twitch message
+    Message(Message),
+    /// An error
+    Error(Error),
+}
+
+// TODO this could be a lot simpler
+impl<R> Iterator for Client<R>
+where
+    R: Read + Sync + Send,
+{
+    type Item = Event;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.quit.load(Ordering::SeqCst) {
+            log::trace!("quitting");
+            return None;
         }
 
-        self.writer.write_line(format!("PASS {}", config.token))?;
-        self.writer.write_line(format!("NICK {}", config.nick))
-    }
+        if self.has_error {
+            return None;
+        }
 
-    /// Waits for the
-    /// [`GLOBALUSERSTATE`](./commands/struct.GlobalUserState.html) before
-    /// continuing, discarding any messages received
-    ///
-    /// Returns some [`useful information`](./struct.LocalUser.html) about your user
-    ///
-    /// This blocks until the twitch registration is completed, this relies on
-    /// the [`Tags Capability`](./enum.Capability.html#variant.Tags) being sent.
-    ///
-    /// Usage:
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
-    /// # let mut client = Client::new(r, w);
-    /// match client.wait_for_ready() {
-    ///     Ok(user) => println!("user id: {}", user.user_id),
-    ///     Err(err) => panic!("failed to finish registration: {}", err)
-    /// };
-    /// // we can be sure that we're ready to join
-    /// client.writer().join("some_channel").unwrap();
-    /// ```
-    pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
-        use crate::irc::types::Message as IRCMessage;
-        let mut caps = vec![];
+        macro_rules! error {
+            ($err:expr) => {{
+                self.has_error = true;
+                return Some(Event::Error($err));
+            }};
+        }
 
-        loop {
-            match self.read_message()? {
-                Message::Irc(msg) => {
-                    match *msg {
-                        IRCMessage::Cap {
-                            // box patterns are nightly
+        macro_rules! read {
+            () => {
+                match self.read_message() {
+                    Ok(Some(msg)) => {
+                        if self.quit.load(Ordering::SeqCst) {
+                            log::trace!("quitting");
+                            return None;
+                        }
+                        msg
+                    }
+                    Ok(None) => return None,
+                    Err(err) => error!(err),
+                }
+            };
+        }
+
+        if self.ready_state.is_none() {
+            let _ = self
+                .ready_state
+                .replace(match (self.irc_ready, self.want_tags) {
+                    (true, false) | (false, false) | (true, true) => ReadyState::Irc,
+                    (false, true) => ReadyState::Twitch,
+                });
+        }
+        let ready = self.ready_state.unwrap();
+
+        match self.state {
+            ClientState::Start => {
+                log::trace!("state is: {:?}", self.state);
+                let msg = read!();
+                match &msg {
+                    Message::Irc(msg) => match &**msg {
+                        crate::irc::Message::Cap {
                             acknowledge: true,
                             cap,
                         } => match cap.as_str() {
-                            "twitch.tv/tags" => caps.push(Capability::Tags),
-                            "twitch.tv/membership" => caps.push(Capability::Membership),
-                            "twitch.tv/commands" => caps.push(Capability::Commands),
+                            "twitch.tv/tags" => self.caps.push(Capability::Tags),
+                            "twitch.tv/membership" => self.caps.push(Capability::Membership),
+                            "twitch.tv/commands" => self.caps.push(Capability::Commands),
                             _ => {}
                         },
-                        IRCMessage::Ready { .. } => {
+                        _ => {}
+                    },
+                    _ => {}
+                };
+
+                self.state.next(ready);
+                return Some(Event::Message(msg));
+            }
+            ClientState::IrcReady => loop {
+                log::trace!("state is: {:?}", self.state);
+                match read!() {
+                    Message::Irc(msg) => {
+                        if let crate::irc::Message::Ready { name } = *msg {
+                            self.state.next(ready);
+                            return Some(Event::IrcReady(name));
+                        }
+                    }
+                    _ => continue,
+                }
+            },
+            ClientState::TwitchReady => loop {
+                log::trace!("state is: {:?}", &self.state);
+                match read!() {
+                    Message::Irc(msg) => match *msg {
+                        crate::irc::Message::Cap {
+                            acknowledge: true,
+                            cap,
+                        } => match cap.as_str() {
+                            "twitch.tv/tags" => self.caps.push(Capability::Tags),
+                            "twitch.tv/membership" => self.caps.push(Capability::Membership),
+                            "twitch.tv/commands" => self.caps.push(Capability::Commands),
+                            _ => {}
+                        },
+                        crate::irc::Message::Ready { .. } => {
                             let mut bad = vec![];
                             match (
-                                caps.contains(&Capability::Tags),
-                                caps.contains(&Capability::Commands),
+                                self.caps.contains(&Capability::Tags),
+                                self.caps.contains(&Capability::Commands),
                             ) {
                                 (true, true) => continue,
-
                                 (false, true) => bad.push(Capability::Tags),
                                 (true, false) => bad.push(Capability::Commands),
                                 _ => {
@@ -173,198 +332,61 @@ impl<R: ReadAdapter> Client<R> {
                                     bad.push(Capability::Commands);
                                 }
                             };
-
                             if !bad.is_empty() {
-                                return Err(Error::CapabilityRequired(bad));
+                                error!(Error::CapabilityRequired(bad))
                             }
                         }
                         _ => {}
+                    },
+                    Message::GlobalUserState(state) => {
+                        self.state.next(ready);
+                        return Some(Event::TwitchReady(LocalUser {
+                            user_id: dbg!(&state).user_id(),
+                            display_name: state.display_name().map(ToString::to_string),
+                            name: self.desired_name.clone(),
+                            color: state.color(),
+                            badges: state.badges(),
+                            emote_sets: state.emote_sets(),
+                            caps: self.caps.clone(),
+                        }));
                     }
+                    _ => continue,
                 }
-
-                Message::GlobalUserState(state) => {
-                    return Ok(LocalUser {
-                        user_id: state.user_id(),
-                        display_name: state.display_name().map(ToString::to_string),
-                        color: state.color(),
-                        badges: state.badges(),
-                        emote_sets: state.emote_sets(),
-                        caps,
-                    });
+            },
+            ClientState::Go => loop {
+                let msg = read!();
+                let filter = msg.what_filter();
+                if self.filters.contains(&filter) {
+                    log::debug!("dispatching to a : {:?}", filter);
+                    return Some(Event::Message(msg));
                 }
-                _ => continue,
-            }
+            },
         }
-    }
-
-    /// Like [`wait_for_ready`](./struct.Client.html#method.wait_for_ready) but waits for the end of the IRC MOTD
-    ///
-    /// This will generally happen before `GLOBALUSERSTATE` but don't rely on that
-    ///
-    /// Returns the username assigned to you by the server
-    ///
-    /// Usage:
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
-    /// # let mut client = Client::new(r, w);
-    /// match client.wait_for_irc_ready() {
-    ///     Ok(name) => println!("end of motd, our name is: {}", name),
-    ///     Err(err) => panic!("failed to finish registration: {}", err),
-    /// };
-    /// // we can be sure that we're ready to join
-    /// client.writer().join("some_channel").unwrap();
-    /// ```
-    pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
-        use crate::irc::types::Message as IrcMessage;
-        loop {
-            match self.read_message()? {
-                Message::Irc(msg) => {
-                    if let IrcMessage::Ready { name } = *msg {
-                        return Ok(name);
-                    }
-                }
-                _ => continue,
-            }
-        }
-    }
-
-    /// Reads a [`Message`](./enum.Message.html#variants)
-    ///
-    /// This 'pumps' the messages through the filter system
-    ///
-    /// Using this will drive the client (blocking for a read, then producing messages).
-    /// Usage:
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());    
-    /// # let mut client = Client::new(r, w);
-    /// // block the thread (i.e. wait for the client to close down)    
-    /// while let Ok(msg) = client.read_message() {
-    ///     // match msg {
-    ///     // .. stuff
-    ///     // }
-    /// }
-    ///
-    /// // or incrementally calling `client.read_message()`
-    /// // when you want the next message
-    /// ```
-    pub fn read_message(&mut self) -> Result<Message, Error> {
-        let msg = self.reader.read_message()?;
-        log::trace!("<- {:?}", msg);
-        {
-            let w = self.writer();
-            if let Message::Irc(ref ircmsg) = msg {
-                if let crate::irc::types::Message::Ping { token } = &**ircmsg {
-                    return w
-                        .write_line(format!("PONG :{}", token))
-                        .and_then(|_| Ok(msg));
-                }
-            }
-
-            let key = msg.what_filter();
-            if let Some(filters) = self.filters.get_mut(key) {
-                for filter in filters.iter_mut() {
-                    log::trace!("sending msg to filter (id: {}): {:?}", (filter.1).0, key);
-                    (filter.0)(msg.clone(), w.clone()) // when in doubt
-                }
-            }
-        }
-        log::trace!("begin dispatch");
-        self.handlers.handle(msg.clone());
-        log::trace!("end dispatch");
-        Ok(msg)
     }
 }
 
-impl<R> Client<R> {
-    /** When a message is received run this function with it and a clone of the Writer.
-
-    The type of the closure determines what is filtered
-
-    Usage:
-    ```no_run
-    # use twitchchat::{helpers::TestStream, *};
-    # let mut stream = TestStream::new();
-    # let (r, w) = sync_adapters(stream.clone(), stream.clone());
-    # let mut client = Client::new(r, w);
-    use twitchchat::commands::*;
-    let pm_tok = client.on(|msg: PrivMsg, w: Writer| {
-        // msg is now a `twitchchat::commands::PrivMsg`
-    });
-    let join_tok = client.on(|msg: Join, w: Writer| {
-        // msg is now a `twitchchat::commands::Join`
-    });
-
-    // if a PRIVMSG or JOIN is parsed here
-    // the corresponding closure, above, will run
-    client.read_message();
-    ```
-
-    The available filters are the same names as the structs in
-    [commands](./commands/index.html#structs)
-
-    When [`Client::read_message`](./struct.Client.html#method.read_message)
-    is called, it'll send a copy of the matching message to these filters.
-
-    Multiple filters can be 'registered' for the same type
-
-    Use the returned token to remove the filter, by passing it to the
-    [`Client::off`](./struct.Client.html#method.off) method
-    */
-    pub fn on<F, T>(&mut self, mut f: F) -> Token
-    where
-        F: FnMut(T, Writer) + 'static + Send + Sync,
-        T: From<Message>,
-        T: MessageFilter,
-    {
-        let filter = T::to_filter();
-        self.filters
-            .insert(filter, Box::new(move |msg, w| f(msg.into(), w)))
-    }
-
-    /// Remove a previously registered message filter, using the token returned by `on`
-    ///
-    /// Returns true if this filter existed
-    pub fn off(&mut self, tok: Token) -> bool {
-        self.filters.try_remove(tok)
-    }
-
-    /**
-    Add a [`Handler`](./trait.Handler.html) to the internal filtering
-
-    When [`Client::read_message`](./struct.Client.html#method.read_message)
-    is called, it'll send a RC message to the appropriate function.
-
-    Use the returned token to remove the filter, by passing it to the
-    [`Client::remove_handler`](./struct.Client.html#method.remove_handler) method
-    */
-    pub fn handler<H>(&mut self, handler: H) -> Token
-    where
-        H: super::Handler + Send + Sync + 'static,
-    {
-        let tok = self.handlers.add(handler);
-        log::trace!("add handler, id: {}", tok);
-        tok
-    }
-
-    /// Remove a previously added handler, using the returned token
-    ///
-    /// Returns true if this handler existed
-    pub fn remove_handler(&mut self, tok: Token) -> bool {
-        let ok = self.handlers.remove(tok);
-        log::trace!("tried to remove handler, id: {}, status: {}", tok, ok);
-        ok
-    }
-
-    /// Get a clone of the writer
-    pub fn writer(&self) -> Writer {
-        self.writer.clone()
-    }
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum ReadyState {
+    Irc,
+    Twitch,
 }
 
-// TODO rate limit:
-// 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
-// 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum ClientState {
+    Start = 0,
+    IrcReady = 1,
+    TwitchReady = 2,
+    Go = 3,
+}
+
+impl ClientState {
+    fn next(&mut self, ready: ReadyState) {
+        let _ = match self {
+            ClientState::Start if ready == ReadyState::Irc => {
+                std::mem::replace(self, ClientState::IrcReady)
+            }
+            ClientState::Start => std::mem::replace(self, ClientState::TwitchReady),
+            _ => std::mem::replace(self, ClientState::Go),
+        };
+    }
+}

@@ -119,7 +119,7 @@ impl UserNotice {
     }
     /// (Sent only on sub, resub) Boolean indicating whether users want their
     /// streaks to be shared.
-    // TODO option?
+    // TODO option? (why? july 30 2019)
     pub fn msg_param_should_share_streak(&self) -> bool {
         self.get_as_bool("msg-param-should-share-streak")
     }
@@ -281,7 +281,7 @@ r#"@badges=;color=;display-name=SevenTest1;emotes=30259:0-6;id=37feed0f-b9c7-4c3
         ];
 
         for (input, &output) in input.iter().zip(output.iter()) {
-            let msg = crate::irc::types::Message::parse(input).unwrap();
+            let msg = crate::irc::Message::parse(input).unwrap();
             if let crate::twitch::Message::UserNotice(msg @ UserNotice { .. }) =
                 parse(&msg).unwrap()
             {

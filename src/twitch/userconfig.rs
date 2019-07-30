@@ -1,6 +1,8 @@
 use crate::twitch::Capability;
 use std::collections::BTreeSet;
 
+pub(crate) const JUSTINFAN1234: &'static str = "justinfan1234";
+
 /// Configuration used to complete the 'registration' with the irc server
 #[derive(Clone)]
 pub struct UserConfig {
@@ -27,7 +29,7 @@ impl std::fmt::Debug for UserConfig {
 impl UserConfig {
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), defaults with all of the [`Capabilities`](./enum.Capability.html) disabled
     pub fn builder() -> UserConfigBuilder {
-        UserConfigBuilder::new()
+        UserConfigBuilder::default()
     }
 
     /// Create a [`UserConfigBuilder`](./userconfig/struct.UserConfigBuilder.html), with all of the [`Capabilities`](./enum.Capability.html) enabled
@@ -54,10 +56,6 @@ impl Default for UserConfigBuilder {
 }
 
 impl UserConfigBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Use this nickname in the configuration
     pub fn nick<S: ToString>(mut self, nick: S) -> Self {
         let _ = self.nick.replace(nick.to_string());
@@ -68,7 +66,12 @@ impl UserConfigBuilder {
     // check for the leading 'oauth:'
     // and probably the length (its probably 64 bytes)
     pub fn token<S: ToString>(mut self, token: S) -> Self {
-        let _ = self.token.replace(token.to_string());
+        let token = token.to_string();
+        if token == JUSTINFAN1234 {
+            let _ = self.token.replace(token.to_string());
+        } else if token.starts_with("oauth") && token.len() == 36 {
+            let _ = self.token.replace(token.to_string());
+        }
         self
     }
 
@@ -98,10 +101,11 @@ impl UserConfigBuilder {
 
     /// Build the `UserConfig`
     ///
-    /// Returns None if nick or token are invalid
+    /// Returns None if `token` isn't 36-characters and prefixed by oauth:
+    /// **note** panics if `nick` was empty
     pub fn build(self) -> Option<UserConfig> {
         Some(UserConfig {
-            nick: self.nick?,
+            nick: self.nick.unwrap(),
             token: self.token?,
             caps: self.caps.into_iter().collect(),
         })
@@ -119,11 +123,32 @@ impl UserConfigBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn invalid_token() {
+        assert!(
+            UserConfig::builder()
+                .nick("justinfan12345")
+                .token("oauth:12345678901234567890123456789")
+                .build()
+                .is_none(),
+            "token is too short"
+        );
+        assert!(
+            UserConfig::builder()
+                .nick("justinfan12345")
+                .token("123456789012345678901234567890123456")
+                .build()
+                .is_none(),
+            "no prefix"
+        );
+    }
+
     #[test]
     fn print_userconfig() {
         let c = UserConfig::builder()
             .nick("justinfan12345")
-            .token("justinfan12345")
+            .token("oauth:123456789012345678901234567890")
             .tags()
             .membership()
             .commands()

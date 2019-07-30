@@ -40,6 +40,7 @@ impl Capability {
 }
 
 impl Default for Capability {
+    /// The default capability is `Generic`
     fn default() -> Self {
         Capability::Generic
     }

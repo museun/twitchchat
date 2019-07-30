@@ -1,21 +1,38 @@
 use std::fmt::Display;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+use std::time::Duration;
 
 use super::{Color, Error, IntoChannel};
 use crossbeam_channel as channel;
+use rate_limit::SyncLimiter;
+
+// TODO more accurate rate limit:
+// 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
+// 100 per 30 seconds	Users sending commands or messages to channels in which they have Moderator or Operator status
 
 /// A thread-safe, clonable writer for the Twitch client
 #[derive(Clone)]
-pub struct Writer(channel::Sender<String>);
+pub struct Writer {
+    tx: channel::Sender<String>,
+    quit: Arc<AtomicBool>,
+    rate: Arc<SyncLimiter>,
+}
 
 impl Writer {
-    pub(crate) fn new() -> (Self, channel::Receiver<String>) {
+    pub(crate) fn new(quit: Arc<AtomicBool>) -> (Self, channel::Receiver<String>) {
+        let rate = Arc::new(SyncLimiter::full(50, Duration::from_secs(15)));
         let (tx, rx) = channel::unbounded();
-        (Self(tx), rx)
+        (Self { tx, quit, rate }, rx)
     }
 
     pub(crate) fn write_line(&self, data: impl Display) -> Result<(), Error> {
-        match self.0.try_send(format!("{}\r\n", data)) {
-            Ok(..) => Ok(()),
+        match self.tx.try_send(format!("{}\r\n", data)) {
+            Ok(..) => {
+                let _ = self.rate.take();
+                Ok(())
+            }
             Err(channel::TrySendError::Disconnected(..)) => Err(Error::NotConnected),
             Err(channel::TrySendError::Full(..)) => {
                 unreachable!("channel shouldn't be buffered, or remotely full")
@@ -309,11 +326,7 @@ impl Writer {
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// The following are equivilant
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
-    /// # let mut client = Client::new(r, w);
+    /// ```ignore
     /// let w = client.writer();
     /// w.join("museun").unwrap();
     /// w.join("#museun").unwrap();
@@ -325,16 +338,58 @@ impl Writer {
         self.raw(format!("JOIN {}", *channel))
     }
 
+    /// This is used to signal to the [`Client`]() to shutdown
+    pub fn shutdown_client(&self) {
+        self.quit.store(true, Ordering::SeqCst);
+    }
+
+    /// Join many channels (from an iterator)
+    pub fn join_many<'a, I>(&self, channels: I) -> Result<(), Error>
+    where
+        I: IntoIterator + 'a,
+        I::Item: AsRef<str> + 'a,
+    {
+        let mut buf = String::with_capacity(512);
+
+        for channel in channels {
+            let channel = channel.as_ref();
+            let len = if channel.starts_with('#') {
+                channel.len()
+            } else {
+                channel.len() + 1
+            };
+
+            if buf.len() + len + 1 > 510 {
+                self.write_line(&buf)?;
+                buf.clear();
+            }
+
+            if buf.is_empty() {
+                buf.push_str("JOIN ");
+            } else {
+                buf.push(',');
+            }
+
+            if !channel.starts_with('#') {
+                buf.push_str(&["#", channel].concat());
+            } else {
+                buf.push_str(&channel);
+            }
+        }
+
+        if !buf.is_empty() {
+            self.write_line(&buf)?;
+        }
+
+        Ok(())
+    }
+
     /// Parts a `channel`
     ///
     /// This ensures the channel name is lowercased and begins with a '#'.
     ///
     /// The following are equivilant
-    /// ```no_run
-    /// # use twitchchat::{helpers::TestStream, *};
-    /// # let mut stream = TestStream::new();
-    /// # let (r, w) = sync_adapters(stream.clone(), stream.clone());
-    /// # let mut client = Client::new(r, w);
+    /// ```ignore
     /// let w = client.writer();
     /// w.part("museun").unwrap();
     /// w.part("#museun").unwrap();
@@ -391,7 +446,8 @@ mod tests {
         f: impl FnOnce(&Writer) -> Result<(), Error>,
         expected: impl PartialEq<String> + std::fmt::Debug,
     ) {
-        let (w, rx) = Writer::new();
+        let quit = Arc::new(AtomicBool::new(false));
+        let (w, rx) = Writer::new(quit);
         f(&w).unwrap();
         assert_eq!(expected, rx.recv().unwrap())
     }
@@ -409,8 +465,6 @@ mod tests {
         let expected = "PRIVMSG jtv :/host #museun\r\n";
         test_writer(|w| w.host("museun"), expected);
         test_writer(|w| w.host("#museun"), expected);
-
-        // TODO: AsChannel #45
         test_writer(|w| w.host(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -441,8 +495,6 @@ mod tests {
         let expected = "PRIVMSG jtv :/raid #museun\r\n";
         test_writer(|w| w.raid("museun"), expected);
         test_writer(|w| w.raid("#museun"), expected);
-
-        // TODO: AsChannel #45
         test_writer(|w| w.raid(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -671,7 +723,6 @@ mod tests {
     fn join() {
         let expected = "JOIN #museun\r\n";
         test_writer(|w| w.join("museun"), expected);
-        // TODO: AsChannel #45
         test_writer(|w| w.join(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -679,7 +730,6 @@ mod tests {
     fn part() {
         let expected = "PART #museun\r\n";
         test_writer(|w| w.part("museun"), expected);
-        // TODO: AsChannel #45
         test_writer(|w| w.part(TestDisplay(&"museun").to_string()), expected);
     }
 
@@ -688,7 +738,6 @@ mod tests {
         let expected = "PRIVMSG #museun :/me testing\r\n";
         test_writer(|w| w.me("museun", "testing"), expected);
         test_writer(|w| w.me("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.me(TestDisplay(&"museun").to_string(), "testing"),
             expected,
@@ -701,7 +750,6 @@ mod tests {
         let expected = "PRIVMSG #museun :testing\r\n";
         test_writer(|w| w.privmsg("museun", "testing"), expected);
         test_writer(|w| w.privmsg("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.privmsg(TestDisplay(&"museun").to_string(), "testing"),
             expected,
@@ -714,7 +762,6 @@ mod tests {
         let expected = "PRIVMSG #museun :testing\r\n";
         test_writer(|w| w.send("museun", "testing"), expected);
         test_writer(|w| w.send("#museun", "testing"), expected);
-        // TODO: AsChannel #45
         test_writer(
             |w| w.send(TestDisplay(&"museun").to_string(), "testing"),
             expected,
@@ -734,4 +781,19 @@ mod tests {
         let expected = "PRIVMSG museun :this is a test\r\n";
         test_writer(|w| w.raw(&expected[..expected.len() - 2]), expected);
     }
+
+    // fn make_channel_list() -> impl Iterator<Item = String> {
+    //     use rand::prelude::*;
+    //     std::iter::from_fn(move || {
+    //         let mut rng = thread_rng();
+    //         let range = rng.gen_range(5, 30);
+    //         Some(
+    //             rng.sample_iter(&rand::distributions::Alphanumeric)
+    //                 .take(range)
+    //                 .collect(),
+    //         )
+    //     })
+    // }
+
+    // TODO join many test
 }
