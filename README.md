@@ -16,7 +16,7 @@ or, wrap an [`std::io::Read`](https://doc.rust-lang.org/std/io/trait.Read.html) 
 
 see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
 
-if you don't want serde support, then include `default-features = false` in your `Cargo.toml`
+if you want serde support, then include `features = ["serde_derive"]` in your `Cargo.toml`
 
 a demo of it:
 ```rust
