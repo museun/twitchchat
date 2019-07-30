@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use super::{Color, Error, IntoChannel};
 use crossbeam_channel as channel;
-use rate_limit::Limiter;
+use rate_limit::SyncLimiter;
 
 // TODO more accurate rate limit:
 // 20 per 30 seconds	Users sending commands or messages to channels in which they do not have Moderator or Operator status
@@ -17,12 +17,12 @@ use rate_limit::Limiter;
 pub struct Writer {
     tx: channel::Sender<String>,
     quit: Arc<AtomicBool>,
-    rate: Arc<Limiter>,
+    rate: Arc<SyncLimiter>,
 }
 
 impl Writer {
     pub(crate) fn new(quit: Arc<AtomicBool>) -> (Self, channel::Receiver<String>) {
-        let rate = Arc::new(Limiter::full_unsync(50, Duration::from_secs(15)));
+        let rate = Arc::new(SyncLimiter::full(50, Duration::from_secs(15)));
         let (tx, rx) = channel::unbounded();
         (Self { tx, quit, rate }, rx)
     }
