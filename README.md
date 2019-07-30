@@ -1,142 +1,140 @@
+[![Build Status](https://circleci.com/gh/museun/twitchchat/tree/master.svg?style=shield)](https://circleci.com/gh/museun/twitchchat/cargo-readme/tree/master)
+
 # twitchchat
-![Crates.io](https://img.shields.io/crates/l/twitchchat/0.1.7.svg?style=flat-square)
-[![doc.rs](https://docs.rs/twitchchat/badge.svg)](https://docs.rs/twitchchat/latest/twitchchat/)
-[![Crates.io](https://img.shields.io/crates/v/twitchchat.svg)](https://crates.io/crates/twitchchat)
-[![CircleCI](https://circleci.com/gh/museun/twitchchat.svg?style=svg)](https://circleci.com/gh/museun/twitchchat)
-![AppVeyor](https://img.shields.io/appveyor/ci/museun/twitchchat.svg)
 
-interface to the irc portion of twitch's chat
+## twitchchat
+This crate provides a way to interact with Twitch's chat
 
-you provide implementations of [`ReadAdapter`](https://docs.rs/twitchchat/latest/twitchchat/trait.ReadAdapter.html) and [`WriteAdapter`](https://docs.rs/twitchchat/latest/twitchchat/trait.WriteAdapter.html)
+Along with the messages/commands as Rust types, it provides methods for sending messags/commands.
 
-or, wrap an [`std::io::Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and [`std::io::Write`](https://doc.rust-lang.org/std/io/trait.Write.html) with 
-[`ReadAdapter`](https://docs.rs/twitchchat/latest/twitchchat/struct.SyncReadAdapter.html) and [`WriteAdapter`](https://docs.rs/twitchchat/latest/twitchchat/struct.SyncWriteAdapter.html)
-
-...and this provides all of the types for Twitch chat message.
-
-see the [docs](https://docs.rs/twitchchat/latest/twitchchat) for more info
-
-if you want serde support, then include `features = ["serde_derive"]` in your `Cargo.toml`
-
-a demo of it:
+### a simple example
 ```rust
-fn main() {
-    use std::net::TcpStream;
-    use twitchchat::commands::PrivMsg;
-    use twitchchat::{Client, Writer, UserConfig, sync_adapters};
+use twitchchat::commands;
+use twitchchat::*;
 
-    // create a userconfig
-    let userconfig = UserConfig::builder()
-        .nick(env!("MY_TWITCH_NAME"))
-        .token(env!("MY_TWITCH_PASS"))
-        // enable these capabilities
-        .tags()
-        .membership()
-        .commands()
-        // build the config
-        .build()
-        .expect("semi-valid config");
+// use an anonymous login (you should probably use your name and your chat oauth token)
+let (nick, token) = twitchchat::ANONYMOUS_LOGIN;
 
-    // connect to twitch
-    let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect");
-    // clone the tcpstream
-    let write = read.try_clone().expect("must be able to clone");
-    
-    // create the adapters adapter
-    let (read, write) = sync_adapters(read, write);
+// connect with this nick, token
+let mut client = twitchchat::connect_easy(nick, token)
+    .unwrap() // this is an error if
+              // the network connection can't be opened,
+              // the nick/pass is invalid, etc
+     // add some filters
+    .filter::<commands::PrivMsg>() // filter to PrivMsg commands
+    .filter::<commands::Join>();   // filter to Join commands
 
-    // create a new client from the read, write pairs
-    let mut client = Client::new(read, write);
+// get a clonable, threadsafe writer
+let writer = client.writer();
 
-    // when we receive a PrivMsg run this function
-    // tok allows us to remove this later, if we want
-    let _tok = client.on(move |msg: PrivMsg, w: Writer| {
-        const KAPPA: usize = 25;
-        // print out `user: message`
-        println!("{}: {}", msg.display_name().unwrap(), msg.message());
-
-        let kappas = msg
-            .emotes()
-            .iter()
-            // filter Kappas
-            .filter(|e| e.id == KAPPA)
-            // count how many times it appears
-            .map(|d| d.ranges.len())
-            .sum::<usize>();
-
-        // if someone sent more than 3 Kappas, send a Kappa back
-        if kappas >= 3 {
-            // using the provided Writer
-            w.send(msg.channel(), "Kappa").unwrap();
+// for each event from the client (this &mut is only needed if you want to use `wait_for_close`)
+for event in &mut client {
+    match event {
+        // when we're connected
+        Event::IrcReady(..) => {
+            // join a channel
+            writer.join("museun").unwrap();
         }
-    });
-
-    // log if the broadcaster, a sub or a mod talks
-    client.on(move |msg: PrivMsg, _: Writer| {
-        use twitchchat::BadgeKind::{Broadcaster, Subscriber};
-
-        let name = msg.display_name().unwrap_or_else(|| msg.irc_name());
-        let badges = msg
-            .badges()
-            .iter()
-            // filter to just the "BadgeKind"
-            .map(|badge| badge.kind.clone())
-            .collect::<Vec<_>>();
-
-        match (
-            badges.contains(&Broadcaster),
-            badges.contains(&Subscriber),
-            msg.moderator(), // or badges.contains(&Moderator)
-        ) {
-            (true, _, _) => println!("{} is the broadcaster", name),
-            (_, true, _) => println!("{} is a subscriber", name),
-            (_, _, true) => println!("{} is a mod", name),
-            (_, _, _) => {
-                // just a normal viewer
-            }
-        };
-    });
-
-    // 'register' (sends out creds.) with the server
-    client.register(userconfig).expect("register with twitch");
-
-    // blocks the thread until the server tells us who we were
-    match client.wait_for_ready() {
-        // and print it out
-        Ok(user) => {
-            // id: 23196011, name: Some("museun"), color: Some(OrangeRed)
-            println!(
-                "id: {}, name: {:?}, color: {:?}",
-                user.user_id, user.display_name, user.color
-            )
+        // when we get a priv msg
+        Event::Message(Message::PrivMsg(msg)) => {
+            // print out the sender : messsage
+            println!("{}: {}", msg.user(), msg.message());
         }
-        Err(twitchchat::Error::InvalidRegistration) => {
-            eprintln!("invalid nick/pass");
-            std::process::exit(1);
+        // when we get a join msg
+        Event::Message(Message::Join(msg)) => {
+            // print out the user and the channel that was joined
+            println!("*** {} joined {}", msg.user(), msg.channel())
         }
-        Err(err) => panic!(err),
-    };
-
-    // get a clone of the writer, this allows you to write to the connection
-    let w = client.writer();
-    // join a channel
-    w.join("museun").unwrap();
-
-    {
-        // not needed here, but the writer is clonable
-        // you can also get another one from the `client`
-        let w = w.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_secs(3));
-            w.send("museun", "VoHiYo").unwrap();
-        });
+        // when we get an error
+        Event::Error(err) => {
+            // print it out
+            eprintln!("error: {}", err);
+            // and exit the loop
+            break;
+        }
+        // not used here
+        Event::TwitchReady(..) => {
+            // this only happens when you're using Capability::Tags, Capability::Commands and a non-anonymous login
+        }
+        // make the compiler happy
+        _ => unreachable!(),
     }
+}
 
-    // block this thread until the connection ends
-    // this will call the filters when it receives the appropirate message
-    if let Err(err) = client.run() {
-        eprintln!("error while running: {}", err);
-        std::process::exit(1);
+// wait for the client to close
+// this isn't needed, but if you want to synchronize something to it
+// this is how you would do it
+client.wait_for_close();
+```
+### with custom capabilities
+```rust
+use twitchchat::commands;
+use twitchchat::*;
+
+// use an anonymous login (you should probably use your name and your chat oauth token)
+let (nick, token) = twitchchat::ANONYMOUS_LOGIN;
+let config = UserConfig::builder()
+    .token(token) // your oauth token
+    .nick(nick) // your nickname
+    .commands() // command capabilites (see: https://dev.twitch.tv/docs/irc/commands/ )
+    .membership() // command capabilites (see: https://dev.twitch.tv/docs/irc/membership/ )
+    .tags() // command capabilites (see: https://dev.twitch.tv/docs/irc/tags/ )
+    .build() // verify the settings
+    .unwrap();
+
+// connect with the config
+let client = twitchchat::connect(&config)
+    .unwrap()
+    .filter::<commands::PrivMsg>();
+let writer = client.writer();
+
+for event in client {
+    match event {
+        Event::IrcReady(..) => writer.join("museun").unwrap(),
+        Event::Message(Message::PrivMsg(msg)) => {
+            println!("{}: {}", msg.user(), msg.message());
+        }
+        Event::Error(..) => break,
+        _ => continue,
     }
 }
 ```
+### by constructing the client manually with your own Read/Write types
+```rust
+use std::net::TcpStream;
+use twitchchat::commands;
+use twitchchat::*;
+
+// or anything that implements std::io::Read + Send + Sync and std::io::Write + Send + Sync
+let (read, write) = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS)
+    .map(|w| (w.try_clone().unwrap(), w))
+    .unwrap();
+
+// use an anonymous login (you should probably use your name and your chat oauth token)
+let (nick, token) = twitchchat::ANONYMOUS_LOGIN;
+let config = UserConfig::builder()
+    .token(token) // your oauth token
+    .nick(nick) // your nickname
+    .commands() // command capabilites (see: https://dev.twitch.tv/docs/irc/commands/ )
+    .membership() // command capabilites (see: https://dev.twitch.tv/docs/irc/membership/ )
+    .tags() // command capabilites (see: https://dev.twitch.tv/docs/irc/tags/ )
+    .build() // verify the settings
+    .unwrap();
+
+let client = Client::register(config, read, write).unwrap();
+let client = client.filter::<commands::PrivMsg>();
+let writer = client.writer();
+
+for event in client {
+    match event {
+        Event::IrcReady(..) => writer.join("museun").unwrap(),
+        Event::Message(Message::PrivMsg(msg)) => {
+            println!("{}: {}", msg.user(), msg.message());
+        }
+        Event::Error(..) => break,
+        _ => continue,
+    }
+}
+```
+
+License: 0BSD
