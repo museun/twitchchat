@@ -1,4 +1,4 @@
-use crate::irc::types::Message as IrcMessage;
+use crate::irc::Message as IrcMessage;
 use std::collections::HashMap;
 
 /// Convert an IRC-like message type into something that the Twitch commands can be parsed from
@@ -108,7 +108,7 @@ impl ToMessage for IrcMessage {
     fn prefix(&self) -> Option<&str> {
         match self {
             IrcMessage::Unknown {
-                prefix: Some(crate::irc::types::Prefix::User { nick, .. }),
+                prefix: Some(crate::irc::Prefix::User { nick, .. }),
                 ..
             } => Some(&nick),
             _ => None,

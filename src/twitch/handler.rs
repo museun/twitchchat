@@ -63,6 +63,7 @@ impl Handlers {
         dispatch!(msg, on_message)
     }
 }
+
 /// Handler allows you to implement message filtering with a struct
 #[allow(unused_variables)]
 pub trait Handler: Send {
@@ -71,9 +72,9 @@ pub trait Handler: Send {
     fn on_message(&mut self, msg: Arc<Message>) {
         log::debug!("on_message: {:?}", msg)
     }
-    /// Called when a [`irc::types::Message`](./irc/types/enum.Message.html) message is received
+    /// Called when a [`irc::Message`](./irc/enum.Message.html) message is received
     #[inline]
-    fn on_irc_message(&mut self, msg: Arc<crate::irc::types::Message>) {
+    fn on_irc_message(&mut self, msg: Arc<crate::irc::Message>) {
         log::debug!("on_irc_message: {:?}", msg)
     }
     /// Called when a [`Join`](./commands/struct.Join.html) message is received

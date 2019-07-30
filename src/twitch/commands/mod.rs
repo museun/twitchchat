@@ -32,7 +32,7 @@ pub use self::roomstate::{FollowersOnly, RoomState};
 pub use self::usernotice::{NoticeType, SubPlan, UserNotice};
 pub use self::userstate::UserState;
 
-use crate::irc::types::*;
+use crate::irc::*;
 use crate::twitch::{Badge, BadgeInfo, Channel, Color, Emotes, IntoChannel, RGB};
 use crate::Tags;
 
@@ -91,13 +91,13 @@ pub(crate) fn parse(msg: &Message) -> Option<super::Message> {
     macro_rules! get_user {
         ($prefix:expr) => {
             match $prefix.unwrap() {
-                crate::irc::types::Prefix::User { nick, .. } => nick,
+                crate::irc::Prefix::User { nick, .. } => nick,
                 _ => unreachable!(),
             }
         };
     }
 
-    if let crate::irc::types::Message::Unknown {
+    if let crate::irc::Message::Unknown {
         prefix,
         tags,
         head,

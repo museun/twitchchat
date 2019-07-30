@@ -68,7 +68,7 @@ pub struct LocalUser {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Message {
     /// An irc Message
-    Irc(Box<crate::irc::types::Message>),
+    Irc(Box<crate::irc::Message>),
     /// Join a channel.
     Join(commands::Join),
     /// Depart from a channel.
@@ -113,7 +113,7 @@ impl Message {
     pub fn parse(msg: impl crate::ToMessage) -> Self {
         // TODO be smarter about this
         use crate::conversion::{ArgsType, TagType};
-        use crate::irc::types::{Message as IrcMessage, Prefix};
+        use crate::irc::{Message as IrcMessage, Prefix};
 
         let msg = IrcMessage::Unknown {
             prefix: msg.prefix().map(|nick| Prefix::User {

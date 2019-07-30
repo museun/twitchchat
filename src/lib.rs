@@ -133,7 +133,7 @@ The [`irc`](./irc/index.html) module contains a **very** simplistic representati
 #![deny(unused_qualifications)]
 #![deny(unused_results)]
 
-/// IRC-related stuff
+/// IRC-related stuff (not really intended for use with real IRC networks)
 pub mod irc;
 
 mod tags;

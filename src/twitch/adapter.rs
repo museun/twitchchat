@@ -1,7 +1,7 @@
 use std::io::{BufRead, BufReader, Read, Write};
 
 use super::{Error, Message};
-use crate::irc::types::Message as IrcMessage;
+use crate::irc::Message as IrcMessage;
 
 /// ReadAdapter allows you to provide your own "reader" for the client
 pub trait ReadAdapter {
@@ -81,7 +81,7 @@ impl<R: Read> ReadAdapter for SyncReadAdapter<R> {
                 tail,
                 ..
             } => {
-                use crate::irc::types::Prefix::*;
+                use crate::irc::Prefix::*;
                 if let (Some(Server { host }), Some(data)) = (prefix, tail) {
                     if head == "NOTICE"
                     && host == "tmi.twitch.tv"

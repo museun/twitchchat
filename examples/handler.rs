@@ -1,7 +1,7 @@
 use std::net::TcpStream;
 use std::sync::Arc;
 
-use twitchchat::irc::types::Message as IrcMessage;
+use twitchchat::irc::Message as IrcMessage;
 use twitchchat::{commands::*, Client, Handler, Message, UserConfig, Writer};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -141,7 +141,7 @@ impl<R: ReadAdapter> Client<R> {
     /// client.writer().join("some_channel").unwrap();
     /// ```
     pub fn wait_for_ready(&mut self) -> Result<LocalUser, Error> {
-        use crate::irc::types::Message as IRCMessage;
+        use crate::irc::Message as IRCMessage;
         let mut caps = vec![];
 
         loop {
@@ -217,7 +217,7 @@ impl<R: ReadAdapter> Client<R> {
     /// client.writer().join("some_channel").unwrap();
     /// ```
     pub fn wait_for_irc_ready(&mut self) -> Result<String, Error> {
-        use crate::irc::types::Message as IrcMessage;
+        use crate::irc::Message as IrcMessage;
         loop {
             match self.read_message()? {
                 Message::Irc(msg) => {
@@ -257,7 +257,7 @@ impl<R: ReadAdapter> Client<R> {
         {
             let w = self.writer();
             if let Message::Irc(ref ircmsg) = msg {
-                if let crate::irc::types::Message::Ping { token } = &**ircmsg {
+                if let crate::irc::Message::Ping { token } = &**ircmsg {
                     return w
                         .write_line(format!("PONG :{}", token))
                         .and_then(|_| Ok(msg));
