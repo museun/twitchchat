@@ -24,6 +24,8 @@ pub struct Client<R> {
     handlers: Handlers,
 
     writer: Writer,
+
+    desired_name: Option<String>,
 }
 
 impl<R: ReadAdapter> Client<R> {
@@ -56,6 +58,8 @@ impl<R: ReadAdapter> Client<R> {
             handlers: Handlers::default(),
 
             writer: writer_,
+
+            desired_name: None,
         }
     }
 
@@ -113,6 +117,12 @@ impl<R: ReadAdapter> Client<R> {
         for cap in config.caps.iter().filter_map(|c| c.get_command()) {
             self.writer.write_line(cap)?;
         }
+
+        // TODO: maybe use a https://doc.rust-lang.org/std/sync/struct.Once.html
+        // this method should only be called once
+        // so we should return an error if we've already called it
+        //
+        let _ = self.desired_name.replace(config.nick.clone());
 
         self.writer.write_line(format!("PASS {}", config.token))?;
         self.writer.write_line(format!("NICK {}", config.nick))
@@ -184,8 +194,12 @@ impl<R: ReadAdapter> Client<R> {
 
                 Message::GlobalUserState(state) => {
                     return Ok(LocalUser {
-                        user_id: state.user_id(),
+                        user_id: dbg!(&state).user_id(),
                         display_name: state.display_name().map(ToString::to_string),
+                        name: self
+                            .desired_name
+                            .take()
+                            .expect("register must be called before this message is received"),
                         color: state.color(),
                         badges: state.badges(),
                         emote_sets: state.emote_sets(),

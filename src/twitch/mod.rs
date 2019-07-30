@@ -49,8 +49,10 @@ pub use self::userconfig::UserConfigBuilder;
 pub struct LocalUser {
     /// Your user id
     pub user_id: u64,
-    /// Your display name, if set
+    /// Your display name, if set.
     pub display_name: Option<String>,
+    /// The name you've provided to UserConfig (incase display_name isn't set)
+    pub name: String,
     /// Your color, if set
     pub color: Option<Color>,
     /// Your badges
