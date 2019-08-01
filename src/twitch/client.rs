@@ -202,6 +202,10 @@ where
                 }
                 Ok(Some(Message::parse(msg)))
             }
+            crate::irc::Message::Ping { token } => {
+                self.writer.write_line(format!("PONG :{}", token))?;
+                Ok(Some(Message::Irc(Box::new(msg))))
+            }
             _ => Ok(Some(Message::Irc(Box::new(msg)))),
         }
     }
