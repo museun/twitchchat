@@ -345,7 +345,7 @@ where
                     Message::GlobalUserState(state) => {
                         self.state.next(ready);
                         return Some(Event::TwitchReady(LocalUser {
-                            user_id: dbg!(&state).user_id(),
+                            user_id: state.user_id(),
                             display_name: state.display_name().map(ToString::to_string),
                             name: self.desired_name.clone(),
                             color: state.color(),
