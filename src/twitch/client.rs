@@ -278,24 +278,23 @@ where
             ClientState::Start => {
                 log::trace!("state is: {:?}", self.state);
                 let msg = read!();
-                match &msg {
-                    Message::Irc(msg) => match &**msg {
-                        crate::irc::Message::Cap {
-                            acknowledge: true,
-                            cap,
-                        } => match cap.as_str() {
+                if let Message::Irc(msg) = &msg {
+                    if let crate::irc::Message::Cap {
+                        acknowledge: true,
+                        cap,
+                    } = &**msg
+                    {
+                        match cap.as_str() {
                             "twitch.tv/tags" => self.caps.push(Capability::Tags),
                             "twitch.tv/membership" => self.caps.push(Capability::Membership),
                             "twitch.tv/commands" => self.caps.push(Capability::Commands),
                             _ => {}
-                        },
-                        _ => {}
-                    },
-                    _ => {}
+                        }
+                    }
                 };
 
                 self.state.next(ready);
-                return Some(Event::Message(msg));
+                Some(Event::Message(msg))
             }
             ClientState::IrcReady => loop {
                 log::trace!("state is: {:?}", self.state);

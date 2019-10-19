@@ -153,7 +153,6 @@ pub use twitch::*;
 
 pub use self::twitch::UserConfig;
 
-// TODO remove this stuff
 /// Message conversion types
 pub mod conversion;
 #[doc(inline)]

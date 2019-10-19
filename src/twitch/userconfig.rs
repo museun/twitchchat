@@ -1,7 +1,7 @@
 use crate::twitch::Capability;
 use std::collections::BTreeSet;
 
-pub(crate) const JUSTINFAN1234: &'static str = "justinfan1234";
+pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
 /// Configuration used to complete the 'registration' with the irc server
 #[derive(Clone)]
@@ -67,9 +67,7 @@ impl UserConfigBuilder {
     // and probably the length (its probably 64 bytes)
     pub fn token<S: ToString>(mut self, token: S) -> Self {
         let token = token.to_string();
-        if token == JUSTINFAN1234 {
-            let _ = self.token.replace(token.to_string());
-        } else if token.starts_with("oauth") && token.len() == 36 {
+        if token == JUSTINFAN1234 || (token.starts_with("oauth") && token.len() == 36) {
             let _ = self.token.replace(token.to_string());
         }
         self

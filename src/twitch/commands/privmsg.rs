@@ -45,8 +45,7 @@ impl PrivMsg {
     pub fn badges(&self) -> Vec<Badge> {
         badges(self.get("badges").unwrap_or_default())
     }
-    /// How many bits were attached (0 for None)
-    // TODO make this optional (july 30 2019: why?)
+    /// How many bits were attached (0 for None)    
     pub fn bits(&self) -> u64 {
         self.get_parsed("bits").unwrap_or_default()
     }

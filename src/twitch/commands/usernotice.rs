@@ -80,7 +80,7 @@ impl UserNotice {
             e => NoticeType::Unknown(e.to_string()),
         }
     }
-    // TODO maybe parse this into a struct
+
     /// (Sent only on sub, resub) The total number of months the user has
     /// subscribed. This is the same as msg-param-months but sent for different
     /// types of user notices.
@@ -118,8 +118,7 @@ impl UserNotice {
         self.get("msg-param-recipient-user-name")
     }
     /// (Sent only on sub, resub) Boolean indicating whether users want their
-    /// streaks to be shared.
-    // TODO option? (why? july 30 2019)
+    /// streaks to be shared.    
     pub fn msg_param_should_share_streak(&self) -> bool {
         self.get_as_bool("msg-param-should-share-streak")
     }
