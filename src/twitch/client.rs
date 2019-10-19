@@ -65,6 +65,7 @@ where
             let mut w = write;
             for msg in rx {
                 if w.write_all(msg.as_bytes()).is_err() {
+                    log::debug!("cannot write");
                     break;
                 }
             }
@@ -85,7 +86,7 @@ where
             state: ClientState::Start,
 
             want_tags,
-            irc_ready: is_anonymous,
+            irc_ready: is_anonymous | want_tags,
 
             quit,
         })
