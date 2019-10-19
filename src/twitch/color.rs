@@ -1,23 +1,14 @@
 use std::str::FromStr;
 /// An error returned from the FromStr impls of RGB and Color
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ColorError {
     /// An invalid Hex string for `RGB`
+    #[error("invalid hex string")]
     InvalidHexString,
     /// Unknown color name
+    #[error("unknown color")]
     UnknownColor,
 }
-
-impl std::fmt::Display for ColorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ColorError::InvalidHexString => write!(f, "invalid hex string"),
-            ColorError::UnknownColor => write!(f, "unknown color"),
-        }
-    }
-}
-
-impl std::error::Error for ColorError {}
 
 /// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]

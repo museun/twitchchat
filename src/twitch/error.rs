@@ -1,64 +1,40 @@
 /// An error that the [`Client`](./struct.Client.html) can return
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Connection could not be established
-    Connect(std::io::Error),
+    #[error("cannot connect: {0}")]
+    Connect(#[source] std::io::Error),
     /// Could not register with the provided [UserConfig](./struct.UserConfig.html)
+    #[error("cannot send initial registration: {0}")]
     Register(Box<Self>),
     /// Could not write
-    Write(std::io::Error),
+    #[error("cannot write: {0}")]
+    Write(#[source] std::io::Error),
     /// Could not read
-    Read(std::io::Error),
+    #[error("cannot read: {0}")]
+    Read(#[source] std::io::Error),
     /// Invalid message received from Twitch
+    #[error("invalid message, from '{0}' (trimmed)")]
     InvalidMessage(String),
     /// Invalid Nick/Pass combination
+    #[error("invalid registration. check the `token` and `nick`")]
     InvalidRegistration,
     /// Channel name provided was empty
+    #[error("empty channel name provided")]
     EmptyChannelName,
     /// Cannot read. This probably means you need to reconnect.
+    #[error("cannot read, client should quit now")]
     CannotRead,
     /// Capability is required for this functionality
+    #[error("{} are required to do that",
+        .0
+        .iter()
+        .map(|f| format!("{:?}", f))
+        .collect::<Vec<_>>()
+        .join(", ")
+    )]
     CapabilityRequired(Vec<crate::Capability>),
     /// Not connected to the server
+    #[error("not connected to server")]
     NotConnected,
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::Connect(err) => write!(f, "cannot connect: {}", err),
-            Error::Register(err) => write!(f, "cannot send initial registration: {}", err),
-            Error::Write(err) => write!(f, "cannot write: {}", err),
-            Error::Read(err) => write!(f, "cannot read: {}", err),
-            Error::InvalidMessage(raw) => {
-                write!(f, "invalid message, from '{}' (trimmed)", raw.trim())
-            }
-            Error::InvalidRegistration => {
-                write!(f, "invalid registration. check the `token` and `nick`")
-            }
-            Error::EmptyChannelName => write!(f, "empty channel name provided"),
-            Error::CannotRead => write!(f, "cannot read, client should quit now"),
-            Error::CapabilityRequired(list) => {
-                let caps = list
-                    .iter()
-                    .map(|f| format!("{:?}", f))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                write!(f, "{} are required to do that", caps)
-            }
-            Error::NotConnected => write!(f, "not connected to server"),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Connect(err) | Error::Write(err) | Error::Read(err) => {
-                Some(err as &(dyn std::error::Error))
-            }
-            Error::Register(err) => Some(err as &(dyn std::error::Error)),
-            _ => None,
-        }
-    }
 }
