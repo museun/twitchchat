@@ -147,6 +147,8 @@ pub use tags::Tags;
 mod twitch;
 pub use twitch::*;
 
+pub use crate::twitch::filter::Filter;
+
 pub use self::twitch::UserConfig;
 
 /// Message conversion types

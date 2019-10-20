@@ -22,8 +22,7 @@ pub enum Message {
     NamesEnd(commands::NamesEnd),
     /// Purge a user's typically after a user is banned from chat or timed out.
     ClearChat(commands::ClearChat),
-    /// Single message removal on a channel. This is triggered via /delete
-    /// <target-msg-id> on IRC.
+    /// Single message removal on a channel. This is triggered via /delete <target-msg-id> on IRC.
     ClearMsg(commands::ClearMsg),
     /// Channel starts host mode.
     HostTargetStart(commands::HostTargetStart),
@@ -35,8 +34,7 @@ pub enum Message {
     Reconnect(commands::Reconnect),
     /// Identifies the channel's chat settings (e.g., slow mode duration).
     RoomState(commands::RoomState),
-    /// Announces Twitch-specific events to the channel (e.g., a user's
-    /// subscription notification).
+    /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
     UserNotice(commands::UserNotice),
     /// Identifies a user's chat settings or properties (e.g., chat color)..
     UserState(commands::UserState),

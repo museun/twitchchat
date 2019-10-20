@@ -38,24 +38,58 @@ filter_this!(
     GlobalUserState, //
 );
 
+// special cast the Boxed IRC mesage
+impl MessageFilter for crate::irc::Message {
+    fn to_filter() -> Filter {
+        Filter::Irc
+    }
+}
+
+impl From<Message> for crate::irc::Message {
+    fn from(msg: Message) -> Self {
+        match msg {
+            Message::Irc(msg) => *msg,
+            _ => unreachable!(),
+        }
+    }
+}
+
+/// A filter that can be applied to [`Client::filter`](./struct.Client.html#method.filter)
 #[derive(Copy, Clone, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 pub enum Filter {
+    /// An irc Message
     Irc,
+    /// Join a channel.
     Join,
+    /// Depart from a channel.
     Part,
+    /// Send a message to a channel.
     PrivMsg,
+    /// Gain/lose moderator (operator) status in a channel.
     Mode,
+    /// List current chatters in a channel. (begin)
     NamesStart,
+    /// List current chatters in a channel. (end)
     NamesEnd,
+    /// Purge a user's typically after a user is banned from chat or timed out.
     ClearChat,
+    /// Single message removal on a channel. This is triggered via /delete <target-msg-id> on IRC.
     ClearMsg,
+    /// Channel starts host mode.
     HostTargetStart,
+    /// Channel stops host mode.
     HostTargetEnd,
+    /// General notices from the server.
     Notice,
+    /// Rejoin channels after a restart.
     Reconnect,
+    /// Identifies the channel's chat settings (e.g., slow mode duration).
     RoomState,
+    /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
     UserNotice,
+    /// Identifies a user's chat settings or properties (e.g., chat color)..
     UserState,
+    /// On successful login.
     GlobalUserState,
     // Reserve the right to add more fields to this enum
     #[doc(hidden)]
