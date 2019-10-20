@@ -1,54 +1,55 @@
 use std::collections::HashSet;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 use super::{Capability, Error, LocalUser, Message, UserConfig, Writer};
 use crate::filter::{Filter, MessageFilter};
 
+/// An event received while reading from the client
+#[derive(Debug)]
+pub enum Event {
+    /// An IRC ready event was requested, returning the your IRC name
+    IrcReady(String),
+    /// A twitch ready event was requested, returning your twitch user
+    TwitchReady(LocalUser),
+    /// A twitch message
+    Message(Message),
+    /// An error
+    Error(Error),
+}
+
 // TODO handle shutdowns better
 
 /// Client for interacting with Twitch's chat.
-pub struct Client<R> {
+pub struct Client<R, W> {
     reader: BufReader<R>,
     writer: Writer,
-    handle: std::thread::JoinHandle<()>,
+    output: W,
+    write_queue: crossbeam_channel::Receiver<String>,
     filters: HashSet<Filter>,
-
     desired_name: String,
-    caps: Vec<Capability>,
-    has_error: bool,
-
-    ready_state: Option<ReadyState>,
-    state: ClientState,
-
-    want_tags: bool,
-    irc_ready: bool,
-
-    quit: Arc<AtomicBool>,
+    client_config: ClientConfig,
 }
 
-impl<R> Client<R>
+impl<R, W> Client<R, W>
 where
     R: Read + Sync + Send,
+    W: Write + Sync + Send + 'static,
 {
     /// Creates and registers a new Client with the IRC server.
     ///
     /// Takes a [`UserConfig`](./struct.UserConfig.html) and a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html)/[`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) pair
     ///
     /// Returns the Client, or an error if it cannot write to the `W`
-    pub fn register<U, W>(config: U, read: R, write: W) -> Result<Self, Error>
+    pub fn register<U>(config: U, read: R, write: W) -> Result<Self, Error>
     where
         U: std::borrow::Borrow<UserConfig>,
-        W: Write + Sync + Send + 'static,
     {
-        let quit = Arc::new(AtomicBool::new(false));
-        let (writer, rx) = Writer::new(Arc::clone(&quit));
+        let (writer, rx) = Writer::new();
 
         let config = config.borrow();
+        use super::userconfig::JUSTINFAN1234 as ANON;
         // check for anonymous login ('justinfan1234')
-        let is_anonymous = config.nick == super::userconfig::JUSTINFAN1234
-            && config.token == super::userconfig::JUSTINFAN1234;
+        let is_anonymous = config.nick == ANON && config.token == ANON;
 
         let want_tags = config.caps.contains(&Capability::Tags) && !is_anonymous;
         for cap in config.caps.iter().filter_map(|c| c.get_command()) {
@@ -60,35 +61,17 @@ where
         writer.write_line(format!("NICK {}", config.nick))?;
         log::trace!("registered");
 
-        let handle = std::thread::spawn(move || {
-            log::trace!("starting write loop");
-            let mut w = write;
-            for msg in rx {
-                if w.write_all(msg.as_bytes()).is_err() {
-                    log::debug!("cannot write");
-                    break;
-                }
-            }
-            log::trace!("ending write loop");
-        });
-
         Ok(Self {
             reader: BufReader::new(read),
             writer,
-            handle,
+            output: write,
+            write_queue: rx,
             filters: HashSet::new(),
-
             desired_name: config.nick.to_string(),
-            caps: vec![],
-            has_error: false,
-
-            ready_state: None,
-            state: ClientState::Start,
-
-            want_tags,
-            irc_ready: is_anonymous | want_tags,
-
-            quit,
+            client_config: ClientConfig {
+                want_tags,
+                is_anonymous,
+            },
         })
     }
 
@@ -131,57 +114,101 @@ where
         self.filters.remove(&filter)
     }
 
-    /// Sets the iterator to start when we've received the 'ok' from the irc server
-    ///
-    /// When this event happens, a [`Event::IrcReady`](enum.Event.html#variant.IrcReady) is produced by the iterator
-    ///
-    /// - If the `tags` capability was not set, then this is automatically set.
-    /// - If this is not set and the `tags` capability was set, then a [`Event::TwitchReady`](enum.Event.html#variant.TwitchReady) is produced instead
-    ///
-    /// It will try to be smart and produce a `TwitchReady` event if desired, otherwise `IrcReady` was produced
-    pub fn when_irc_ready(mut self) -> Self {
-        self.irc_ready = true;
-        self
-    }
-
     /// Get a clonable writer from the client
     pub fn writer(&self) -> Writer {
         log::trace!("cloning writer");
         self.writer.clone()
     }
 
-    /// This is useful to synchronize the closing of the 'Read'
-    pub fn wait_for_close(self) {
-        log::trace!("waiting for thread to join");
-        let _ = self.handle.join();
-        log::trace!("thread joined");
+    /// Manually try to read a message from the connection in a non-blocking fashion
+    ///
+    /// Returns [`Some(Message)`](./enum.Message.html) if it read a message
+    ///
+    /// Returns `None` if it couldn't, but didn't run into an error
+    pub fn read_message(&mut self) -> Result<Option<Message>, Error> {
+        match self.try_read() {
+            Production::Produce(msg) => Ok(Some(msg)),
+            Production::Yield => Ok(None),
+            Production::Error(err) => Err(err),
+        }
     }
 
-    fn read_message(&mut self) -> Result<Option<Message>, Error> {
-        if self.quit.load(Ordering::SeqCst) {
-            log::trace!("quitting");
-            return Ok(None);
-        }
+    /// Returns a blocking iterator over the [`Events`](./enum.Event.html) produced by the [`Client`](./struct.Client.html)
+    pub fn iter(self) -> BlockingClientIter<R, W> {
+        self.into_iter()
+    }
 
+    /// Returns a non-blocking iterator over the [`Events`](./enum.Event.html) produced by the [`Client`](./struct.Client.html)
+    ///
+    /// This will produce an [`Option<Event>`](./enum.Event.html)
+    /// * when a message was received: [`Some(Event)`](./enum.Event.html)
+    /// * when no message was ready: `None`
+    pub fn nonblocking_iter(self) -> ClientIter<R, W> {
+        ClientIter {
+            client: ClientState {
+                client_config: self.client_config,
+                client: self,
+                state: TaggedState::Start,
+                caps: vec![],
+                done: false,
+            },
+        }
+    }
+
+    fn try_read(&mut self) -> Production<Message, Error> {
         let mut line = String::new(); // reuse this
-        if self.reader.read_line(&mut line).map_err(|err| {
-            log::warn!("failed to read: {}", err);
-            Error::CannotRead
-        })? == 0
-        {
-            log::warn!("cannot read (amount was empty)");
-            return Err(Error::CannotRead);
-        }
 
-        if self.quit.load(Ordering::SeqCst) {
-            log::trace!("quitting");
-            return Ok(None);
+        match self.reader.read_line(&mut line) {
+            Ok(0) => {
+                log::warn!("cannot read (amount was empty)");
+                // TODO this should be EOF / Disconnected
+                return Production::Error(Error::CannotRead);
+            }
+            Err(err) => {
+                use std::io::ErrorKind as E;
+                (match err.kind() {
+                    E::WouldBlock => {
+                        const READ_AT_MOST: std::time::Duration =
+                            std::time::Duration::from_millis(10);
+                        let now = std::time::Instant::now();
+                        // try to read all of the write queue, if 10
+                        // milliseconds pass we'll bail leaving the rest in the
+                        // queue if there is nothing to write, we'll bail early
+                        for ts in std::iter::repeat(std::time::Instant::now()) {
+                            match self.write_queue.try_recv() {
+                                Ok(msg) => {
+                                    if let Err(err) = self.output.write_all(msg.as_bytes()) {
+                                        log::debug!("cannot write: {}", err);
+                                        return Production::Error(Error::NotConnected);
+                                    }
+                                }
+                                Err(crossbeam_channel::TryRecvError::Disconnected) => {
+                                    return Production::Error(Error::NotConnected)
+                                }
+                                _ => break,
+                            }
+                            if ts - now > READ_AT_MOST {
+                                break;
+                            }
+                        }
+                        return Production::Yield;
+                    }
+                    // TODO these should be special-cased
+                    // E::TimedOut | E::NotConnected
+                    _ => return Production::Error(Error::CannotRead),
+                })
+            }
+            _ => {}
         }
 
         let _ = line.remove(line.len() - 1);
         assert!(!line.is_empty(), "line should not be just a '\r'");
+
         log::trace!("<- {}", line);
-        let msg = crate::irc::Message::parse(&line).ok_or_else(|| Error::InvalidMessage(line))?;;
+        let msg = match crate::irc::Message::parse(&line) {
+            Some(msg) => msg,
+            None => return Production::Error(Error::InvalidMessage(line)),
+        };
 
         match &msg {
             crate::irc::Message::Unknown {
@@ -198,199 +225,219 @@ where
                         && args.get(0).map(|k| k.as_str()) == Some("*")
                     {
                         log::warn!("got a registration error");
-                        return Err(Error::InvalidRegistration);
+                        return Production::Error(Error::InvalidRegistration);
                     }
                 }
-                Ok(Some(Message::parse(msg)))
+                Production::Produce(Message::parse(msg))
             }
             crate::irc::Message::Ping { token } => {
-                self.writer.write_line(format!("PONG :{}", token))?;
-                Ok(Some(Message::Irc(Box::new(msg))))
+                match self.writer.write_line(format!("PONG :{}", token)) {
+                    Err(err) => Production::Error(err),
+                    Ok(_) => Production::Produce(Message::Irc(Box::new(msg))),
+                }
             }
-            _ => Ok(Some(Message::Irc(Box::new(msg)))),
+            _ => Production::Produce(Message::Irc(Box::new(msg))),
         }
     }
 }
 
-/// An event received while reading from the client
-#[derive(Debug)]
-pub enum Event {
-    /// An IRC ready event was requested, returning the your IRC name
-    IrcReady(String),
-    /// A twitch ready event was requested, returning your twitch user
-    TwitchReady(LocalUser),
-    /// A twitch message
-    Message(Message),
-    /// An error
-    Error(Error),
-}
-
-// TODO this could be a lot simpler
-impl<R> Iterator for Client<R>
+impl<R, W> IntoIterator for Client<R, W>
 where
     R: Read + Sync + Send,
+    W: Write + Sync + Send + 'static,
 {
     type Item = Event;
+    type IntoIter = BlockingClientIter<R, W>;
+    fn into_iter(self) -> Self::IntoIter {
+        BlockingClientIter {
+            client: ClientState {
+                client_config: self.client_config,
+                client: self,
+                state: TaggedState::Start,
+                caps: vec![],
+                done: false,
+            },
+        }
+    }
+}
 
+pub struct BlockingClientIter<R, W> {
+    client: ClientState<R, W>,
+}
+
+impl<R, W> Iterator for BlockingClientIter<R, W>
+where
+    R: Read + Sync + Send,
+    W: Write + Sync + Send + 'static,
+{
+    type Item = Event;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.quit.load(Ordering::SeqCst) {
-            log::trace!("quitting");
-            return None;
-        }
+        const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(10);
 
-        if self.has_error {
-            return None;
+        // TODO don't spin wait here, be smarter and use a scheduler
+        loop {
+            if let Some(ev) = self.client.try_read()? {
+                return Some(ev);
+            }
+            // TODO enqueue and drain from it
+            std::thread::park_timeout(READ_TIMEOUT)
         }
+    }
+}
+
+pub struct ClientIter<R, W> {
+    client: ClientState<R, W>,
+}
+
+impl<R, W> Iterator for ClientIter<R, W>
+where
+    R: Read + Sync + Send,
+    W: Write + Sync + Send + 'static,
+{
+    type Item = Option<Event>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.client.try_read()
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+struct ClientConfig {
+    want_tags: bool,
+    is_anonymous: bool,
+}
+
+#[derive(Debug)]
+enum Production<T, E> {
+    Produce(T),
+    Error(E),
+    Yield,
+}
+
+struct ClientState<R, W> {
+    client: Client<R, W>,
+    state: TaggedState,
+    caps: Vec<Capability>,
+    client_config: ClientConfig,
+    done: bool,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum TaggedState {
+    Start = 0,
+    TwitchReady = 1,
+    Rest = 2,
+}
+
+impl<R, W> ClientState<R, W>
+where
+    R: Read + Send + Sync,
+    W: Write + Sync + Send + 'static,
+{
+    // TODO this definitely needs testing to ensure the state transitions are
+    // correct
+    #[allow(clippy::option_option)]
+    fn try_read(&mut self) -> Option<Option<Event>> {
+        use crate::irc::Message as I;
+        use crate::Message as M;
+
+        macro_rules! produce {
+            ($ev:expr) => {
+                return Some(Some($ev));
+            };
+        };
 
         macro_rules! error {
             ($err:expr) => {{
-                self.has_error = true;
-                return Some(Event::Error($err));
+                self.done = true;
+                return Some(Some(Event::Error($err)));
             }};
         }
 
-        macro_rules! read {
-            () => {
-                match self.read_message() {
-                    Ok(Some(msg)) => {
-                        if self.quit.load(Ordering::SeqCst) {
-                            log::trace!("quitting");
-                            return None;
-                        }
-                        msg
-                    }
-                    Ok(None) => return None,
-                    Err(err) => error!(err),
-                }
+        loop {
+            let msg = match self.client.try_read() {
+                Production::Produce(msg) => msg,
+                Production::Error(err) => error!(err),
+                Production::Yield => return Some(None),
             };
-        }
 
-        if self.ready_state.is_none() {
-            let _ = self
-                .ready_state
-                .replace(match (self.irc_ready, self.want_tags) {
-                    (true, false) | (false, false) | (true, true) => ReadyState::Irc,
-                    (false, true) => ReadyState::Twitch,
-                });
-        }
-        let ready = self.ready_state.unwrap();
-
-        match self.state {
-            ClientState::Start => {
-                log::trace!("state is: {:?}", self.state);
-                let msg = read!();
-                if let Message::Irc(msg) = &msg {
-                    if let crate::irc::Message::Cap {
-                        acknowledge: true,
-                        cap,
-                    } = &**msg
-                    {
-                        match cap.as_str() {
-                            "twitch.tv/tags" => self.caps.push(Capability::Tags),
-                            "twitch.tv/membership" => self.caps.push(Capability::Membership),
-                            "twitch.tv/commands" => self.caps.push(Capability::Commands),
-                            _ => {}
+            match self.state {
+                // if we're at the start
+                TaggedState::Start => {
+                    if let M::Irc(msg) = &msg {
+                        match &**msg {
+                            I::Cap {
+                                acknowledge: true,
+                                cap,
+                            } => match cap.as_str() {
+                                "twitch.tv/tags" => self.caps.push(Capability::Tags),
+                                "twitch.tv/membership" => self.caps.push(Capability::Membership),
+                                "twitch.tv/commands" => self.caps.push(Capability::Commands),
+                                unk => log::warn!("unknown capability: {}", unk),
+                            },
+                            // this an 001, so we can transition to the next state
+                            I::Connected { name } => {
+                                self.state = TaggedState::TwitchReady;
+                                produce!(Event::IrcReady(name.clone()));
+                            }
+                            _ => { /* fallthrough */ }
                         }
                     }
-                };
-
-                self.state.next(ready);
-                Some(Event::Message(msg))
-            }
-            ClientState::IrcReady => loop {
-                log::trace!("state is: {:?}", self.state);
-                match read!() {
-                    Message::Irc(msg) => {
-                        if let crate::irc::Message::Ready { name } = *msg {
-                            self.state.next(ready);
-                            return Some(Event::IrcReady(name));
-                        }
-                    }
-                    _ => continue,
                 }
-            },
-            ClientState::TwitchReady => loop {
-                log::trace!("state is: {:?}", &self.state);
-                match read!() {
-                    Message::Irc(msg) => match *msg {
-                        crate::irc::Message::Cap {
-                            acknowledge: true,
-                            cap,
-                        } => match cap.as_str() {
-                            "twitch.tv/tags" => self.caps.push(Capability::Tags),
-                            "twitch.tv/membership" => self.caps.push(Capability::Membership),
-                            "twitch.tv/commands" => self.caps.push(Capability::Commands),
-                            _ => {}
-                        },
-                        crate::irc::Message::Ready { .. } => {
-                            let mut bad = vec![];
-                            match (
-                                self.caps.contains(&Capability::Tags),
-                                self.caps.contains(&Capability::Commands),
-                            ) {
-                                (true, true) => continue,
-                                (false, true) => bad.push(Capability::Tags),
-                                (true, false) => bad.push(Capability::Commands),
-                                _ => {
-                                    bad.push(Capability::Tags);
-                                    bad.push(Capability::Commands);
+
+                // if we've reached 001
+                TaggedState::TwitchReady => {
+                    // this is the MOTD, check out caps
+                    match &msg {
+                        M::Irc(msg) => {
+                            if let I::Ready { .. } = &**msg {
+                                if !self.client_config.is_anonymous || self.client_config.want_tags
+                                {
+                                    let mut bad = vec![];
+                                    match (
+                                        self.caps.contains(&Capability::Tags),
+                                        self.caps.contains(&Capability::Commands),
+                                    ) {
+                                        (true, true) => continue,
+                                        (false, true) => bad.push(Capability::Tags),
+                                        (true, false) => bad.push(Capability::Commands),
+                                        _ => {
+                                            bad.push(Capability::Tags);
+                                            bad.push(Capability::Commands);
+                                        }
+                                    };
+                                    if !bad.is_empty() {
+                                        error!(Error::CapabilityRequired(bad))
+                                    }
                                 }
-                            };
-                            if !bad.is_empty() {
-                                error!(Error::CapabilityRequired(bad))
+                                self.state = TaggedState::Rest;
                             }
                         }
-                        _ => {}
-                    },
-                    Message::GlobalUserState(state) => {
-                        self.state.next(ready);
-                        return Some(Event::TwitchReady(LocalUser {
-                            user_id: state.user_id(),
-                            display_name: state.display_name().map(ToString::to_string),
-                            name: self.desired_name.clone(),
-                            color: state.color(),
-                            badges: state.badges(),
-                            emote_sets: state.emote_sets(),
-                            caps: self.caps.clone(),
-                        }));
+
+                        M::GlobalUserState(state) => {
+                            self.state = TaggedState::Rest;
+                            if !self.client_config.is_anonymous || self.client_config.want_tags {
+                                produce!(Event::TwitchReady(LocalUser::from_global_user_state(
+                                    state,
+                                    self.client.desired_name.clone(),
+                                    self.caps.clone()
+                                )));
+                            }
+                        }
+                        _ => { /* fallthrough */ }
                     }
-                    _ => continue,
                 }
-            },
-            ClientState::Go => loop {
-                let msg = read!();
-                let filter = msg.what_filter();
-                if self.filters.contains(&filter) {
-                    log::debug!("dispatching to a : {:?}", filter);
-                    return Some(Event::Message(msg));
+                TaggedState::Rest => {
+                    let filter = msg.what_filter();
+                    if self.client.filters.contains(&filter) {
+                        log::debug!("dispatching to: {:?}", filter);
+                        produce!(Event::Message(msg))
+                    }
+                    // so we don't fallthrough
+                    continue;
                 }
-            },
+            };
+
+            produce!(Event::Message(msg))
         }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum ReadyState {
-    Irc,
-    Twitch,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum ClientState {
-    Start = 0,
-    IrcReady = 1,
-    TwitchReady = 2,
-    Go = 3,
-}
-
-impl ClientState {
-    fn next(&mut self, ready: ReadyState) {
-        let _ = match self {
-            ClientState::Start if ready == ReadyState::Irc => {
-                std::mem::replace(self, ClientState::IrcReady)
-            }
-            ClientState::Start => std::mem::replace(self, ClientState::TwitchReady),
-            _ => std::mem::replace(self, ClientState::Go),
-        };
     }
 }

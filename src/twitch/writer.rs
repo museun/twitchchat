@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use std::time::Duration;
@@ -16,15 +15,14 @@ use rate_limit::SyncLimiter;
 #[derive(Clone)]
 pub struct Writer {
     tx: channel::Sender<String>,
-    quit: Arc<AtomicBool>,
     rate: Arc<SyncLimiter>,
 }
 
 impl Writer {
-    pub(crate) fn new(quit: Arc<AtomicBool>) -> (Self, channel::Receiver<String>) {
+    pub(crate) fn new() -> (Self, channel::Receiver<String>) {
         let rate = Arc::new(SyncLimiter::full(50, Duration::from_secs(15)));
-        let (tx, rx) = channel::unbounded();
-        (Self { tx, quit, rate }, rx)
+        let (tx, rx) = channel::bounded(32);
+        (Self { tx, rate }, rx)
     }
 
     pub(crate) fn write_line(&self, data: impl Display) -> Result<(), Error> {
@@ -338,11 +336,6 @@ impl Writer {
         self.raw(format!("JOIN {}", *channel))
     }
 
-    /// This is used to signal to the [`Client`]() to shutdown
-    pub fn shutdown_client(&self) {
-        self.quit.store(true, Ordering::SeqCst);
-    }
-
     /// Join many channels (from an iterator)
     pub fn join_many<'a, I>(&self, channels: I) -> Result<(), Error>
     where
@@ -446,8 +439,7 @@ mod tests {
         f: impl FnOnce(&Writer) -> Result<(), Error>,
         expected: impl PartialEq<String> + std::fmt::Debug,
     ) {
-        let quit = Arc::new(AtomicBool::new(false));
-        let (w, rx) = Writer::new(quit);
+        let (w, rx) = Writer::new();
         f(&w).unwrap();
         assert_eq!(expected, rx.recv().unwrap())
     }

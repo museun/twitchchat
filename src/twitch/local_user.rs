@@ -19,3 +19,21 @@ pub struct LocalUser {
     /// The capabilities the server acknowledged
     pub caps: Vec<Capability>,
 }
+
+impl LocalUser {
+    pub(crate) fn from_global_user_state(
+        state: &crate::commands::GlobalUserState,
+        name: String,
+        caps: impl IntoIterator<Item = Capability>,
+    ) -> Self {
+        LocalUser {
+            user_id: state.user_id(),
+            display_name: state.display_name().map(ToString::to_string),
+            name,
+            color: state.color(),
+            badges: state.badges(),
+            emote_sets: state.emote_sets(),
+            caps: caps.into_iter().collect(),
+        }
+    }
+}

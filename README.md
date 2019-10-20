@@ -27,8 +27,9 @@ let mut client = twitchchat::connect_easy(nick, token)
 // get a clonable, threadsafe writer
 let writer = client.writer();
 
-// for each event from the client (this &mut is only needed if you want to use `wait_for_close`)
-for event in &mut client {
+// for each event from the client, blocking
+// a client.nonblocking_iter() also exists
+for event in client {
     match event {
         // when we're connected
         Event::IrcReady(..) => {
@@ -60,11 +61,6 @@ for event in &mut client {
         _ => unreachable!(),
     }
 }
-
-// wait for the client to close
-// this isn't needed, but if you want to synchronize something to it
-// this is how you would do it
-client.wait_for_close();
 ```
 ### with custom capabilities
 ```rust

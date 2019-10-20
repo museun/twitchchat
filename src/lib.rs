@@ -23,8 +23,9 @@
 //! // get a clonable, threadsafe writer
 //! let writer = client.writer();
 //!
-//! // for each event from the client (this &mut is only needed if you want to use `wait_for_close`)
-//! for event in &mut client {
+//! // for each event from the client, blocking
+//! // a client.nonblocking_iter() also exists
+//! for event in client {
 //!     match event {
 //!         // when we're connected
 //!         Event::IrcReady(..) => {
@@ -56,11 +57,6 @@
 //!         _ => unreachable!(),
 //!     }
 //! }
-//!
-//! // wait for the client to close
-//! // this isn't needed, but if you want to synchronize something to it
-//! // this is how you would do it
-//! client.wait_for_close();
 //! ```
 //! ## with custom capabilities
 //! ```no_run
@@ -176,12 +172,13 @@ pub use conversion::ToMessage;
 ///     write,
 /// );
 /// ```
-pub fn connect<U>(config: U) -> Result<Client<std::net::TcpStream>, Error>
+pub fn connect<U>(config: U) -> Result<Client<std::net::TcpStream, std::net::TcpStream>, Error>
 where
     U: std::borrow::Borrow<UserConfig>,
 {
     let (read, write) = {
         let stream = std::net::TcpStream::connect(TWITCH_IRC_ADDRESS).map_err(Error::Connect)?;
+        stream.set_nonblocking(true).map_err(Error::Connect)?;
         (stream.try_clone().unwrap(), stream)
     };
     Client::register(config, read, write)
@@ -193,9 +190,10 @@ where
 pub fn connect_easy(
     nick: impl ToString,
     token: impl ToString,
-) -> Result<Client<std::net::TcpStream>, Error> {
+) -> Result<Client<std::net::TcpStream, std::net::TcpStream>, Error> {
     let (read, write) = {
         let stream = std::net::TcpStream::connect(TWITCH_IRC_ADDRESS).map_err(Error::Connect)?;
+        stream.set_nonblocking(true).map_err(Error::Connect)?;
         (stream.try_clone().unwrap(), stream)
     };
     Client::register(

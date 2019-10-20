@@ -5,7 +5,7 @@ fn main() {
     use twitchchat::*;
 
     struct Bot {
-        client: Option<Client<TcpStream>>,
+        client: Option<Client<TcpStream, TcpStream>>,
         writer: Writer,
     }
 
