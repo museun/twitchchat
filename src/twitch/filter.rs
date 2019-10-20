@@ -55,6 +55,26 @@ impl From<Message> for crate::irc::Message {
 }
 
 /// A filter that can be applied to [`Client::filter`](./struct.Client.html#method.filter)
+///
+/// | Filter name | Filter to use, which produces: |
+/// | :--- | :--- |
+/// | [`Filter::Irc`](./enum.Filter.html#variant.Irc) | [`irc::Message`](./irc/enum.Message.html) |
+/// | [`Filter::Join`](./enum.Filter.html#variant.Join) | [`commands::Join`](./commands/struct.Join.html) |
+/// | [`Filter::Part`](./enum.Filter.html#variant.Part) | [`commands::Part`](./commands/struct.Part.html) |
+/// | [`Filter::PrivMsg`](./enum.Filter.html#variant.PrivMsg) | [`commands::PrivMsg`](./commands/struct.PrivMsg.html) |
+/// | [`Filter::Mode`](./enum.Filter.html#variant.Mode) | [`commands::Mode`](./commands/struct.Mode.html) |
+/// | [`Filter::NamesStart`](./enum.Filter.html#variant.NamesStart) | [`commands::NamesStart`](./commands/struct.NamesStart.html) |
+/// | [`Filter::NamesEnd`](./enum.Filter.html#variant.NamesEnd) | [`commands::NamesEnd`](./commands/struct.NamesEnd.html) |
+/// | [`Filter::ClearChat`](./enum.Filter.html#variant.ClearChat) | [`commands::ClearChat`](./commands/struct.ClearChat.html) |
+/// | [`Filter::ClearMsg`](./enum.Filter.html#variant.ClearMsg) | [`commands::ClearMsg`](./commands/struct.ClearMsg.html) |
+/// | [`Filter::HostTargetStart`](./enum.Filter.html#variant.HostTargetStart) | [`commands::HostTargetStart`](./commands/struct.HostTargetStart.html) |
+/// | [`Filter::HostTargetEnd`](./enum.Filter.html#variant.HostTargetEnd) | [`commands::HostTargetEnd`](./commands/struct.HostTargetEnd.html) |
+/// | [`Filter::Notice`](./enum.Filter.html#variant.Notice) | [`commands::Notice`](./commands/struct.Notice.html) |
+/// | [`Filter::Reconnect`](./enum.Filter.html#variant.Reconnect) | [`commands::Reconnect`](./commands/struct.Reconnect.html) |
+/// | [`Filter::RoomState`](./enum.Filter.html#variant.RoomState) | [`commands::RoomState`](./commands/struct.RoomState.html) |
+/// | [`Filter::UserNotice`](./enum.Filter.html#variant.UserNotice) | [`commands::UserNotice`](./commands/struct.UserNotice.html) |
+/// | [`Filter::UserState`](./enum.Filter.html#variant.UserState) | [`commands::UserState`](./commands/struct.UserState.html) |
+/// | [`Filter::GlobalUserState`](./enum.Filter.html#variant.GlobalUserState) | [`commands::GlobalUserState`](./commands/struct.GlobalUserState.html) |
 #[derive(Copy, Clone, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 pub enum Filter {
     /// An irc Message
