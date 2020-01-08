@@ -118,4 +118,5 @@ import_modules! {
     irc_ready
     global_user_state
     cap
+    notice
 }

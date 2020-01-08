@@ -207,8 +207,8 @@ impl Dispatcher {
             .add_event::<events::Ready>()
             .add_event::<events::Cap>()
             .add_event::<events::GlobalUserState>()
+            .add_event::<events::Notice>()
 
-        // .add_event::<events::Notice>()
         // .add_event::<events::Error>()
     }
 
@@ -225,12 +225,11 @@ impl Dispatcher {
             "PRIVMSG" => try_send!(events::Privmsg),
             "PING" => try_send!(events::Ping),
             "PONG" => try_send!(events::Pong),
-
             "001" => try_send!(events::IrcReady),
             "376" => try_send!(events::Ready),
             "CAP" => try_send!(events::Cap),
             "GLOBALUSERSTATE" => try_send!(events::GlobalUserState),
-
+            "NOTICE" => try_send!(events::Notice),
             _ => {}
         };
         try_send!(events::Raw)

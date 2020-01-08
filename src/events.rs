@@ -9,14 +9,14 @@ These can be used with [Dispatcher::subscribe][Subscribe] to get a [Stream] of [
 */
 use super::*;
 
-make_event!(Join => messages::Join);
-make_event!(Part => messages::Part);
-make_event!(Privmsg => messages::Privmsg);
-make_event!(Raw => messages::Raw);
-make_event!(Ping => messages::Ping);
-make_event!(Pong => messages::Pong);
-
-make_event!(IrcReady => messages::IrcReady);
-make_event!(Ready => messages::Ready);
-make_event!(Cap => messages::Cap);
+make_event!(Join            => messages::Join);
+make_event!(Part            => messages::Part);
+make_event!(Privmsg         => messages::Privmsg);
+make_event!(Raw             => messages::Raw);
+make_event!(Ping            => messages::Ping);
+make_event!(Pong            => messages::Pong);
+make_event!(IrcReady        => messages::IrcReady);
+make_event!(Ready           => messages::Ready);
+make_event!(Cap             => messages::Cap);
 make_event!(GlobalUserState => messages::GlobalUserState);
+make_event!(Notice          => messages::Notice);
