@@ -58,13 +58,14 @@ impl crate::Encodable for UserConfig {
             capabilities,
         } = self;
 
-        writer.write_all(format!("PASS {}\r\n", token).as_bytes())?;
-        writer.write_all(format!("NICK {}\r\n", name).as_bytes())?;
-
         for cap in capabilities {
             writer.write_all(cap.encode_as_str().as_bytes())?;
             writer.write_all(b"\r\n")?;
         }
+
+        writer.write_all(format!("PASS {}\r\n", token).as_bytes())?;
+        writer.write_all(format!("NICK {}\r\n", name).as_bytes())?;
+
         Ok(())
     }
 }

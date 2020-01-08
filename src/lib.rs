@@ -283,7 +283,7 @@ pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
 mod internal;
-pub(crate) use internal::{IntoOwned, IntoString, StringMarker};
+pub(crate) use internal::{IntoOwned, StringMarker};
 
 /// Synchronous methods
 pub mod sync;

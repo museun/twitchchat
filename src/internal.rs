@@ -18,42 +18,37 @@ pub trait IntoOwned: private::into_owned::Sealed {
     fn into_owned(&self) -> Self::Target;
 }
 
-pub(crate) trait IntoString {
-    type Target;
-    fn into_string(&self) -> Self::Target;
-}
+// impl IntoOwned for str {
+//     type Target = String;
+//     fn into_owned(&self) -> Self::Target {
+//         self.to_string()
+//     }
+// }
 
-impl IntoString for str {
+impl IntoOwned for &str {
     type Target = String;
-    fn into_string(&self) -> Self::Target {
-        self.to_string()
-    }
-}
-
-impl IntoString for &str {
-    type Target = String;
-    fn into_string(&self) -> Self::Target {
+    fn into_owned(&self) -> Self::Target {
         (*self).to_string()
     }
 }
 
-impl IntoString for String {
+impl IntoOwned for String {
     type Target = String;
-    fn into_string(&self) -> Self::Target {
+    fn into_owned(&self) -> Self::Target {
         self.to_string()
     }
 }
 
-impl IntoString for crate::decode::Prefix<&str> {
+impl IntoOwned for crate::decode::Prefix<&str> {
     type Target = crate::decode::Prefix<String>;
-    fn into_string(&self) -> Self::Target {
+    fn into_owned(&self) -> Self::Target {
         self.into_owned()
     }
 }
 
-impl IntoString for crate::Tags<&str> {
+impl IntoOwned for crate::Tags<&str> {
     type Target = crate::Tags<String>;
-    fn into_string(&self) -> Self::Target {
+    fn into_owned(&self) -> Self::Target {
         crate::Tags(
             self.clone()
                 .into_inner()
@@ -64,13 +59,20 @@ impl IntoString for crate::Tags<&str> {
     }
 }
 
-impl<T> IntoString for Option<T>
+impl<T> IntoOwned for Option<T>
 where
-    T: IntoString,
+    T: IntoOwned,
 {
     type Target = Option<T::Target>;
-    fn into_string(&self) -> Self::Target {
-        self.as_ref().map(|s| s.into_string())
+    fn into_owned(&self) -> Self::Target {
+        self.as_ref().map(|s| (*s).into_owned())
+    }
+}
+
+impl IntoOwned for bool {
+    type Target = bool;
+    fn into_owned(&self) -> Self::Target {
+        *self
     }
 }
 
