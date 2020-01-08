@@ -131,11 +131,15 @@ where
 
 impl<'a> Prefix<&'a str> {
     fn parse(input: &'a str) -> Option<Self> {
-        if !input.starts_with(':') {
+        let offset = if input.starts_with(':') {
+            1
+        } else if input == "tmi.twitch.tv" {
+            0
+        } else {
             return None;
-        }
+        };
 
-        let input = input[1..input.find(' ').unwrap_or_else(|| input.len())].trim();
+        let input = input[offset..input.find(' ').unwrap_or_else(|| input.len())].trim();
         let prefix = match input.find('!') {
             Some(pos) => Prefix::User {
                 nick: &input[..pos],
@@ -197,7 +201,7 @@ impl<'a> Parser<'a> {
     // ':prefix '
     fn prefix(&mut self) -> Option<Prefix<&'a str>> {
         let input = &self.input[self.pos..];
-        if !input.starts_with(':') {
+        if !input.starts_with("tmi.twitch.tv") && !input.starts_with(':') {
             return None;
         }
         let pos = input.find(' ')?;
@@ -288,12 +292,20 @@ mod tests {
             Prefix::Server {
                 host: "tmi.twitch.tv".into(),
             },
+        );
+
+        let prefix = Prefix::parse("tmi.twitch.tv").unwrap();
+        assert_eq!(
+            prefix,
+            Prefix::Server {
+                host: "tmi.twitch.tv".into(),
+            },
         )
     }
 
     #[test]
     fn missing_colon_prefix() {
-        for input in &["museun!museun@museun.tmi.twitch.tv", "tmi.twitch.tv"] {
+        for input in &["museun!museun@museun.tmi.twitch.tv", "not_tmi.twitch.tv"] {
             assert!(Prefix::parse(input).is_none());
         }
     }
@@ -342,5 +354,20 @@ mod tests {
         // remove all of the bad ones, only keep the 'success'
         let vec = super::decode_many(input).flatten().collect::<Vec<_>>();
         assert_eq!(vec.len(), 2);
+    }
+
+    #[test]
+    fn cap_ack() {
+        let input = "tmi.twitch.tv CAP * ACK :twitch.tv/commands\r\n";
+        let msg = Message::parse(input).unwrap();
+        assert_eq!(
+            msg.prefix.unwrap(),
+            Prefix::Server {
+                host: "tmi.twitch.tv"
+            }
+        );
+        assert_eq!(msg.command, "CAP");
+        assert_eq!(msg.args, "* ACK");
+        assert_eq!(msg.data.unwrap(), "twitch.tv/commands")
     }
 }
