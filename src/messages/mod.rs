@@ -109,6 +109,7 @@ macro_rules! import_modules {
 import_modules! {
     cap
     clear_chat
+    clear_msg
     global_user_state
     irc_ready
     join
