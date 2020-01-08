@@ -50,7 +50,6 @@ export_encode! {
     color
     command
     commercial
-    delete
     disconnect
     emoteonly
     emoteonlyoff
@@ -62,11 +61,9 @@ export_encode! {
     me
     give_mod
     mods
-    op
     r9kbeta
     r9kbetaoff
     raid
-    send
     slow
     slowoff
     subscribers
