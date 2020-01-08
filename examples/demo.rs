@@ -1,11 +1,3 @@
-# twitchchat
-
-This crate provides a way to interace with [Twitch]'s chat.
-
-Along with the messages as Rust types, it provides methods for sending messages.
-
-## Simple example
-```rust
 #[tokio::main]
 async fn main() {
     use futures::prelude::*;
@@ -122,8 +114,3 @@ async fn main() {
     // clearing the subscriptions would close each event stream
     client.dispatcher().await.count_subscribers_all();
 }
-```
-
-[Twitch]: https://www.twitch.tv
-
-License: 0BSD

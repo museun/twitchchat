@@ -1,54 +1,54 @@
 use std::ops::Range;
 
-/// Emotes are little pictograms used inline in twitch messages
-///
-/// They are presented (to the irc connection) in a
-/// `id1:range1,range2/id2:range1,..` form which marks the byte position that
-/// the emote is at.
-///
-/// Examples:
-///
-/// `"testing Kappa"` would be `25:8-13`
-/// `"Kappa testing Kappa"` would be `25:0-5,14-19`
+/**
+Emotes are little pictograms used in-line in Twitch messages
+
+They are presented (to the irc connection) in a `id:range1,range2/id2:range1,..` form which marks the byte position that the emote is located.
+
+# example:
+`"testing Kappa"` would be `25:8-13`
+
+`"Kappa testing Kappa"` would be `25:0-5,14-19`
+*/
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Emotes {
-    /// The emote id, e.g. `Kappa = 25`
+    /// This emote id, e.g. `Kappa = 25`    
     pub id: usize,
-    /// A list of [`Range`](https://doc.rust-lang.org/std/ops/struct.Range.html) in the message where this emote is
-    /// found
+    /// A list of [Range] in the message where this emote is found
+    ///
+    /// [Range]: https://doc.rust-lang.org/std/ops/struct.Range.html
     pub ranges: Vec<Range<u16>>,
 }
 
 impl Emotes {
-    pub(in crate) fn parse<'a>(input: &'a str) -> impl Iterator<Item = Self> + 'a {
-        input
-            .split_terminator('/')
-            .filter_map(|s| Self::get_parts(s, ':'))
-            .filter_map(|(head, tail)| {
-                Some(Self {
+    /// Parse emotes from a string, returning an iterator over each emote
+    pub(crate) fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
+        input.split_terminator('/').filter_map(|s| {
+            get_parts(s, ':').and_then(|(head, tail)| {
+                let emotes = Self {
                     id: head.parse().ok()?,
-                    ranges: Self::get_ranges(&tail).collect(),
-                })
+                    ranges: get_ranges(&tail).collect(),
+                };
+                emotes.into()
             })
+        })
     }
+}
 
-    #[inline]
-    fn get_ranges<'a>(tail: &'a str) -> impl Iterator<Item = Range<u16>> + 'a {
-        tail.split_terminator(',')
-            .map(|s| Self::get_parts(s, '-'))
-            .filter_map(move |parts| {
-                let (start, end) = parts?;
-                let (start, end) = (start.parse().ok()?, end.parse().ok()?);
-                Some(Range { start, end })
-            })
-    }
+#[inline]
+fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
+    let mut split = input.split_terminator(sep);
+    (split.next()?, split.next()?).into()
+}
 
-    #[inline(always)]
-    fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
-        let mut s = input.split_terminator(sep);
-        Some((s.next()?, s.next()?))
-    }
+#[inline]
+fn get_ranges(tail: &str) -> impl Iterator<Item = Range<u16>> + '_ {
+    tail.split_terminator(',')
+        .filter_map(|s| get_parts(s, '-'))
+        .filter_map(move |(start, end)| {
+            let (start, end) = (start.parse().ok()?, end.parse().ok()?);
+            Range { start, end }.into()
+        })
 }
 
 #[cfg(test)]
@@ -56,8 +56,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::unreadable_literal)]
-    fn parse_emotes() {
+    fn parse() {
         macro_rules! emote {
             ($id:expr, $($r:expr),* $(,)?) => {
                 Emotes {
@@ -70,43 +69,24 @@ mod tests {
         let inputs = &[
             (
                 "25:0-4,6-10,12-16",
-                vec![
-                    emote!(25, (0..4), (6..10), (12..16)), //
-                ],
+                vec![emote!(25, (0..4), (6..10), (12..16))],
             ),
-            (
-                "25:0-4",
-                vec![
-                    emote!(25, (0..4)), //
-                ],
-            ),
+            ("25:0-4", vec![emote!(25, (0..4))]),
             (
                 "1077966:0-6/25:8-12",
-                vec![
-                    emote!(1077966, (0..6)), //
-                    emote!(25, (8..12)),     //
-                ],
+                vec![emote!(1077966, (0..6)), emote!(25, (8..12))],
             ),
             (
                 "25:0-4,6-10/33:12-19",
-                vec![
-                    emote!(25, (0..4), (6..10)), //
-                    emote!(33, (12..19)),        //
-                ],
+                vec![emote!(25, (0..4), (6..10)), emote!(33, (12..19))],
             ),
             (
                 "25:0-4,15-19/33:6-13",
-                vec![
-                    emote!(25, (0..4), (15..19)), //
-                    emote!(33, (6..13)),          //
-                ],
+                vec![emote!(25, (0..4), (15..19)), emote!(33, (6..13))],
             ),
             (
                 "33:0-7/25:9-13,15-19",
-                vec![
-                    emote!(33, (0..7)),            //
-                    emote!(25, (9..13), (15..19)), //
-                ],
+                vec![emote!(33, (0..7)), emote!(25, (9..13), (15..19))],
             ),
         ];
 
