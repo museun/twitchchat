@@ -24,3 +24,4 @@ make_event!(ClearChat       => messages::ClearChat);
 make_event!(ClearMsg        => messages::ClearMsg);
 make_event!(Reconnect       => messages::Reconnect);
 make_event!(UserState       => messages::UserState);
+make_event!(Mode            => messages::Mode);

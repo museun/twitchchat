@@ -122,4 +122,5 @@ import_modules! {
     ready
     reconnect
     user_state
+    mode
 }
