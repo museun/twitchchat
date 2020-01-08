@@ -12,7 +12,7 @@ async fn main() {
     // putting this in the env so people don't join my channel when running this
     let channel = std::env::var("TWITCH_CHANNEL").unwrap();
 
-    // connect via tls over tcp with this nick and password
+    // connect via (tls or normal, 'Secure' determines that) tcp with this nick and password
     let (read, write) = twitchchat::connect_easy(&nick, &pass, twitchchat::Secure::Nope)
         .await
         .unwrap();
@@ -79,7 +79,7 @@ async fn main() {
     drop(dispatcher);
 
     // get a clonable writer from the client
-    // join a channel, methods on writer return false if the client is connected
+    // join a channel, methods on writer return false if the client is disconnected
     if !client.writer().join(&channel).await {
         panic!("not connected!?")
     }

@@ -93,7 +93,7 @@ async fn main() {
     drop(dispatcher);
 
     // get a clonable writer from the client
-    // join a channel, methods on writer return false if the client is connected
+    // join a channel, methods on writer return false if the client is disconnected
     if !client.writer().join(&channel).await {
         panic!("not connected!?")
     }
