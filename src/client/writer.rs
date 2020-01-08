@@ -64,6 +64,180 @@ impl Writer {
         self.send_message(msg).await
     }
 
+    pub async fn ban<'a>(
+        &'a mut self,
+        username: &'a str,
+        reason: impl Into<Option<&'a str>>,
+    ) -> bool {
+        let msg = crate::encode::ban(username, reason);
+        self.send_message(msg).await
+    }
+
+    pub async fn clear(&mut self) -> bool {
+        let msg = crate::encode::clear();
+        self.send_message(msg).await
+    }
+
+    pub async fn color(&mut self, color: crate::color::Color) -> bool {
+        let msg = crate::encode::color(color);
+        self.send_message(msg).await
+    }
+
+    pub async fn command(&mut self, data: &str) -> bool {
+        let msg = crate::encode::command(data);
+        self.send_message(msg).await
+    }
+
+    pub async fn commercial(&mut self, length: impl Into<Option<usize>>) -> bool {
+        let msg = crate::encode::commercial(length);
+        self.send_message(msg).await
+    }
+
+    pub async fn disconnect(&mut self) -> bool {
+        let msg = crate::encode::disconnect();
+        self.send_message(msg).await
+    }
+
+    pub async fn emote_only(&mut self) -> bool {
+        let msg = crate::encode::emote_only();
+        self.send_message(msg).await
+    }
+
+    pub async fn emote_only_off(&mut self) -> bool {
+        let msg = crate::encode::emote_only_off();
+        self.send_message(msg).await
+    }
+
+    pub async fn followers(&mut self, duration: &str) -> bool {
+        let msg = crate::encode::followers(duration);
+        self.send_message(msg).await
+    }
+
+    pub async fn followers_off(&mut self) -> bool {
+        let msg = crate::encode::followers_off();
+        self.send_message(msg).await
+    }
+
+    pub async fn give_mod(&mut self, username: &str) -> bool {
+        let msg = crate::encode::give_mod(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn help(&mut self) -> bool {
+        let msg = crate::encode::help();
+        self.send_message(msg).await
+    }
+
+    pub async fn host(&mut self, channel: &str) -> bool {
+        let msg = crate::encode::host(channel);
+        self.send_message(msg).await
+    }
+
+    pub async fn marker<'a>(&'a mut self, comment: impl Into<Option<&'a str>>) -> bool {
+        let msg = crate::encode::marker(comment);
+        self.send_message(msg).await
+    }
+
+    pub async fn me<'a>(&'a mut self, channel: &'a str, message: &'a str) -> bool {
+        let msg = crate::encode::me(channel, message);
+        self.send_message(msg).await
+    }
+
+    pub async fn mods(&mut self) -> bool {
+        let msg = crate::encode::mods();
+        self.send_message(msg).await
+    }
+
+    pub async fn r9k_beta(&mut self) -> bool {
+        let msg = crate::encode::r9k_beta();
+        self.send_message(msg).await
+    }
+
+    pub async fn r9k_beta_off(&mut self) -> bool {
+        let msg = crate::encode::r9k_beta_off();
+        self.send_message(msg).await
+    }
+
+    pub async fn raid(&mut self, channel: &str) -> bool {
+        let msg = crate::encode::raid(channel);
+        self.send_message(msg).await
+    }
+
+    pub async fn slow(&mut self, duration: impl Into<Option<usize>>) -> bool {
+        let msg = crate::encode::slow(duration);
+        self.send_message(msg).await
+    }
+
+    pub async fn slow_off(&mut self) -> bool {
+        let msg = crate::encode::slow_off();
+        self.send_message(msg).await
+    }
+
+    pub async fn subscribers(&mut self) -> bool {
+        let msg = crate::encode::subscribers();
+        self.send_message(msg).await
+    }
+
+    pub async fn subscribers_off(&mut self) -> bool {
+        let msg = crate::encode::subscribers_off();
+        self.send_message(msg).await
+    }
+
+    pub async fn timeout<'a>(
+        &'a mut self,
+        username: &'a str,
+        duration: impl Into<Option<&'a str>>,
+        message: impl Into<Option<&'a str>>,
+    ) -> bool {
+        let msg = crate::encode::timeout(username, duration, message);
+        self.send_message(msg).await
+    }
+
+    pub async fn unban(&mut self, username: &str) -> bool {
+        let msg = crate::encode::unban(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn unhost(&mut self) -> bool {
+        let msg = crate::encode::unhost();
+        self.send_message(msg).await
+    }
+
+    pub async fn unmod(&mut self, username: &str) -> bool {
+        let msg = crate::encode::unmod(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn unraid(&mut self) -> bool {
+        let msg = crate::encode::unraid();
+        self.send_message(msg).await
+    }
+
+    pub async fn untimeout(&mut self, username: &str) -> bool {
+        let msg = crate::encode::untimeout(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn unvip(&mut self, username: &str) -> bool {
+        let msg = crate::encode::unvip(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn vip(&mut self, username: &str) -> bool {
+        let msg = crate::encode::vip(username);
+        self.send_message(msg).await
+    }
+
+    pub async fn vips(&mut self) -> bool {
+        let msg = crate::encode::vips();
+        self.send_message(msg).await
+    }
+
+    pub async fn whisper<'a>(&'a mut self, username: &'a str, message: &'a str) -> bool {
+        let msg = crate::encode::whisper(username, message);
+        self.send_message(msg).await
+    }
+
     /// Send this encodable message
     pub async fn send_message<E: crate::Encodable>(&mut self, msg: E) -> bool {
         // TODO use BytesMut here
