@@ -44,6 +44,43 @@ export_encode! {
     join
     part
     privmsg
+
+    ban
+    clear
+    color
+    command
+    commercial
+    delete
+    disconnect
+    emoteonly
+    emoteonlyoff
+    followers
+    followersoff
+    help
+    host
+    marker
+    me
+    give_mod
+    mods
+    op
+    r9kbeta
+    r9kbetaoff
+    raid
+    send
+    slow
+    slowoff
+    subscribers
+    subscribersoff
+    timeout
+    unban
+    unhost
+    unmod
+    unraid
+    untimeout
+    unvip
+    vip
+    vips
+    whisper
 }
 
 #[cfg(test)]
