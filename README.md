@@ -126,7 +126,7 @@ async fn main() {
 
     // another way would be to clear all subscriptions
     // clearing the subscriptions would close each event stream
-    client.dispatcher().await.count_subscribers_all();
+    client.dispatcher().await.clear_subscriptions_all();
 }
 ```
 
