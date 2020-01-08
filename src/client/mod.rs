@@ -216,39 +216,3 @@ impl Client {
         });
     }
 }
-
-/*
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn foo() {
-        better_panic::install();
-
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(async move {
-                let client = Client::new();
-                let mut raw = client.dispatcher().await.subscribe::<crate::events::Raw>();
-
-                tokio::task::spawn(async move {
-                    while let Some(_msg) = raw.next().await {
-                        //
-                    }
-                });
-
-                let mut join = client.dispatcher().await.subscribe::<crate::events::Join>();
-
-                let mut writer = client.writer();
-                tokio::task::spawn(async move {
-                    while let Some(msg) = join.next().await {
-                        writer.part(&msg.channel).await;
-                    }
-                });
-
-                //
-                client.dispatcher().await.clear_subscriptions_all();
-            });
-    }
-}
-*/
