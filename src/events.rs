@@ -20,3 +20,4 @@ make_event!(Ready           => messages::Ready);
 make_event!(Cap             => messages::Cap);
 make_event!(GlobalUserState => messages::GlobalUserState);
 make_event!(Notice          => messages::Notice);
+make_event!(ClearChat       => messages::ClearChat);

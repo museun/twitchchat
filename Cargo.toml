@@ -21,7 +21,8 @@ version = "0.4.8"
 version = "0.2.8"
 optional = true
 default-features = false
-features = ["dns", "io-util", "stream", "sync", "tcp"]
+features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time"]
+#["dns", "io-util", "stream", "sync", "tcp"]
 
 [dependencies.futures]
 version = "0.3.1"

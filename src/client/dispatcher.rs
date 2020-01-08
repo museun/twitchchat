@@ -208,8 +208,7 @@ impl Dispatcher {
             .add_event::<events::Cap>()
             .add_event::<events::GlobalUserState>()
             .add_event::<events::Notice>()
-
-        // .add_event::<events::Error>()
+            .add_event::<events::ClearChat>()
     }
 
     pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
@@ -230,6 +229,7 @@ impl Dispatcher {
             "CAP" => try_send!(events::Cap),
             "GLOBALUSERSTATE" => try_send!(events::GlobalUserState),
             "NOTICE" => try_send!(events::Notice),
+            "CLEARCHAT" => try_send!(events::ClearChat),
             _ => {}
         };
         try_send!(events::Raw)

@@ -107,16 +107,16 @@ macro_rules! import_modules {
 }
 
 import_modules! {
+    cap
+    clear_chat
+    global_user_state
+    irc_ready
     join
+    notice
     part
-    raw
-    privmsg
     ping
     pong
-
+    privmsg
+    raw
     ready
-    irc_ready
-    global_user_state
-    cap
-    notice
 }
