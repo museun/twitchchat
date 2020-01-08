@@ -121,4 +121,5 @@ import_modules! {
     raw
     ready
     reconnect
+    user_state
 }

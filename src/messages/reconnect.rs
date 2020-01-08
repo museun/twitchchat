@@ -22,7 +22,6 @@ mod tests {
 
         for msg in crate::decode_many(input).map(|s| s.unwrap()) {
             assert_eq!(Reconnect::try_from(&msg).unwrap(), Reconnect {});
-            assert_eq!(Reconnect::try_from(&msg).unwrap(), Reconnect {})
         }
     }
 }

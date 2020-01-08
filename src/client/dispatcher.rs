@@ -211,6 +211,7 @@ impl Dispatcher {
             .add_event::<events::ClearChat>()
             .add_event::<events::ClearMsg>()
             .add_event::<events::Reconnect>()
+            .add_event::<events::UserState>()
     }
 
     pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
@@ -233,6 +234,7 @@ impl Dispatcher {
             "NOTICE" => try_send!(events::Notice),
             "CLEARMSG" => try_send!(events::ClearMsg),
             "RECONNECT" => try_send!(events::Reconnect),
+            "USERSTATE" => try_send!(events::UserState),
             _ => {}
         };
         try_send!(events::Raw)
