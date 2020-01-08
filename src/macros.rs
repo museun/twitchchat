@@ -15,7 +15,7 @@ macro_rules! as_owned {
 
             fn into_owned(&self) -> Self::Target {
                 Self::Target {
-                    $( $field: self.$field.into_string(), )*
+                    $( $field: self.$field.into_owned(), )*
                 }
             }
         }

@@ -203,6 +203,13 @@ impl Dispatcher {
             .add_event::<events::Privmsg>()
             .add_event::<events::Ping>()
             .add_event::<events::Pong>()
+            .add_event::<events::IrcReady>()
+            .add_event::<events::Ready>()
+            .add_event::<events::Cap>()
+            .add_event::<events::GlobalUserState>()
+
+        // .add_event::<events::Notice>()
+        // .add_event::<events::Error>()
     }
 
     pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
@@ -218,6 +225,12 @@ impl Dispatcher {
             "PRIVMSG" => try_send!(events::Privmsg),
             "PING" => try_send!(events::Ping),
             "PONG" => try_send!(events::Pong),
+
+            "001" => try_send!(events::IrcReady),
+            "376" => try_send!(events::Ready),
+            "CAP" => try_send!(events::Cap),
+            "GLOBALUSERSTATE" => try_send!(events::GlobalUserState),
+
             _ => {}
         };
         try_send!(events::Raw)

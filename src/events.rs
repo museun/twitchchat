@@ -15,3 +15,8 @@ make_event!(Privmsg => messages::Privmsg);
 make_event!(Raw => messages::Raw);
 make_event!(Ping => messages::Ping);
 make_event!(Pong => messages::Pong);
+
+make_event!(IrcReady => messages::IrcReady);
+make_event!(Ready => messages::Ready);
+make_event!(Cap => messages::Cap);
+make_event!(GlobalUserState => messages::GlobalUserState);

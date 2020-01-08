@@ -15,7 +15,7 @@ Or by using [TryFrom] on an [Message]
 mod prelude {
     pub use crate::decode::{Message, Prefix};
     pub use crate::Tags;
-    pub(crate) use crate::{IntoOwned, IntoString, StringMarker};
+    pub(crate) use crate::{IntoOwned, StringMarker};
 
     pub use std::any::{Any, TypeId};
     pub use std::collections::HashMap;
@@ -113,4 +113,9 @@ import_modules! {
     privmsg
     ping
     pong
+
+    ready
+    irc_ready
+    global_user_state
+    cap
 }

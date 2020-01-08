@@ -1,3 +1,5 @@
+// TODO make this use StringMarker for Strings
+
 /// The kind of the [badges] that are associated with messages.
 ///
 /// Any unknonw (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.

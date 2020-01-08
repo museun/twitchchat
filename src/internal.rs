@@ -69,10 +69,37 @@ where
     }
 }
 
+impl<T> IntoOwned for Vec<T>
+where
+    T: IntoOwned,
+{
+    type Target = Vec<T::Target>;
+    fn into_owned(&self) -> Self::Target {
+        self.clone()
+            .into_iter()
+            .map(IntoOwned::into_owned)
+            .collect()
+    }
+}
+
 impl IntoOwned for bool {
     type Target = bool;
     fn into_owned(&self) -> Self::Target {
         *self
+    }
+}
+
+impl IntoOwned for crate::color::Color {
+    type Target = crate::color::Color;
+    fn into_owned(&self) -> Self::Target {
+        *self
+    }
+}
+
+impl IntoOwned for crate::Badge {
+    type Target = crate::Badge;
+    fn into_owned(&self) -> Self::Target {
+        self.clone()
     }
 }
 
