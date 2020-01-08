@@ -120,4 +120,5 @@ import_modules! {
     privmsg
     raw
     ready
+    reconnect
 }

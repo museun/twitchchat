@@ -20,6 +20,16 @@ macro_rules! as_owned {
             }
         }
     };
+
+    (for $ty:tt) => {
+        impl IntoOwned for $ty {
+            type Target = $ty;
+
+            fn into_owned(&self) -> Self::Target {
+                self.clone()
+            }
+        }
+    }
 }
 
 macro_rules! make_event {
