@@ -1,6 +1,11 @@
-[![Build Status](https://circleci.com/gh/museun/twitchchat/tree/master.svg?style=shield)](https://circleci.com/gh/museun/twitchchat/cargo-readme/tree/master)
-
 # twitchchat
+
+# NOTE this crate is undergoing massive changes.
+**Please check out the async branch, or one of the v0.8.0 tags**
+
+
+
+[![Build Status](https://circleci.com/gh/museun/twitchchat/tree/master.svg?style=shield)](https://circleci.com/gh/museun/twitchchat/cargo-readme/tree/master)
 
 ## twitchchat
 This crate provides a way to interact with Twitch's chat
