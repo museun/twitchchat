@@ -1,5 +1,9 @@
 # twitchchat
 
+# Please read this
+**for the old version please check out the 'master' branch**
+**soon this will become the next version**
+
 This crate provides a way to interace with [Twitch]'s chat.
 
 Along with the messages as Rust types, it provides methods for sending messages.
