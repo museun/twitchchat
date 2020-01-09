@@ -89,6 +89,13 @@ impl IntoOwned for bool {
     }
 }
 
+impl IntoOwned for usize {
+    type Target = usize;
+    fn into_owned(&self) -> Self::Target {
+        *self
+    }
+}
+
 impl IntoOwned for crate::color::Color {
     type Target = crate::color::Color;
     fn into_owned(&self) -> Self::Target {

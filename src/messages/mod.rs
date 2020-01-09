@@ -105,6 +105,7 @@ export_modules! {
     clear_chat
     clear_msg
     global_user_state
+    host_target
     irc_ready
     join
     mode

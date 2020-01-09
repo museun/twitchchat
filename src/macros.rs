@@ -9,9 +9,7 @@ macro_rules! cfg_async {
 }
 
 macro_rules! as_owned {
-    (for $ty:tt {
-        $($field:ident),* $(,)?
-    }) => {
+    (for $ty:tt { $($field:ident),* $(,)? }) => {
         impl<'a> TryFrom<&'a Message<&'a str>> for $ty<String> {
             type Error = InvalidMessage;
 

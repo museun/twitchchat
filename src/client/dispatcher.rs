@@ -202,6 +202,7 @@ impl Dispatcher {
         "PART"            => Part
         "PRIVMSG"         => Privmsg
         "CAP"             => Cap
+        "HOSTARGET"       => HostTarget
         "GLOBALUSERSTATE" => GlobalUserState
         "NOTICE"          => Notice
         "CLEARCHAT"       => ClearChat

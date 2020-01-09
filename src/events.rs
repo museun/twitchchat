@@ -14,6 +14,7 @@ make_event! {
     ClearChat       => messages::ClearChat
     ClearMsg        => messages::ClearMsg
     GlobalUserState => messages::GlobalUserState
+    HostTarget      => messages::HostTarget
     IrcReady        => messages::IrcReady
     Join            => messages::Join
     Mode            => messages::Mode
