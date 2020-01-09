@@ -24,24 +24,22 @@ as_owned!(for IrcReady {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn parse() {
-        let good = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-        let msg = crate::decode(good).unwrap().1;
-
-        assert_eq!(
-            IrcReady::<String>::try_from(&msg).unwrap(),
-            IrcReady {
-                nickname: "shaken_bot".into()
-            }
-        );
-
-        assert_eq!(
-            IrcReady::<&str>::try_from(&msg).unwrap(),
-            IrcReady {
-                nickname: "shaken_bot"
-            }
-        )
+        let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+        for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+            assert_eq!(
+                IrcReady::<String>::try_from(&msg).unwrap(),
+                IrcReady {
+                    nickname: "shaken_bot".into()
+                }
+            );
+            assert_eq!(
+                IrcReady::<&str>::try_from(&msg).unwrap(),
+                IrcReady {
+                    nickname: "shaken_bot"
+                }
+            )
+        }
     }
 }

@@ -27,7 +27,6 @@ mod tests {
     #[test]
     fn parse() {
         let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
-
         for msg in crate::decode_many(input).map(|s| s.unwrap()) {
             assert_eq!(
                 Ready::<String>::try_from(&msg).unwrap(),
@@ -35,7 +34,6 @@ mod tests {
                     username: "shaken_bot".into(),
                 }
             );
-
             assert_eq!(
                 Ready::<&str>::try_from(&msg).unwrap(),
                 Ready {

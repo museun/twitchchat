@@ -19,5 +19,5 @@ impl<'a> TryFrom<&'a Message<&'a str>> for Pong<&'a str> {
 }
 
 as_owned!(for Pong {
-   token    
+    token    
 });

@@ -37,24 +37,23 @@ mod tests {
     use super::*;
     #[test]
     fn parse() {
-        let good = ":test!test@test JOIN #foo\r\n";
-        let msg = crate::decode(good).unwrap().1;
-
-        assert_eq!(
-            Join::<String>::try_from(&msg).unwrap(),
-            Join {
-                user: "test".into(),
-                channel: "#foo".into()
-            }
-        );
-
-        assert_eq!(
-            Join::<&str>::try_from(&msg).unwrap(),
-            Join {
-                user: "test",
-                channel: "#foo"
-            }
-        )
+        let input = ":test!test@test JOIN #foo\r\n";
+        for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+            assert_eq!(
+                Join::<String>::try_from(&msg).unwrap(),
+                Join {
+                    user: "test".into(),
+                    channel: "#foo".into()
+                }
+            );
+            assert_eq!(
+                Join::<&str>::try_from(&msg).unwrap(),
+                Join {
+                    user: "test",
+                    channel: "#foo"
+                }
+            )
+        }
     }
 
     #[test]

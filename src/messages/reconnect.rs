@@ -19,7 +19,6 @@ mod tests {
     #[test]
     fn parse() {
         let input = ":tmi.twitch.tv RECONNECT\r\n";
-
         for msg in crate::decode_many(input).map(|s| s.unwrap()) {
             assert_eq!(Reconnect::try_from(&msg).unwrap(), Reconnect {});
         }

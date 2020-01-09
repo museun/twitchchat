@@ -32,7 +32,6 @@ as_owned!(for Cap {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn parse_ack() {
         use std::convert::TryInto;
