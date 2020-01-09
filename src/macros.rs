@@ -1,3 +1,13 @@
+macro_rules! cfg_async {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "async")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! as_owned {
     (for $ty:tt {
         $($field:ident),* $(,)?
@@ -54,12 +64,26 @@ macro_rules! make_event {
     };
 }
 
-macro_rules! cfg_async {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "async")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-            $item
-        )*
-    }
+macro_rules! make_mapping {
+    ($($event:expr => $ident:ident)*) => {
+        pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
+            match msg.command {
+                $($event => self.try_send::<events::$ident>(&msg),)*
+                _ => {},
+            }
+            self.try_send::<events::Raw>(&msg);
+        }
+
+        pub(crate) fn new() -> Self {
+            Self { event_map: Default::default() }
+            $( .add_event::<events::$ident>() )*
+            .add_event::<events::Raw>()
+        }
+    };
+}
+
+macro_rules! export_modules {
+    ($($module:ident)*) => {
+        $( mod $module; pub use $module::*; )*
+    };
 }

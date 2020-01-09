@@ -31,20 +31,7 @@ cfg_async! {
     }
 }
 
-macro_rules! export_encode {
-    ($($ident:ident)*) => {
-        $( mod $ident; pub use $ident::*; )*
-    };
-}
-
-export_encode! {
-    raw
-    ping
-    pong
-    join
-    part
-    privmsg
-
+export_modules! {
     ban
     clear
     color
@@ -55,15 +42,21 @@ export_encode! {
     emoteonlyoff
     followers
     followersoff
+    give_mod
     help
     host
+    join
     marker
     me
-    give_mod
     mods
+    part
+    ping
+    pong
+    privmsg
     r9kbeta
     r9kbetaoff
     raid
+    raw
     slow
     slowoff
     subscribers

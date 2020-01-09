@@ -100,19 +100,14 @@ impl<'a> Expect for crate::decode::Message<&'a str> {
     }
 }
 
-macro_rules! import_modules {
-    ($($module:ident)*) => {
-        $( mod $module; pub use $module::*; )*
-    };
-}
-
-import_modules! {
+export_modules! {
     cap
     clear_chat
     clear_msg
     global_user_state
     irc_ready
     join
+    mode
     notice
     part
     ping
@@ -122,5 +117,4 @@ import_modules! {
     ready
     reconnect
     user_state
-    mode
 }

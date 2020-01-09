@@ -192,24 +192,6 @@ impl Dispatcher {
     }
 }
 
-macro_rules! make_mapping {
-    ($($event:expr => $ident:ident)*) => {
-        pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
-            match msg.command {
-                $($event => self.try_send::<events::$ident>(&msg),)*
-                _ => {},
-            }
-            self.try_send::<events::Raw>(&msg);
-        }
-
-        pub(crate) fn new() -> Self {
-            Self { event_map: Default::default() }
-            $( .add_event::<events::$ident>() )*
-            .add_event::<events::Raw>()
-        }
-    };
-}
-
 impl Dispatcher {
     make_mapping! {
         "001"             => IrcReady
