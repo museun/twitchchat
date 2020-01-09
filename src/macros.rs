@@ -39,16 +39,18 @@ macro_rules! make_event {
         pub struct $item;
     };
 
-    ($event:ident => $message:path) => {
-        make_event!(@DOC
-            concat!("Used to get a [", stringify!($message), "](../messages/struct.", stringify!($event), ".html)")
-            =>
-            $event
-        );
+    ($($event:ident => $message:path)*) => {
+        $(
+            make_event!(@DOC
+                concat!("Used to get a [", stringify!($message), "](../messages/struct.", stringify!($event), ".html)")
+                =>
+                $event
+            );
 
-        impl<'a> crate::client::Event<'a> for $event {
-            type Mapped = $message;
-        }
+            impl<'a> crate::client::Event<'a> for $event {
+                type Mapped = $message;
+            }
+        )*
     };
 }
 

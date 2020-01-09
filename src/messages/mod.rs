@@ -117,7 +117,7 @@ import_modules! {
     part
     ping
     pong
-    privmsg
+    priv_msg
     raw
     ready
     reconnect
