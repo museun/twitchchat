@@ -13,9 +13,8 @@ repository = "https://github.com/museun/twitchchat"
 default = ["async"]
 async = ["tokio", "futures"]
 
-# normal deps
-[dependencies.log]
-version = "0.4.8"
+[dependencies]
+log = "0.4.8"
 
 [dependencies.tokio]
 version = "0.2.8"
@@ -30,13 +29,11 @@ optional = true
 default-features = false
 features = ["alloc"]
 
-# development deps:
-[dev-dependencies.matches]
-version = "0.1.8"
+[dev-dependencies]
+matches = "0.1.8"
 
 [dev-dependencies.tokio]
 version = "0.2.8"
 default-features = false
 features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time"]
-
 

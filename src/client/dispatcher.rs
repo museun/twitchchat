@@ -190,56 +190,43 @@ impl Dispatcher {
             });
         }
     }
+}
 
-    pub(crate) fn new() -> Self {
-        let map = Self {
-            event_map: Default::default(),
-        };
-
-        // TODO use a static_assertion to ensure all events are added to the map
-        map.add_event::<events::Raw>()
-            .add_event::<events::Join>()
-            .add_event::<events::Part>()
-            .add_event::<events::Privmsg>()
-            .add_event::<events::Ping>()
-            .add_event::<events::Pong>()
-            .add_event::<events::IrcReady>()
-            .add_event::<events::Ready>()
-            .add_event::<events::Cap>()
-            .add_event::<events::GlobalUserState>()
-            .add_event::<events::Notice>()
-            .add_event::<events::ClearChat>()
-            .add_event::<events::ClearMsg>()
-            .add_event::<events::Reconnect>()
-            .add_event::<events::UserState>()
-            .add_event::<events::Mode>()
-    }
-
-    pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
-        macro_rules! try_send {
-            ($ev:ty) => {
-                self.try_send::<$ev>(&msg)
-            };
+macro_rules! make_mapping {
+    ($($event:expr => $ident:ident)*) => {
+        pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
+            match msg.command {
+                $($event => self.try_send::<events::$ident>(&msg),)*
+                _ => {},
+            }
+            self.try_send::<events::Raw>(&msg);
         }
 
-        match msg.command {
-            "JOIN" => try_send!(events::Join),
-            "PART" => try_send!(events::Part),
-            "PRIVMSG" => try_send!(events::Privmsg),
-            "PING" => try_send!(events::Ping),
-            "PONG" => try_send!(events::Pong),
-            "001" => try_send!(events::IrcReady),
-            "376" => try_send!(events::Ready),
-            "CAP" => try_send!(events::Cap),
-            "GLOBALUSERSTATE" => try_send!(events::GlobalUserState),
-            "NOTICE" => try_send!(events::Notice),
-            "CLEARMSG" => try_send!(events::ClearMsg),
-            "RECONNECT" => try_send!(events::Reconnect),
-            "USERSTATE" => try_send!(events::UserState),
-            "MODE" => try_send!(events::Mode),
-            _ => {}
-        };
-        try_send!(events::Raw)
+        pub(crate) fn new() -> Self {
+            Self { event_map: Default::default() }
+            $( .add_event::<events::$ident>() )*
+            .add_event::<events::Raw>()
+        }
+    };
+}
+
+impl Dispatcher {
+    make_mapping! {
+        "001"             => IrcReady
+        "PING"            => Ping
+        "PONG"            => Pong
+        "376"             => Ready
+        "JOIN"            => Join
+        "PART"            => Part
+        "PRIVMSG"         => Privmsg
+        "CAP"             => Cap
+        "GLOBALUSERSTATE" => GlobalUserState
+        "NOTICE"          => Notice
+        "CLEARCHAT"       => ClearChat
+        "CLEARMSG"        => ClearMsg
+        "RECONNECT"       => Reconnect
+        "USERSTATE"       => UserState
+        "MODE"            => Mode
     }
 }
 
