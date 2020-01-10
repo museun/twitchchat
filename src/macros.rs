@@ -8,11 +8,22 @@ macro_rules! cfg_async {
     }
 }
 
+macro_rules! parse {
+    ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
+        impl<'a> TryFrom<&'a Message<&'a str>> for $ty<&'a str> {
+            type Error = InvalidMessage;
+            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
+                $body(msg)
+            }
+        }
+        as_owned!(for $ty { $($field),* });
+    };
+}
+
 macro_rules! as_owned {
     (for $ty:tt { $($field:ident),* $(,)? }) => {
         impl<'a> TryFrom<&'a Message<&'a str>> for $ty<String> {
             type Error = InvalidMessage;
-
             fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
                 $ty::<&'a str>::try_from(msg).map(|ok| ok.into_owned())
             }
@@ -20,7 +31,6 @@ macro_rules! as_owned {
 
         impl IntoOwned for $ty<&str> {
             type Target = $ty<String>;
-
             fn into_owned(&self) -> Self::Target {
                 Self::Target {
                     $( $field: self.$field.into_owned(), )*
