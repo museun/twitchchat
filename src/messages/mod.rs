@@ -49,6 +49,7 @@ pub enum InvalidMessage {
     ExpectedData,
 }
 
+// TODO (important) implement this
 impl std::fmt::Display for InvalidMessage {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -57,11 +58,7 @@ impl std::fmt::Display for InvalidMessage {
     }
 }
 
-impl std::error::Error for InvalidMessage {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+impl std::error::Error for InvalidMessage {}
 
 pub trait Expect {
     fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage>;
