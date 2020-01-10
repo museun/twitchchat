@@ -17,7 +17,7 @@ async = ["tokio", "futures"]
 log = "0.4.8"
 
 [dependencies.tokio]
-version = "0.2.8"
+version = "0.2.9"
 optional = true
 default-features = false
 features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time"]
@@ -33,7 +33,7 @@ features = ["alloc"]
 matches = "0.1.8"
 
 [dev-dependencies.tokio]
-version = "0.2.8"
+version = "0.2.9"
 default-features = false
 features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time"]
 
