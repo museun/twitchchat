@@ -56,8 +56,13 @@ impl<T: crate::StringMarker + Borrow<str>> Tags<T> {
     {
         self.0.get(key.borrow()).map(Borrow::borrow)
     }
+}
 
-    // Take ownership of the inner HashMap
+impl<T> Tags<T>
+where
+    T: crate::StringMarker,
+{
+    /// Take ownership of the inner HashMap
     pub fn into_inner(self) -> HashMap<T, T> {
         self.0
     }

@@ -1,10 +1,11 @@
-use {std::fmt::Debug, std::hash::Hash};
+use super::Conversion as _;
+use std::{borrow::Borrow, fmt::Debug, hash::Hash};
 
 #[doc(hidden)]
 pub trait StringMarker
 where
     Self: Hash + Debug + Clone,
-    Self: Eq + PartialEq + AsRef<str>,
+    Self: Eq + PartialEq + AsRef<str> + Borrow<str>,
     Self: private::string_marker::Sealed,
 {
 }
@@ -42,7 +43,7 @@ impl IntoOwned for String {
 impl IntoOwned for crate::decode::Prefix<&str> {
     type Target = crate::decode::Prefix<String>;
     fn into_owned(&self) -> Self::Target {
-        self.into_owned()
+        self.as_owned()
     }
 }
 

@@ -190,28 +190,38 @@ impl Dispatcher {
             });
         }
     }
-}
 
-impl Dispatcher {
-    make_mapping! {
-        "001"             => IrcReady
-        "PING"            => Ping
-        "PONG"            => Pong
-        "376"             => Ready
-        "JOIN"            => Join
-        "PART"            => Part
-        "PRIVMSG"         => Privmsg
-        "CAP"             => Cap
-        "HOSTARGET"       => HostTarget
-        "GLOBALUSERSTATE" => GlobalUserState
-        "NOTICE"          => Notice
-        "CLEARCHAT"       => ClearChat
-        "CLEARMSG"        => ClearMsg
-        "RECONNECT"       => Reconnect
-        "USERSTATE"       => UserState
-        "MODE"            => Mode
+    pub(crate) fn new() -> Self {
+        Self {
+            event_map: Default::default(),
+        }
+    }
+
+    pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<&'a str>) {
+        unimplemented!()
     }
 }
+
+// impl Dispatcher {
+//     make_mapping! {
+//         "001"             => IrcReady
+//         "PING"            => Ping
+//         "PONG"            => Pong
+//         "376"             => Ready
+//         "JOIN"            => Join
+//         "PART"            => Part
+//         "PRIVMSG"         => Privmsg
+//         "CAP"             => Cap
+//         "HOSTARGET"       => HostTarget
+//         "GLOBALUSERSTATE" => GlobalUserState
+//         "NOTICE"          => Notice
+//         "CLEARCHAT"       => ClearChat
+//         "CLEARMSG"        => ClearMsg
+//         "RECONNECT"       => Reconnect
+//         "USERSTATE"       => UserState
+//         "MODE"            => Mode
+//     }
+// }
 
 struct Sender<T> {
     sender: mpsc::UnboundedSender<Arc<T>>,
@@ -227,6 +237,7 @@ impl<T> Sender<T> {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,3 +334,4 @@ mod tests {
             .block_on(test);
     }
 }
+*/

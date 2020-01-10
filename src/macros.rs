@@ -1,3 +1,10 @@
+/// Used for StringMarker to -> String
+macro_rules! fast_to_string {
+    ($expr:expr) => {
+        (*($expr.as_ref())).to_string()
+    };
+}
+
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
@@ -17,6 +24,16 @@ macro_rules! parse {
             }
         }
         as_owned!(for $ty { $($field),* });
+    };
+
+    ($ty:tt => $body:expr) => {
+        impl<'a> TryFrom<&'a Message<&'a str>> for $ty {
+            type Error = InvalidMessage;
+            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
+                $body(msg)
+            }
+        }
+        as_owned!(for $ty);
     };
 }
 

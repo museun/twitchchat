@@ -205,14 +205,14 @@ impl Client {
         let mut dispatcher = self.dispatcher().await;
 
         // set up the auto PING
-        let mut stream = dispatcher.subscribe_internal::<crate::events::Ping>(true);
-        let mut writer = self.writer();
-        tokio::task::spawn(async move {
-            while let Some(msg) = stream.next().await {
-                if !writer.pong(&msg.token).await {
-                    break;
-                }
-            }
-        });
+        // let mut stream = dispatcher.subscribe_internal::<crate::events::Ping>(true);
+        // let mut writer = self.writer();
+        // tokio::task::spawn(async move {
+        //     while let Some(msg) = stream.next().await {
+        //         if !writer.pong(&msg.token).await {
+        //             break;
+        //         }
+        //     }
+        // });
     }
 }

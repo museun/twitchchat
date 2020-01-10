@@ -287,3 +287,11 @@ pub(crate) use internal::{IntoOwned, StringMarker};
 
 /// Synchronous methods
 pub mod sync;
+
+pub trait Conversion<'a> {
+    type Borrowed: 'a;
+    type Owned;
+
+    fn as_borrowed(&'a self) -> Self::Borrowed;
+    fn as_owned(&self) -> Self::Owned;
+}

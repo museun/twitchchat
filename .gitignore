@@ -5,3 +5,4 @@ TODO.txt
 *.txt
 *.json
 *.log
+.vscode/*

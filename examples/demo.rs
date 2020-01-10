@@ -1,3 +1,5 @@
+fn main() {}
+/*
 #[tokio::main]
 async fn main() {
     use futures::prelude::*;
@@ -114,3 +116,4 @@ async fn main() {
     // clearing the subscriptions would close each event stream
     client.dispatcher().await.clear_subscriptions_all();
 }
+*/
