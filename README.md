@@ -1,16 +1,17 @@
 # twitchchat
 
-# Please read this
-**for the old version please check out the 'master' branch**
-
-**soon this will become the next version**
----
-
 This crate provides a way to interace with [Twitch]'s chat.
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
-## Simple example
+## License
+
+`twitchchat` is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+
+See LICENSE-APACHE and LICENSE-MIT for details.
+
+
+## A demo of the API:
 ```rust
 #[tokio::main]
 async fn main() {
@@ -26,7 +27,7 @@ async fn main() {
     // putting this in the env so people don't join my channel when running this
     let channel = std::env::var("TWITCH_CHANNEL").unwrap();
 
-    // connect via tls over tcp with this nick and password
+    // connect via (tls or normal, 'Secure' determines that) tcp with this nick and password
     let (read, write) = twitchchat::connect_easy(&nick, &pass, twitchchat::Secure::Nope)
         .await
         .unwrap();
@@ -78,9 +79,9 @@ async fn main() {
                 Some("!hello") => {
                     let response = format!("hello {}!", msg.user);
                     // send a message in response
-                    let still_connected = writer.privmsg(&msg.channel, &response).await;
-                    if !still_connected {
-                        break;
+                    if let Err(_err) = writer.privmsg(&msg.channel, &response).await {
+                        // we ran into a write error, we should probably leave this task
+                        return;
                     }
                 }
                 _ => {}
@@ -94,8 +95,17 @@ async fn main() {
 
     // get a clonable writer from the client
     // join a channel, methods on writer return false if the client is disconnected
-    if !client.writer().join(&channel).await {
-        panic!("not connected!?")
+    if let Err(err) = client.writer().join(&channel).await {
+        match err {
+            twitchchat::Error::InvalidChannel(..) => {
+                eprintln!("you cannot join a channel with an empty name. demo is ending");
+                std::process::exit(1);
+            }
+            _ => {
+                // we'll get an error if we try to write to a disconnected client.
+                // if this happens, you should shutdown your tasks
+            }
+        }
     }
 
     // you can clear subscriptions with
@@ -130,6 +140,4 @@ async fn main() {
 }
 ```
 
-[Twitch]: https://www.twitch.tv
-
-License: 0BSD
+[Twitch]: https://dev.twitch.tv/docs/irc

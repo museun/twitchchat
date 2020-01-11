@@ -80,7 +80,7 @@ async fn main() {
 
     // get a clonable writer from the client
     // join a channel, methods on writer return false if the client is disconnected
-    if let Err(err) = client.writer().join(&channel) {
+    if let Err(err) = client.writer().join(&channel).await {
         match err {
             twitchchat::Error::InvalidChannel(..) => {
                 eprintln!("you cannot join a channel with an empty name. demo is ending");

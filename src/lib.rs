@@ -5,7 +5,6 @@ Along with the messages as Rust types, it provides methods for sending messages.
 
 # Demonstration
 See `examples/demo.rs` for a demo of the api
-```
 
 [Twitch]: https://www.twitch.tv
 */
