@@ -32,23 +32,37 @@ macro_rules! conversion {
             }
         }
     };
+    ($ty:tt) => {
+        impl<'a> crate::Conversion<'a> for $ty
+        {
+            type Owned = $ty;
+            type Borrowed = $ty;
+
+            fn as_borrowed(&'a self) -> Self::Borrowed {
+                $ty { }
+            }
+
+            fn as_owned(&self) -> Self::Owned {
+                $ty { }
+            }
+        }
+    };
 }
 
 macro_rules! parse {
     (bare $ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
-        impl<'a> TryFrom<&'a Message<&'a str>> for $ty<&'a str> {
-            type Error = InvalidMessage;
-            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
+        impl<'a> crate::Parse<&'a Message<&'a str>> for $ty<&'a str> {
+            fn parse(msg: &'a Message<&'a str>) -> Result<Self, crate::messages::InvalidMessage> {
                 $body(msg)
             }
         }
 
-        impl<'a> TryFrom<&'a Message<&'a str>> for $ty<String> {
-            type Error = InvalidMessage;
-            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
-                $ty::<&'a str>::try_from(msg).map(|ok| ok.as_owned())
+        impl<'a> crate::Parse<&'a Message<&'a str>> for $ty<String> {
+            fn parse(msg: &'a Message<&'a str>) -> Result<Self, crate::messages::InvalidMessage> {
+                $ty::<&'a str>::parse(msg).map(|ok| ok.as_owned())
             }
         }
+        // TODO more conversions
     };
 
     ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
@@ -57,10 +71,17 @@ macro_rules! parse {
     };
 
     ($ty:tt => $body:expr) => {
-        impl<'a> TryFrom<&'a Message<&'a str>> for $ty {
-            type Error = InvalidMessage;
-            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
+        conversion!($ty);
+
+        impl<'a> crate::Parse<&'a Message<&'a str>> for $ty {
+            fn parse(msg: &'a Message<&'a str>) -> Result<Self, crate::messages::InvalidMessage> {
                 $body(msg)
+            }
+        }
+
+        impl<'a> crate::Parse<&'a Message<String>> for $ty {
+            fn parse(msg: &'a Message<String>) -> Result<Self, crate::messages::InvalidMessage> {
+                $body(&msg.as_borrowed()).map(|ok| ok.as_owned())
             }
         }
     };

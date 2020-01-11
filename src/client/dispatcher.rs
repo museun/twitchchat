@@ -1,10 +1,10 @@
 use super::{Event, EventStream};
 use crate::decode::Message;
 use crate::events;
+use crate::Parse;
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::sync::Arc;
 
 use tokio::sync::mpsc;
@@ -178,9 +178,7 @@ impl Dispatcher {
             .get_mut(&TypeId::of::<T>())
             .filter(|s| !s.is_empty())
         {
-            let msg = T::Mapped::try_from(msg)
-                .map(Arc::new)
-                .expect("valid message");
+            let msg = T::Mapped::parse(msg).map(Arc::new).expect("valid message");
 
             senders.retain(|(_, sender)| {
                 sender

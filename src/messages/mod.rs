@@ -13,11 +13,9 @@ Or by using [TryFrom] on an [Message]
 */
 
 use crate::decode::Message;
+use crate::Conversion as _;
 use crate::StringMarker;
 use crate::Tags;
-
-use crate::Conversion as _;
-use std::convert::TryFrom;
 
 mod error;
 pub use error::InvalidMessage;

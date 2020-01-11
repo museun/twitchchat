@@ -295,3 +295,10 @@ pub trait Conversion<'a> {
     fn as_borrowed(&'a self) -> Self::Borrowed;
     fn as_owned(&self) -> Self::Owned;
 }
+
+pub trait Parse<T>
+where
+    Self: Sized,
+{
+    fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
+}
