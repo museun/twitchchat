@@ -288,6 +288,22 @@ pub(crate) use internal::StringMarker;
 /// Synchronous methods
 pub mod sync;
 
+/// A trait for converting crate types between `Owned` and `Borrowed` representations
+///
+/// # Example
+/// ```rust
+/// # use twitchchat::*;
+/// # use twitchchat::messages::*;
+/// let input = ":test!test@test JOIN #museun\r\n";
+/// let message : Raw<&str> = decode::decode_many(&input).next().unwrap().unwrap();
+/// let message_owned : Raw<String> = message.as_owned();
+///
+/// let join : Join<&str> = Join::parse(&message).unwrap();
+/// let owned : Join<String> = join.as_owned();
+/// let borrowed : Join<&str> = join.as_borrowed();
+///
+/// assert_eq!(borrowed, join);
+/// ```
 pub trait Conversion<'a> {
     type Borrowed: 'a;
     type Owned;
@@ -296,6 +312,16 @@ pub trait Conversion<'a> {
     fn as_owned(&self) -> Self::Owned;
 }
 
+/// A trait for parsing messages
+///
+/// # Example
+/// ```rust
+/// # use twitchchat::*;
+/// # use twitchchat::messages::*;
+/// let input = ":test!test@test JOIN #museun\r\n";
+/// let message : Raw<&str> = decode::decode_many(&input).next().unwrap().unwrap();
+/// let join : Join<&str> = Join::parse(&message).unwrap();
+/// assert_eq!(join, Join { channel: "#museun", user: "test" });
 pub trait Parse<T>
 where
     Self: Sized,
