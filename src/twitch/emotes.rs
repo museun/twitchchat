@@ -11,6 +11,7 @@ They are presented (to the irc connection) in a `id:range1,range2/id2:range1,..`
 `"Kappa testing Kappa"` would be `25:0-5,14-19`
 */
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Emotes {
     /// This emote id, e.g. `Kappa = 25`    
     pub id: usize,

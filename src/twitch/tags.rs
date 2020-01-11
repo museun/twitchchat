@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 /// Tags are IRCv3 message tags. Twitch uses them extensively.
 #[derive(PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tags<T: crate::StringMarker>(pub(crate) HashMap<T, T>);
 
 impl<T: crate::StringMarker> Default for Tags<T> {

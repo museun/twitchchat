@@ -3,6 +3,7 @@
 /// Without any of these specified, you will just able to read/write basic messages
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Capability {
     /// Membership capability
     ///

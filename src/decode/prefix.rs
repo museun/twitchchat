@@ -1,5 +1,6 @@
 /// Prefix is the sender of a message
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Prefix<T>
 where
     T: crate::StringMarker,

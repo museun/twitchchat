@@ -27,6 +27,7 @@ let config = UserConfig::builder()
 ```
 */
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserConfig {
     /// Requested name of your user
     pub name: String,
@@ -104,6 +105,7 @@ impl std::error::Error for UserConfigError {}
 ///
 /// [UserConfig]: ./struct.UserConfig.html
 #[derive(Default, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserConfigBuilder {
     capabilities: BTreeSet<Capability>,
     name: Option<String>,

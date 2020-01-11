@@ -2,6 +2,7 @@ use super::*;
 
 /// An IRC-like message
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Message<T>
 where
     T: crate::StringMarker,

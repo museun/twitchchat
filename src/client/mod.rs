@@ -48,8 +48,8 @@ type Sender<T = Vec<u8>> = mpsc::Sender<T>;
 type Receiver = mpsc::Receiver<Vec<u8>>;
 
 /// Status of the client after running
-#[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Status {
     /// It ran to completion
     Eof,

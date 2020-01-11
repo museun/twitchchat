@@ -30,6 +30,7 @@ pub type Raw<T> = Message<T>;
 
 /// The kind of the Names event
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum NamesKind<T = String>
 where
     T: StringMarker,
@@ -53,6 +54,7 @@ where
 ///
 /// And once you receive an End you'll have the complete lost
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Names<T = String>
 where
     T: StringMarker,
@@ -67,6 +69,7 @@ where
 
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RoomState<T = String>
 where
     T: StringMarker,
@@ -79,6 +82,7 @@ where
 
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserNotice<T = String>
 where
     T: StringMarker,
@@ -93,6 +97,7 @@ where
 
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GlobalUserState<T = String>
 where
     T: StringMarker,
@@ -111,6 +116,7 @@ where
 
 /// Event kind for determine when a Host event beings or end
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum HostTargetKind<T = String>
 where
     T: StringMarker,
@@ -126,6 +132,7 @@ where
 
 /// When a channel starts to host another channel
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HostTarget<T = String>
 where
     T: StringMarker,
@@ -140,6 +147,7 @@ where
 
 /// Acknowledgement (or not) on a CAPS request
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cap<T = String>
 where
     T: StringMarker,
@@ -154,6 +162,7 @@ where
 ///
 /// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearChat<T = String>
 where
     T: StringMarker,
@@ -170,6 +179,7 @@ where
 ///
 /// This is triggered via /delete on IRC.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearMsg<T = String>
 where
     T: StringMarker,
@@ -184,6 +194,7 @@ where
 
 /// Happens when the IRC connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IrcReady<T = String>
 where
     T: StringMarker,
@@ -196,6 +207,7 @@ where
 ///
 /// The happens when a user (yourself included) joins a channel
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Join<T = String>
 where
     T: StringMarker,
@@ -208,6 +220,7 @@ where
 
 /// Status of gaining or losing moderator (operator) status
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ModeStatus {
     /// Moderator status gained
     Gained,
@@ -217,6 +230,7 @@ pub enum ModeStatus {
 
 /// When a user gains or loses moderator (operator) status in a channel.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mode<T = String>
 where
     T: StringMarker,
@@ -231,6 +245,7 @@ where
 
 /// General notices from the server.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Notice<T = String>
 where
     T: StringMarker,
@@ -247,6 +262,7 @@ where
 ///
 /// The happens when a user (yourself included) leaves a channel
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Part<T = String>
 where
     T: StringMarker,
@@ -263,6 +279,7 @@ where
 ///
 /// But you can use them however you want
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ping<T = String>
 where
     T: StringMarker,
@@ -275,6 +292,7 @@ where
 ///
 /// This should be a response to sending a PING to the server
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Pong<T = String>
 where
     T: StringMarker,
@@ -285,6 +303,7 @@ where
 
 /// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Privmsg<T = String>
 where
     T: StringMarker,
@@ -301,6 +320,7 @@ where
 
 /// Happens when the Twitch connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ready<T = String>
 where
     T: StringMarker,
@@ -317,10 +337,12 @@ where
 /// case, reconnect and rejoin channels that were on the connection, as you
 /// would normally.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Reconnect {}
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserState<T = String>
 where
     T: StringMarker,
