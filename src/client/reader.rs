@@ -1,6 +1,9 @@
 use super::*;
 
-pub async fn read_loop<R>(read: R, dispatcher: Arc<Mutex<Dispatcher>>) -> Result<Status, Error>
+pub(super) async fn read_loop<R>(
+    read: R,
+    dispatcher: Arc<Mutex<Dispatcher>>,
+) -> Result<Status, Error>
 where
     R: AsyncRead + Send + Sync + Unpin + 'static,
 {

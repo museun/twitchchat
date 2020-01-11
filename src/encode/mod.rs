@@ -4,6 +4,7 @@ use std::io::prelude::*;
 ///
 /// See available messages in the [encode](./index.html#structs) module
 pub trait Encodable: private::Sealed {
+    /// Encode the provided message to the writer
     fn encode<W: ?Sized + Write>(&self, writer: &mut W) -> std::io::Result<()>;
 }
 
@@ -45,7 +46,9 @@ cfg_async! {
     }
 }
 
-export_modules! {
+// TODO get motivated for this
+// TODO part 2: remove it and merge this into a non-runtime Writer
+export_modules_without_docs! {
     ban
     clear
     color

@@ -1,6 +1,6 @@
 use super::*;
 
-pub async fn write_loop<W>(write: W, mut recv: Receiver) -> Result<Status, Error>
+pub(super) async fn write_loop<W>(write: W, mut recv: Receiver) -> Result<Status, Error>
 where
     W: AsyncWrite + Send + Sync + Unpin + 'static,
 {

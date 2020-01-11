@@ -128,8 +128,8 @@ macro_rules! make_mapping {
     };
 }
 
-macro_rules! export_modules {
+macro_rules! export_modules_without_docs {
     ($($module:ident)*) => {
-        $( mod $module; pub use $module::*; )*
+        $( #[allow(missing_docs)] mod $module; pub use $module::*; )*
     };
 }
