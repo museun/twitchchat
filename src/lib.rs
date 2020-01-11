@@ -208,6 +208,21 @@ impl Secure {
 
 cfg_async! {
     /// Write the provided `UserConfig` to the ***async*** writer
+    ///
+    /// # Example
+    /// ```rust
+    /// # use twitchchat::{*};
+    /// # use tokio::runtime::Runtime;
+    /// # Runtime::new().unwrap().block_on(async move {
+    /// let config = UserConfig::builder().anonymous().build().unwrap();
+    /// let mut writer = vec![];
+    /// register(&config, &mut writer).await.unwrap();
+    /// assert_eq!(
+    ///     std::str::from_utf8(&writer).unwrap(),
+    ///     "PASS justinfan1234\r\nNICK justinfan1234\r\n"
+    /// );
+    /// # });
+    /// ```
     pub async fn register<W: ?Sized>(
         user_config: &UserConfig,
         writer: &mut W,
