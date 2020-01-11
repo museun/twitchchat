@@ -58,7 +58,7 @@ where
 
 impl<'a> Badge<&'a str> {
     /// Tries to parse a badge from this message part
-    pub(crate) fn parse(input: &'a str) -> Option<Badge<&'a str>> {
+    pub fn parse(input: &'a str) -> Option<Badge<&'a str>> {
         use BadgeKind::*;
 
         let mut iter = input.split('/');

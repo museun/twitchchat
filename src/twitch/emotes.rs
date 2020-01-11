@@ -10,7 +10,7 @@ They are presented (to the irc connection) in a `id:range1,range2/id2:range1,..`
 
 `"Kappa testing Kappa"` would be `25:0-5,14-19`
 */
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Emotes {
     /// This emote id, e.g. `Kappa = 25`    
@@ -23,8 +23,7 @@ pub struct Emotes {
 
 impl Emotes {
     /// Parse emotes from a string, returning an iterator over each emote
-    #[allow(dead_code)]
-    pub(crate) fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
+    pub fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
         input.split_terminator('/').filter_map(|s| {
             get_parts(s, ':').and_then(|(head, tail)| {
                 let emotes = Self {
@@ -38,14 +37,12 @@ impl Emotes {
 }
 
 #[inline]
-#[allow(dead_code)]
 fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
     let mut split = input.split_terminator(sep);
     (split.next()?, split.next()?).into()
 }
 
 #[inline]
-#[allow(dead_code)]
 fn get_ranges(tail: &str) -> impl Iterator<Item = Range<u16>> + '_ {
     tail.split_terminator(',')
         .filter_map(|s| get_parts(s, '-'))
