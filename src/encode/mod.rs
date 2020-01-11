@@ -17,6 +17,20 @@ cfg_async! {
     /// Encode the provided message to the [tokio::io::AsyncWrite][AsyncWrite]
     ///
     /// [AsyncWrite]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncWrite.html
+    ///
+    /// # Example
+    /// ```rust
+    /// # use twitchchat::*;
+    /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    /// let mut writer = vec![];
+    /// let message = encode::join("#museun");
+    /// encode(&message, &mut writer).await.unwrap();
+    /// assert_eq!(
+    ///     std::str::from_utf8(&writer).unwrap(),
+    ///     "JOIN #museun\r\n"
+    /// );
+    /// # });
+    /// ```
     pub async fn encode<M: ?Sized, W: ?Sized>(message: &M, writer: &mut W) -> std::io::Result<()>
     where
         M: Encodable,

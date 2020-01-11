@@ -175,6 +175,8 @@ pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
 
+const TWITCH_DOMAIN: &str = "irc.chat.twitch.tv";
+
 cfg_async! {
     use tokio::io::{AsyncRead, AsyncWrite};
 }
@@ -211,9 +213,8 @@ cfg_async! {
     ///
     /// # Example
     /// ```rust
-    /// # use twitchchat::{*};
-    /// # use tokio::runtime::Runtime;
-    /// # Runtime::new().unwrap().block_on(async move {
+    /// # use twitchchat::*;
+    /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
     /// let config = UserConfig::builder().anonymous().build().unwrap();
     /// let mut writer = vec![];
     /// register(&config, &mut writer).await.unwrap();
@@ -235,31 +236,125 @@ cfg_async! {
 }
 
 cfg_async! {
-    /// Opens an ***async*** TCP connection using the provided `UserConfig` and `Secure` setting
-    ///
-    /// If `secure` is `None`, it'll use the normal TCP socket
+    type ConnectRes = std::io::Result<(
+        BoxAsyncRead, BoxAsyncWrite
+    )>;
+
+    async fn connect_no_tls(addr: &str) -> std::io::Result<impl AsyncWrite + AsyncRead + Unpin> {
+        tokio::net::TcpStream::connect(addr).await
+    }
+
+    async fn connect_tls(addr: &str) -> std::io::Result<impl AsyncWrite + AsyncRead + Unpin> {
+        use std::io::{Error, ErrorKind};
+        let stream = tokio::net::TcpStream::connect(addr).await?;
+        let conn: tokio_tls::TlsConnector = native_tls::TlsConnector::new()
+            .map_err(|err| Error::new(ErrorKind::Other, err))?
+            .into();
+        conn.connect(TWITCH_DOMAIN, stream)
+            .await
+            .map_err(|err| Error::new(ErrorKind::Other, err))
+    }
+
+    /// Boxed AsyncRead
+    pub type BoxAsyncRead = Box<dyn AsyncRead + Send + Sync + Unpin>;
+    /// Boxed AsyncWrite
+    pub type BoxAsyncWrite = Box<dyn AsyncWrite + Send + Sync + Unpin>;
+
+    /**
+    Opens an ***async*** TCP connection using the provided `UserConfig` and `Secure` setting
+
+    If `secure` is `None`, it'll use the normal TCP socket
+
+    # Panics
+    This panics if you try to use a secure connection but have the `tls` feature disabled
+
+    # Example
+    ## With TLS
+    ```rust
+    # use twitchchat::*;
+    # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    let user_config = UserConfig::builder().anonymous().build().unwrap();
+    let secure = Secure::Nope; // or None
+    let (read, write) = connect(&user_config, secure).await.unwrap();
+    # });
+    ```
+
+    ## Without TLS
+    ```rust
+    # use twitchchat::*;
+    # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    let user_config = UserConfig::builder().anonymous().build().unwrap();
+    let secure = Secure::Nope; // or None
+    let (read, write) = connect(&user_config, secure).await.unwrap();
+    # });
+    ```
+    */
     pub async fn connect(
         user_config: &UserConfig,
         secure: impl Into<Option<Secure>>,
-    ) -> std::io::Result<(impl AsyncRead, impl AsyncWrite)> {
-        let addr = secure.into().unwrap_or_default().get_address();
-        let mut stream = tokio::net::TcpStream::connect(addr).await?;
-        register(user_config, &mut stream).await?;
-        Ok(tokio::io::split(stream))
+    ) -> ConnectRes {
+        let secure = secure.into().unwrap_or_default();
+        let addr = secure.get_address();
+
+        match secure {
+            Secure::UseTls => {
+                if cfg!(feature = "tls") {
+                    let mut stream = connect_tls(addr).await?;
+                    register(user_config, &mut stream).await?;
+                    let (read, write) = tokio::io::split(stream);
+                    Ok((Box::new(read), Box::new(write)))
+                } else {
+                    panic!("enable the \"tls\" feature to use this")
+                }
+            },
+            Secure::Nope => {
+                let mut stream = connect_no_tls(addr).await?;
+                register(user_config, &mut stream).await?;
+                let (read, write) = tokio::io::split(stream);
+                Ok((Box::new(read), Box::new(write)))
+            },
+        }
     }
 
-    /// Opens an ***async*** TCP connection using the provided `name`, `token and `Secure` setting
-    ///
-    /// If `secure` is `None`, it'll use the normal TCP socket
-    ///
-    /// This enables all of the [Capabilities]
-    ///
-    /// [Capabilities]: ./enum.Capability.html
+    /**
+    Opens an ***async*** TCP connection using the provided `name`, `token` and `Secure` setting
+
+    If `secure` is `None`, it'll use the normal TCP socket
+
+    This enables all of the [Capabilities]
+
+    [Capabilities]: ./enum.Capability.html
+
+    # Panics
+    This panics if you try to use a secure connection but have the `tls` feature disabled
+
+    # Example
+
+    ## With TLS
+    ```rust
+    # use twitchchat::*;
+    # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    let (nick, pass) = ANONYMOUS_LOGIN;
+    let secure = Secure::UseTls;
+    let (read, write) = connect_easy(nick, pass, secure).await.unwrap();
+    # });
+    ```
+
+    ## Without TLS
+    ```rust
+    # use twitchchat::*;
+    # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    let (nick, pass) = ANONYMOUS_LOGIN;
+    let secure = Secure::Nope; // or None
+    let (read, write) = connect_easy(nick, pass, secure).await.unwrap();
+    # });
+    ```
+    */
     pub async fn connect_easy(
         name: &str,
         token: &str,
         secure: impl Into<Option<Secure>>,
-    ) -> std::io::Result<(impl AsyncRead, impl AsyncWrite)> {
+    ) -> ConnectRes {
         let config = simple_user_config(name, token).unwrap();
         connect(&config, secure).await
     }
@@ -298,7 +393,7 @@ pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
 mod internal;
-pub(crate) use internal::StringMarker;
+pub use internal::StringMarker;
 
 /// Synchronous methods
 pub mod sync;

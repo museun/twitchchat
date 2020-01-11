@@ -1,7 +1,7 @@
 use crate::Conversion;
 use std::{borrow::Borrow, fmt::Debug, hash::Hash};
 
-#[doc(hidden)]
+/// Marker trait for the 'storage' abstraction of the types
 pub trait StringMarker
 where
     Self: Hash + Debug + Clone,
