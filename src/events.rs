@@ -9,22 +9,22 @@ These can be used with [Dispatcher::subscribe][Subscribe] to get a [Stream] of [
 */
 use super::*;
 
-// make_event! {
-//     Cap             => messages::Cap
-//     ClearChat       => messages::ClearChat
-//     ClearMsg        => messages::ClearMsg
-//     GlobalUserState => messages::GlobalUserState
-//     HostTarget      => messages::HostTarget
-//     IrcReady        => messages::IrcReady
-//     Join            => messages::Join
-//     Mode            => messages::Mode
-//     Notice          => messages::Notice
-//     Part            => messages::Part
-//     Ping            => messages::Ping
-//     Pong            => messages::Pong
-//     Privmsg         => messages::Privmsg
-//     Raw             => messages::Raw
-//     Ready           => messages::Ready
-//     Reconnect       => messages::Reconnect
-//     UserState       => messages::UserState
-// }
+make_event! {
+    Cap             => messages::Cap
+    ClearChat       => messages::ClearChat
+    ClearMsg        => messages::ClearMsg
+    GlobalUserState => messages::GlobalUserState
+    HostTarget      => messages::HostTarget
+    IrcReady        => messages::IrcReady
+    Join            => messages::Join
+    Mode            => messages::Mode
+    Notice          => messages::Notice
+    Part            => messages::Part
+    Ping            => messages::Ping
+    Pong            => messages::Pong
+    Privmsg         => messages::Privmsg
+    Raw             => messages::Raw<String>
+    Ready           => messages::Ready
+    Reconnect       => messages::Reconnect
+    UserState       => messages::UserState
+}

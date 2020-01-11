@@ -11,8 +11,6 @@ where
 }
 
 mod private {
-    use super::Event;
-
     pub trait Sealed {}
-    impl<'a, T> Sealed for T where T: Event<'a> {}
+    impl<'a, T> Sealed for T where T: super::Event<'a> {}
 }

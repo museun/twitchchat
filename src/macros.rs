@@ -1,10 +1,3 @@
-/// Used for StringMarker to -> String
-macro_rules! fast_to_string {
-    ($expr:expr) => {
-        (*($expr.as_ref())).to_string()
-    };
-}
-
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
@@ -15,15 +8,52 @@ macro_rules! cfg_async {
     }
 }
 
+macro_rules! conversion {
+    ($ty:tt { $($field:ident),* $(,)? }) => {
+        impl<'a, T> crate::Conversion<'a> for $ty<T>
+        where
+            T: crate::StringMarker + crate::Conversion<'a>,
+            <T as crate::Conversion<'a>>::Borrowed: StringMarker,
+            <T as crate::Conversion<'a>>::Owned: StringMarker,
+        {
+            type Owned = $ty<T::Owned>;
+            type Borrowed = $ty<T::Borrowed>;
+
+            fn as_borrowed(&'a self) -> Self::Borrowed {
+                $ty {
+                    $( $field: self.$field.as_borrowed(), )*
+                }
+            }
+
+            fn as_owned(&self) -> Self::Owned {
+                $ty {
+                    $( $field: self.$field.as_owned(), )*
+                }
+            }
+        }
+    };
+}
+
 macro_rules! parse {
-    ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
+    (bare $ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
         impl<'a> TryFrom<&'a Message<&'a str>> for $ty<&'a str> {
             type Error = InvalidMessage;
             fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
                 $body(msg)
             }
         }
-        as_owned!(for $ty { $($field),* });
+
+        impl<'a> TryFrom<&'a Message<&'a str>> for $ty<String> {
+            type Error = InvalidMessage;
+            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
+                $ty::<&'a str>::try_from(msg).map(|ok| ok.as_owned())
+            }
+        }
+    };
+
+    ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
+        conversion!($ty { $($field,)* });
+        parse!(bare $ty { $($field,)* } => $body);
     };
 
     ($ty:tt => $body:expr) => {
@@ -33,38 +63,7 @@ macro_rules! parse {
                 $body(msg)
             }
         }
-        as_owned!(for $ty);
     };
-}
-
-macro_rules! as_owned {
-    (for $ty:tt { $($field:ident),* $(,)? }) => {
-        impl<'a> TryFrom<&'a Message<&'a str>> for $ty<String> {
-            type Error = InvalidMessage;
-            fn try_from(msg: &'a Message<&'a str>) -> Result<Self, Self::Error> {
-                $ty::<&'a str>::try_from(msg).map(|ok| ok.into_owned())
-            }
-        }
-
-        impl IntoOwned for $ty<&str> {
-            type Target = $ty<String>;
-            fn into_owned(&self) -> Self::Target {
-                Self::Target {
-                    $( $field: self.$field.into_owned(), )*
-                }
-            }
-        }
-    };
-
-    (for $ty:tt) => {
-        impl IntoOwned for $ty {
-            type Target = $ty;
-
-            fn into_owned(&self) -> Self::Target {
-                self.clone()
-            }
-        }
-    }
 }
 
 macro_rules! make_event {

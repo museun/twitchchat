@@ -1,5 +1,3 @@
-// TODO make this use StringMarker for Strings
-
 /// The kind of the [badges] that are associated with messages.
 ///
 /// Any unknonw (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.
@@ -7,8 +5,11 @@
 /// [badges]: ./struct.Badge.html
 /// [Unknown]: ./enum.BadgeKind.html#variant.Unknown
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub enum BadgeKind {
+#[derive(Debug, Clone, PartialEq)]
+pub enum BadgeKind<T>
+where
+    T: crate::StringMarker,
+{
     /// Admin badge
     Admin,
     /// Bits badge
@@ -32,14 +33,17 @@ pub enum BadgeKind {
     /// Partner badge
     Partner,
     /// Unknown badge. Likely a custom badge
-    Unknown(String),
+    Unknown(T),
 }
 
 /// Badges attached to a message
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct Badge {
+#[derive(Debug, Clone, PartialEq)]
+pub struct Badge<T>
+where
+    T: crate::StringMarker,
+{
     /// The kind of the Badge
-    pub kind: BadgeKind,
+    pub kind: BadgeKind<T>,
     /// Any associated data with the badge
     ///
     /// May be:
@@ -47,14 +51,13 @@ pub struct Badge {
     /// - number of bits
     /// - number of months needed for sub badge
     /// - etc
-    pub data: String,
+    pub data: T,
 }
 
-impl Badge {
+impl<'a> Badge<&'a str> {
     /// Tries to parse a badge from this message part
-    pub(crate) fn parse(input: &str) -> Option<Self> {
+    pub(crate) fn parse(input: &'a str) -> Option<Badge<&'a str>> {
         use BadgeKind::*;
-        let input = input.to_ascii_lowercase();
 
         let mut iter = input.split('/');
         let kind = match iter.next()? {
@@ -69,18 +72,13 @@ impl Badge {
             "premium" => Premium,
             "vip" => VIP,
             "partner" => Partner,
-            badge => Unknown(badge.to_string()),
+            badge => Unknown(badge),
         };
-
-        Self {
-            kind,
-            data: iter.next()?.to_string(),
-        }
-        .into()
+        iter.next().map(|data| Self { kind, data })
     }
 }
 
 /// Metadata to the chat badges
-pub type BadgeInfo = Badge;
+pub type BadgeInfo<T> = Badge<T>;
 
 // TODO tests

@@ -55,35 +55,3 @@ where
         }
     }
 }
-
-impl<'a, T> crate::Conversion<'a> for Prefix<T>
-where
-    T: crate::StringMarker,
-{
-    type Borrowed = Prefix<&'a str>;
-    type Owned = Prefix<String>;
-
-    /// Converts the Prefix to a Prefix<&str>
-    fn as_borrowed(&'a self) -> Self::Borrowed {
-        match self {
-            Prefix::User { nick } => Prefix::User {
-                nick: nick.as_ref(),
-            },
-            Prefix::Server { host } => Prefix::Server {
-                host: host.as_ref(),
-            },
-        }
-    }
-
-    /// Converts the Prefix to a Prefix<String>
-    fn as_owned(&self) -> Self::Owned {
-        match self {
-            Prefix::User { nick } => Prefix::User {
-                nick: (*(nick.as_ref())).to_string(),
-            },
-            Prefix::Server { host } => Prefix::Server {
-                host: (*(host.as_ref())).to_string(),
-            },
-        }
-    }
-}

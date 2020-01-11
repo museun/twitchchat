@@ -13,9 +13,10 @@ Or by using [TryFrom] on an [Message]
 */
 
 use crate::decode::Message;
+use crate::StringMarker;
 use crate::Tags;
-use crate::{IntoOwned, StringMarker};
 
+use crate::Conversion as _;
 use std::convert::TryFrom;
 
 /// An error returned when trying to use [TryFrom] on a [Message] to a specific [message][msg]
@@ -110,7 +111,7 @@ mod messages {
         pub display_name: Option<T>,
         pub color: crate::color::Color,
         pub emote_sets: Vec<T>,
-        pub badges: Vec<crate::Badge>,
+        pub badges: Vec<crate::Badge<T>>,
     }
 
     #[derive(Debug, Clone, PartialEq)]
@@ -120,20 +121,6 @@ mod messages {
     {
         Start { target: T },
         End,
-    }
-
-    // TODO add this case to the macro
-    impl<'a> IntoOwned for HostTargetKind<&'a str> {
-        type Target = HostTargetKind<String>;
-
-        fn into_owned(&self) -> Self::Target {
-            match self {
-                HostTargetKind::Start { target } => HostTargetKind::Start {
-                    target: target.to_string(),
-                },
-                HostTargetKind::End => HostTargetKind::End,
-            }
-        }
     }
 
     #[derive(Debug, Clone, PartialEq)]
@@ -206,7 +193,7 @@ mod messages {
         Lost,
     }
 
-    as_owned!(for ModeStatus);
+    // as_owned!(for ModeStatus);
 
     #[derive(Debug, Clone, PartialEq)]
     pub struct Mode<T = String>
@@ -301,7 +288,7 @@ mod parse {
     use super::*;
 
     parse! {
-        Raw {
+        bare Raw {
             raw,
             tags,
             prefix,
