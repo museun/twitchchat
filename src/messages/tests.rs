@@ -40,6 +40,66 @@ fn raw_owned() {
 }
 
 #[test]
+fn user_notice_message_borrowed() {
+    let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            UserNotice::<&str>::parse(&msg).unwrap(),
+            UserNotice {
+                tags: Tags::default(),
+                channel: "#museun",
+                message: Some("This room is no longer in slow mode.")
+            }
+        )
+    }
+}
+
+#[test]
+fn user_notice_message_owned() {
+    let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            UserNotice::<String>::parse(&msg).unwrap(),
+            UserNotice {
+                tags: Tags::default(),
+                channel: "#museun".to_string(),
+                message: Some("This room is no longer in slow mode.".to_string())
+            }
+        )
+    }
+}
+
+#[test]
+fn user_notice_borrowed() {
+    let input = ":tmi.twitch.tv USERNOTICE #museun\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            UserNotice::<&str>::parse(&msg).unwrap(),
+            UserNotice {
+                tags: Tags::default(),
+                channel: "#museun",
+                message: None,
+            }
+        )
+    }
+}
+
+#[test]
+fn user_notice_owned() {
+    let input = ":tmi.twitch.tv USERNOTICE #museun\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            UserNotice::<String>::parse(&msg).unwrap(),
+            UserNotice {
+                tags: Tags::default(),
+                channel: "#museun".to_string(),
+                message: None,
+            }
+        )
+    }
+}
+
+#[test]
 fn room_state_borrowed() {
     let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
     for msg in crate::decode_many(input).map(|s| s.unwrap()) {

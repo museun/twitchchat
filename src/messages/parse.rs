@@ -24,6 +24,18 @@ parse! {
 }
 
 parse! {
+    UserNotice { tags, channel, message } => |msg: &'a Message<&'a str>| {
+        msg.expect_command("USERNOTICE")?;
+        let channel = msg.expect_arg(0)?;
+        Ok(Self {
+            tags: msg.tags.clone(),
+            channel,
+            message: msg.data,
+        })
+    }
+}
+
+parse! {
     Names { user, channel, kind } => |msg: &'a Message<&'a str>| {
         let kind = match msg.command {
             "353" => {
