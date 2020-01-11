@@ -40,6 +40,72 @@ fn raw_owned() {
 }
 
 #[test]
+fn names_start_borrowed() {
+    let input =
+        ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Names::<&str>::parse(&msg).unwrap(),
+            Names {
+                user: "museun",
+                channel: "#museun",
+                kind: NamesKind::Start {
+                    users: vec!["shaken_bot4", "shaken_bot5"]
+                }
+            }
+        )
+    }
+}
+
+#[test]
+fn names_start_owned() {
+    let input =
+        ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Names::<String>::parse(&msg).unwrap(),
+            Names {
+                user: "museun".to_string(),
+                channel: "#museun".to_string(),
+                kind: NamesKind::Start {
+                    users: vec!["shaken_bot4".to_string(), "shaken_bot5".to_string()]
+                }
+            }
+        )
+    }
+}
+
+#[test]
+fn names_end_borrowed() {
+    let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Names::<&str>::parse(&msg).unwrap(),
+            Names {
+                user: "museun",
+                channel: "#museun",
+                kind: NamesKind::End
+            }
+        )
+    }
+}
+
+#[test]
+fn names_end_owned() {
+    let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Names::<String>::parse(&msg).unwrap(),
+            Names {
+                user: "museun".to_string(),
+                channel: "#museun".to_string(),
+                kind: NamesKind::End
+            }
+        )
+    }
+}
+
+#[test]
 fn global_user_state_borrowed() {
     let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
     for msg in crate::decode_many(input).map(|s| s.unwrap()) {

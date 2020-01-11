@@ -193,6 +193,32 @@ where
     }
 }
 
+impl<'a, T> crate::Conversion<'a> for crate::messages::NamesKind<T>
+where
+    T: StringMarker + crate::Conversion<'a>,
+    <T as crate::Conversion<'a>>::Borrowed: StringMarker,
+    <T as crate::Conversion<'a>>::Owned: StringMarker,
+{
+    type Borrowed = crate::messages::NamesKind<T::Borrowed>;
+    type Owned = crate::messages::NamesKind<T::Owned>;
+    fn as_borrowed(&'a self) -> Self::Borrowed {
+        match self {
+            crate::messages::NamesKind::Start { users } => crate::messages::NamesKind::Start {
+                users: users.as_borrowed(),
+            },
+            crate::messages::NamesKind::End => crate::messages::NamesKind::End,
+        }
+    }
+    fn as_owned(&self) -> Self::Owned {
+        match self {
+            crate::messages::NamesKind::Start { users } => crate::messages::NamesKind::Start {
+                users: users.as_owned(),
+            },
+            crate::messages::NamesKind::End => crate::messages::NamesKind::End,
+        }
+    }
+}
+
 impl<'a, T> crate::Conversion<'a> for crate::messages::HostTargetKind<T>
 where
     T: StringMarker + crate::Conversion<'a>,

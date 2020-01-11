@@ -29,6 +29,25 @@ mod parse;
 pub type Raw<T> = crate::decode::Message<T>;
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum NamesKind<T = String>
+where
+    T: StringMarker,
+{
+    Start { users: Vec<T> },
+    End,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Names<T = String>
+where
+    T: StringMarker,
+{
+    pub user: T,
+    pub channel: T,
+    pub kind: NamesKind<T>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct GlobalUserState<T = String>
 where
     T: StringMarker,

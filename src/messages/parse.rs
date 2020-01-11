@@ -14,6 +14,37 @@ parse! {
 }
 
 parse! {
+    Names { user, channel, kind } => |msg: &'a Message<&'a str>| {
+        let kind = match msg.command {
+            "353" => {
+                NamesKind::Start {
+                    users: msg.expect_data()?.split_whitespace().collect()
+                }
+            }
+            "366" => {
+                NamesKind::End
+            }
+            unknown => return Err(InvalidMessage::InvalidCommand {
+                expected: "353 or 366".to_string(),
+                got: unknown.to_string()
+            })
+        };
+
+        let user = msg.expect_arg(0)?;
+        let channel = match msg.expect_arg(1)? {
+            "=" => msg.expect_arg(2)?,
+            channel => channel
+        };
+
+        Ok(Self {
+            user,
+            channel,
+            kind
+        })
+    }
+}
+
+parse! {
     GlobalUserState {
         user_id,
         display_name,
