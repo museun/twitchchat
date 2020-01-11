@@ -3,7 +3,7 @@
 
 You can [get] a [Dispatcher] from the [Client].
 
-A dispatcher can be [subscribed] to. Subscribing will then produce a [Stream] of discrete [messages] for the [event].
+A dispatcher can be [subscribed] to. Subscribing will then produce a [Stream] of discrete [messages] for the [events].
 
 ## Stream cancellation
 When the dispatcher is dropped, all of the streams will produce ***None***.
@@ -48,6 +48,7 @@ type Sender<T = Vec<u8>> = mpsc::Sender<T>;
 type Receiver = mpsc::Receiver<Vec<u8>>;
 
 /// Status of the client after running
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Status {
     /// It ran to completion
