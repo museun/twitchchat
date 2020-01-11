@@ -1,48 +1,136 @@
-use std::str::FromStr;
-/// An error returned from the FromStr impls of RGB and Color
-#[derive(Copy, Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum ColorError {
-    /// An invalid Hex string for `RGB`
-    #[error("invalid hex string")]
+/*!
+Color types associated with Twitch.
+
+Both an RGB triplet and named Colors are provided.
+
+# RGB
+## Try to parse a RGB from a #RRGGBB or RRGGBB
+```
+# use std::str::FromStr as _;
+# use twitchchat::color::RGB;
+let rgb: RGB = "#00FF19".parse().unwrap();
+assert_eq!(rgb.red(), 0x00);
+assert_eq!(rgb.green(), 0xFF);
+assert_eq!(rgb.blue(), 0x19);
+
+// or without the leading octothrope
+let rgb: RGB = "00FF19".parse().unwrap();
+assert_eq!(rgb.red(), 0x00);
+assert_eq!(rgb.green(), 0xFF);
+assert_eq!(rgb.blue(), 0x19);
+```
+
+## Turning it back into a string
+```
+# use std::str::FromStr as _;
+# use twitchchat::color::RGB;
+let input = "#00FF19";
+let rgb: RGB = input.parse().unwrap();
+assert_eq!(rgb.to_string(), input);
+```
+
+# Color
+## Try to parse a Color from a named color
+```
+# use std::str::FromStr as _;
+# use twitchchat::color::*;
+let input = "Blue Violet";
+let color: Color = input.parse().unwrap();
+assert_eq!(color.rgb, RGB(0x8A, 0x2B, 0xE2));
+assert_eq!(color.kind, TwitchColor::BlueViolet);
+```
+
+# Conversions
+```
+# use twitchchat::color::*;
+let input = "Blue Violet";
+let color: Color = input.parse().unwrap();
+
+// Color can be converted into an RGB
+let rgb: RGB = color.into();
+
+// RGB can be converted into a TwitchColor
+let twitch_color: TwitchColor = rgb.into();
+
+// TwitchColor can be converted into an RGB
+let rgb: RGB = twitch_color.into();
+```
+*/
+
+/// An error returned when trying to parse a string as an RGB triplet
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum ParseError {
+    /// An invalid hex string for `RGB`
     InvalidHexString,
     /// Unknown color name
-    #[error("unknown color")]
     UnknownColor,
 }
 
-/// A 24-bit triplet for hex colors. Defaults to *White* `(0xFF,0xFF,0xFF)`
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct RGB(pub u8, pub u8, pub u8);
-
-impl RGB {
-    /// Returns the `red` field
-    pub fn red(self) -> u8 {
-        self.0
-    }
-
-    /// Returns the `green` field
-    pub fn green(self) -> u8 {
-        self.1
-    }
-
-    /// Returns the `blue` field
-    pub fn blue(self) -> u8 {
-        self.2
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::InvalidHexString => f.write_str("invalid hex string"),
+            ParseError::UnknownColor => f.write_str("unknown color"),
+        }
     }
 }
 
+impl std::error::Error for ParseError {}
+
+impl std::str::FromStr for RGB {
+    type Err = ParseError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let input = input.trim();
+        let input = match (input.chars().next(), input.len()) {
+            (Some('#'), 7) => &input[1..],
+            (.., 6) => input,
+            _ => return Err(ParseError::InvalidHexString),
+        };
+
+        u32::from_str_radix(input, 16)
+            .map(|s| {
+                Self(
+                    ((s >> 16) & 0xFF) as _,
+                    ((s >> 8) & 0xFF) as _,
+                    (s & 0xFF) as _,
+                )
+            })
+            .map_err(|_| ParseError::InvalidHexString)
+    }
+}
+
+/// A 24-bit RGB triplet
+///
+/// Default color is **white** `(0xFF,0xFF,0xFF)`
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
+pub struct RGB(pub u8, pub u8, pub u8);
+
 impl Default for RGB {
-    /// Default color of `#FFFFFF` (White)
     fn default() -> Self {
-        RGB(255, 255, 255)
+        RGB(0xFF, 0xFF, 0xFF)
     }
 }
 
 impl std::fmt::Display for RGB {
-    /// Formats the RGB as `#RRGGBB` (in hex)
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self(r, g, b) = self;
         write!(f, "#{:02X}{:02X}{:02X}", r, g, b)
+    }
+}
+
+impl RGB {
+    /// The red field
+    pub fn red(self) -> u8 {
+        self.0
+    }
+    /// The green field
+    pub fn green(self) -> u8 {
+        self.1
+    }
+    /// The blue field
+    pub fn blue(self) -> u8 {
+        self.2
     }
 }
 
@@ -79,61 +167,100 @@ impl<'de> serde::Deserialize<'de> for RGB {
     }
 }
 
-impl FromStr for RGB {
-    type Err = ColorError;
+/**
+A twitch color paired with an RGB
 
-    /// Tries to parse a string (`'#FFFFFF'` or `'FFFFFF'`) into RGB.
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let input = input.trim();
-        let input = match (input.chars().next(), input.len()) {
-            (Some('#'), 7) => &input[1..],
-            (_, 6) => input,
-            _ => return Err(ColorError::InvalidHexString),
-        };
+Twitch has named colors. Users with `Turbo` enabled accounts can set a custom color.
 
-        u32::from_str_radix(&input, 16)
-            .map(|s| {
-                RGB(
-                    ((s >> 16) & 0xFF) as u8,
-                    ((s >> 8) & 0xFF) as u8,
-                    (s & 0xFF) as u8,
-                )
-            })
-            .map_err(|_| ColorError::InvalidHexString)
-    }
-}
+Name | Color
+--- | ---
+Blue | `#0000FF`
+BlueViolet | `#8A2BE2`
+CadetBlue | `#5F9EA0`
+Chocolate | `#D2691E`
+Coral | `#FF7F50`
+DodgerBlue | `#1E90FF`
+Firebrick | `#B22222`
+GoldenRod | `#DAA520`
+Green | `#008000`
+HotPink | `#FF69B4`
+OrangeRed | `#FF4500`
+Red | `#FF0000`
+SeaGreen | `#2E8B57`
+SpringGreen | `#00FF7F`
+YellowGreen | `#ADFF2F`
 
-/// Color represents a Twitch color
-///
-/// Twitch has named colors, and those with `Turbo` enabled accounts can set custom colors
-///
-/// A table of colors:
-///
-/// Name|Color|Alternative name *(can be parsed from name and these)*
-/// ---|---|---
-/// Blue |`#0000FF`| blue
-/// BlueViolet |`#8A2BE2`| blueviolet, blue_violet, blue violet
-/// CadetBlue |`#5F9EA0`| cadetblue, cadet_blue, cadet blue
-/// Chocolate |`#D2691E`| chocolate
-/// Coral |`#FF7F50`| coral
-/// DodgerBlue |`#1E90FF`| dodgerblue, dodger_blue, dodger blue
-/// Firebrick |`#B22222`| firebrick
-/// GoldenRod |`#DAA520`| goldenrod, golden_rod, golden rod
-/// Green |`#008000`| green
-/// HotPink |`#FF69B4`| hotpink, hot_pink, hot pink
-/// OrangeRed |`#FF4500`| orangered, orange_red, orange red
-/// Red |`#FF0000`| red
-/// SeaGreen |`#2E8B57`| seagreen, sea_green, sea green
-/// SpringGreen |`#00FF7F`| springgreen, spring_green, spring green
-/// YellowGreen |`#ADFF2F`| yellowgreen, yellow_green, yellow green
-/// Turbo |*custom*| ---
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+These can be [parsed] from their **name** in
+- `"PascalCase"`
+- `"Title Case"`
+- `"snake_case"`
+- `"lower case"`
+
+[parsed]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+*/
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Color {
     /// The name of the Twitch color
     pub kind: TwitchColor,
-    /// The RGB triplet for this color    
+    /// The RGB triplet for this color
     pub rgb: RGB,
+}
+
+impl std::str::FromStr for Color {
+    type Err = ParseError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        use TwitchColor::*;
+        let find = |color| {
+            let colors = twitch_colors();
+            colors[colors.iter().position(|(d, _)| *d == color).unwrap()]
+        };
+
+        let mut s = input.replace(' ', "_");
+        if !s.contains('_') {
+            if let Some(pos) = s
+                .chars()
+                .skip(1)
+                .position(|d| d.is_ascii_uppercase())
+                .map(|d| d + 1)
+            {
+                s.insert(pos, '_');
+            }
+        }
+        let s = s.to_ascii_lowercase();
+        let (kind, rgb) = match s.as_str() {
+            "blue" => find(Blue),
+            "blue_violet" => find(BlueViolet),
+            "cadet_blue" => find(CadetBlue),
+            "chocolate" => find(Chocolate),
+            "coral" => find(Coral),
+            "dodger_blue" => find(DodgerBlue),
+            "firebrick" => find(Firebrick),
+            "golden_rod" => find(GoldenRod),
+            "green" => find(Green),
+            "hot_pink" => find(HotPink),
+            "orange_red" => find(OrangeRed),
+            "red" => find(Red),
+            "sea_green" => find(SeaGreen),
+            "spring_green" => find(SpringGreen),
+            "yellow_green" => find(YellowGreen),
+            _ => (Turbo, input.parse()?),
+        };
+
+        Ok(Self { kind, rgb })
+    }
+}
+
+impl Default for Color {
+    /// Defaults to having a kind of [Turbo] and RGB of #FFFFFF (white)
+    ///
+    /// [Turbo]: ./enum.TwitchColor.html#variant.Turbo
+    fn default() -> Self {
+        Self {
+            kind: TwitchColor::Turbo,
+            rgb: RGB::default(),
+        }
+    }
 }
 
 impl std::fmt::Display for Color {
@@ -155,104 +282,49 @@ impl std::fmt::Display for Color {
             SeaGreen => "SeaGreen",
             SpringGreen => "SpringGreen",
             YellowGreen => "YellowGreen",
-            Turbo => return write!(f, "{}", self.rgb.to_string()),
-            __Nonexhaustive => unreachable!(),
+            _ => return f.write_str(&self.rgb.to_string()),
         };
-        write!(f, "{}", name)
+        f.write_str(name)
     }
 }
 
-impl Default for Color {
-    /// Defaults to having a kind of `TwitchColor::Turbo` and an RGB of `#FFFFFF`
-    fn default() -> Self {
-        Self {
-            kind: TwitchColor::Turbo,
-            rgb: RGB::default(),
-        }
-    }
-}
-
-impl FromStr for Color {
-    type Err = ColorError;
-    /// Tries to parse the twitch color name
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        use TwitchColor::*;
-
-        let find = |color| {
-            let colors = twitch_colors();
-            colors[colors.iter().position(|(d, _)| *d == color).unwrap()]
-        };
-
-        let (kind, rgb) = match input {
-            "Blue" | "blue" => find(Blue),
-            "BlueViolet" | "blue_violet" | "blueviolet" | "blue violet" => find(BlueViolet),
-            "CadetBlue" | "cadet_blue" | "cadetblue" | "cadet blue" => find(CadetBlue),
-            "Chocolate" | "chocolate" => find(Chocolate),
-            "Coral" | "coral" => find(Coral),
-            "DodgerBlue" | "dodger_blue" | "dodgerblue" | "dodger blue" => find(DodgerBlue),
-            "Firebrick" | "firebrick" => find(Firebrick),
-            "GoldenRod" | "golden_rod" | "goldenrod" | "golden rod" => find(GoldenRod),
-            "Green" | "green" => find(Green),
-            "HotPink" | "hot_pink" | "hotpink" | "hot pink" => find(HotPink),
-            "OrangeRed" | "orange_red" | "orangered" | "orange red" => find(OrangeRed),
-            "Red" | "red" => find(Red),
-            "SeaGreen" | "sea_green" | "seagreen" | "sea green" => find(SeaGreen),
-            "SpringGreen" | "spring_green" | "springgreen" | "spring green" => find(SpringGreen),
-            "YellowGreen" | "yellow_green" | "yellowgreen" | "yellow green" => find(YellowGreen),
-            _ => (Turbo, input.parse::<RGB>()?),
-        };
-
-        Ok(Self { kind, rgb })
-    }
-}
-
-/// These are the default Twitch colors
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
+/// Named Twitch colors
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TwitchColor {
-    /// RGB (hex): #0000FF
+    /// RGB (hex): `#0000FF`
     Blue,
-    /// RGB (hex): #8A2BE2
+    /// RGB (hex): `#8A2BE2`
     BlueViolet,
-    /// RGB (hex): #5F9EA0
+    /// RGB (hex): `#5F9EA0`
     CadetBlue,
-    /// RGB (hex): #D2691E
+    /// RGB (hex): `#D2691E`
     Chocolate,
-    /// RGB (hex): #FF7F50
+    /// RGB (hex): `#FF7F50`
     Coral,
-    /// RGB (hex): #1E90FF
+    /// RGB (hex): `#1E90FF`
     DodgerBlue,
-    /// RGB (hex): #B22222
+    /// RGB (hex): `#B22222`
     Firebrick,
-    /// RGB (hex): #DAA520
+    /// RGB (hex): `#DAA520`
     GoldenRod,
-    /// RGB (hex): #008000
+    /// RGB (hex): `#008000`
     Green,
-    /// RGB (hex): #FF69B4
+    /// RGB (hex): `#FF69B4`
     HotPink,
-    /// RGB (hex): #FF4500
+    /// RGB (hex): `#FF4500`
     OrangeRed,
-    /// RGB (hex): #FF0000
+    /// RGB (hex): `#FF0000`
     Red,
-    /// RGB (hex): #2E8B57
+    /// RGB (hex): `#2E8B57`
     SeaGreen,
-    /// RGB (hex): #00FF7F
+    /// RGB (hex): `#00FF7F`
     SpringGreen,
-    /// RGB (hex): #ADFF2F
+    /// RGB (hex): `#ADFF2F`
     YellowGreen,
     /// Turbo colors are custom user-selected colors
     Turbo,
-    #[doc(hidden)]
-    __Nonexhaustive,
-}
-
-impl From<RGB> for Color {
-    fn from(rgb: RGB) -> Self {
-        Color {
-            kind: rgb.into(),
-            rgb,
-        }
-    }
 }
 
 impl From<Color> for RGB {
@@ -266,7 +338,7 @@ impl From<RGB> for TwitchColor {
         twitch_colors()
             .iter()
             .find(|(_, color)| *color == rgb)
-            .map(|&(c, _)| c)
+            .map(|&(color, _)| color)
             .unwrap_or_else(|| TwitchColor::Turbo)
     }
 }
@@ -276,12 +348,15 @@ impl From<TwitchColor> for RGB {
         twitch_colors()
             .iter()
             .find(|(c, _)| *c == color)
-            .map(|&(_, r)| r)
+            .map(|&(_, rgb)| rgb)
             .unwrap_or_default()
     }
 }
 
-/// A helper method that returns a const array of [`TwitchColor`](./enum.TwitchColor.html) colors to [`RGB`](./struct.RGB.html)
+/// A utility method that returns an array of [TwitchColor]s mapped to its corresponding [RGB]
+///
+/// [TwitchColor]: ./enum.TwitchColor.html
+/// [RGB]: ./struct.RGB.html
 pub const fn twitch_colors() -> [(TwitchColor, RGB); 15] {
     use TwitchColor::*;
     [
@@ -306,12 +381,76 @@ pub const fn twitch_colors() -> [(TwitchColor, RGB); 15] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn parse_color() {
-        let color: Color = "blue".parse().unwrap();
-        assert_eq!(color.kind, TwitchColor::Blue);
-        assert_eq!(color.rgb, RGB(0, 0, 255));
-        assert_eq!(color.to_string(), "Blue");
+        use TwitchColor::*;
+        let colors = vec![
+            (Blue, vec!["Blue", "blue"]),
+            (
+                BlueViolet,
+                vec!["BlueViolet", "Blue_Violet", "Blue Violet", "blue_violet"],
+            ),
+            (
+                CadetBlue,
+                vec!["CadetBlue", "Cadet_Blue", "Cadet Blue", "cadet_blue"],
+            ),
+            (Chocolate, vec!["Chocolate", "chocolate"]),
+            (Coral, vec!["Coral", "coral"]),
+            (
+                DodgerBlue,
+                vec!["DodgerBlue", "Dodger_Blue", "Dodger Blue", "dodger_blue"],
+            ),
+            (Firebrick, vec!["Firebrick", "firebrick"]),
+            (
+                GoldenRod,
+                vec!["GoldenRod", "Golden_Rod", "Golden Rod", "golden_rod"],
+            ),
+            (Green, vec!["Green", "green"]),
+            (HotPink, vec!["HotPink", "Hot_Pink", "Hot Pink", "hot_pink"]),
+            (
+                OrangeRed,
+                vec!["OrangeRed", "Orange_Red", "Orange Red", "orange_red"],
+            ),
+            (Red, vec!["Red", "red"]),
+            (
+                SeaGreen,
+                vec!["SeaGreen", "Sea_Green", "Sea Green", "sea_green"],
+            ),
+            (
+                SpringGreen,
+                vec![
+                    "SpringGreen",
+                    "Spring_Green",
+                    "Spring Green",
+                    "spring_green",
+                ],
+            ),
+            (
+                YellowGreen,
+                vec![
+                    "YellowGreen",
+                    "Yellow_Green",
+                    "Yellow Green",
+                    "yellow_green",
+                ],
+            ),
+        ];
+
+        let twitch_colors = twitch_colors();
+        for (tc, names) in colors {
+            for name in names {
+                let color: Color = name.parse().unwrap();
+                assert_eq!(color.kind, tc);
+                if let Some(rgb) = twitch_colors
+                    .iter()
+                    .find(|(c, _)| c == &color.kind)
+                    .map(|(_, r)| r)
+                {
+                    assert_eq!(color.rgb, *rgb);
+                }
+            }
+        }
     }
 
     #[test]
@@ -327,35 +466,23 @@ mod tests {
         assert_eq!(color.to_string(), "#FAFAFA");
     }
 
-    #[cfg(feature = "serde")]
     #[test]
-    fn round_trip_color() {
-        let color: Color = "blue".parse().unwrap();
-        let json = serde_json::to_string(&color).unwrap();
-        let parsed: Color = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, color);
-        assert_eq!(color.kind, TwitchColor::Blue);
-        assert_eq!(color.rgb, RGB(0, 0, 255));
-        assert_eq!(color.to_string(), "Blue");
+    fn fields() {
+        let rgb = RGB(0x27, 255, 82);
+        assert_eq!(rgb.red(), 39);
+        assert_eq!(rgb.green(), 255);
+        assert_eq!(rgb.blue(), 82);
     }
 
-    #[cfg(feature = "serde")]
     #[test]
-    fn round_trip_turbo_color() {
-        let color: Color = "#FAFAFA".parse().unwrap();
-        let json = serde_json::to_string(&color).unwrap();
-        let parsed: Color = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, color);
-        assert_eq!(color.kind, TwitchColor::Turbo);
-        assert_eq!(color.rgb, RGB(250, 250, 250));
-        assert_eq!(color.to_string(), "#FAFAFA");
+    fn format_rgb() {
+        let rgb = RGB(0x27, 255, 82);
+        assert_eq!(rgb.to_string(), "#27FF52")
+    }
 
-        let color: Color = "FAFAFA".parse().unwrap();
-        let json = serde_json::to_string(&color).unwrap();
-        let parsed: Color = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, color);
-        assert_eq!(color.kind, TwitchColor::Turbo);
-        assert_eq!(color.rgb, RGB(250, 250, 250));
-        assert_eq!(color.to_string(), "#FAFAFA");
+    #[test]
+    fn default_rgb() {
+        let rgb = RGB::default();
+        assert_eq!(rgb, RGB(0xFF, 0xFF, 0xFF))
     }
 }

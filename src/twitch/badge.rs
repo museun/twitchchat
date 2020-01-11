@@ -1,55 +1,66 @@
-/// BadgeKind are the `kind` of badges that are associated with messages.
+/// The kind of the [badges] that are associated with messages.
 ///
-/// Any unknown (e.g. custom badges/sub events, etc) are placed into the
-/// `Unknown` variant
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+/// Any unknonw (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.
+///
+/// [badges]: ./struct.Badge.html
+/// [Unknown]: ./enum.BadgeKind.html#variant.Unknown
+#[non_exhaustive]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum BadgeKind {
+pub enum BadgeKind<T>
+where
+    T: crate::StringMarker,
+{
     /// Admin badge
     Admin,
     /// Bits badge
     Bits,
     /// Broadcaster badge
     Broadcaster,
-    /// Global moderator badge
+    /// GlobalMod badge
     GlobalMod,
-    /// Channel moderator badge
+    /// Moderator badge
     Moderator,
     /// Subscriber badge
     Subscriber,
-    /// Twitch staff badge
+    /// Staff badge
     Staff,
     /// Turbo badge
     Turbo,
-    /// Twitch Prime badge
+    /// Premium badge
     Premium,
-    /// VIP Badge
+    /// VIP badge
     VIP,
     /// Partner badge
     Partner,
-    /// An Unknown badge
-    Unknown(String),
-    // Reserve the right to add more fields to this enum
-    #[doc(hidden)]
-    __Nonexhaustive,
+    /// Unknown badge. Likely a custom badge
+    Unknown(T),
 }
 
 /// Badges attached to a message
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Badge {
-    /// The kind of Badge
-    pub kind: BadgeKind,
+pub struct Badge<T>
+where
+    T: crate::StringMarker,
+{
+    /// The kind of the Badge
+    pub kind: BadgeKind<T>,
     /// Any associated data with the badge
     ///
-    /// May be the version, the number of bits, the number of months needed for the subscriber badge, etc.
-    pub data: String,
+    /// May be:
+    /// - version
+    /// - number of bits
+    /// - number of months needed for sub badge
+    /// - etc
+    pub data: T,
 }
 
-impl Badge {
-    pub(crate) fn parse(input: &str) -> Option<Self> {
+impl<'a> Badge<&'a str> {
+    /// Tries to parse a badge from this message part
+    pub fn parse(input: &'a str) -> Option<Badge<&'a str>> {
         use BadgeKind::*;
-        let input = input.to_ascii_lowercase();
+
         let mut iter = input.split('/');
         let kind = match iter.next()? {
             "admin" => Admin,
@@ -63,15 +74,13 @@ impl Badge {
             "premium" => Premium,
             "vip" => VIP,
             "partner" => Partner,
-            badge => Unknown(badge.to_string()),
+            badge => Unknown(badge),
         };
-        Some(Badge {
-            kind,
-            data: iter.next()?.to_string(),
-        })
+        iter.next().map(|data| Self { kind, data })
     }
 }
 
-/// Metadata related to the chat badges.
-// TODO verify that this is mirrored
-pub type BadgeInfo = Badge;
+/// Metadata to the chat badges
+pub type BadgeInfo<T> = Badge<T>;
+
+// TODO tests

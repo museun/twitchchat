@@ -1,13 +1,40 @@
-use super::*;
-
 /// Simple channel wrapper.
 ///
 /// This ensures the twitch channels align with IRC naming scheme.
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Channel(String);
 
+/// An error produced by invalid channel names
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum Error {
+    /// Channel name was empty
+    EmptyChannelName,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::EmptyChannelName => f.write_str("empty channel name"),
+        }
+    }
+}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+}
+
 /// A trait to convert types into [`Channel`](./struct.Channel.html)
+///
+/// ```rust
+/// # use twitchchat::*;
+/// let channel : Channel = "museun".into_channel().unwrap();
+/// assert_eq!(*channel, "#museun");
+///
+/// let channel : Channel = "#museun".into_channel().unwrap();
+/// assert_eq!(*channel, "#museun");
+/// ```
 pub trait IntoChannel {
     /// Tries to convert this type a channel
     fn into_channel(self) -> Result<Channel, Error>;
@@ -89,10 +116,7 @@ mod tests {
     #[test]
     fn bad_channel() {
         let err = Channel::validate("").unwrap_err();
-        if let Error::EmptyChannelName = err {
-        } else {
-            panic!("wrong error: {}", err)
-        }
+        matches::assert_matches!(err, Error::EmptyChannelName);
     }
 
     #[test]

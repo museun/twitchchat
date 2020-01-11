@@ -1,16 +1,3 @@
-# twitchchat
-This crate provides a way to interace with [Twitch]'s chat.
-
-Along with the messages as Rust types, it provides methods for sending messages.
-
-## License
-`twitchchat` is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
-
-See LICENSE-APACHE and LICENSE-MIT for details.
-
-
-## A demo of the API:
-```rust
 #[tokio::main]
 async fn main() {
     use futures::prelude::*;
@@ -136,6 +123,3 @@ async fn main() {
     // clearing the subscriptions would close each event stream
     client.dispatcher().await.clear_subscriptions_all();
 }
-```
-
-[Twitch]: https://dev.twitch.tv/docs/irc
