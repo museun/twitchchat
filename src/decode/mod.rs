@@ -10,7 +10,7 @@ type Result<T> = std::result::Result<T, ParseError>;
 ```rust
 # use twitchchat::*;
 let input = ":test!test@test JOIN #museun\r\n";
-let (pos, message) = decode(&input).unwrap();
+let (pos, message) = decode_one(&input).unwrap();
 assert_eq!(pos, 0); // no more messages were found
 
 let expected = messages::Raw {
@@ -28,7 +28,7 @@ assert_eq!(message, expected);
 ```rust
 # use twitchchat::*;
 let input = ":test!test@test JOIN #museun\r\n:test!test@test JOIN #shaken_bot\r\n";
-let (pos, message) = decode(&input).unwrap();
+let (pos, message) = decode_one(&input).unwrap();
 assert_eq!(pos, 30); // another message probably starts at offset '30'
 
 let expected = messages::Raw {
@@ -42,7 +42,7 @@ let expected = messages::Raw {
 assert_eq!(message, expected);
 
 // continue from where it left off
-let (pos, message) = decode(&input[pos..]).unwrap();
+let (pos, message) = decode_one(&input[pos..]).unwrap();
 assert_eq!(pos, 0); // no more messages were found
 
 let expected = messages::Raw {
@@ -56,7 +56,7 @@ let expected = messages::Raw {
 assert_eq!(message, expected);
 ```
 */
-pub fn decode(input: &str) -> Result<(usize, Message<&'_ str>)> {
+pub fn decode_one(input: &str) -> Result<(usize, Message<&'_ str>)> {
     let pos = input
         .find("\r\n")
         .ok_or_else(|| ParseError::IncompleteMessage { pos: 0 })?;
@@ -91,13 +91,13 @@ let expected = &[
     },
 ];
 
-for (message, expected) in decode_many(&input).zip(expected.iter()) {
+for (message, expected) in decode(&input).zip(expected.iter()) {
     let msg = message.expect("valid message");
     assert_eq!(msg, *expected);
 }
 ```
 */
-pub fn decode_many(input: &str) -> impl Iterator<Item = Result<Message<&'_ str>>> + '_ {
+pub fn decode(input: &str) -> impl Iterator<Item = Result<Message<&'_ str>>> + '_ {
     ParseIter::new(input)
 }
 

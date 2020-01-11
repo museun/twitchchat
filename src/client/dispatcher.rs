@@ -313,7 +313,7 @@ mod tests {
             }
         };
 
-        let msg = crate::decode("foobar\r\n").map(|(_, msg)| msg).unwrap();
+        let msg = crate::decode_one("foobar\r\n").map(|(_, msg)| msg).unwrap();
 
         let test = async move {
             let keep = tokio::task::spawn(keep);

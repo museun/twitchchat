@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn from_test() {
         use crate::{Conversion, Parse};
-        let msg = crate::decode_many(":test!test@test JOIN #museun\r\n")
+        let msg = crate::decode(":test!test@test JOIN #museun\r\n")
             .next()
             .unwrap()
             .unwrap();

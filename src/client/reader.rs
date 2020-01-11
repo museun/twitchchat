@@ -10,7 +10,7 @@ where
     let mut reader = tokio::io::BufReader::new(read).lines();
     while let Some(line) = reader.next().await {
         let line = line? + "\r\n";
-        for msg in crate::decode_many(&line) {
+        for msg in crate::decode(&line) {
             let msg = msg?;
             log::trace!("< {}", msg.raw.escape_debug());
             dispatcher.lock().await.dispatch(&msg);

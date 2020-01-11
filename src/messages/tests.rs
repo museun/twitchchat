@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn raw_borrowed() {
     let input = ":museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :testing over here\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Raw::<&str>::parse(&msg).unwrap(),
             Raw {
@@ -21,7 +21,7 @@ fn raw_borrowed() {
 #[test]
 fn raw_owned() {
     let input = ":museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :testing over here\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Raw::<String>::parse(&msg).unwrap(),
             Raw {
@@ -41,7 +41,7 @@ fn raw_owned() {
 #[test]
 fn user_notice_message_borrowed() {
     let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserNotice::<&str>::parse(&msg).unwrap(),
             UserNotice {
@@ -56,7 +56,7 @@ fn user_notice_message_borrowed() {
 #[test]
 fn user_notice_message_owned() {
     let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserNotice::<String>::parse(&msg).unwrap(),
             UserNotice {
@@ -71,7 +71,7 @@ fn user_notice_message_owned() {
 #[test]
 fn user_notice_borrowed() {
     let input = ":tmi.twitch.tv USERNOTICE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserNotice::<&str>::parse(&msg).unwrap(),
             UserNotice {
@@ -86,7 +86,7 @@ fn user_notice_borrowed() {
 #[test]
 fn user_notice_owned() {
     let input = ":tmi.twitch.tv USERNOTICE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserNotice::<String>::parse(&msg).unwrap(),
             UserNotice {
@@ -101,7 +101,7 @@ fn user_notice_owned() {
 #[test]
 fn room_state_borrowed() {
     let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             RoomState::<&str>::parse(&msg).unwrap(),
             RoomState {
@@ -115,7 +115,7 @@ fn room_state_borrowed() {
 #[test]
 fn room_state_owned() {
     let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             RoomState::<String>::parse(&msg).unwrap(),
             RoomState {
@@ -130,7 +130,7 @@ fn room_state_owned() {
 fn names_start_borrowed() {
     let input =
         ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Names::<&str>::parse(&msg).unwrap(),
             Names {
@@ -148,7 +148,7 @@ fn names_start_borrowed() {
 fn names_start_owned() {
     let input =
         ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Names::<String>::parse(&msg).unwrap(),
             Names {
@@ -165,7 +165,7 @@ fn names_start_owned() {
 #[test]
 fn names_end_borrowed() {
     let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Names::<&str>::parse(&msg).unwrap(),
             Names {
@@ -180,7 +180,7 @@ fn names_end_borrowed() {
 #[test]
 fn names_end_owned() {
     let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Names::<String>::parse(&msg).unwrap(),
             Names {
@@ -195,7 +195,7 @@ fn names_end_owned() {
 #[test]
 fn global_user_state_borrowed() {
     let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             GlobalUserState::<&str>::parse(&msg).unwrap(),
             GlobalUserState {
@@ -212,7 +212,7 @@ fn global_user_state_borrowed() {
 #[test]
 fn global_user_state_owned() {
     let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             GlobalUserState::<String>::parse(&msg).unwrap(),
             GlobalUserState {
@@ -229,7 +229,7 @@ fn global_user_state_owned() {
 #[test]
 fn host_target_borrowed() {
     let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun 1024\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::<&str>::parse(&msg).unwrap(),
             HostTarget {
@@ -244,7 +244,7 @@ fn host_target_borrowed() {
 #[test]
 fn host_target_owned() {
     let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun 1024\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::<String>::parse(&msg).unwrap(),
             HostTarget {
@@ -261,7 +261,7 @@ fn host_target_owned() {
 #[test]
 fn host_target_none_borrowed() {
     let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::<&str>::parse(&msg).unwrap(),
             HostTarget {
@@ -276,7 +276,7 @@ fn host_target_none_borrowed() {
 #[test]
 fn host_target_none_owned() {
     let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::<String>::parse(&msg).unwrap(),
             HostTarget {
@@ -300,7 +300,7 @@ fn cap_acknowledged_borrowed() {
         "twitch.tv/tags",
         "twitch.tv/commands",
     ];
-    for (msg, expected) in crate::decode_many(&input)
+    for (msg, expected) in crate::decode(&input)
         .map(|s| s.unwrap())
         .zip(expected.into_iter())
     {
@@ -320,7 +320,7 @@ fn cap_acknowledged_owned() {
         "twitch.tv/tags",
         "twitch.tv/commands",
     ];
-    for (msg, expected) in crate::decode_many(&input)
+    for (msg, expected) in crate::decode(&input)
         .map(|s| s.unwrap())
         .zip(expected.into_iter())
     {
@@ -333,7 +333,7 @@ fn cap_acknowledged_owned() {
 #[test]
 fn cap_failed_borrowed() {
     let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         let cap = Cap::<&str>::parse(&msg).unwrap();
         assert!(!cap.acknowledged);
         assert_eq!(cap.capability, "foobar");
@@ -343,7 +343,7 @@ fn cap_failed_borrowed() {
 #[test]
 fn cap_failed_owned() {
     let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         let cap = Cap::<String>::parse(&msg).unwrap();
         assert!(!cap.acknowledged);
         assert_eq!(cap.capability, "foobar".to_string());
@@ -353,7 +353,7 @@ fn cap_failed_owned() {
 #[test]
 fn clear_chat_borrowed() {
     let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearChat::<&str>::parse(&msg).unwrap(),
             ClearChat {
@@ -368,7 +368,7 @@ fn clear_chat_borrowed() {
 #[test]
 fn clear_chat_owned() {
     let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearChat::<String>::parse(&msg).unwrap(),
             ClearChat {
@@ -383,7 +383,7 @@ fn clear_chat_owned() {
 #[test]
 fn clear_chat_empty_borrowed() {
     let input = ":tmi.twitch.tv CLEARCHAT #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearChat::<&str>::parse(&msg).unwrap(),
             ClearChat {
@@ -398,7 +398,7 @@ fn clear_chat_empty_borrowed() {
 #[test]
 fn clear_chat_empty_owned() {
     let input = ":tmi.twitch.tv CLEARCHAT #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearChat::<String>::parse(&msg).unwrap(),
             ClearChat {
@@ -413,7 +413,7 @@ fn clear_chat_empty_owned() {
 #[test]
 fn clear_msg_borrowed() {
     let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearMsg::<&str>::parse(&msg).unwrap(),
             ClearMsg {
@@ -428,7 +428,7 @@ fn clear_msg_borrowed() {
 #[test]
 fn clear_msg_owned() {
     let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearMsg::<String>::parse(&msg).unwrap(),
             ClearMsg {
@@ -443,7 +443,7 @@ fn clear_msg_owned() {
 #[test]
 fn clear_msg_empty_borrowed() {
     let input = ":tmi.twitch.tv CLEARMSG #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearMsg::<&str>::parse(&msg).unwrap(),
             ClearMsg {
@@ -458,7 +458,7 @@ fn clear_msg_empty_borrowed() {
 #[test]
 fn clear_msg_empty_owned() {
     let input = ":tmi.twitch.tv CLEARMSG #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             ClearMsg::<String>::parse(&msg).unwrap(),
             ClearMsg {
@@ -473,7 +473,7 @@ fn clear_msg_empty_owned() {
 #[test]
 fn irc_ready_borrowed() {
     let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             IrcReady::<&str>::parse(&msg).unwrap(),
             IrcReady {
@@ -486,7 +486,7 @@ fn irc_ready_borrowed() {
 #[test]
 fn irc_ready_owned() {
     let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             IrcReady::<String>::parse(&msg).unwrap(),
             IrcReady {
@@ -498,7 +498,7 @@ fn irc_ready_owned() {
 
 #[test]
 fn join_bad_command_borrowed() {
-    let input = crate::decode_many(":tmi.twitch.tv NOT_JOIN #foo\r\n")
+    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -512,7 +512,7 @@ fn join_bad_command_borrowed() {
 
 #[test]
 fn join_bad_nick_borrowed() {
-    let input = crate::decode_many(":tmi.twitch.tv JOIN #foo\r\n")
+    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -523,7 +523,7 @@ fn join_bad_nick_borrowed() {
 
 #[test]
 fn join_bad_channel_borrowed() {
-    let input = crate::decode_many(":tmi.twitch.tv JOIN\r\n")
+    let input = crate::decode(":tmi.twitch.tv JOIN\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -534,7 +534,7 @@ fn join_bad_channel_borrowed() {
 
 #[test]
 fn join_bad_command_owned() {
-    let input = crate::decode_many(":tmi.twitch.tv NOT_JOIN #foo\r\n")
+    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -548,7 +548,7 @@ fn join_bad_command_owned() {
 
 #[test]
 fn join_bad_nick_owned() {
-    let input = crate::decode_many(":tmi.twitch.tv JOIN #foo\r\n")
+    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -559,7 +559,7 @@ fn join_bad_nick_owned() {
 
 #[test]
 fn join_bad_channel_owned() {
-    let input = crate::decode_many(":tmi.twitch.tv JOIN\r\n")
+    let input = crate::decode(":tmi.twitch.tv JOIN\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -571,7 +571,7 @@ fn join_bad_channel_owned() {
 #[test]
 fn join_borrowed() {
     let input = ":test!test@test JOIN #foo\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Join::<&str>::parse(&msg).unwrap(),
             Join {
@@ -585,7 +585,7 @@ fn join_borrowed() {
 #[test]
 fn join_owned() {
     let input = ":test!test@test JOIN #foo\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Join::<String>::parse(&msg).unwrap(),
             Join {
@@ -599,7 +599,7 @@ fn join_owned() {
 #[test]
 fn mode_lost_borrowed() {
     let input = ":jtv MODE #museun -o shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Mode::<&str>::parse(&msg).unwrap(),
             Mode {
@@ -614,7 +614,7 @@ fn mode_lost_borrowed() {
 #[test]
 fn mode_gained_borrowed() {
     let input = ":jtv MODE #museun +o shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Mode::<&str>::parse(&msg).unwrap(),
             Mode {
@@ -629,7 +629,7 @@ fn mode_gained_borrowed() {
 #[test]
 fn mode_lost_owned() {
     let input = ":jtv MODE #museun -o shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Mode::<String>::parse(&msg).unwrap(),
             Mode {
@@ -644,7 +644,7 @@ fn mode_lost_owned() {
 #[test]
 fn mode_gained_owned() {
     let input = ":jtv MODE #museun +o shaken_bot\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Mode::<String>::parse(&msg).unwrap(),
             Mode {
@@ -659,7 +659,7 @@ fn mode_gained_owned() {
 #[test]
 fn notice_borrowed() {
     let input = ":tmi.twitch.tv NOTICE #museun :This room is no longer in slow mode.\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Notice::<&str>::parse(&msg).unwrap(),
             Notice {
@@ -674,7 +674,7 @@ fn notice_borrowed() {
 #[test]
 fn notice_owned() {
     let input = ":tmi.twitch.tv NOTICE #museun :This room is no longer in slow mode.\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Notice::<String>::parse(&msg).unwrap(),
             Notice {
@@ -689,7 +689,7 @@ fn notice_owned() {
 #[test]
 fn part_borrowed() {
     let input = ":test!test@test PART #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Part::<&str>::parse(&msg).unwrap(),
             Part {
@@ -703,7 +703,7 @@ fn part_borrowed() {
 #[test]
 fn part_owned() {
     let input = ":test!test@test PART #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Part::<String>::parse(&msg).unwrap(),
             Part {
@@ -717,7 +717,7 @@ fn part_owned() {
 #[test]
 fn ping_borrowed() {
     let input = "PING :1234567890\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Ping::<&str>::parse(&msg).unwrap(),
             Ping {
@@ -730,7 +730,7 @@ fn ping_borrowed() {
 #[test]
 fn ping_owned() {
     let input = "PING :1234567890\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Ping::<String>::parse(&msg).unwrap(),
             Ping {
@@ -743,7 +743,7 @@ fn ping_owned() {
 #[test]
 fn pong_borrowed() {
     let input = "PONG :1234567890\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Pong::<&str>::parse(&msg).unwrap(),
             Pong {
@@ -756,7 +756,7 @@ fn pong_borrowed() {
 #[test]
 fn pong_owned() {
     let input = "PONG :1234567890\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Pong::<String>::parse(&msg).unwrap(),
             Pong {
@@ -769,7 +769,7 @@ fn pong_owned() {
 #[test]
 fn privmsg_borrowed() {
     let input = ":test!user@host PRIVMSG #museun :this is a test\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Privmsg::<&str>::parse(&msg).unwrap(),
             Privmsg {
@@ -785,7 +785,7 @@ fn privmsg_borrowed() {
 #[test]
 fn privmsg_owned() {
     let input = ":test!user@host PRIVMSG #museun :this is a test\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Privmsg::<String>::parse(&msg).unwrap(),
             Privmsg {
@@ -801,7 +801,7 @@ fn privmsg_owned() {
 #[test]
 fn ready_borrowed() {
     let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Ready::<&str>::parse(&msg).unwrap(),
             Ready {
@@ -814,7 +814,7 @@ fn ready_borrowed() {
 #[test]
 fn ready_owned() {
     let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             Ready::<String>::parse(&msg).unwrap(),
             Ready {
@@ -827,7 +827,7 @@ fn ready_owned() {
 #[test]
 fn reconnect() {
     let input = ":tmi.twitch.tv RECONNECT\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(Reconnect::parse(&msg).unwrap(), Reconnect {});
     }
 }
@@ -835,7 +835,7 @@ fn reconnect() {
 #[test]
 fn user_state_borrowed() {
     let input = ":tmi.twitch.tv USERSTATE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserState::<&str>::parse(&msg).unwrap(),
             UserState {
@@ -849,7 +849,7 @@ fn user_state_borrowed() {
 #[test]
 fn user_state_owned() {
     let input = ":tmi.twitch.tv USERSTATE #museun\r\n";
-    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             UserState::<String>::parse(&msg).unwrap(),
             UserState {

@@ -1,4 +1,3 @@
-
 use super::*;
 #[test]
 fn parse_user_prefix() {
@@ -38,37 +37,37 @@ fn missing_colon_prefix() {
 }
 
 #[test]
-fn decode() {
+fn decode_one() {
     let input = ":foo!bar@baz PRIVMSG #test :this is a test\r\n:local.host PING :1234\r\n";
-    let (next, _msg) = super::decode(input).unwrap();
+    let (next, _msg) = super::decode_one(input).unwrap();
     assert!(next > 0);
 
     // this should be the last message
-    let (next, _msg) = super::decode(&input[next..]).unwrap();
+    let (next, _msg) = super::decode_one(&input[next..]).unwrap();
     assert_eq!(next, 0);
 
     // try with a bad element at the end
     let input = ":foo!bar@baz PRIVMSG #test :this is a test\r\n:local.host PING :1234\r\nfoo";
     {
-        let (next, _msg) = super::decode(input).unwrap();
+        let (next, _msg) = super::decode_one(input).unwrap();
         assert!(next > 0);
 
         let input = &input[next..];
-        let (next, _msg) = super::decode(&input).unwrap();
+        let (next, _msg) = super::decode_one(&input).unwrap();
         assert!(next > 0);
 
         // last one should be an error
         let input = &input[next..];
-        super::decode(&input).unwrap_err();
+        super::decode_one(&input).unwrap_err();
     }
 }
 
 #[test]
-fn decode_many() {
+fn decode() {
     let input = ":foo!bar@baz PRIVMSG #test :this is a test\r\n:local.host PING :1234\r\nfoo";
 
     // try with the iterator
-    let mut vec = super::decode_many(input).collect::<Vec<_>>();
+    let mut vec = super::decode(input).collect::<Vec<_>>();
     assert_eq!(vec.len(), 3);
 
     // last one should be an error
@@ -79,7 +78,7 @@ fn decode_many() {
     }
 
     // remove all of the bad ones, only keep the 'success'
-    let vec = super::decode_many(input).flatten().collect::<Vec<_>>();
+    let vec = super::decode(input).flatten().collect::<Vec<_>>();
     assert_eq!(vec.len(), 2);
 }
 

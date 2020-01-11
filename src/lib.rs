@@ -151,7 +151,7 @@ cfg_async! {
 /// Decode messages from a `&str`
 pub mod decode;
 #[doc(inline)]
-pub use decode::{decode, decode_many};
+pub use decode::{decode, decode_one};
 
 /// Encode messages to a writer
 pub mod encode;
@@ -419,7 +419,7 @@ pub mod sync;
 /// # use twitchchat::*;
 /// # use twitchchat::messages::*;
 /// let input = ":test!test@test JOIN #museun\r\n";
-/// let message : Raw<&str> = decode::decode_many(&input).next().unwrap().unwrap();
+/// let message : Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
 /// let message_owned : Raw<String> = message.as_owned();
 ///
 /// let join : Join<&str> = Join::parse(&message).unwrap();
@@ -447,7 +447,7 @@ pub trait Conversion<'a> {
 /// # use twitchchat::*;
 /// # use twitchchat::messages::*;
 /// let input = ":test!test@test JOIN #museun\r\n";
-/// let message : Raw<&str> = decode::decode_many(&input).next().unwrap().unwrap();
+/// let message : Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
 /// let join : Join<&str> = Join::parse(&message).unwrap();
 /// assert_eq!(join, Join { channel: "#museun", user: "test" });
 /// ```
