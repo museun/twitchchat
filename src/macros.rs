@@ -8,6 +8,16 @@ macro_rules! cfg_async {
     }
 }
 
+macro_rules! from_impl {
+    ($ty:tt) => {
+        impl<'a> From<$ty<&'a str>> for $ty<String> {
+            fn from(d: $ty<&'a str>) -> $ty<String> {
+                d.as_owned()
+            }
+        }
+    };
+}
+
 macro_rules! conversion {
     ($ty:tt { $($field:ident),* $(,)? }) => {
         impl<'a, T> Conversion<'a> for $ty<T>
@@ -67,6 +77,7 @@ macro_rules! parse {
 
     ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
         conversion!($ty { $($field,)* });
+        from_impl!($ty);
         parse!(bare $ty { $($field,)* } => $body);
     };
 
@@ -132,4 +143,20 @@ macro_rules! export_modules_without_docs {
     ($($module:ident)*) => {
         $( #[allow(missing_docs)] mod $module; pub use $module::*; )*
     };
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn from_test() {
+        use crate::{Conversion, Parse};
+        let msg = crate::decode_many(":test!test@test JOIN #museun\r\n")
+            .next()
+            .unwrap()
+            .unwrap();
+
+        let join: crate::messages::Join<&str> = crate::messages::Join::parse(&msg).unwrap();
+        let join: crate::messages::Join<String> = join.into();
+        assert_eq!(join, join.as_owned());
+    }
 }
