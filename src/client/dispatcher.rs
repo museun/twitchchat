@@ -51,12 +51,25 @@ impl Dispatcher {
     Use an event from [Events][Event] and subscribe will produce an [`EventStream<Arc<T::Mapped>>`][EventStream] which corresponds to the message in [Messages][Message].
 
     ## A table of mappings
-    Event                    | Message                      | Description
-    ---                      | ---                          | ---
-    [Join][join_event]       | [Join][join_msg]             | ***TODO*** some description goes here
-    [Part][part_event]       | [Part][part_msg]             | ***TODO*** some description goes here
-    [Privmsg][privmsg_event] | [Privmsg][privmsg_msg]       | ***TODO*** some description goes here
-    [Raw][raw_event]         | [RawMessage][rawmessage_msg] | ***TODO*** some description goes here
+    Event                                    | Message                                    | Description
+    ---                                      | ---                                        | ---
+    [Cap][Cap_event]                         | [Cap][Cap_message]                         | Capability response from the server
+    [ClearChat][ClearChat_event]             | [ClearChat][ClearChat_message]             | Someone cleared the chat
+    [ClearMsg][ClearMsg_event]               | [ClearMsg][ClearMsg_message]               | Someone removed a users message(s)
+    [GlobalUserState][GlobalUserState_event] | [GlobalUserState][GlobalUserState_message] | Your user information from the server
+    [HostTarget][HostTarget_event]           | [HostTarget][HostTarget_message]           | When a channel hosts/unhosts another channel
+    [IrcReady][IrcReady_event]               | [IrcReady][IrcReady_message]               | When the IRC connection is ready
+    [Join][Join_event]                       | [Join][Join_message]                       | When a user joins a channel
+    [Mode][Mode_event]                       | [Mode][Mode_message]                       | When someone gains/loses moderator status
+    [Notice][Notice_event]                   | [Notice][Notice_message]                   | General notices from the server
+    [Part][Part_event]                       | [Part][Part_message]                       | When a user leaves a channel
+    [Ping][Ping_event]                       | [Ping][Ping_message]                       | Server requesting a response (for heartbeat/connection tracking)
+    [Pong][Pong_event]                       | [Pong][Pong_message]                       | Server responding to a user-provided PING
+    [Privmsg][Privmsg_event]                 | [Privmsg][Privmsg_message]                 | A normal message sent by a user
+    [Raw][Raw_event]                         | [Raw][Raw_message]                         | The raw message before being specialized
+    [Ready][Ready_event]                     | [Ready][Ready_message]                     | When the Twitch connection is ready
+    [Reconnect][Reconnect_event]             | [Reconnect][Reconnect_message]             | Server asking you to reconnect
+    [UserState][UserState_event]             | [UserState][UserState_message]             | Identifies a user's chat settings or properties (e.g., chat color).
 
     # Disconnection
     The stream will also yield ***None*** when the `Dispatcher` is dropped.
@@ -68,14 +81,42 @@ impl Dispatcher {
     [EventStream]: ../events/struct.EventStream.html
     [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 
-    [join_event]: ./events/struct.Join.html
-    [join_msg]: ./messages/struct.Join.html
-    [part_event]: ./events/struct.Part.html
-    [part_msg]: ./messages/struct.Part.html
-    [privmsg_event]: ./events/struct.Privmsg.html
-    [privmsg_msg]: ./messages/struct.Privmsg.html
-    [raw_event]: ./events/struct.Raw.html
-    [rawmessage_msg]: ./messages/struct.Rawmessage.html
+    [Cap_event]: ../events/struct.Cap.html
+    [ClearChat_event]: ../events/struct.ClearChat.html
+    [ClearMsg_event]: ../events/struct.ClearMsg.html
+    [GlobalUserState_event]: ../events/struct.GlobalUserState.html
+    [HostTarget_event]: ../events/struct.HostTarget.html
+    [IrcReady_event]: ../events/struct.IrcReady.html
+    [Join_event]: ../events/struct.Join.html
+    [Mode_event]: ../events/struct.Mode.html
+    [Notice_event]: ../events/struct.Notice.html
+    [Part_event]: ../events/struct.Part.html
+    [Ping_event]: ../events/struct.Ping.html
+    [Pong_event]: ../events/struct.Pong.html
+    [Privmsg_event]: ../events/struct.Privmsg.html
+    [Raw_event]: ../events/struct.Raw.html
+    [Ready_event]: ../events/struct.Ready.html
+    [Reconnect_event]: ../events/struct.Reconnect.html
+    [UserState_event]: ../events/struct.UserState.html
+
+    [Cap_message]: ../messages/struct.Cap.html
+    [ClearChat_message]: ../messages/struct.ClearChat.html
+    [ClearMsg_message]: ../messages/struct.ClearMsg.html
+    [GlobalUserState_message]: ../messages/struct.GlobalUserState.html
+    [HostTarget_message]: ../messages/struct.HostTarget.html
+    [IrcReady_message]: ../messages/struct.IrcReady.html
+    [Join_message]: ../messages/struct.Join.html
+    [Mode_message]: ../messages/struct.Mode.html
+    [Notice_message]: ../messages/struct.Notice.html
+    [Part_message]: ../messages/struct.Part.html
+    [Ping_message]: ../messages/struct.Ping.html
+    [Pong_message]: ../messages/struct.Pong.html
+    [Privmsg_message]: ../messages/struct.Privmsg.html
+    [Raw_message]: ../messages/struct.Raw.html
+    [Ready_message]: ../messages/struct.Ready.html
+    [Reconnect_message]: ../messages/struct.Reconnect.html
+    [UserState_message]: ../messages/struct.UserState.html
+
     */
     pub fn subscribe<'a, T>(&mut self) -> EventStream<Arc<T::Mapped>>
     where

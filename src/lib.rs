@@ -127,6 +127,18 @@ async fn main() {
 [Twitch]: https://www.twitch.tv
 */
 
+#![warn(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
+
 #[macro_use]
 mod macros;
 
@@ -209,21 +221,23 @@ impl Secure {
 }
 
 cfg_async! {
-    /// Write the provided `UserConfig` to the ***async*** writer
-    ///
-    /// # Example
-    /// ```rust
-    /// # use twitchchat::*;
-    /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
-    /// let config = UserConfig::builder().anonymous().build().unwrap();
-    /// let mut writer = vec![];
-    /// register(&config, &mut writer).await.unwrap();
-    /// assert_eq!(
-    ///     std::str::from_utf8(&writer).unwrap(),
-    ///     "PASS justinfan1234\r\nNICK justinfan1234\r\n"
-    /// );
-    /// # });
-    /// ```
+    /**
+    Write the provided `UserConfig` to the ***async*** writer
+
+    # Example
+    ```rust
+    # use twitchchat::*;
+    # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    let config = UserConfig::builder().anonymous().build().unwrap();
+    let mut writer = vec![];
+    register(&config, &mut writer).await.unwrap();
+    assert_eq!(
+        std::str::from_utf8(&writer).unwrap(),
+        "PASS justinfan1234\r\nNICK justinfan1234\r\n"
+    );
+    # });
+    ```
+    */
     pub async fn register<W: ?Sized>(
         user_config: &UserConfig,
         writer: &mut W,
