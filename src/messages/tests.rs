@@ -1,5 +1,4 @@
 use super::*;
-use crate::Parse as _;
 
 #[test]
 fn raw_borrowed() {
