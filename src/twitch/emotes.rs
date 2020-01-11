@@ -23,6 +23,7 @@ pub struct Emotes {
 
 impl Emotes {
     /// Parse emotes from a string, returning an iterator over each emote
+    #[allow(dead_code)]
     pub(crate) fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
         input.split_terminator('/').filter_map(|s| {
             get_parts(s, ':').and_then(|(head, tail)| {
@@ -37,12 +38,14 @@ impl Emotes {
 }
 
 #[inline]
+#[allow(dead_code)]
 fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
     let mut split = input.split_terminator(sep);
     (split.next()?, split.next()?).into()
 }
 
 #[inline]
+#[allow(dead_code)]
 fn get_ranges(tail: &str) -> impl Iterator<Item = Range<u16>> + '_ {
     tail.split_terminator(',')
         .filter_map(|s| get_parts(s, '-'))

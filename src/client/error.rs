@@ -14,6 +14,10 @@ pub enum Error {
     NotRunning,
     /// Tried to start an already running client
     AlreadyRunning,
+    /// An invalid channel was provided
+    InvalidChannel(crate::ChannelError),
+    /// The client has been disconnected
+    ClientDisconnect,
 }
 
 impl From<std::str::Utf8Error> for Error {
@@ -34,6 +38,12 @@ impl From<crate::decode::ParseError> for Error {
     }
 }
 
+impl From<crate::ChannelError> for Error {
+    fn from(err: crate::ChannelError) -> Self {
+        Self::InvalidChannel(err)
+    }
+}
+
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -42,6 +52,8 @@ impl std::fmt::Display for Error {
             Error::Decode(err) => write!(f, "decode error: {}", err),
             Error::NotRunning => write!(f, "tried to stop a non-running client"),
             Error::AlreadyRunning => write!(f, "tried to start an already running client"),
+            Error::InvalidChannel(err) => write!(f, "an invalid channel was provided: {}", err),
+            Error::ClientDisconnect => write!(f, "this client has been disconnected"),
         }
     }
 }
@@ -52,6 +64,7 @@ impl std::error::Error for Error {
             Error::Utf8(err) => Some(err),
             Error::Io(err) => Some(err),
             Error::Decode(err) => Some(err),
+            Error::InvalidChannel(err) => Some(err),
             _ => None,
         }
     }

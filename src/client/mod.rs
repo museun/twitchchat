@@ -216,7 +216,7 @@ impl Client {
         let mut writer = self.writer();
         tokio::task::spawn(async move {
             while let Some(msg) = stream.next().await {
-                if !writer.pong(&msg.token).await {
+                if writer.pong(&msg.token).await.is_err() {
                     break;
                 }
             }

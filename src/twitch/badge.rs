@@ -5,7 +5,7 @@
 /// [badges]: ./struct.Badge.html
 /// [Unknown]: ./enum.BadgeKind.html#variant.Unknown
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BadgeKind<T>
 where
@@ -38,7 +38,7 @@ where
 }
 
 /// Badges attached to a message
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Badge<T>
 where

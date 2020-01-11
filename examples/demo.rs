@@ -64,9 +64,9 @@ async fn main() {
                 Some("!hello") => {
                     let response = format!("hello {}!", msg.user);
                     // send a message in response
-                    let still_connected = writer.privmsg(&msg.channel, &response).await;
-                    if !still_connected {
-                        break;
+                    if let Err(_err) = writer.privmsg(&msg.channel, &response).await {
+                        // we ran into a write error, we should probably leave this task
+                        return;
                     }
                 }
                 _ => {}
@@ -80,8 +80,17 @@ async fn main() {
 
     // get a clonable writer from the client
     // join a channel, methods on writer return false if the client is disconnected
-    if !client.writer().join(&channel).await {
-        panic!("not connected!?")
+    if let Err(err) = client.writer().join(&channel) {
+        match err {
+            twitchchat::Error::InvalidChannel(..) => {
+                eprintln!("you cannot join a channel with an empty name. demo is ending");
+                std::process::exit(1);
+            }
+            _ => {
+                // we'll get an error if we try to write to a disconnected client.
+                // if this happens, you should shutdown your tasks
+            }
+        }
     }
 
     // you can clear subscriptions with
