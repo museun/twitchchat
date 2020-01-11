@@ -4,8 +4,10 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Channel(String);
 
+/// An error produced by invalid channel names
 #[derive(Debug)]
 pub enum Error {
+    /// Channel name was empty
     EmptyChannelName,
 }
 
@@ -23,6 +25,15 @@ impl std::error::Error for Error {
 }
 
 /// A trait to convert types into [`Channel`](./struct.Channel.html)
+///
+/// ```rust
+/// # use twitchchat::*;
+/// let channel : Channel = "museun".into_channel().unwrap();
+/// assert_eq!(*channel, "#museun");
+///
+/// let channel : Channel = "#museun".into_channel().unwrap();
+/// assert_eq!(*channel, "#museun");
+/// ```
 pub trait IntoChannel {
     /// Tries to convert this type a channel
     fn into_channel(self) -> Result<Channel, Error>;
