@@ -14,6 +14,16 @@ parse! {
 }
 
 parse! {
+    RoomState { tags, channel } => |msg: &'a Message<&'a str>| {
+        msg.expect_command("ROOMSTATE")?;
+        Ok(Self {
+            channel: msg.expect_arg(0)?,
+            tags: msg.tags.clone()
+        })
+    }
+}
+
+parse! {
     Names { user, channel, kind } => |msg: &'a Message<&'a str>| {
         let kind = match msg.command {
             "353" => {

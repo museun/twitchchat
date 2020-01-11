@@ -48,6 +48,15 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct RoomState<T = String>
+where
+    T: StringMarker,
+{
+    pub tags: Tags<T>,
+    pub channel: T,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct GlobalUserState<T = String>
 where
     T: StringMarker,

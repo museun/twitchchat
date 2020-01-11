@@ -40,6 +40,34 @@ fn raw_owned() {
 }
 
 #[test]
+fn room_state_borrowed() {
+    let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            RoomState::<&str>::parse(&msg).unwrap(),
+            RoomState {
+                tags: Tags::default(),
+                channel: "#museun"
+            }
+        )
+    }
+}
+
+#[test]
+fn room_state_owned() {
+    let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
+    for msg in crate::decode_many(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            RoomState::<String>::parse(&msg).unwrap(),
+            RoomState {
+                tags: Tags::default(),
+                channel: "#museun".to_string()
+            }
+        )
+    }
+}
+
+#[test]
 fn names_start_borrowed() {
     let input =
         ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
