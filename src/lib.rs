@@ -299,6 +299,7 @@ pub trait Conversion<'a> {
 pub trait Parse<T>
 where
     Self: Sized,
+    Self: crate::internal::private::parse_marker::Sealed<T>,
 {
     fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
 }
