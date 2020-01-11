@@ -1,11 +1,9 @@
 # twitchchat
-
 This crate provides a way to interace with [Twitch]'s chat.
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
 ## License
-
 `twitchchat` is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
 
 See LICENSE-APACHE and LICENSE-MIT for details.
