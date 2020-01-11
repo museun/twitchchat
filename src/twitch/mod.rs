@@ -14,3 +14,6 @@ mod badge;
 pub use badge::{Badge, BadgeInfo, BadgeKind};
 
 pub mod color;
+
+mod channel;
+pub use channel::{Channel, Error as ChannelError, IntoChannel};
