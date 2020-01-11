@@ -7,7 +7,7 @@ pub(crate) trait Expect {
     fn expect_data(&self) -> Result<&str, InvalidMessage>;
 }
 
-impl<'a> Expect for crate::decode::Message<&'a str> {
+impl<'a> Expect for Message<&'a str> {
     fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage> {
         if self.command != cmd {
             return Err(InvalidMessage::InvalidCommand {

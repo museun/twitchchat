@@ -429,10 +429,14 @@ pub mod sync;
 /// assert_eq!(borrowed, join);
 /// ```
 pub trait Conversion<'a> {
+    /// The borrowed type
     type Borrowed: 'a;
+    /// The owned type
     type Owned;
 
+    /// Get a borrowed version
     fn as_borrowed(&'a self) -> Self::Borrowed;
+    /// Get an owned version
     fn as_owned(&self) -> Self::Owned;
 }
 
