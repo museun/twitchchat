@@ -25,6 +25,12 @@ pub struct Dispatcher {
     event_map: HashMap<TypeId, Vec<(bool, Box<dyn Any + Send>)>>,
 }
 
+impl std::fmt::Debug for Dispatcher {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Dispatcher").finish()
+    }
+}
+
 impl Dispatcher {
     /**
     Subscribe to an [Event] which'll return a [Stream] of a corresponding [Message].

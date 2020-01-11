@@ -1,6 +1,7 @@
 /// An error returned by the [Client]
 ///
 /// [Client]: ./struct.Client.html
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
     /// A UTF-8 decoding/encoding error

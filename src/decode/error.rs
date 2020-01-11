@@ -1,12 +1,13 @@
 /// An error occured while parsing a line.
-#[derive(Debug)]
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
 pub enum ParseError {
     /// An empty line was found
     EmptyLine,
 
     /// An incomplete message was parsed
     IncompleteMessage {
-        // Position of the start of this invalid message
+        /// Position of the start of this invalid message
         pos: usize,
     },
 

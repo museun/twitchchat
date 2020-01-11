@@ -193,11 +193,11 @@ where
     }
 }
 
-impl<'a, T> crate::Conversion<'a> for crate::messages::NamesKind<T>
+impl<'a, T> Conversion<'a> for crate::messages::NamesKind<T>
 where
-    T: StringMarker + crate::Conversion<'a>,
-    <T as crate::Conversion<'a>>::Borrowed: StringMarker,
-    <T as crate::Conversion<'a>>::Owned: StringMarker,
+    T: StringMarker + Conversion<'a>,
+    <T as Conversion<'a>>::Borrowed: StringMarker,
+    <T as Conversion<'a>>::Owned: StringMarker,
 {
     type Borrowed = crate::messages::NamesKind<T::Borrowed>;
     type Owned = crate::messages::NamesKind<T::Owned>;
@@ -219,11 +219,11 @@ where
     }
 }
 
-impl<'a, T> crate::Conversion<'a> for crate::messages::HostTargetKind<T>
+impl<'a, T> Conversion<'a> for crate::messages::HostTargetKind<T>
 where
-    T: StringMarker + crate::Conversion<'a>,
-    <T as crate::Conversion<'a>>::Borrowed: StringMarker,
-    <T as crate::Conversion<'a>>::Owned: StringMarker,
+    T: StringMarker + Conversion<'a>,
+    <T as Conversion<'a>>::Borrowed: StringMarker,
+    <T as Conversion<'a>>::Owned: StringMarker,
 {
     type Borrowed = crate::messages::HostTargetKind<T::Borrowed>;
     type Owned = crate::messages::HostTargetKind<T::Owned>;
@@ -249,7 +249,7 @@ where
     }
 }
 
-impl<'a> crate::Conversion<'a> for crate::messages::ModeStatus {
+impl<'a> Conversion<'a> for crate::messages::ModeStatus {
     type Borrowed = crate::messages::ModeStatus;
     type Owned = crate::messages::ModeStatus;
     fn as_borrowed(&'a self) -> Self::Borrowed {
@@ -260,11 +260,11 @@ impl<'a> crate::Conversion<'a> for crate::messages::ModeStatus {
     }
 }
 
-impl<'a, T> crate::Conversion<'a> for crate::decode::Message<T>
+impl<'a, T> Conversion<'a> for crate::decode::Message<T>
 where
-    T: crate::StringMarker + crate::Conversion<'a>,
-    <T as crate::Conversion<'a>>::Borrowed: crate::StringMarker,
-    <T as crate::Conversion<'a>>::Owned: crate::StringMarker,
+    T: StringMarker + Conversion<'a>,
+    <T as Conversion<'a>>::Borrowed: StringMarker,
+    <T as Conversion<'a>>::Owned: StringMarker,
 {
     type Borrowed = crate::decode::Message<T::Borrowed>;
     type Owned = crate::decode::Message<T::Owned>;
@@ -292,11 +292,11 @@ where
     }
 }
 
-impl<'a, T> crate::Conversion<'a> for crate::decode::Prefix<T>
+impl<'a, T> Conversion<'a> for crate::decode::Prefix<T>
 where
-    T: crate::StringMarker + crate::Conversion<'a>,
-    <T as crate::Conversion<'a>>::Borrowed: crate::StringMarker,
-    <T as crate::Conversion<'a>>::Owned: crate::StringMarker,
+    T: StringMarker + Conversion<'a>,
+    <T as Conversion<'a>>::Borrowed: StringMarker,
+    <T as Conversion<'a>>::Owned: StringMarker,
 {
     type Borrowed = crate::decode::Prefix<T::Borrowed>;
     type Owned = crate::decode::Prefix<T::Owned>;
@@ -370,6 +370,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(unused_qualifications)]
     fn option_conversion() {
         let owned = Some(String::from("asdf"));
 

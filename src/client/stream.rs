@@ -8,6 +8,14 @@ use super::*;
 /// [sub]: ./struct.Dispatcher.html#method.subscribe
 pub struct EventStream<T>(pub(super) mpsc::UnboundedReceiver<T>);
 
+impl<T> std::fmt::Debug for EventStream<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EventStream")
+            .field("type", &std::any::type_name::<T>())
+            .finish()
+    }
+}
+
 impl<T> Stream for EventStream<T>
 where
     T: Clone,

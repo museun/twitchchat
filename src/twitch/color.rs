@@ -59,7 +59,7 @@ let rgb: RGB = twitch_color.into();
 
 /// An error returned when trying to parse a string as an RGB triplet
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ParseError {
     /// An invalid hex string for `RGB`
     InvalidHexString,

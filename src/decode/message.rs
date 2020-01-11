@@ -43,6 +43,7 @@ impl<'a> Message<&'a str> {
         })
     }
 
+    /// Get the 'nth' arg from this Message
     pub fn arg(&self, nth: usize) -> Option<&str> {
         self.args.split_whitespace().nth(nth)
     }

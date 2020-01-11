@@ -74,7 +74,7 @@ impl crate::Encodable for UserConfig {
 ///
 /// [UserConfigBuilder]: ./struct.UserConfigBuilder.html
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum UserConfigError {
     /// An invalid name was provided
     InvalidName,
@@ -103,7 +103,7 @@ impl std::error::Error for UserConfigError {}
 /// Builder for making a [UserConfig]
 ///
 /// [UserConfig]: ./struct.UserConfig.html
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UserConfigBuilder {
     capabilities: BTreeSet<Capability>,
     name: Option<String>,

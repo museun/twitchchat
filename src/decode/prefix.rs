@@ -41,6 +41,9 @@ impl<T> Prefix<T>
 where
     T: crate::StringMarker,
 {
+    /// The user name in this prefix
+    ///
+    /// This is the name of the user if a user had sent the message
     pub fn nick(&self) -> Option<&T> {
         match self {
             Prefix::User { nick } => Some(nick),
@@ -48,6 +51,9 @@ where
         }
     }
 
+    /// The host name in this prefix
+    ///
+    /// This is the name of the server if the server had sent the message
     pub fn host(&self) -> Option<&T> {
         match self {
             Prefix::Server { host } => Some(host),

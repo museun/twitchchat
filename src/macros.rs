@@ -91,6 +91,7 @@ macro_rules! make_event {
     (@DOC $($doc:expr)* => $item:tt) => {
         $(#[doc = $doc])*
         #[non_exhaustive]
+        #[allow(missing_debug_implementations,missing_copy_implementations)]
         pub struct $item;
     };
 

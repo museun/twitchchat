@@ -5,7 +5,8 @@
 pub struct Channel(String);
 
 /// An error produced by invalid channel names
-#[derive(Debug)]
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
 pub enum Error {
     /// Channel name was empty
     EmptyChannelName,

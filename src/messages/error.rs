@@ -1,6 +1,6 @@
-/// An error returned when trying to use [TryFrom] on a [Message] to a specific [message][msg]
+/// An error returned when trying to use [Parse] on a [Message] to a specific [message][msg]
 ///
-/// [TryFrom]: https://doc.rust-lang.org/std/convert/trait.TryFrom.html
+/// [Parse]: ../trait.Parse.html
 /// [Message]: ../decode/struct.Message.html
 /// [msg]: ./messages/index.html
 #[derive(Debug)]

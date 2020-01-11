@@ -450,10 +450,12 @@ pub trait Conversion<'a> {
 /// let message : Raw<&str> = decode::decode_many(&input).next().unwrap().unwrap();
 /// let join : Join<&str> = Join::parse(&message).unwrap();
 /// assert_eq!(join, Join { channel: "#museun", user: "test" });
+/// ```
 pub trait Parse<T>
 where
     Self: Sized,
     Self: crate::internal::private::parse_marker::Sealed<T>,
 {
+    /// Tries to parse the input as this message
     fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
 }

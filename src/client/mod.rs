@@ -113,6 +113,12 @@ pub struct Client {
     abort: Arc<Mutex<Option<futures::future::AbortHandle>>>,
 }
 
+impl std::fmt::Debug for Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Client").finish()
+    }
+}
+
 impl Default for Client {
     fn default() -> Self {
         let (sender, receiver) = mpsc::channel(64);
