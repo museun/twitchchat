@@ -148,7 +148,7 @@ macro_rules! export_modules_without_docs {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn from_test() {
+    fn from_borrowed() {
         use crate::{Conversion, Parse};
         let msg = crate::decode(":test!test@test JOIN #museun\r\n")
             .next()
