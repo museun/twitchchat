@@ -17,6 +17,24 @@ macro_rules! from_impl {
                 d.as_owned()
             }
         }
+
+        impl<'a> From<&$ty<&'a str>> for $ty<String> {
+            fn from(d: &$ty<&'a str>) -> $ty<String> {
+                d.as_owned()
+            }
+        }
+
+        impl<'a> From<&$ty<String>> for $ty<String> {
+            fn from(d: &$ty<String>) -> $ty<String> {
+                d.as_owned()
+            }
+        }
+
+        impl<'a> From<&'a $ty<&'a str>> for $ty<&'a str> {
+            fn from(d: &'a $ty<&'a str>) -> $ty<&'a str> {
+                d.as_borrowed()
+            }
+        }
     };
 }
 
