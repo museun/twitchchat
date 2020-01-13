@@ -33,7 +33,7 @@ async fn main() {
     // spawn a task to consume the stream
     tokio::task::spawn(async move {
         while let Some(msg) = privmsg.next().await {
-            eprintln!("[{}] {}: {}", msg.channel, msg.user, msg.data);
+            eprintln!("[{}] {}: {}", msg.channel, msg.name, msg.data);
         }
     });
 
@@ -42,7 +42,7 @@ async fn main() {
     tokio::task::spawn(async move {
         while let Some(msg) = join.next().await {
             // we've joined a channel
-            if msg.user == nick {
+            if msg.name == nick {
                 eprintln!("you joined {}", msg.channel);
                 break; // returning/dropping the stream un-subscribes it
             }
@@ -62,7 +62,7 @@ async fn main() {
                     bot_client.stop().await.unwrap();
                 }
                 Some("!hello") => {
-                    let response = format!("hello {}!", msg.user);
+                    let response = format!("hello {}!", msg.name);
                     // send a message in response
                     if let Err(_err) = writer.privmsg(&msg.channel, &response).await {
                         // we ran into a write error, we should probably leave this task

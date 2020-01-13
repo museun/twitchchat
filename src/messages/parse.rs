@@ -129,7 +129,7 @@ parse! {
 }
 
 parse! {
-    Names { user, channel, kind } => |msg: &'a Message<&'a str>| {
+    Names { name, channel, kind } => |msg: &'a Message<&'a str>| {
         let kind = match msg.command {
             "353" => {
                 NamesKind::Start {
@@ -145,14 +145,14 @@ parse! {
             })
         };
 
-        let user = msg.expect_arg(0)?;
+        let name = msg.expect_arg(0)?;
         let channel = match msg.expect_arg(1)? {
             "=" => msg.expect_arg(2)?,
             channel => channel
         };
 
         Ok(Self {
-            user,
+            name,
             channel,
             kind
         })
@@ -240,12 +240,12 @@ parse! {
 }
 
 parse! {
-    ClearChat { tags, channel, user } => |msg: &'a Message<&'a str>| {
+    ClearChat { tags, channel, name } => |msg: &'a Message<&'a str>| {
         msg.expect_command("CLEARCHAT")?;
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            user: msg.expect_data().ok(),
+            name: msg.expect_data().ok(),
         })
     }
 }
@@ -269,17 +269,17 @@ parse! {
 }
 
 parse! {
-    Join { user, channel } => |msg: &'a Message<&'a str>| {
+    Join { name, channel } => |msg: &'a Message<&'a str>| {
         msg.expect_command("JOIN")?;
         Ok(Self {
-            user: msg.expect_nick()?,
+            name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
         })
     }
 }
 
 parse! {
-    Mode { channel, status, user,} => |msg: &'a Message<&'a str>| {
+    Mode { channel, status, name,} => |msg: &'a Message<&'a str>| {
         msg.expect_command("MODE")?;
         let channel = msg.expect_arg(0)?;
         let status = match msg.expect_arg(1)?.chars().nth(0).unwrap() {
@@ -287,11 +287,11 @@ parse! {
             '-' => ModeStatus::Lost,
             _ => unreachable!(),
         };
-        let user = msg.expect_arg(2)?;
+        let name = msg.expect_arg(2)?;
         Ok(Self {
             channel,
             status,
-            user,
+            name,
         })
     }
 }
@@ -308,10 +308,10 @@ parse! {
 }
 
 parse! {
-    Part { user, channel } => |msg: &'a Message<&'a str>| {
+    Part { name, channel } => |msg: &'a Message<&'a str>| {
         msg.expect_command("PART")?;
         Ok(Self {
-            user: msg.expect_nick()?,
+            name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
         })
     }
@@ -332,10 +332,10 @@ parse! {
 }
 
 parse! {
-    Privmsg { user, channel, data, tags, } => |msg: &'a Message<&'a str>| {
+    Privmsg { name, channel, data, tags, } => |msg: &'a Message<&'a str>| {
         msg.expect_command("PRIVMSG")?;
         Ok(Self {
-            user: msg.expect_nick()?,
+            name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
             data: msg.expect_data()?,
             tags: msg.tags.clone(),

@@ -134,7 +134,7 @@ fn names_start_borrowed() {
         assert_eq!(
             Names::<&str>::parse(&msg).unwrap(),
             Names {
-                user: "museun",
+                name: "museun",
                 channel: "#museun",
                 kind: NamesKind::Start {
                     users: vec!["shaken_bot4", "shaken_bot5"]
@@ -152,7 +152,7 @@ fn names_start_owned() {
         assert_eq!(
             Names::<String>::parse(&msg).unwrap(),
             Names {
-                user: "museun".to_string(),
+                name: "museun".to_string(),
                 channel: "#museun".to_string(),
                 kind: NamesKind::Start {
                     users: vec!["shaken_bot4".to_string(), "shaken_bot5".to_string()]
@@ -169,7 +169,7 @@ fn names_end_borrowed() {
         assert_eq!(
             Names::<&str>::parse(&msg).unwrap(),
             Names {
-                user: "museun",
+                name: "museun",
                 channel: "#museun",
                 kind: NamesKind::End
             }
@@ -184,7 +184,7 @@ fn names_end_owned() {
         assert_eq!(
             Names::<String>::parse(&msg).unwrap(),
             Names {
-                user: "museun".to_string(),
+                name: "museun".to_string(),
                 channel: "#museun".to_string(),
                 kind: NamesKind::End
             }
@@ -359,7 +359,7 @@ fn clear_chat_borrowed() {
             ClearChat {
                 tags: Tags::default(),
                 channel: "#museun",
-                user: Some("shaken_bot"),
+                name: Some("shaken_bot"),
             }
         )
     }
@@ -374,7 +374,7 @@ fn clear_chat_owned() {
             ClearChat {
                 tags: Tags::default(),
                 channel: "#museun".to_string(),
-                user: Some("shaken_bot".to_string()),
+                name: Some("shaken_bot".to_string()),
             }
         )
     }
@@ -389,7 +389,7 @@ fn clear_chat_empty_borrowed() {
             ClearChat {
                 tags: Tags::default(),
                 channel: "#museun",
-                user: None,
+                name: None,
             }
         )
     }
@@ -404,7 +404,7 @@ fn clear_chat_empty_owned() {
             ClearChat {
                 tags: Tags::default(),
                 channel: "#museun".to_string(),
-                user: None,
+                name: None,
             }
         )
     }
@@ -575,7 +575,7 @@ fn join_borrowed() {
         assert_eq!(
             Join::<&str>::parse(&msg).unwrap(),
             Join {
-                user: "test",
+                name: "test",
                 channel: "#foo"
             }
         )
@@ -589,7 +589,7 @@ fn join_owned() {
         assert_eq!(
             Join::<String>::parse(&msg).unwrap(),
             Join {
-                user: "test".to_string(),
+                name: "test".to_string(),
                 channel: "#foo".to_string()
             }
         )
@@ -605,7 +605,7 @@ fn mode_lost_borrowed() {
             Mode {
                 channel: "#museun",
                 status: ModeStatus::Lost,
-                user: "shaken_bot"
+                name: "shaken_bot"
             }
         )
     }
@@ -620,7 +620,7 @@ fn mode_gained_borrowed() {
             Mode {
                 channel: "#museun",
                 status: ModeStatus::Gained,
-                user: "shaken_bot",
+                name: "shaken_bot",
             }
         )
     }
@@ -635,7 +635,7 @@ fn mode_lost_owned() {
             Mode {
                 channel: "#museun".to_string(),
                 status: ModeStatus::Lost,
-                user: "shaken_bot".to_string()
+                name: "shaken_bot".to_string()
             }
         )
     }
@@ -650,7 +650,7 @@ fn mode_gained_owned() {
             Mode {
                 channel: "#museun".to_string(),
                 status: ModeStatus::Gained,
-                user: "shaken_bot".to_string()
+                name: "shaken_bot".to_string()
             }
         )
     }
@@ -693,7 +693,7 @@ fn part_borrowed() {
         assert_eq!(
             Part::<&str>::parse(&msg).unwrap(),
             Part {
-                user: "test",
+                name: "test",
                 channel: "#museun",
             }
         )
@@ -707,7 +707,7 @@ fn part_owned() {
         assert_eq!(
             Part::<String>::parse(&msg).unwrap(),
             Part {
-                user: "test".to_string(),
+                name: "test".to_string(),
                 channel: "#museun".to_string(),
             }
         )
@@ -773,7 +773,7 @@ fn privmsg_borrowed() {
         assert_eq!(
             Privmsg::<&str>::parse(&msg).unwrap(),
             Privmsg {
-                user: "test",
+                name: "test",
                 channel: "#museun",
                 data: "this is a test",
                 tags: Default::default(),
@@ -789,7 +789,7 @@ fn privmsg_owned() {
         assert_eq!(
             Privmsg::<String>::parse(&msg).unwrap(),
             Privmsg {
-                user: "test".to_string(),
+                name: "test".to_string(),
                 channel: "#museun".to_string(),
                 data: "this is a test".to_string(),
                 tags: Default::default(),

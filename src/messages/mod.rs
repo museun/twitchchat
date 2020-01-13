@@ -55,7 +55,7 @@ where
     /// The channel this event happened on
     pub channel: T,
     /// The user, if any, that was being purged
-    pub user: Option<T>,
+    pub name: Option<T>,
 }
 
 /// When a single message has been removed from a channel.
@@ -146,7 +146,7 @@ where
     T: StringMarker,
 {
     /// Name of the user that joined the channel
-    pub user: T,
+    pub name: T,
     /// Channel which they joined
     pub channel: T,
 }
@@ -173,7 +173,7 @@ where
     /// The status. gained, or lost
     pub status: ModeStatus,
     /// The user this applies too
-    pub user: T,
+    pub name: T,
 }
 
 /// The kind of the Names event
@@ -208,7 +208,7 @@ where
     T: StringMarker,
 {
     /// Your username
-    pub user: T,
+    pub name: T,
     /// The channel this event is happening for
     pub channel: T,
     /// The state of the event
@@ -240,7 +240,7 @@ where
     T: StringMarker,
 {
     /// Name of the user that left the channel
-    pub user: T,
+    pub name: T,
     /// Channel which they left
     pub channel: T,
 }
@@ -281,7 +281,7 @@ where
     T: StringMarker,
 {
     /// User who sent this messages
-    pub user: T,
+    pub name: T,
     /// Channel this message was sent on
     pub channel: T,
     /// Data that the user provided

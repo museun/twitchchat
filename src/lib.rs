@@ -341,7 +341,7 @@ pub trait Conversion<'a> {
 /// let input = ":test!test@test JOIN #museun\r\n";
 /// let message : Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
 /// let join : Join<&str> = Join::parse(&message).unwrap();
-/// assert_eq!(join, Join { channel: "#museun", user: "test" });
+/// assert_eq!(join, Join { channel: "#museun", name: "test" });
 /// ```
 pub trait Parse<T>
 where
