@@ -133,7 +133,6 @@ impl UserConfigBuilder {
     ///
     /// This uses `"justin1234"` as the name and token
     ///
-    /// Capabilites cannot be used with this login
     pub fn anonymous(self) -> Self {
         let (name, token) = crate::ANONYMOUS_LOGIN;
         self.name(name).token(token)
@@ -141,10 +140,6 @@ impl UserConfigBuilder {
 
     /// Capabilities to enable
     ///
-    /// This will produce an [error] on [build] if the name/pass were ***anonymous***
-    ///
-    /// [error]: ./enum.UserConfigError.html#variant.AnonymousCapabilities
-    /// [build]: ./struct.UserConfigBuilder.html#method.build
     pub fn capabilities(mut self, caps: &[Capability]) -> Self {
         self.capabilities.extend(caps);
         self
@@ -153,6 +148,10 @@ impl UserConfigBuilder {
     /// Tries to build the UserConfig
     ///
     /// This returns an error if the name or token are invalid
+    ///
+    /// If the anonymous `name` OR `token` is used without the other matching one this will return an [error].
+    ///
+    /// [error]: ./enum.UserConfigError.html
     pub fn build(self) -> Result<UserConfig, UserConfigError> {
         let name = self
             .name
