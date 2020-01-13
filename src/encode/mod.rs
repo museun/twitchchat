@@ -90,5 +90,5 @@ export_modules_without_docs! {
     whisper
 }
 
-#[cfg(test)]
+#[cfg(all(test, features = "async"))]
 mod tests;

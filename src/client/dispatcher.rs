@@ -76,6 +76,8 @@ impl Dispatcher {
     [Ready][Ready_event]                     | [Ready][Ready_message]                     | When the Twitch connection is ready
     [Reconnect][Reconnect_event]             | [Reconnect][Reconnect_message]             | Server asking you to reconnect
     [UserState][UserState_event]             | [UserState][UserState_message]             | Identifies a user's chat settings or properties (e.g., chat color).
+    ---                                      | ---                                        | ---
+    [All][All_event]                         | [AllCommands][AllCommands_message]         | This bundles all above messages into a single enum.
 
     # Disconnection
     The stream will also yield ***None*** when the `Dispatcher` is dropped.
@@ -104,6 +106,7 @@ impl Dispatcher {
     [Ready_event]: ../events/struct.Ready.html
     [Reconnect_event]: ../events/struct.Reconnect.html
     [UserState_event]: ../events/struct.UserState.html
+    [All_event]: ../events/struct.All.html
 
     [Cap_message]: ../messages/struct.Cap.html
     [ClearChat_message]: ../messages/struct.ClearChat.html
@@ -122,6 +125,7 @@ impl Dispatcher {
     [Ready_message]: ../messages/struct.Ready.html
     [Reconnect_message]: ../messages/struct.Reconnect.html
     [UserState_message]: ../messages/struct.UserState.html
+    [AllCommands_message]: ../messages/enum.AllCommands.html
 
     */
     pub fn subscribe<'a, T>(&mut self) -> EventStream<Arc<T::Mapped>>
@@ -226,7 +230,6 @@ impl Dispatcher {
             .filter(|s| !s.is_empty())
         {
             let msg = T::Mapped::parse(msg).map(Arc::new).expect("valid message");
-
             senders.retain(|(_, sender)| {
                 sender
                     .downcast_ref::<Sender<T::Mapped>>()

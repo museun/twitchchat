@@ -31,3 +31,14 @@ make_event! {
     Reconnect       => messages::Reconnect
     UserState       => messages::UserState
 }
+
+/// Used to get a [messages::AllCommands][AllCommands]
+///
+/// [AllCommands]: ../messages/enum.AllCommands.html
+#[non_exhaustive]
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+pub struct All;
+
+impl<'a> crate::client::Event<'a> for All {
+    type Mapped = messages::AllCommands;
+}

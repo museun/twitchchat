@@ -1,3 +1,5 @@
+#![allow(unused_macros)]
+
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
@@ -72,7 +74,6 @@ macro_rules! parse {
                 $ty::<&'a str>::parse(msg).map(|ok| ok.as_owned())
             }
         }
-        // TODO more conversions
     };
 
     ($ty:tt { $($field:ident),* $(,)? } => $body:expr) => {
@@ -128,12 +129,15 @@ macro_rules! make_mapping {
                 $($event => self.try_send::<events::$ident>(&msg),)*
                 _ => {},
             }
+
+            self.try_send::<events::All>(&msg);
             self.try_send::<events::Raw>(&msg);
         }
 
         pub(crate) fn new() -> Self {
             Self { event_map: Default::default() }
             $( .add_event::<events::$ident>() )*
+            .add_event::<events::All>()
             .add_event::<events::Raw>()
         }
     };

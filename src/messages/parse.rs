@@ -13,6 +13,99 @@ parse! {
     }
 }
 
+impl<'a> Parse<&'a Message<&'a str>> for AllCommands<&'a str> {
+    fn parse(msg: &'a Message<&'a str>) -> Result<Self, InvalidMessage> {
+        let out = match msg.command {
+            "001" => IrcReady::parse(msg)?.into(),
+            "PING" => Ping::parse(msg)?.into(),
+            "PONG" => Pong::parse(msg)?.into(),
+            "376" => Ready::parse(msg)?.into(),
+            "JOIN" => Join::parse(msg)?.into(),
+            "PART" => Part::parse(msg)?.into(),
+            "PRIVMSG" => Privmsg::parse(msg)?.into(),
+            "CAP" => Cap::parse(msg)?.into(),
+            "HOSTARGET" => HostTarget::parse(msg)?.into(),
+            "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
+            "NOTICE" => Notice::parse(msg)?.into(),
+            "CLEARCHAT" => ClearChat::parse(msg)?.into(),
+            "CLEARMSG" => ClearMsg::parse(msg)?.into(),
+            "RECONNECT" => Reconnect::parse(msg)?.into(),
+            "USERSTATE" => UserState::parse(msg)?.into(),
+            "MODE" => Mode::parse(msg)?.into(),
+            _ => msg.clone().into(),
+        };
+        Ok(out)
+    }
+}
+
+impl<'a> Parse<&'a Message<&'a str>> for AllCommands<String> {
+    fn parse(msg: &'a Message<&'a str>) -> Result<Self, InvalidMessage> {
+        AllCommands::<&'a str>::parse(msg).map(|ok| ok.as_owned())
+    }
+}
+
+impl<'a, T> Conversion<'a> for AllCommands<T>
+where
+    T: StringMarker + Conversion<'a>,
+    <T as Conversion<'a>>::Borrowed: StringMarker,
+    <T as Conversion<'a>>::Owned: StringMarker,
+{
+    type Owned = AllCommands<T::Owned>;
+    type Borrowed = AllCommands<T::Borrowed>;
+
+    fn as_borrowed(&'a self) -> Self::Borrowed {
+        use AllCommands::*;
+        match self {
+            Unknown(msg) => Unknown(msg.as_borrowed()),
+            Cap(msg) => Cap(msg.as_borrowed()),
+            ClearChat(msg) => ClearChat(msg.as_borrowed()),
+            ClearMsg(msg) => ClearMsg(msg.as_borrowed()),
+            GlobalUserState(msg) => GlobalUserState(msg.as_borrowed()),
+            HostTarget(msg) => HostTarget(msg.as_borrowed()),
+            IrcReady(msg) => IrcReady(msg.as_borrowed()),
+            Join(msg) => Join(msg.as_borrowed()),
+            Mode(msg) => Mode(msg.as_borrowed()),
+            Names(msg) => Names(msg.as_borrowed()),
+            Notice(msg) => Notice(msg.as_borrowed()),
+            Part(msg) => Part(msg.as_borrowed()),
+            Ping(msg) => Ping(msg.as_borrowed()),
+            Pong(msg) => Pong(msg.as_borrowed()),
+            Privmsg(msg) => Privmsg(msg.as_borrowed()),
+            Ready(msg) => Ready(msg.as_borrowed()),
+            Reconnect(msg) => Reconnect(msg.as_borrowed()),
+            RoomState(msg) => RoomState(msg.as_borrowed()),
+            UserNotice(msg) => UserNotice(msg.as_borrowed()),
+            UserState(msg) => UserState(msg.as_borrowed()),
+        }
+    }
+
+    fn as_owned(&self) -> Self::Owned {
+        use AllCommands::*;
+        match self {
+            Unknown(msg) => Unknown(msg.as_owned()),
+            Cap(msg) => Cap(msg.as_owned()),
+            ClearChat(msg) => ClearChat(msg.as_owned()),
+            ClearMsg(msg) => ClearMsg(msg.as_owned()),
+            GlobalUserState(msg) => GlobalUserState(msg.as_owned()),
+            HostTarget(msg) => HostTarget(msg.as_owned()),
+            IrcReady(msg) => IrcReady(msg.as_owned()),
+            Join(msg) => Join(msg.as_owned()),
+            Mode(msg) => Mode(msg.as_owned()),
+            Names(msg) => Names(msg.as_owned()),
+            Notice(msg) => Notice(msg.as_owned()),
+            Part(msg) => Part(msg.as_owned()),
+            Ping(msg) => Ping(msg.as_owned()),
+            Pong(msg) => Pong(msg.as_owned()),
+            Privmsg(msg) => Privmsg(msg.as_owned()),
+            Ready(msg) => Ready(msg.as_owned()),
+            Reconnect(msg) => Reconnect(msg.as_owned()),
+            RoomState(msg) => RoomState(msg.as_owned()),
+            UserNotice(msg) => UserNotice(msg.as_owned()),
+            UserState(msg) => UserState(msg.as_owned()),
+        }
+    }
+}
+
 parse! {
     RoomState { tags, channel } => |msg: &'a Message<&'a str>| {
         msg.expect_command("ROOMSTATE")?;

@@ -28,70 +28,50 @@ mod parse;
 /// A raw IRC message
 pub type Raw<T> = Message<T>;
 
-/// The kind of the Names event
+/// Acknowledgement (or not) on a CAPS request
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NamesKind<T = String>
+pub struct Cap<T = String>
 where
     T: StringMarker,
 {
-    /// Names begins, this'll continue until `End` is recieved
-    Start {
-        /// A list of user names
-        users: Vec<T>,
-    },
-    /// Names end, this'll mark the end of the event
-    End,
+    /// The capability name
+    pub capability: T,
+    /// Whether it was acknowledged
+    pub acknowledged: bool,
 }
 
-/// The names event
+/// When a user's message(s) have been purged.
 ///
-/// This'll will list people on a channel for your user
-///
-/// The `kind` field lets you determine if its still 'happening'
-///
-/// Your should keep a list of the names from the `Start` variant
-///
-/// And once you receive an End you'll have the complete lost
+/// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Names<T = String>
+pub struct ClearChat<T = String>
 where
     T: StringMarker,
 {
-    /// Your username
-    pub user: T,
-    /// The channel this event is happening for
-    pub channel: T,
-    /// The state of the event
-    pub kind: NamesKind<T>,
-}
-
-/// Identifies the channel's chat settings (e.g., slow mode duration).
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RoomState<T = String>
-where
-    T: StringMarker,
-{
-    /// Tags attached to this message
+    /// Tags attached to the message
     pub tags: Tags<T>,
-    /// Channel this event is happening on
+    /// The channel this event happened on
     pub channel: T,
+    /// The user, if any, that was being purged
+    pub user: Option<T>,
 }
 
-/// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
+/// When a single message has been removed from a channel.
+///
+/// This is triggered via /delete on IRC.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct UserNotice<T = String>
+pub struct ClearMsg<T = String>
 where
     T: StringMarker,
 {
-    /// Tags attached to this message
+    /// Tags attached to the message
     pub tags: Tags<T>,
-    /// Channel this event is happening on
+    /// The channel this event happened on
     pub channel: T,
-    /// Optional message attached to the event
+    /// The message that was deleted
     pub message: Option<T>,
 }
 
@@ -145,53 +125,6 @@ where
     pub kind: HostTargetKind<T>,
 }
 
-/// Acknowledgement (or not) on a CAPS request
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Cap<T = String>
-where
-    T: StringMarker,
-{
-    /// The capability name
-    pub capability: T,
-    /// Whether it was acknowledged
-    pub acknowledged: bool,
-}
-
-/// When a user's message(s) have been purged.
-///
-/// Typically after a user is banned from chat or timed out
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ClearChat<T = String>
-where
-    T: StringMarker,
-{
-    /// Tags attached to the message
-    pub tags: Tags<T>,
-    /// The channel this event happened on
-    pub channel: T,
-    /// The user, if any, that was being purged
-    pub user: Option<T>,
-}
-
-/// When a single message has been removed from a channel.
-///
-/// This is triggered via /delete on IRC.
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ClearMsg<T = String>
-where
-    T: StringMarker,
-{
-    /// Tags attached to the message
-    pub tags: Tags<T>,
-    /// The channel this event happened on
-    pub channel: T,
-    /// The message that was deleted
-    pub message: Option<T>,
-}
-
 /// Happens when the IRC connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -241,6 +174,45 @@ where
     pub status: ModeStatus,
     /// The user this applies too
     pub user: T,
+}
+
+/// The kind of the Names event
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NamesKind<T = String>
+where
+    T: StringMarker,
+{
+    /// Names begins, this'll continue until `End` is recieved
+    Start {
+        /// A list of user names
+        users: Vec<T>,
+    },
+    /// Names end, this'll mark the end of the event
+    End,
+}
+
+/// The names event
+///
+/// This'll will list people on a channel for your user
+///
+/// The `kind` field lets you determine if its still 'happening'
+///
+/// Your should keep a list of the names from the `Start` variant
+///
+/// And once you receive an End you'll have the complete lost
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Names<T = String>
+where
+    T: StringMarker,
+{
+    /// Your username
+    pub user: T,
+    /// The channel this event is happening for
+    pub channel: T,
+    /// The state of the event
+    pub kind: NamesKind<T>,
 }
 
 /// General notices from the server.
@@ -340,6 +312,34 @@ where
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Reconnect {}
 
+/// Identifies the channel's chat settings (e.g., slow mode duration).
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RoomState<T = String>
+where
+    T: StringMarker,
+{
+    /// Tags attached to this message
+    pub tags: Tags<T>,
+    /// Channel this event is happening on
+    pub channel: T,
+}
+
+/// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct UserNotice<T = String>
+where
+    T: StringMarker,
+{
+    /// Tags attached to this message
+    pub tags: Tags<T>,
+    /// Channel this event is happening on
+    pub channel: T,
+    /// Optional message attached to the event
+    pub message: Option<T>,
+}
+
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -351,6 +351,221 @@ where
     pub tags: Tags<T>,
     /// Channel this event happened on
     pub channel: T,
+}
+
+/// This is a collection of all possible message types
+///
+/// Subscribing to [events::All][all] will produce this, so you can have a single stream for multiple messages.
+///
+/// [all]: ../events/struct.All.html
+#[allow(missing_docs)]
+#[non_exhaustive]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AllCommands<T = String>
+where
+    T: StringMarker,
+{
+    Unknown(Raw<T>),
+    Cap(Cap<T>),
+    ClearChat(ClearChat<T>),
+    ClearMsg(ClearMsg<T>),
+    GlobalUserState(GlobalUserState<T>),
+    HostTarget(HostTarget<T>),
+    IrcReady(IrcReady<T>),
+    Join(Join<T>),
+    Mode(Mode<T>),
+    Names(Names<T>),
+    Notice(Notice<T>),
+    Part(Part<T>),
+    Ping(Ping<T>),
+    Pong(Pong<T>),
+    Privmsg(Privmsg<T>),
+    Ready(Ready<T>),
+    Reconnect(Reconnect),
+    RoomState(RoomState<T>),
+    UserNotice(UserNotice<T>),
+    UserState(UserState<T>),
+}
+
+impl<T> From<Raw<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Raw<T>) -> Self {
+        Self::Unknown(msg)
+    }
+}
+
+impl<T> From<Cap<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Cap<T>) -> Self {
+        Self::Cap(msg)
+    }
+}
+
+impl<T> From<ClearChat<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: ClearChat<T>) -> Self {
+        Self::ClearChat(msg)
+    }
+}
+
+impl<T> From<ClearMsg<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: ClearMsg<T>) -> Self {
+        Self::ClearMsg(msg)
+    }
+}
+
+impl<T> From<GlobalUserState<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: GlobalUserState<T>) -> Self {
+        Self::GlobalUserState(msg)
+    }
+}
+
+impl<T> From<HostTarget<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: HostTarget<T>) -> Self {
+        Self::HostTarget(msg)
+    }
+}
+
+impl<T> From<IrcReady<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: IrcReady<T>) -> Self {
+        Self::IrcReady(msg)
+    }
+}
+
+impl<T> From<Join<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Join<T>) -> Self {
+        Self::Join(msg)
+    }
+}
+
+impl<T> From<Mode<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Mode<T>) -> Self {
+        Self::Mode(msg)
+    }
+}
+
+impl<T> From<Names<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Names<T>) -> Self {
+        Self::Names(msg)
+    }
+}
+
+impl<T> From<Notice<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Notice<T>) -> Self {
+        Self::Notice(msg)
+    }
+}
+
+impl<T> From<Part<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Part<T>) -> Self {
+        Self::Part(msg)
+    }
+}
+
+impl<T> From<Ping<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Ping<T>) -> Self {
+        Self::Ping(msg)
+    }
+}
+
+impl<T> From<Pong<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Pong<T>) -> Self {
+        Self::Pong(msg)
+    }
+}
+
+impl<T> From<Privmsg<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Privmsg<T>) -> Self {
+        Self::Privmsg(msg)
+    }
+}
+
+impl<T> From<Ready<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Ready<T>) -> Self {
+        Self::Ready(msg)
+    }
+}
+
+impl<T> From<Reconnect> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: Reconnect) -> Self {
+        Self::Reconnect(msg)
+    }
+}
+
+impl<T> From<RoomState<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: RoomState<T>) -> Self {
+        Self::RoomState(msg)
+    }
+}
+
+impl<T> From<UserNotice<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: UserNotice<T>) -> Self {
+        Self::UserNotice(msg)
+    }
+}
+
+impl<T> From<UserState<T>> for AllCommands<T>
+where
+    T: StringMarker,
+{
+    fn from(msg: UserState<T>) -> Self {
+        Self::UserState(msg)
+    }
 }
 
 #[cfg(test)]

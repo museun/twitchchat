@@ -128,6 +128,7 @@ impl Writer {
     /// Enables emote-only mode (only emoticons may be used in chat).
     ///
     /// Use [emote_only_off] to disable.
+    ///
     /// [emote_only_off]: ./struct.Writer.html#method.emote_only_off
     pub async fn emote_only(&mut self) -> Result {
         let msg = crate::encode::emote_only();
