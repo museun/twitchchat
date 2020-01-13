@@ -153,7 +153,7 @@ impl UserConfigBuilder {
     /// Tries to build the UserConfig
     ///
     /// This returns an error if the name or token are invalid
-    pub fn build(mut self) -> Result<UserConfig, UserConfigError> {
+    pub fn build(self) -> Result<UserConfig, UserConfigError> {
         let name = self
             .name
             .filter(|s| validate_name(&s))
@@ -166,7 +166,7 @@ impl UserConfigBuilder {
 
         match (name.as_str(), token.as_str()) {
             (crate::JUSTINFAN1234, crate::JUSTINFAN1234) => {
-                self.capabilities.clear();
+                // both are allowed
             }
             (crate::JUSTINFAN1234, ..) | (.., crate::JUSTINFAN1234) => {
                 return Err(UserConfigError::PartialAnonymous)
