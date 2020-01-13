@@ -51,26 +51,6 @@ impl UserConfig {
     }
 }
 
-impl crate::Encodable for UserConfig {
-    fn encode<W: ?Sized + std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        let UserConfig {
-            name,
-            token,
-            capabilities,
-        } = self;
-
-        for cap in capabilities {
-            writer.write_all(cap.encode_as_str().as_bytes())?;
-            writer.write_all(b"\r\n")?;
-        }
-
-        writer.write_all(format!("PASS {}\r\n", token).as_bytes())?;
-        writer.write_all(format!("NICK {}\r\n", name).as_bytes())?;
-
-        Ok(())
-    }
-}
-
 /// User config error returned by the [UserConfigBuilder]
 ///
 /// [UserConfigBuilder]: ./struct.UserConfigBuilder.html

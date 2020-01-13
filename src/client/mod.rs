@@ -96,7 +96,7 @@ client.run(read_impl, write_impl).await;
 ```
 
 [Dispatcher]: ./struct.Dispatcher.html
-[Writer]: ./struct.Writer.html
+[Writer]: ./client/struct.Writer.html
 [Client]: ./struct.Client.html
 [AsyncRead]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncRead.html
 [AsyncWrite]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncWrite.html
@@ -169,8 +169,8 @@ impl Client {
     /// * [`Ok(Status::Canceled)`][cancel] if `stop` was called
     ///
     /// [error]: ./enum.Error.html
-    /// [eof]: ./enum.Status.html#variant.Eof
-    /// [cancel]: ./enum.Status.html#variant.Canceled
+    /// [eof]: ./client/enum.Status.html#variant.Eof
+    /// [cancel]: ./client/enum.Status.html#variant.Canceled
     pub async fn run<R, W>(&self, read: R, write: W) -> Result<Status, Error>
     where
         R: AsyncRead + Send + Sync + Unpin + 'static,

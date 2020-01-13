@@ -2,32 +2,6 @@ use crate::*;
 use std::io::{Read, Write};
 
 /**
-Encode the provided message to the [std::io::Write][Write]
-
-# Example
-```rust
-# use twitchchat::{sync, encode};
-let message = encode::join("#museun");
-let mut writer = vec![];
-sync::encode(&message, &mut writer).unwrap();
-assert_eq!(
-    std::str::from_utf8(&writer).unwrap(),
-    "JOIN #museun\r\n"
-);
-```
-
-[Write]: https://doc.rust-lang.org/std/io/trait.Write.html
-*/
-pub fn encode<M: ?Sized, W: ?Sized>(message: &M, writer: &mut W) -> std::io::Result<()>
-where
-    M: Encodable,
-    W: Write,
-{
-    message.encode(writer)?;
-    writer.flush()
-}
-
-/**
 Write the provided `UserConfig` to the ***sync*** writer
 # Example
 ```rust
@@ -45,7 +19,21 @@ pub fn register<W: ?Sized>(user_config: &UserConfig, writer: &mut W) -> std::io:
 where
     W: Write,
 {
-    encode(user_config, writer)
+    let UserConfig {
+        name,
+        token,
+        capabilities,
+    } = user_config;
+
+    for cap in capabilities {
+        writer.write_all(cap.encode_as_str().as_bytes())?;
+        writer.write_all(b"\r\n")?;
+    }
+
+    writer.write_all(format!("PASS {}\r\n", token).as_bytes())?;
+    writer.write_all(format!("NICK {}\r\n", name).as_bytes())?;
+
+    Ok(())
 }
 
 /**

@@ -27,7 +27,7 @@ mod macros;
 cfg_async! {
     pub mod client;
     #[doc(inline)]
-    pub use client::{Error, Client};
+    pub use client::{Error, Client, EventStream};
 }
 
 /// Decode messages from a `&str`
@@ -35,15 +35,9 @@ pub mod decode;
 #[doc(inline)]
 pub use decode::{decode, decode_one};
 
-/// Encode messages to a writer
-pub mod encode;
+mod encode;
 #[doc(inline)]
-pub use encode::Encodable;
-
-cfg_async! {
-    #[doc(inline)]
-    pub use encode::encode;
-}
+pub use encode::Encoder;
 
 /// Common Twitch types
 pub mod twitch;
@@ -125,7 +119,23 @@ cfg_async! {
     where
         W: AsyncWrite + Unpin,
     {
-        encode(user_config, writer).await
+        use tokio::io::AsyncWriteExt as _;
+
+        let UserConfig {
+            name,
+            token,
+            capabilities,
+        } = user_config;
+
+        for cap in capabilities {
+            writer.write_all(cap.encode_as_str().as_bytes()).await?;
+            writer.write_all(b"\r\n").await?;
+        }
+
+        writer.write_all(format!("PASS {}\r\n", token).as_bytes()).await?;
+        writer.write_all(format!("NICK {}\r\n", name).as_bytes()).await?;
+
+        Ok(())
     }
 }
 
