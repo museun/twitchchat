@@ -21,6 +21,7 @@ make_event! {
     IrcReady        => messages::IrcReady
     Join            => messages::Join
     Mode            => messages::Mode
+    Names           => messages::Names
     Notice          => messages::Notice
     Part            => messages::Part
     Ping            => messages::Ping
@@ -29,6 +30,7 @@ make_event! {
     Raw             => messages::Raw<String>
     Ready           => messages::Ready
     Reconnect       => messages::Reconnect
+    RoomState       => messages::RoomState
     UserState       => messages::UserState
 }
 

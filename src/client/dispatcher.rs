@@ -67,6 +67,7 @@ impl Dispatcher {
     [IrcReady][IrcReady_event]               | [IrcReady][IrcReady_message]               | When the IRC connection is ready
     [Join][Join_event]                       | [Join][Join_message]                       | When a user joins a channel
     [Mode][Mode_event]                       | [Mode][Mode_message]                       | When someone gains/loses moderator status
+    [Names][Names_event]                     | [Names][Names_message]                     | Server giving you a stream of names for a channel
     [Notice][Notice_event]                   | [Notice][Notice_message]                   | General notices from the server
     [Part][Part_event]                       | [Part][Part_message]                       | When a user leaves a channel
     [Ping][Ping_event]                       | [Ping][Ping_message]                       | Server requesting a response (for heartbeat/connection tracking)
@@ -75,6 +76,7 @@ impl Dispatcher {
     [Raw][Raw_event]                         | [Raw][Raw_message]                         | The raw message before being specialized
     [Ready][Ready_event]                     | [Ready][Ready_message]                     | When the Twitch connection is ready
     [Reconnect][Reconnect_event]             | [Reconnect][Reconnect_message]             | Server asking you to reconnect
+    [RoomState][RoomState_event]             | [RoomState][RoomState_message]             | Server giving you information about the room
     [UserState][UserState_event]             | [UserState][UserState_message]             | Identifies a user's chat settings or properties (e.g., chat color).
     ---                                      | ---                                        | ---
     [All][All_event]                         | [AllCommands][AllCommands_message]         | This bundles all above messages into a single enum.
@@ -97,6 +99,7 @@ impl Dispatcher {
     [IrcReady_event]: ../events/struct.IrcReady.html
     [Join_event]: ../events/struct.Join.html
     [Mode_event]: ../events/struct.Mode.html
+    [Names_event]: ../events/struct.Names.html
     [Notice_event]: ../events/struct.Notice.html
     [Part_event]: ../events/struct.Part.html
     [Ping_event]: ../events/struct.Ping.html
@@ -105,6 +108,7 @@ impl Dispatcher {
     [Raw_event]: ../events/struct.Raw.html
     [Ready_event]: ../events/struct.Ready.html
     [Reconnect_event]: ../events/struct.Reconnect.html
+    [RoomState_event]: ../events/struct.RoomState.html
     [UserState_event]: ../events/struct.UserState.html
     [All_event]: ../events/struct.All.html
 
@@ -117,6 +121,7 @@ impl Dispatcher {
     [Join_message]: ../messages/struct.Join.html
     [Mode_message]: ../messages/struct.Mode.html
     [Notice_message]: ../messages/struct.Notice.html
+    [Names_message]: ../messages/struct.Names.html
     [Part_message]: ../messages/struct.Part.html
     [Ping_message]: ../messages/struct.Ping.html
     [Pong_message]: ../messages/struct.Pong.html
@@ -124,6 +129,7 @@ impl Dispatcher {
     [Raw_message]: ../messages/struct.Raw.html
     [Ready_message]: ../messages/struct.Ready.html
     [Reconnect_message]: ../messages/struct.Reconnect.html
+    [RoomState_message]: ../messages/struct.RoomState.html
     [UserState_message]: ../messages/struct.UserState.html
     [AllCommands_message]: ../messages/enum.AllCommands.html
 
@@ -245,6 +251,8 @@ impl Dispatcher {
         "001"             => IrcReady
         "PING"            => Ping
         "PONG"            => Pong
+        "353"             => Names
+        "366"             => Names
         "376"             => Ready
         "JOIN"            => Join
         "PART"            => Part
@@ -256,6 +264,7 @@ impl Dispatcher {
         "CLEARCHAT"       => ClearChat
         "CLEARMSG"        => ClearMsg
         "RECONNECT"       => Reconnect
+        "ROOMSTATE"       => RoomState
         "USERSTATE"       => UserState
         "MODE"            => Mode
     }
