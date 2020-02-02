@@ -1,3 +1,17 @@
+#![warn(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unreachable_pub,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
+#![deny(intra_doc_link_resolution_failure)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 /*!
 This crate provides a way to interface with [Twitch]'s chat.
 
@@ -8,21 +22,10 @@ See `examples/demo.rs` for a demo of the api
 
 [Twitch]: https://www.twitch.tv
 */
-#![warn(
-    missing_docs,
-    missing_debug_implementations,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unsafe_code,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications
-)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
-mod macros;
+#[doc(hidden)]
+pub mod macros;
 
 cfg_async! {
     pub mod client;

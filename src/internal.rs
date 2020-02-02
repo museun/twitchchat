@@ -396,12 +396,12 @@ mod tests {
 }
 
 pub(crate) mod private {
-    pub mod string_marker {
+    pub(crate) mod string_marker {
         pub trait Sealed {}
         impl<T> Sealed for T where T: crate::internal::StringMarker {}
     }
 
-    pub mod parse_marker {
+    pub(crate) mod parse_marker {
         pub trait Sealed<E> {}
         impl<T, E> Sealed<E> for T
         where

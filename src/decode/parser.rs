@@ -1,18 +1,18 @@
 use super::*;
 
 // @tags :prefix cmd args :data\r\n
-pub struct Parser<'a> {
+pub(super) struct Parser<'a> {
     input: &'a str,
     pos: usize,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub(super) fn new(input: &'a str) -> Self {
         Self { input, pos: 0 }
     }
 
     // '@tags '
-    pub fn tags(&mut self) -> Tags<&'a str> {
+    pub(super) fn tags(&mut self) -> Tags<&'a str> {
         let input = &self.input[self.pos..];
         if input.starts_with('@') {
             if let Some(pos) = input.find(' ') {
@@ -24,7 +24,7 @@ impl<'a> Parser<'a> {
     }
 
     // ':prefix '
-    pub fn prefix(&mut self) -> Option<Prefix<&'a str>> {
+    pub(super) fn prefix(&mut self) -> Option<Prefix<&'a str>> {
         let input = &self.input[self.pos..];
         if !input.starts_with("tmi.twitch.tv") && !input.starts_with(':') {
             return None;
@@ -35,7 +35,7 @@ impl<'a> Parser<'a> {
     }
 
     // 'cmd '
-    pub fn command(&mut self) -> &'a str {
+    pub(super) fn command(&mut self) -> &'a str {
         let input = &self.input[self.pos..];
         let pos = input.find(' ').unwrap_or_else(|| input.len());
         self.pos += pos + 1;
@@ -43,7 +43,7 @@ impl<'a> Parser<'a> {
     }
 
     // 'args '
-    pub fn args(&mut self) -> &'a str {
+    pub(super) fn args(&mut self) -> &'a str {
         if self.pos > self.input.len() {
             return "";
         }
@@ -55,18 +55,18 @@ impl<'a> Parser<'a> {
     }
 
     // ':data'
-    pub fn data(&mut self) -> Option<&'a str> {
+    pub(super) fn data(&mut self) -> Option<&'a str> {
         self.input.get(self.pos..).filter(|s| !s.is_empty())
     }
 }
 
-pub struct ParseIter<'a> {
+pub(super) struct ParseIter<'a> {
     input: &'a str,
     pos: usize,
 }
 
 impl<'a> ParseIter<'a> {
-    pub fn new(input: &'a str) -> Self {
+    pub(super) fn new(input: &'a str) -> Self {
         Self { input, pos: 0 }
     }
 }
