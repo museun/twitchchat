@@ -177,7 +177,7 @@ parse! {
             .get("user-id")
             .expect("user-id attached to message");
 
-        let display_name = msg.tags.get("display-name");
+        let display_name = msg.tags.get("display-name").cloned();
 
         let color = msg
             .tags

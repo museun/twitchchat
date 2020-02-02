@@ -49,13 +49,13 @@ impl<'a> Tags<&'a str> {
     }
 }
 
-impl<T: crate::StringMarker + Borrow<str>> Tags<T> {
+impl<T: crate::StringMarker> Tags<T> {
     /// Tries to get the tag for this `key`
-    pub fn get<K: ?Sized>(&self, key: &K) -> Option<&str>
+    pub fn get<K: ?Sized>(&self, key: &K) -> Option<&T>
     where
         K: Borrow<str>,
     {
-        self.0.get(key.borrow()).map(Borrow::borrow)
+        self.0.get(key.borrow())
     }
 
     /** Tries to get the tag as a parsable [`FromStr`] type.
@@ -93,7 +93,7 @@ impl<T: crate::StringMarker + Borrow<str>> Tags<T> {
         K: Borrow<str>,
         E: std::str::FromStr,
     {
-        self.get(key).and_then(|s| s.parse().ok())
+        self.get(key).and_then(|s| s.as_ref().parse().ok())
     }
 
     /** Tries to get the tag as a bool.
@@ -123,18 +123,18 @@ impl<T: crate::StringMarker + Borrow<str>> Tags<T> {
     }
 
     /// Get an iterator over the key,value pairs in the tags
-    pub fn iter(&self) -> impl Iterator<Item = (&str, &str)> + '_ {
-        self.0.iter().map(|(k, v)| (v.borrow(), k.borrow()))
+    pub fn iter(&self) -> impl Iterator<Item = (&T, &T)> + '_ {
+        self.0.iter()
     }
 
     /// Get an iterator over the keys in the tags
-    pub fn keys(&self) -> impl Iterator<Item = &str> + '_ {
-        self.0.keys().map(|s| s.borrow())
+    pub fn keys(&self) -> impl Iterator<Item = &T> + '_ {
+        self.0.keys()
     }
 
     /// Get an iterator over the values in the tags
-    pub fn values(&self) -> impl Iterator<Item = &str> + '_ {
-        self.0.values().map(|s| s.borrow())
+    pub fn values(&self) -> impl Iterator<Item = &T> + '_ {
+        self.0.values()
     }
 }
 
