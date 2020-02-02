@@ -311,12 +311,12 @@ pub mod sync;
 /// # use twitchchat::*;
 /// # use twitchchat::messages::*;
 /// let input = ":test!test@test JOIN #museun\r\n";
-/// let message : Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
-/// let message_owned : Raw<String> = message.as_owned();
+/// let message: Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
+/// let message_owned: Raw<String> = message.as_owned();
 ///
-/// let join : Join<&str> = Join::parse(&message).unwrap();
-/// let owned : Join<String> = join.as_owned();
-/// let borrowed : Join<&str> = join.as_borrowed();
+/// let join: Join<&str> = Join::parse(&message).unwrap();
+/// let owned: Join<String> = join.as_owned();
+/// let borrowed: Join<&str> = join.as_borrowed();
 ///
 /// assert_eq!(borrowed, join);
 /// ```
@@ -339,8 +339,8 @@ pub trait Conversion<'a> {
 /// # use twitchchat::*;
 /// # use twitchchat::messages::*;
 /// let input = ":test!test@test JOIN #museun\r\n";
-/// let message : Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
-/// let join : Join<&str> = Join::parse(&message).unwrap();
+/// let message: Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
+/// let join: Join<&str> = Join::parse(&message).unwrap();
 /// assert_eq!(join, Join { channel: "#museun", name: "test" });
 /// ```
 pub trait Parse<T>

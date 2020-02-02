@@ -29,10 +29,10 @@ impl std::error::Error for Error {
 ///
 /// ```rust
 /// # use twitchchat::*;
-/// let channel : Channel = "museun".into_channel().unwrap();
+/// let channel: Channel = "museun".into_channel().unwrap();
 /// assert_eq!(*channel, "#museun");
 ///
-/// let channel : Channel = "#museun".into_channel().unwrap();
+/// let channel: Channel = "#museun".into_channel().unwrap();
 /// assert_eq!(*channel, "#museun");
 /// ```
 pub trait IntoChannel {
