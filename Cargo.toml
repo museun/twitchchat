@@ -21,7 +21,7 @@ tls = ["tokio-tls","native-tls"]
 log = "0.4.8"
 
 [dependencies.tokio]
-version = "0.2.9"
+version = "0.2.11"
 optional = true
 default-features = false
 features = ["dns","stream","sync","tcp"]
@@ -47,10 +47,10 @@ features = ["derive"]
 
 [dev-dependencies]
 matches = "0.1.8"
-flexi_logger = "0.14.5"
+flexi_logger = "0.14.6"
 
 [dev-dependencies.tokio]
-version = "0.2.9"
+version = "0.2.11"
 default-features = false
 features = ["dns","io-util","macros","stream","sync","tcp","time"]
 
