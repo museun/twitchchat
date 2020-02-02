@@ -57,6 +57,85 @@ impl<T: crate::StringMarker + Borrow<str>> Tags<T> {
     {
         self.0.get(key.borrow()).map(Borrow::borrow)
     }
+
+    /** Tries to get the tag as a parsable [`FromStr`] type.
+
+    This returns None if it cannot parse, or cannot find the tag
+
+    [FromStr]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+
+    ```rust
+    # use twitchchat::Tags;
+    let input = "@foo=42;color=#1E90FF";
+    let tags = Tags::parse(input).unwrap();
+
+    // 'foo' can be parsed as a usize
+    let answer: usize = tags.get_parsed("foo").unwrap();
+    assert_eq!(answer, 42);
+
+    // 'foo' can be parsed a String (this shows how to use this with a 'turbofish')
+    assert_eq!(
+        tags.get_parsed::<_, String>("foo").unwrap(),
+        "42".to_string()
+    );
+
+    // 'foo' cannot be parsed as a bool
+    assert!(tags.get_parsed::<_, bool>("foo").is_none());
+
+    // a non-std type with a FromStr impl
+    # use twitchchat::color::*;
+    let color: Color = tags.get_parsed("color").unwrap();
+    assert_eq!(color.rgb, RGB(0x1E, 0x90, 0xFF));
+    ```
+    */
+    pub fn get_parsed<K: ?Sized, E>(&self, key: &K) -> Option<E>
+    where
+        K: Borrow<str>,
+        E: std::str::FromStr,
+    {
+        self.get(key).and_then(|s| s.parse().ok())
+    }
+
+    /** Tries to get the tag as a bool.
+
+    If it wasn't found it'll return false
+
+    ```rust
+    # use twitchchat::Tags;
+    let input = "@foo=42;ok=true;nope=false";
+    let tags = Tags::parse(input).unwrap();
+
+    // 'foo' is not a bool
+    assert!(!tags.get_as_bool("foo"));
+
+    // 'ok' is a bool and is true
+    assert!(tags.get_as_bool("ok"));
+
+    // 'nope' is a bool but its false
+    assert!(!tags.get_as_bool("nope"));
+    ```
+    */
+    pub fn get_as_bool<K: ?Sized>(&self, key: &K) -> bool
+    where
+        K: Borrow<str>,
+    {
+        self.get_parsed(key).unwrap_or_default()
+    }
+
+    /// Get an iterator over the key,value pairs in the tags
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &str)> + '_ {
+        self.0.iter().map(|(k, v)| (v.borrow(), k.borrow()))
+    }
+
+    /// Get an iterator over the keys in the tags
+    pub fn keys(&self) -> impl Iterator<Item = &str> + '_ {
+        self.0.keys().map(|s| s.borrow())
+    }
+
+    /// Get an iterator over the values in the tags
+    pub fn values(&self) -> impl Iterator<Item = &str> + '_ {
+        self.0.values().map(|s| s.borrow())
+    }
 }
 
 impl<T> Tags<T>
@@ -79,10 +158,53 @@ mod tests {
     }
 
     #[test]
-
     fn invalid_input_empty_input() {
         assert!(Tags::parse("@").is_none());
         assert!(Tags::parse("").is_none());
+    }
+
+    #[test]
+    fn get_parsed() {
+        let input = "@foo=42;badges=broadcaster/1,subscriber/6";
+        let tags = Tags::parse(input).unwrap();
+        assert_eq!(tags.get_parsed::<_, usize>("foo").unwrap(), 42);
+        assert_eq!(
+            tags.get_parsed::<_, String>("foo").unwrap(),
+            "42".to_string()
+        );
+        assert!(tags.get_parsed::<_, bool>("foo").is_none());
+
+        use std::collections::HashMap;
+        #[derive(Debug)]
+        struct Badges(HashMap<String, usize>);
+        impl std::str::FromStr for Badges {
+            type Err = ();
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Ok(Self {
+                    0: s.split_terminator(',')
+                        .filter_map(|s| {
+                            let mut iter = s.split('/');
+                            let left = iter.next()?.to_string();
+                            let right = iter.next()?.parse::<usize>().ok()?;
+                            (left, right).into()
+                        })
+                        .collect(),
+                })
+            }
+        }
+
+        let badges = tags.get_parsed::<_, Badges>("badges").unwrap();
+        assert_eq!(*badges.0.get("subscriber").unwrap(), 6);
+        assert_eq!(*badges.0.get("broadcaster").unwrap(), 1);
+    }
+
+    #[test]
+    fn get_bool() {
+        let input = "@foo=42;ok=true;nope=false";
+        let tags = Tags::parse(input).unwrap();
+        assert!(!tags.get_as_bool("foo"));
+        assert!(tags.get_as_bool("ok"));
+        assert!(!tags.get_as_bool("nope"));
     }
 
     #[test]
