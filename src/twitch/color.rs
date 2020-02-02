@@ -227,6 +227,8 @@ impl std::str::FromStr for Color {
                 s.insert(pos, '_');
             }
         }
+
+        // TODO this isn't correct, its always parsing stuff as 'Turbo'
         let s = s.to_ascii_lowercase();
         let (kind, rgb) = match s.as_str() {
             "blue" => find(Blue),

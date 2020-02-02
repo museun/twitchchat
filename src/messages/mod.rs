@@ -818,6 +818,77 @@ where
     pub tags: Tags<T>,
 }
 
+impl<T> Privmsg<T>
+where
+    T: StringMarker,
+{
+    /// Metadata related to the chat badges
+    ///
+    /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
+    ///
+    // TODO: make this work with the Conversion trait
+    pub fn badge_info(&self) -> Vec<crate::BadgeInfo<&str>> {
+        self.tags
+            .get("badge-info")
+            .map(|s| s.as_ref())
+            .map(crate::parse_badges)
+            .unwrap_or_default()
+    }
+
+    /// Badges attached to this message
+    ///
+    // TODO: make this work with the Conversion trait
+    pub fn badges(&self) -> Vec<crate::Badge<&str>> {
+        self.tags
+            .get("badges")
+            .map(|s| s.as_ref())
+            .map(crate::parse_badges)
+            .unwrap_or_default()
+    }
+    /// How many bits were attached to this message
+    pub fn bits(&self) -> Option<u64> {
+        self.tags.get_parsed("bits")
+    }
+
+    /// The color of the user who sent this message, if set
+    pub fn color(&self) -> Option<crate::color::Color> {
+        self.tags.get_parsed("color")
+    }
+
+    /// display_name
+    pub fn display_name(&self) -> Option<&T> {
+        self.tags.get("display-name")
+    }
+
+    /// Emotes attached to this message
+    pub fn emotes(&self) -> Vec<crate::Emotes> {
+        self.tags
+            .get("emotes")
+            .map(crate::parse_emotes)
+            .unwrap_or_default()
+    }
+
+    /// Whether the user sending this message was a moderator
+    pub fn is_moderator(&self) -> bool {
+        self.tags.get_as_bool("mod")
+    }
+
+    /// The id of the room this message was sent to
+    pub fn room_id(&self) -> Option<u64> {
+        self.tags.get_parsed("room-id")
+    }
+
+    /// The timestamp of when this message was received by Twitch
+    pub fn tmi_sent_ts(&self) -> Option<u64> {
+        self.tags.get_parsed("tmi-sent-ts")
+    }
+
+    /// The id of the user who sent this message
+    pub fn user_id(&self) -> Option<u64> {
+        self.tags.get_parsed("user-id")
+    }
+}
+
 /// Happens when the Twitch connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
