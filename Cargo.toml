@@ -10,12 +10,12 @@ description = "interface to the irc-side of twitch's chat system"
 repository = "https://github.com/museun/twitchchat"
 
 [package.metadata.docs.rs]
-features = ["default","serde"]
+features = ["default", "serde"]
 
 [features]
 default = ["async", "tls"]
 async = ["tokio", "futures"]
-tls = ["tokio-tls","native-tls"]
+tls = ["tokio-tls", "native-tls"]
 
 [dependencies]
 log = "0.4.8"
@@ -24,7 +24,7 @@ log = "0.4.8"
 version = "0.2.11"
 optional = true
 default-features = false
-features = ["dns","stream","sync","tcp"]
+features = ["dns", "stream", "sync", "tcp"]
 
 [dependencies.tokio-tls]
 version = "0.3.0"
@@ -34,7 +34,7 @@ optional = true
 version = "0.3.1"
 optional = true
 default-features = false
-features = ["alloc"]
+features = ["alloc"] # for AbortHandle
 
 [dependencies.native-tls]
 version = "0.2.3"
@@ -52,7 +52,7 @@ flexi_logger = "0.14.6"
 [dev-dependencies.tokio]
 version = "0.2.11"
 default-features = false
-features = ["dns","io-util","macros","stream","sync","tcp","time"]
+features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time"]
 
 [[example]]
 name = "demo"
