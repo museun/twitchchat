@@ -85,6 +85,21 @@ where
     pub message: Option<T>,
 }
 
+impl<T> ClearMsg<T>
+where
+    T: StringMarker,
+{
+    /// Name of the user who sent the message
+    pub fn login(&self) -> Option<&T> {
+        self.tags.get("login")
+    }
+
+    /// UUID of the message
+    pub fn target_msg_id(&self) -> Option<&T> {
+        self.tags.get("target-msg-id")
+    }
+}
+
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
