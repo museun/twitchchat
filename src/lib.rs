@@ -10,7 +10,7 @@
     unused_import_braces,
     unused_qualifications
 )]
-#![deny(intra_doc_link_resolution_failure)]
+
 #![cfg_attr(docsrs, feature(doc_cfg))]
 /*!
 This crate provides a way to interface with [Twitch]'s chat.
