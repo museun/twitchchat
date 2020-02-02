@@ -881,6 +881,58 @@ where
     pub channel: T,
 }
 
+impl<T> UserState<T>
+where
+    T: StringMarker,
+{
+    /// Metadata related to the chat badges
+    ///
+    /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
+    ///
+    // TODO: make this work with the Conversion trait
+    pub fn badge_info(&self) -> Vec<crate::BadgeInfo<&str>> {
+        self.tags
+            .get("badge-info")
+            .map(|s| s.as_ref())
+            .map(crate::parse_badges)
+            .unwrap_or_default()
+    }
+
+    /// Badges attached to this message
+    ///
+    // TODO: make this work with the Conversion trait
+    pub fn badges(&self) -> Vec<crate::Badge<&str>> {
+        self.tags
+            .get("badges")
+            .map(|s| s.as_ref())
+            .map(crate::parse_badges)
+            .unwrap_or_default()
+    }
+
+    /// The user's color, if set
+    pub fn color(&self) -> Option<crate::color::Color> {
+        self.tags.get_parsed("color")
+    }
+
+    /// The user's display name, if set
+    pub fn display_name(&self) -> Option<&T> {
+        self.tags.get("display-name")
+    }
+
+    /// Emotes attached to this message
+    pub fn emotes(&self) -> Vec<crate::Emotes> {
+        self.tags
+            .get("emotes")
+            .map(crate::parse_emotes)
+            .unwrap_or_default()
+    }
+
+    /// Whether this user a is a moderator
+    pub fn is_moderator(&self) -> bool {
+        self.tags.get_as_bool("mod")
+    }
+}
+
 /// This is a collection of all possible message types
 ///
 /// Subscribing to [events::All][all] will produce this, so you can have a single stream for multiple messages.
