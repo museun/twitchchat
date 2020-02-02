@@ -58,6 +58,16 @@ where
     pub name: Option<T>,
 }
 
+impl<T> ClearChat<T>
+where
+    T: StringMarker,
+{
+    /// (Optional) Duration of the timeout, in seconds. If omitted, the ban is permanent.
+    pub fn ban_duration(&self) -> Option<u64> {
+        self.tags.get_parsed("ban-duration")
+    }
+}
+
 /// When a single message has been removed from a channel.
 ///
 /// This is triggered via /delete on IRC.
