@@ -27,10 +27,10 @@ impl Capability {
     /// Encode this capability as a string, to be sent to the server
     pub fn encode_as_str(self) -> &'static str {
         match self {
-            Capability::Membership => "CAP REQ :twitch.tv/membership",
-            Capability::Tags => "CAP REQ :twitch.tv/tags",
-            Capability::Commands => "CAP REQ :twitch.tv/commands",
-            Capability::ChatRooms => "CAP REQ :twitch.tv/tags twitch.tv/commands",
+            Self::Membership => "CAP REQ :twitch.tv/membership",
+            Self::Tags => "CAP REQ :twitch.tv/tags",
+            Self::Commands => "CAP REQ :twitch.tv/commands",
+            Self::ChatRooms => "CAP REQ :twitch.tv/tags twitch.tv/commands",
         }
     }
 }

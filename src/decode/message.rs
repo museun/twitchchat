@@ -1,28 +1,26 @@
 use super::*;
+use std::borrow::Cow;
 
 /// An IRC-like message
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Message<T>
-where
-    T: crate::StringMarker,
-{
+pub struct Message<'t> {
     /// The raw string
-    pub raw: T,
+    pub raw: Cow<'t, str>,
     /// Any targets found in the message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// The prefix of the message
-    pub prefix: Option<Prefix<T>>,
+    pub prefix: Option<Prefix<'t>>,
     /// The command of the message
-    pub command: T,
+    pub command: Cow<'t, str>,
     /// Arguments to the command
-    pub args: T,
+    pub args: Cow<'t, str>,
     /// Any data provided
-    pub data: Option<T>,
+    pub data: Option<Cow<'t, str>>,
 }
 
-impl<'a> Message<&'a str> {
-    pub(super) fn parse(input: &'a str) -> Result<Self> {
+impl<'t> Message<'t> {
+    pub(super) fn parse(input: &'t str) -> Result<Self> {
         let raw = input;
         if !input.ends_with("\r\n") {
             return Err(ParseError::IncompleteMessage { pos: 0 });
@@ -35,12 +33,12 @@ impl<'a> Message<&'a str> {
 
         let mut parser = Parser::new(input);
         Ok(Self {
-            raw,
+            raw: raw.into(),
             tags: parser.tags(),
             prefix: parser.prefix(),
-            command: parser.command(),
-            args: parser.args(),
-            data: parser.data(),
+            command: parser.command().into(),
+            args: parser.args().into(),
+            data: parser.data().map(Into::into),
         })
     }
 

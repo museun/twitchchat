@@ -24,7 +24,7 @@ impl<W> std::fmt::Debug for Encoder<W> {
 
 impl<W: Write + Clone> Clone for Encoder<W> {
     fn clone(&self) -> Self {
-        Encoder {
+        Self {
             writer: self.writer.clone(),
         }
     }
@@ -325,7 +325,7 @@ where
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub  fn unvip(&mut self, username: &str) -> Result {
+    pub fn unvip(&mut self, username: &str) -> Result {
         self.command(&format!("/unvip {}", username))
     }
 
@@ -334,7 +334,7 @@ where
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub  fn vip(&mut self, username: &str) -> Result {
+    pub fn vip(&mut self, username: &str) -> Result {
         self.command(&format!("/vip {}", username))
     }
 

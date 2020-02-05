@@ -28,7 +28,7 @@ trait SafeEncode {
         F: FnMut(&mut Self) -> std::io::Result<()>,
     {
         match func(self) {
-            Ok(res) => Ok(res),
+            Ok(_) => Ok(()),
             Err(err) => {
                 self.clear_data();
                 Err(err)

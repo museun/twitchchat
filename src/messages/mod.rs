@@ -14,29 +14,25 @@ Or by using [Parse] on an [Message]
 
 use crate::decode::Message;
 use crate::Tags;
-use crate::{Conversion, Parse, StringMarker};
+
+use std::borrow::Cow;
 
 mod error;
 pub use error::InvalidMessage;
 
 mod expect;
-use expect::Expect as _;
 
-pub use parse::*;
 mod parse;
 
 /// A raw IRC message
-pub type Raw<T> = Message<T>;
+pub type Raw<'t> = Message<'t>;
 
 /// Acknowledgement (or not) on a CAPS request
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Cap<T = String>
-where
-    T: StringMarker,
-{
+pub struct Cap<'t> {
     /// The capability name
-    pub capability: T,
+    pub capability: Cow<'t, str>,
     /// Whether it was acknowledged
     pub acknowledged: bool,
 }
@@ -46,22 +42,16 @@ where
 /// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ClearChat<T = String>
-where
-    T: StringMarker,
-{
+pub struct ClearChat<'t> {
     /// Tags attached to the message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// The channel this event happened on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// The user, if any, that was being purged
-    pub name: Option<T>,
+    pub name: Option<Cow<'t, str>>,
 }
 
-impl<T> ClearChat<T>
-where
-    T: StringMarker,
-{
+impl<'t> ClearChat<'t> {
     /// (Optional) Duration of the timeout, in seconds. If omitted, the ban is permanent.
     pub fn ban_duration(&self) -> Option<u64> {
         self.tags.get_parsed("ban-duration")
@@ -73,29 +63,23 @@ where
 /// This is triggered via /delete on IRC.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ClearMsg<T = String>
-where
-    T: StringMarker,
-{
+pub struct ClearMsg<'t> {
     /// Tags attached to the message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// The channel this event happened on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// The message that was deleted
-    pub message: Option<T>,
+    pub message: Option<Cow<'t, str>>,
 }
 
-impl<T> ClearMsg<T>
-where
-    T: StringMarker,
-{
+impl<'t> ClearMsg<'t> {
     /// Name of the user who sent the message
-    pub fn login(&self) -> Option<&T> {
+    pub fn login(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("login")
     }
 
     /// UUID of the message
-    pub fn target_msg_id(&self) -> Option<&T> {
+    pub fn target_msg_id(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("target-msg-id")
     }
 }
@@ -103,33 +87,27 @@ where
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct GlobalUserState<T = String>
-where
-    T: StringMarker,
-{
+pub struct GlobalUserState<'t> {
     /// Your user-id
-    pub user_id: T,
+    pub user_id: Cow<'t, str>,
     /// Your display name, if set   
-    pub display_name: Option<T>,
+    pub display_name: Option<Cow<'t, str>>,
     /// Your color, if set. Defaults to `white`
     pub color: crate::color::Color,
     /// Your available emote sets, always contains atleast '0'
-    pub emote_sets: Vec<T>,
+    pub emote_sets: Vec<Cow<'t, str>>,
     /// Any badges you have
-    pub badges: Vec<crate::Badge<T>>,
+    pub badges: Vec<crate::Badge<'t>>,
 }
 
 /// Event kind for determine when a Host event beings or end
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum HostTargetKind<T = String>
-where
-    T: StringMarker,
-{
+pub enum HostTargetKind<'t> {
     /// The host event started
     Start {
         /// Target channel that is being hosted
-        target: T,
+        target: Cow<'t, str>,
     },
     /// The host event ended
     End,
@@ -138,27 +116,21 @@ where
 /// When a channel starts to host another channel
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct HostTarget<T = String>
-where
-    T: StringMarker,
-{
+pub struct HostTarget<'t> {
     /// Source channel (the one doing the hosting).
-    pub source: T,
+    pub source: Cow<'t, str>,
     /// How many viewers are going along
     pub viewers: Option<usize>,
     /// What kind of event this was. e.g. `Start` or `End`
-    pub kind: HostTargetKind<T>,
+    pub kind: HostTargetKind<'t>,
 }
 
 /// Happens when the IRC connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct IrcReady<T = String>
-where
-    T: StringMarker,
-{
+pub struct IrcReady<'t> {
     /// The name the server will refer to you as
-    pub nickname: T,
+    pub nickname: Cow<'t, str>,
 }
 
 /// User join message
@@ -166,14 +138,11 @@ where
 /// The happens when a user (yourself included) joins a channel
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Join<T = String>
-where
-    T: StringMarker,
-{
+pub struct Join<'t> {
     /// Name of the user that joined the channel
-    pub name: T,
+    pub name: Cow<'t, str>,
     /// Channel which they joined
-    pub channel: T,
+    pub channel: Cow<'t, str>,
 }
 
 /// Status of gaining or losing moderator (operator) status
@@ -189,29 +158,23 @@ pub enum ModeStatus {
 /// When a user gains or loses moderator (operator) status in a channel.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Mode<T = String>
-where
-    T: StringMarker,
-{
+pub struct Mode<'t> {
     /// The channel this event happened on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// The status. gained, or lost
     pub status: ModeStatus,
     /// The user this applies too
-    pub name: T,
+    pub name: Cow<'t, str>,
 }
 
 /// The kind of the Names event
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NamesKind<T = String>
-where
-    T: StringMarker,
-{
+pub enum NamesKind<'t> {
     /// Names begins, this'll continue until `End` is recieved
     Start {
         /// A list of user names
-        users: Vec<T>,
+        users: Vec<Cow<'t, str>>,
     },
     /// Names end, this'll mark the end of the event
     End,
@@ -228,43 +191,34 @@ where
 /// And once you receive an End you'll have the complete lost
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Names<T = String>
-where
-    T: StringMarker,
-{
+pub struct Names<'t> {
     /// Your username
-    pub name: T,
+    pub name: Cow<'t, str>,
     /// The channel this event is happening for
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// The state of the event
-    pub kind: NamesKind<T>,
+    pub kind: NamesKind<'t>,
 }
 
 /// General notices from the server.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Notice<T = String>
-where
-    T: StringMarker,
-{
+pub struct Notice<'t> {
     /// The tags attached to this message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// The channel this event happened on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// The message from the server
-    pub message: T,
+    pub message: Cow<'t, str>,
 }
 
-impl<T> Notice<T>
-where
-    T: StringMarker,
-{
+impl<'t> Notice<'t> {
     /// A message ID string. Can be used for ***i18ln***.
     ///
     /// Valid values: see [Twitch IRC: msg-id Tags](https://dev.twitch.tv/docs/irc/msg-id/).
     ///
     /// Returns None if this tag wasn't found on the message
-    pub fn msg_id(&self) -> Option<MessageId<T>> {
+    pub fn msg_id(&'t self) -> Option<MessageId<'t>> {
         let input = self.tags.get("msg-id")?;
         MessageId::parse(input).into()
     }
@@ -274,10 +228,7 @@ where
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum MessageId<T = String>
-where
-    T: StringMarker,
-{
+pub enum MessageId<'t> {
     /// <user> is already banned in this channel.
     AlreadyBanned,
     /// This room is not in emote-only mode.
@@ -624,16 +575,13 @@ where
     /// That user's settings prevent them from receiving this whisper.
     WhisperRestrictedRecipient,
     /// Unknown message id
-    Unknown(T),
+    Unknown(Cow<'t, str>),
 }
 
-impl<T> MessageId<T>
-where
-    T: StringMarker,
-{
-    fn parse(input: &T) -> MessageId<T> {
+impl<'t> MessageId<'t> {
+    fn parse(input: &'t str) -> MessageId<'t> {
         use MessageId::*;
-        match input.as_ref() {
+        match input {
             "already_banned" => AlreadyBanned,
             "already_emote_only_off" => AlreadyEmoteOnlyOff,
             "already_emote_only_on" => AlreadyEmoteOnlyOn,
@@ -778,7 +726,7 @@ where
             "whisper_limit_per_sec" => WhisperLimitPerSec,
             "whisper_restricted" => WhisperRestricted,
             "whisper_restricted_recipient" => WhisperRestrictedRecipient,
-            _ => Unknown(input.clone()),
+            _ => Unknown(Cow::Borrowed(input)),
         }
     }
 }
@@ -788,14 +736,11 @@ where
 /// The happens when a user (yourself included) leaves a channel
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Part<T = String>
-where
-    T: StringMarker,
-{
+pub struct Part<'t> {
     /// Name of the user that left the channel
-    pub name: T,
+    pub name: Cow<'t, str>,
     /// Channel which they left
-    pub channel: T,
+    pub channel: Cow<'t, str>,
 }
 
 /// A ping request from the server
@@ -805,12 +750,9 @@ where
 /// But you can use them however you want
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Ping<T = String>
-where
-    T: StringMarker,
-{
+pub struct Ping<'t> {
     /// Token associated with the PING event
-    pub token: T,
+    pub token: Cow<'t, str>,
 }
 
 /// A pong response sent from the server
@@ -818,56 +760,45 @@ where
 /// This should be a response to sending a PING to the server
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Pong<T = String>
-where
-    T: StringMarker,
-{
+pub struct Pong<'t> {
     /// Token associated with the PONG event
-    pub token: T,
+    pub token: Cow<'t, str>,
 }
 
 /// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Privmsg<T = String>
-where
-    T: StringMarker,
-{
+pub struct Privmsg<'t> {
     /// User who sent this messages
-    pub name: T,
+    pub name: Cow<'t, str>,
     /// Channel this message was sent on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// Data that the user provided
-    pub data: T,
+    pub data: Cow<'t, str>,
     /// Tags attached to the message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
 }
 
-impl<T> Privmsg<T>
-where
-    T: StringMarker,
-{
+impl<'t> Privmsg<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badge_info(&self) -> Vec<crate::BadgeInfo<&str>> {
+    pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
     /// Badges attached to this message
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badges(&self) -> Vec<crate::Badge<&str>> {
+    pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
     /// How many bits were attached to this message
@@ -881,7 +812,7 @@ where
     }
 
     /// display_name
-    pub fn display_name(&self) -> Option<&T> {
+    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("display-name")
     }
 
@@ -889,7 +820,7 @@ where
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(crate::parse_emotes)
+            .map(|s| crate::parse_emotes(s))
             .unwrap_or_default()
     }
 
@@ -917,12 +848,9 @@ where
 /// Happens when the Twitch connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Ready<T = String>
-where
-    T: StringMarker,
-{
+pub struct Ready<'t> {
     /// The name Twitch will refer to you as
-    pub username: T,
+    pub username: Cow<'t, str>,
 }
 
 /// Signals that you should reconnect and rejoin channels after a restart.
@@ -939,20 +867,14 @@ pub struct Reconnect {}
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RoomState<T = String>
-where
-    T: StringMarker,
-{
+pub struct RoomState<'t> {
     /// Tags attached to this message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// Channel this event is happening on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
 }
 
-impl<T> RoomState<T>
-where
-    T: StringMarker,
-{
+impl<'t> RoomState<'t> {
     /// Whether this room is in emote only mode
     pub fn is_emote_only(&self) -> bool {
         self.tags.get_as_bool("emote-only")
@@ -1002,43 +924,35 @@ pub enum FollowersOnly {
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct UserNotice<T = String>
-where
-    T: StringMarker,
-{
+pub struct UserNotice<'t> {
     /// Tags attached to this message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// Channel this event is happening on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
     /// Optional message attached to the event
-    pub message: Option<T>,
+    pub message: Option<Cow<'t, str>>,
 }
 
-impl<T> UserNotice<T>
-where
-    T: StringMarker,
-{
+impl<'t> UserNotice<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badge_info(&self) -> Vec<crate::BadgeInfo<&str>> {
+    pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
     /// Badges attached to this message
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badges(&self) -> Vec<crate::Badge<&str>> {
+    pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
@@ -1048,7 +962,7 @@ where
     }
 
     /// The user's display name, if set
-    pub fn display_name(&self) -> Option<&T> {
+    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("display-name")
     }
 
@@ -1056,19 +970,19 @@ where
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(crate::parse_emotes)
+            .map(|s| crate::parse_emotes(s))
             .unwrap_or_default()
     }
 
     /// A unique id (UUID) attached to this message
     ///
     /// (this is used for localization)
-    pub fn id(&self) -> Option<&T> {
+    pub fn id(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("id")
     }
 
     /// The name of the user who sent this notice
-    pub fn login(&self) -> Option<&T> {
+    pub fn login(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("login")
     }
 
@@ -1078,7 +992,7 @@ where
     }
 
     /// The kind of notice this message is
-    pub fn msg_id(&self) -> Option<NoticeType<T>> {
+    pub fn msg_id(&'t self) -> Option<NoticeType<'t>> {
         let kind = self.tags.get("msg-id")?;
         match kind.as_ref() {
             "sub" => NoticeType::Sub,
@@ -1135,12 +1049,12 @@ where
 
     /// (Sent only on raid) The display name of the source user raiding this
     /// channel.
-    pub fn msg_param_display_name(&self) -> Option<&T> {
+    pub fn msg_param_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-displayName")
     }
 
     /// (Sent on only raid) The name of the source user raiding this channel.
-    pub fn msg_param_login(&self) -> Option<&T> {
+    pub fn msg_param_login(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-login")
     }
 
@@ -1159,13 +1073,13 @@ where
 
     /// (Sent only on anongiftpaidupgrade, giftpaidupgrade) The subscriptions
     /// promo, if any, that is ongoing; e.g. Subtember 2018.
-    pub fn msg_param_promo_name(&self) -> Option<&T> {
+    pub fn msg_param_promo_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-promo-name")
     }
 
     /// (Sent only on subgift, anonsubgift) The display name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_display_name(&self) -> Option<&T> {
+    pub fn msg_param_recipient_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-recipient-display-name")
     }
 
@@ -1177,19 +1091,19 @@ where
 
     /// (Sent only on subgift, anonsubgift) The user name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_user_name(&self) -> Option<&T> {
+    pub fn msg_param_recipient_user_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-recipient-user-name")
     }
 
     /// (Sent only on giftpaidupgrade) The login of the user who gifted the
     /// subscription.
-    pub fn msg_param_sender_login(&self) -> Option<&T> {
+    pub fn msg_param_sender_login(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-sender-login")
     }
 
     /// (Sent only on giftpaidupgrade) The display name of the user who gifted
     /// the subscription.
-    pub fn msg_param_sender_name(&self) -> Option<&T> {
+    pub fn msg_param_sender_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-sender-name")
     }
 
@@ -1225,7 +1139,7 @@ where
     /// (Sent only on sub, resub, subgift, anonsubgift) The display name of the
     /// subscription plan. This may be a default name or one created by the
     /// channel owner.
-    pub fn msg_param_sub_plan_name(&self) -> Option<&T> {
+    pub fn msg_param_sub_plan_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-sub-plan-name")
     }
 
@@ -1237,7 +1151,7 @@ where
 
     /// (Sent only on ritual) The name of the ritual this notice is for. Valid
     /// value: new_chatter.
-    pub fn msg_param_ritual_name(&self) -> Option<&T> {
+    pub fn msg_param_ritual_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("msg-param-ritual-name")
     }
 
@@ -1270,10 +1184,7 @@ pub enum SubPlan {
 #[allow(missing_docs)]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NoticeType<T = String>
-where
-    T: StringMarker,
-{
+pub enum NoticeType<'t> {
     Sub,
     Resub,
     SubGift,
@@ -1286,47 +1197,39 @@ where
     Unraid,
     Ritual,
     BitsBadgeTier,
-    Unknown(T),
+    Unknown(Cow<'t, str>),
 }
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct UserState<T = String>
-where
-    T: StringMarker,
-{
+pub struct UserState<'t> {
     /// Tags attached to this message
-    pub tags: Tags<T>,
+    pub tags: Tags<'t>,
     /// Channel this event happened on
-    pub channel: T,
+    pub channel: Cow<'t, str>,
 }
 
-impl<T> UserState<T>
-where
-    T: StringMarker,
-{
+impl<'t> UserState<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badge_info(&self) -> Vec<crate::BadgeInfo<&str>> {
+    pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
     /// Badges attached to this message
     ///
     // TODO: make this work with the Conversion trait
-    pub fn badges(&self) -> Vec<crate::Badge<&str>> {
+    pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
-            .map(|s| s.as_ref())
-            .map(crate::parse_badges)
+            .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
@@ -1336,7 +1239,7 @@ where
     }
 
     /// The user's display name, if set
-    pub fn display_name(&self) -> Option<&T> {
+    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("display-name")
     }
 
@@ -1344,7 +1247,7 @@ where
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(crate::parse_emotes)
+            .map(|s| crate::parse_emotes(s))
             .unwrap_or_default()
     }
 
@@ -1363,208 +1266,145 @@ where
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum AllCommands<T = String>
-where
-    T: StringMarker,
-{
-    Unknown(Raw<T>),
-    Cap(Cap<T>),
-    ClearChat(ClearChat<T>),
-    ClearMsg(ClearMsg<T>),
-    GlobalUserState(GlobalUserState<T>),
-    HostTarget(HostTarget<T>),
-    IrcReady(IrcReady<T>),
-    Join(Join<T>),
-    Mode(Mode<T>),
-    Names(Names<T>),
-    Notice(Notice<T>),
-    Part(Part<T>),
-    Ping(Ping<T>),
-    Pong(Pong<T>),
-    Privmsg(Privmsg<T>),
-    Ready(Ready<T>),
+pub enum AllCommands<'t> {
+    Unknown(Raw<'t>),
+    Cap(Cap<'t>),
+    ClearChat(ClearChat<'t>),
+    ClearMsg(ClearMsg<'t>),
+    GlobalUserState(GlobalUserState<'t>),
+    HostTarget(HostTarget<'t>),
+    IrcReady(IrcReady<'t>),
+    Join(Join<'t>),
+    Mode(Mode<'t>),
+    Names(Names<'t>),
+    Notice(Notice<'t>),
+    Part(Part<'t>),
+    Ping(Ping<'t>),
+    Pong(Pong<'t>),
+    Privmsg(Privmsg<'t>),
+    Ready(Ready<'t>),
     Reconnect(Reconnect),
-    RoomState(RoomState<T>),
-    UserNotice(UserNotice<T>),
-    UserState(UserState<T>),
+    RoomState(RoomState<'t>),
+    UserNotice(UserNotice<'t>),
+    UserState(UserState<'t>),
 }
 
-impl<T> From<Raw<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Raw<T>) -> Self {
+impl<'t> From<Raw<'t>> for AllCommands<'t> {
+    fn from(msg: Raw<'t>) -> Self {
         Self::Unknown(msg)
     }
 }
 
-impl<T> From<Cap<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Cap<T>) -> Self {
+impl<'t> From<Cap<'t>> for AllCommands<'t> {
+    fn from(msg: Cap<'t>) -> Self {
         Self::Cap(msg)
     }
 }
 
-impl<T> From<ClearChat<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: ClearChat<T>) -> Self {
+impl<'t> From<ClearChat<'t>> for AllCommands<'t> {
+    fn from(msg: ClearChat<'t>) -> Self {
         Self::ClearChat(msg)
     }
 }
 
-impl<T> From<ClearMsg<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: ClearMsg<T>) -> Self {
+impl<'t> From<ClearMsg<'t>> for AllCommands<'t> {
+    fn from(msg: ClearMsg<'t>) -> Self {
         Self::ClearMsg(msg)
     }
 }
 
-impl<T> From<GlobalUserState<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: GlobalUserState<T>) -> Self {
+impl<'t> From<GlobalUserState<'t>> for AllCommands<'t> {
+    fn from(msg: GlobalUserState<'t>) -> Self {
         Self::GlobalUserState(msg)
     }
 }
 
-impl<T> From<HostTarget<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: HostTarget<T>) -> Self {
+impl<'t> From<HostTarget<'t>> for AllCommands<'t> {
+    fn from(msg: HostTarget<'t>) -> Self {
         Self::HostTarget(msg)
     }
 }
 
-impl<T> From<IrcReady<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: IrcReady<T>) -> Self {
+impl<'t> From<IrcReady<'t>> for AllCommands<'t> {
+    fn from(msg: IrcReady<'t>) -> Self {
         Self::IrcReady(msg)
     }
 }
 
-impl<T> From<Join<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Join<T>) -> Self {
+impl<'t> From<Join<'t>> for AllCommands<'t> {
+    fn from(msg: Join<'t>) -> Self {
         Self::Join(msg)
     }
 }
 
-impl<T> From<Mode<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Mode<T>) -> Self {
+impl<'t> From<Mode<'t>> for AllCommands<'t> {
+    fn from(msg: Mode<'t>) -> Self {
         Self::Mode(msg)
     }
 }
 
-impl<T> From<Names<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Names<T>) -> Self {
+impl<'t> From<Names<'t>> for AllCommands<'t> {
+    fn from(msg: Names<'t>) -> Self {
         Self::Names(msg)
     }
 }
 
-impl<T> From<Notice<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Notice<T>) -> Self {
+impl<'t> From<Notice<'t>> for AllCommands<'t> {
+    fn from(msg: Notice<'t>) -> Self {
         Self::Notice(msg)
     }
 }
 
-impl<T> From<Part<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Part<T>) -> Self {
+impl<'t> From<Part<'t>> for AllCommands<'t> {
+    fn from(msg: Part<'t>) -> Self {
         Self::Part(msg)
     }
 }
 
-impl<T> From<Ping<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Ping<T>) -> Self {
+impl<'t> From<Ping<'t>> for AllCommands<'t> {
+    fn from(msg: Ping<'t>) -> Self {
         Self::Ping(msg)
     }
 }
 
-impl<T> From<Pong<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Pong<T>) -> Self {
+impl<'t> From<Pong<'t>> for AllCommands<'t> {
+    fn from(msg: Pong<'t>) -> Self {
         Self::Pong(msg)
     }
 }
 
-impl<T> From<Privmsg<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Privmsg<T>) -> Self {
+impl<'t> From<Privmsg<'t>> for AllCommands<'t> {
+    fn from(msg: Privmsg<'t>) -> Self {
         Self::Privmsg(msg)
     }
 }
 
-impl<T> From<Ready<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: Ready<T>) -> Self {
+impl<'t> From<Ready<'t>> for AllCommands<'t> {
+    fn from(msg: Ready<'t>) -> Self {
         Self::Ready(msg)
     }
 }
 
-impl<T> From<Reconnect> for AllCommands<T>
-where
-    T: StringMarker,
-{
+impl<'t> From<Reconnect> for AllCommands<'t> {
     fn from(msg: Reconnect) -> Self {
         Self::Reconnect(msg)
     }
 }
 
-impl<T> From<RoomState<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: RoomState<T>) -> Self {
+impl<'t> From<RoomState<'t>> for AllCommands<'t> {
+    fn from(msg: RoomState<'t>) -> Self {
         Self::RoomState(msg)
     }
 }
 
-impl<T> From<UserNotice<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: UserNotice<T>) -> Self {
+impl<'t> From<UserNotice<'t>> for AllCommands<'t> {
+    fn from(msg: UserNotice<'t>) -> Self {
         Self::UserNotice(msg)
     }
 }
 
-impl<T> From<UserState<T>> for AllCommands<T>
-where
-    T: StringMarker,
-{
-    fn from(msg: UserState<T>) -> Self {
+impl<'t> From<UserState<'t>> for AllCommands<'t> {
+    fn from(msg: UserState<'t>) -> Self {
         Self::UserState(msg)
     }
 }

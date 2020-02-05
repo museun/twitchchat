@@ -1,4 +1,6 @@
 /*!
+The client for reading/writing messages to Twitch
+
 # Event handling.
 
 You can [get] a [Dispatcher] from the [Client].
@@ -34,7 +36,7 @@ pub use stream::EventStream;
 
 mod event;
 #[doc(hidden)]
-pub use event::Event;
+pub use event::{Event, EventMapped};
 
 mod error;
 pub use error::Error;
@@ -95,9 +97,9 @@ tokio::task::spawn(async move {
 client.run(read_impl, write_impl).await;
 ```
 
-[Dispatcher]: ./struct.Dispatcher.html
-[Writer]: ./client/struct.Writer.html
-[Client]: ./struct.Client.html
+[Dispatcher]: ../client/struct.Dispatcher.html
+[Writer]: ../client/struct.Writer.html
+[Client]: ../client/struct.Client.html
 [AsyncRead]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncRead.html
 [AsyncWrite]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncWrite.html
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
@@ -169,8 +171,8 @@ impl Client {
     /// * [`Ok(Status::Canceled)`][cancel] if `stop` was called
     ///
     /// [error]: ./enum.Error.html
-    /// [eof]: ./client/enum.Status.html#variant.Eof
-    /// [cancel]: ./client/enum.Status.html#variant.Canceled
+    /// [eof]: ../client/enum.Status.html#variant.Eof
+    /// [cancel]: ../client/enum.Status.html#variant.Canceled
     pub async fn run<R, W>(&self, read: R, write: W) -> Result<Status, Error>
     where
         R: AsyncRead + Send + Sync + Unpin + 'static,

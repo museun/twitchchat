@@ -2,7 +2,7 @@
 ///
 /// [Parse]: ../trait.Parse.html
 /// [Message]: ../decode/struct.Message.html
-/// [msg]: ./messages/index.html
+/// [msg]: ./index.html
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum InvalidMessage {
@@ -27,12 +27,12 @@ pub enum InvalidMessage {
 impl std::fmt::Display for InvalidMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InvalidMessage::InvalidCommand { expected, got } => {
+            Self::InvalidCommand { expected, got } => {
                 write!(f, "invalid command. got: {} expected {}", got, expected)
             }
-            InvalidMessage::ExpectedNick => f.write_str("expected nickname"),
-            InvalidMessage::ExpectedArg { pos } => write!(f, "expected arg at {}", pos),
-            InvalidMessage::ExpectedData => f.write_str("expected data"),
+            Self::ExpectedNick => f.write_str("expected nickname"),
+            Self::ExpectedArg { pos } => write!(f, "expected arg at {}", pos),
+            Self::ExpectedData => f.write_str("expected data"),
         }
     }
 }

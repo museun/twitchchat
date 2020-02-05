@@ -7,12 +7,12 @@ pub(super) struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub(super) fn new(input: &'a str) -> Self {
+    pub(super) const fn new(input: &'a str) -> Self {
         Self { input, pos: 0 }
     }
 
     // '@tags '
-    pub(super) fn tags(&mut self) -> Tags<&'a str> {
+    pub(super) fn tags(&mut self) -> Tags<'a> {
         let input = &self.input[self.pos..];
         if input.starts_with('@') {
             if let Some(pos) = input.find(' ') {
@@ -24,7 +24,7 @@ impl<'a> Parser<'a> {
     }
 
     // ':prefix '
-    pub(super) fn prefix(&mut self) -> Option<Prefix<&'a str>> {
+    pub(super) fn prefix(&mut self) -> Option<Prefix<'a>> {
         let input = &self.input[self.pos..];
         if !input.starts_with("tmi.twitch.tv") && !input.starts_with(':') {
             return None;
@@ -51,7 +51,7 @@ impl<'a> Parser<'a> {
         let input = &self.input[self.pos..];
         let pos = input.find(':').unwrap_or_else(|| input.len());
         self.pos += pos + 1;
-        &input[..pos].trim()
+        input[..pos].trim()
     }
 
     // ':data'
@@ -66,13 +66,13 @@ pub(super) struct ParseIter<'a> {
 }
 
 impl<'a> ParseIter<'a> {
-    pub(super) fn new(input: &'a str) -> Self {
+    pub(super) const fn new(input: &'a str) -> Self {
         Self { input, pos: 0 }
     }
 }
 
 impl<'a> Iterator for ParseIter<'a> {
-    type Item = Result<Message<&'a str>>;
+    type Item = Result<Message<'a>>;
     fn next(&mut self) -> Option<Self::Item> {
         const CRLF: &str = "\r\n";
         if self.pos == self.input.len() {

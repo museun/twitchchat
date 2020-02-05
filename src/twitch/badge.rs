@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 /// The kind of the [badges] that are associated with messages.
 ///
 /// Any unknonw (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.
@@ -7,10 +9,7 @@
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum BadgeKind<T>
-where
-    T: crate::StringMarker,
-{
+pub enum BadgeKind<'t> {
     /// Admin badge
     Admin,
     /// Bits badge
@@ -34,18 +33,15 @@ where
     /// Partner badge
     Partner,
     /// Unknown badge. Likely a custom badge
-    Unknown(T),
+    Unknown(Cow<'t, str>),
 }
 
 /// Badges attached to a message
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Badge<T>
-where
-    T: crate::StringMarker,
-{
+pub struct Badge<'t> {
     /// The kind of the Badge
-    pub kind: BadgeKind<T>,
+    pub kind: BadgeKind<'t>,
     /// Any associated data with the badge
     ///
     /// May be:
@@ -53,14 +49,13 @@ where
     /// - number of bits
     /// - number of months needed for sub badge
     /// - etc
-    pub data: T,
+    pub data: Cow<'t, str>,
 }
 
-impl<'a> Badge<&'a str> {
+impl<'t> Badge<'t> {
     /// Tries to parse a badge from this message part
-    pub fn parse(input: &'a str) -> Option<Badge<&'a str>> {
+    pub fn parse(input: &'t str) -> Option<Badge<'t>> {
         use BadgeKind::*;
-
         let mut iter = input.split('/');
         let kind = match iter.next()? {
             "admin" => Admin,
@@ -74,13 +69,16 @@ impl<'a> Badge<&'a str> {
             "premium" => Premium,
             "vip" => VIP,
             "partner" => Partner,
-            badge => Unknown(badge),
+            badge => Unknown(Cow::Borrowed(badge)),
         };
-        iter.next().map(|data| Self { kind, data })
+        iter.next().map(|data| Badge {
+            kind,
+            data: Cow::Borrowed(data),
+        })
     }
 }
 
 /// Metadata to the chat badges
-pub type BadgeInfo<T> = Badge<T>;
+pub type BadgeInfo<'t> = Badge<'t>;
 
 // TODO tests

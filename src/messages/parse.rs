@@ -1,4 +1,6 @@
+use super::expect::Expect as _;
 use super::*;
+use crate::{AsOwned, Parse};
 
 parse! {
     bare Raw {
@@ -8,14 +10,14 @@ parse! {
         command,
         args,
         data
-    } => |msg: &'a Message<&'a str>| {
+    } => |msg: &'t Message<'t>| {
         Ok(msg.clone())
     }
 }
 
-impl<'a> Parse<&'a Message<&'a str>> for AllCommands<&'a str> {
-    fn parse(msg: &'a Message<&'a str>) -> Result<Self, InvalidMessage> {
-        let out = match msg.command {
+impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
+        let out = match &*msg.command {
             "001" => IrcReady::parse(msg)?.into(),
             "PING" => Ping::parse(msg)?.into(),
             "PONG" => Pong::parse(msg)?.into(),
@@ -33,6 +35,7 @@ impl<'a> Parse<&'a Message<&'a str>> for AllCommands<&'a str> {
             "CLEARMSG" => ClearMsg::parse(msg)?.into(),
             "RECONNECT" => Reconnect::parse(msg)?.into(),
             "ROOMSTATE" => RoomState::parse(msg)?.into(),
+            "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
             "MODE" => Mode::parse(msg)?.into(),
             _ => msg.clone().into(),
@@ -41,76 +44,8 @@ impl<'a> Parse<&'a Message<&'a str>> for AllCommands<&'a str> {
     }
 }
 
-impl<'a> Parse<&'a Message<&'a str>> for AllCommands<String> {
-    fn parse(msg: &'a Message<&'a str>) -> Result<Self, InvalidMessage> {
-        AllCommands::<&'a str>::parse(msg).map(|ok| ok.as_owned())
-    }
-}
-
-impl<'a, T> Conversion<'a> for AllCommands<T>
-where
-    T: StringMarker + Conversion<'a>,
-    <T as Conversion<'a>>::Borrowed: StringMarker,
-    <T as Conversion<'a>>::Owned: StringMarker,
-{
-    type Owned = AllCommands<T::Owned>;
-    type Borrowed = AllCommands<T::Borrowed>;
-
-    fn as_borrowed(&'a self) -> Self::Borrowed {
-        use AllCommands::*;
-        match self {
-            Unknown(msg) => Unknown(msg.as_borrowed()),
-            Cap(msg) => Cap(msg.as_borrowed()),
-            ClearChat(msg) => ClearChat(msg.as_borrowed()),
-            ClearMsg(msg) => ClearMsg(msg.as_borrowed()),
-            GlobalUserState(msg) => GlobalUserState(msg.as_borrowed()),
-            HostTarget(msg) => HostTarget(msg.as_borrowed()),
-            IrcReady(msg) => IrcReady(msg.as_borrowed()),
-            Join(msg) => Join(msg.as_borrowed()),
-            Mode(msg) => Mode(msg.as_borrowed()),
-            Names(msg) => Names(msg.as_borrowed()),
-            Notice(msg) => Notice(msg.as_borrowed()),
-            Part(msg) => Part(msg.as_borrowed()),
-            Ping(msg) => Ping(msg.as_borrowed()),
-            Pong(msg) => Pong(msg.as_borrowed()),
-            Privmsg(msg) => Privmsg(msg.as_borrowed()),
-            Ready(msg) => Ready(msg.as_borrowed()),
-            Reconnect(msg) => Reconnect(msg.as_borrowed()),
-            RoomState(msg) => RoomState(msg.as_borrowed()),
-            UserNotice(msg) => UserNotice(msg.as_borrowed()),
-            UserState(msg) => UserState(msg.as_borrowed()),
-        }
-    }
-
-    fn as_owned(&self) -> Self::Owned {
-        use AllCommands::*;
-        match self {
-            Unknown(msg) => Unknown(msg.as_owned()),
-            Cap(msg) => Cap(msg.as_owned()),
-            ClearChat(msg) => ClearChat(msg.as_owned()),
-            ClearMsg(msg) => ClearMsg(msg.as_owned()),
-            GlobalUserState(msg) => GlobalUserState(msg.as_owned()),
-            HostTarget(msg) => HostTarget(msg.as_owned()),
-            IrcReady(msg) => IrcReady(msg.as_owned()),
-            Join(msg) => Join(msg.as_owned()),
-            Mode(msg) => Mode(msg.as_owned()),
-            Names(msg) => Names(msg.as_owned()),
-            Notice(msg) => Notice(msg.as_owned()),
-            Part(msg) => Part(msg.as_owned()),
-            Ping(msg) => Ping(msg.as_owned()),
-            Pong(msg) => Pong(msg.as_owned()),
-            Privmsg(msg) => Privmsg(msg.as_owned()),
-            Ready(msg) => Ready(msg.as_owned()),
-            Reconnect(msg) => Reconnect(msg.as_owned()),
-            RoomState(msg) => RoomState(msg.as_owned()),
-            UserNotice(msg) => UserNotice(msg.as_owned()),
-            UserState(msg) => UserState(msg.as_owned()),
-        }
-    }
-}
-
 parse! {
-    RoomState { tags, channel } => |msg: &'a Message<&'a str>| {
+    RoomState { tags, channel } => |msg: &'t Message<'t>| {
         msg.expect_command("ROOMSTATE")?;
         Ok(Self {
             channel: msg.expect_arg(0)?,
@@ -120,23 +55,25 @@ parse! {
 }
 
 parse! {
-    UserNotice { tags, channel, message } => |msg: &'a Message<&'a str>| {
+    UserNotice { tags, channel, message } => |msg: &'t Message<'t>| {
         msg.expect_command("USERNOTICE")?;
         let channel = msg.expect_arg(0)?;
         Ok(Self {
             tags: msg.tags.clone(),
             channel,
-            message: msg.data,
+            message: msg.data.clone(),
         })
     }
 }
 
 parse! {
-    Names { name, channel, kind } => |msg: &'a Message<&'a str>| {
-        let kind = match msg.command {
+    Names { name, channel, kind } => |msg: &'t Message<'t>| {
+        let kind = match &*msg.command {
             "353" => {
+                let users = msg.expect_data()?.split_whitespace();
+                let users = users.map(Cow::Borrowed).collect();
                 NamesKind::Start {
-                    users: msg.expect_data()?.split_whitespace().collect()
+                    users
                 }
             }
             "366" => {
@@ -150,7 +87,7 @@ parse! {
 
         let name = msg.expect_arg(0)?;
         let channel = match msg.expect_arg(1)? {
-            "=" => msg.expect_arg(2)?,
+            d if d == "=" => msg.expect_arg(2)?,
             channel => channel
         };
 
@@ -169,12 +106,13 @@ parse! {
         color,
         emote_sets,
         badges
-    } => |msg: &'a Message<&'a str>| {
+    } => |msg: &'t Message<'t>| {
         msg.expect_command("GLOBALUSERSTATE")?;
 
         let user_id = msg
             .tags
             .get("user-id")
+            .cloned()
             .expect("user-id attached to message");
 
         let display_name = msg.tags.get("display-name").cloned();
@@ -183,13 +121,14 @@ parse! {
             .tags
             .get("color")
             .and_then(|s| s.parse().ok())
+            .clone()
             .unwrap_or_default();
 
         let emote_sets = msg
             .tags
             .get("emotes-set")
-            .map(|s| s.split(',').collect())
-            .unwrap_or_else(|| vec!["0"]);
+            .map(|s| s.split(',').map(Into::into).collect())
+            .unwrap_or_else(|| vec![Cow::from("0")]);
 
         let badges = msg
             .tags
@@ -208,7 +147,7 @@ parse! {
 }
 
 parse! {
-    HostTarget { source, viewers, kind } => |msg: &'a Message<&'a str>| {
+    HostTarget { source, viewers, kind } => |msg: &'t Message<'t>| {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
         let (kind, viewers) = if let Ok(target) = msg.expect_arg(1) {
@@ -216,7 +155,7 @@ parse! {
             (HostTargetKind::Start { target }, viewers)
         } else {
             let data = msg.expect_data()?;
-            if !data.starts_with("-") {
+            if !data.starts_with('-') {
                 return Err(InvalidMessage::ExpectedData);
             }
             let viewers = data.get(2..).and_then(|s| s.parse().ok());
@@ -231,10 +170,10 @@ parse! {
 }
 
 parse! {
-    Cap { capability, acknowledged } => |msg: &'a Message<&'a str>| {
+    Cap { capability, acknowledged } => |msg: &'t Message<'t>| {
         msg.expect_command("CAP")?;
         let acknowledged = msg.expect_arg(1)? == "ACK";
-        let capability = msg.expect_data()?;
+        let capability = msg.expect_data()?.clone();
         Ok(Self {
             capability,
             acknowledged,
@@ -243,36 +182,36 @@ parse! {
 }
 
 parse! {
-    ClearChat { tags, channel, name } => |msg: &'a Message<&'a str>| {
+    ClearChat { tags, channel, name } => |msg: &'t Message<'t>| {
         msg.expect_command("CLEARCHAT")?;
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            name: msg.expect_data().ok(),
+            name: msg.expect_data().ok().cloned(),
         })
     }
 }
 
 parse! {
-    ClearMsg { tags, channel, message } => |msg: &'a Message<&'a str>| {
+    ClearMsg { tags, channel, message } => |msg: &'t Message<'t>| {
         msg.expect_command("CLEARMSG")?;
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            message: msg.expect_data().ok(),
+            message: msg.expect_data().ok().cloned(),
         })
     }
 }
 
 parse! {
-    IrcReady { nickname } => |msg: &'a Message<&'a str>| {
+    IrcReady { nickname } => |msg: &'t Message<'t>| {
         msg.expect_command("001")?;
         msg.expect_arg(0).map(|nickname| Self { nickname })
     }
 }
 
 parse! {
-    Join { name, channel } => |msg: &'a Message<&'a str>| {
+    Join { name, channel } => |msg: &'t Message<'t>| {
         msg.expect_command("JOIN")?;
         Ok(Self {
             name: msg.expect_nick()?,
@@ -282,10 +221,10 @@ parse! {
 }
 
 parse! {
-    Mode { channel, status, name,} => |msg: &'a Message<&'a str>| {
+    Mode { channel, status, name,} => |msg: &'t Message<'t>| {
         msg.expect_command("MODE")?;
         let channel = msg.expect_arg(0)?;
-        let status = match msg.expect_arg(1)?.chars().nth(0).unwrap() {
+        let status = match msg.expect_arg(1)?.chars().next().unwrap() {
             '+' => ModeStatus::Gained,
             '-' => ModeStatus::Lost,
             _ => unreachable!(),
@@ -300,18 +239,18 @@ parse! {
 }
 
 parse! {
-    Notice { tags, channel, message } => |msg: &'a Message<&'a str>| {
+    Notice { tags, channel, message } => |msg: &'t Message<'t>| {
         msg.expect_command("NOTICE")?;
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            message: msg.expect_data()?,
+            message: msg.expect_data()?.clone(),
         })
     }
 }
 
 parse! {
-    Part { name, channel } => |msg: &'a Message<&'a str>| {
+    Part { name, channel } => |msg: &'t Message<'t>| {
         msg.expect_command("PART")?;
         Ok(Self {
             name: msg.expect_nick()?,
@@ -321,46 +260,46 @@ parse! {
 }
 
 parse! {
-    Ping { token } => |msg: &'a Message<&'a str>| {
+    Ping { token } => |msg: &'t Message<'t>| {
         msg.expect_command("PING")?;
-        msg.expect_data().map(|token| Self { token })
+        msg.expect_data().map(|token| Self { token: token.clone() })
     }
 }
 
 parse! {
-    Pong { token } => |msg: &'a Message<&'a str>| {
+    Pong { token } => |msg: &'t Message<'t>| {
         msg.expect_command("PONG")?;
-        msg.expect_data().map(|token| Self { token })
+        msg.expect_data().map(|token| Self { token: token.clone() })
     }
 }
 
 parse! {
-    Privmsg { name, channel, data, tags, } => |msg: &'a Message<&'a str>| {
+    Privmsg { name, channel, data, tags, } => |msg: &'t Message<'t>| {
         msg.expect_command("PRIVMSG")?;
         Ok(Self {
             name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
-            data: msg.expect_data()?,
+            data: msg.expect_data()?.clone(),
             tags: msg.tags.clone(),
         })
     }
 }
 
 parse! {
-    Ready { username } => |msg: &'a Message<&'a str>| {
+    Ready { username } => |msg: &'t Message<'t>| {
         msg.expect_command("376")?;
         msg.expect_arg(0).map(|username| Self { username })
     }
 }
 
 parse! {
-    Reconnect => |msg: &'a Message<&'a str>| {
+    Reconnect => |msg: &'t Message<'t>| {
         msg.expect_command("RECONNECT").map(|_| Self{ })
     }
 }
 
 parse! {
-    UserState { tags, channel } => |msg: &'a Message<&'a str>| {
+    UserState { tags, channel } => |msg: &'t Message<'t>| {
         msg.expect_command("USERSTATE")?;
         msg.expect_arg(0).map(|channel| Self {
             channel,

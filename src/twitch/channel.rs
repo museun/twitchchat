@@ -15,15 +15,12 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::EmptyChannelName => f.write_str("empty channel name"),
+            Self::EmptyChannelName => f.write_str("empty channel name"),
         }
     }
 }
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+
+impl std::error::Error for Error {}
 
 /// A trait to convert types into [`Channel`](./struct.Channel.html)
 ///
@@ -50,7 +47,7 @@ where
 }
 
 impl Channel {
-    pub(crate) fn validate(name: impl ToString) -> Result<Channel, Error> {
+    pub(crate) fn validate(name: impl ToString) -> Result<Self, Error> {
         let name = name.to_string();
         if name.is_empty() {
             return Err(Error::EmptyChannelName);
@@ -60,9 +57,9 @@ impl Channel {
         let name = if !name.starts_with('#') {
             ["#", name.as_str()].concat()
         } else {
-            name.to_string()
+            name
         };
-        Ok(Channel(name))
+        Ok(Self(name))
     }
 }
 

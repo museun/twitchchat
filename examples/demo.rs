@@ -1,7 +1,13 @@
+/* in your Cargo.toml
+[dependencies]
+twitchchat = "0.8.0-beta"                        # this crate
+tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
+*/
+
+use tokio::stream::StreamExt as _;
+
 #[tokio::main]
 async fn main() {
-    use futures::prelude::*;
-
     let (nick, pass) = (
         // twitch name
         std::env::var("TWITCH_NICK").unwrap(),
@@ -13,7 +19,7 @@ async fn main() {
     let channel = std::env::var("TWITCH_CHANNEL").unwrap();
 
     // connect via (tls or normal, 'Secure' determines that) tcp with this nick and password
-    let (read, write) = twitchchat::connect_easy(&nick, &pass, twitchchat::Secure::Nope)
+    let (read, write) = twitchchat::connect_easy(&nick, &pass, twitchchat::Secure::UseTls)
         .await
         .unwrap();
 
@@ -23,13 +29,16 @@ async fn main() {
     // get a future that resolves when the client is done reading, fails to read/write or is stopped
     let done = client.run(read, write);
 
-    // get an event dispatcher
-    let mut dispatcher = client.dispatcher().await;
-
-    // subscribe to an event stream
+    // subscribe to some an event streams:
 
     // for privmsg (what users send to channels)
-    let mut privmsg = dispatcher.subscribe::<twitchchat::events::Privmsg>();
+    // this event dispatcher is behind a RAII guard, so make sure you drop it.
+    // otherwise it'll block the client until its dropped
+    let mut privmsg = client
+        .dispatcher()
+        .await
+        .subscribe::<twitchchat::events::Privmsg>();
+
     // spawn a task to consume the stream
     tokio::task::spawn(async move {
         while let Some(msg) = privmsg.next().await {
@@ -38,7 +47,11 @@ async fn main() {
     });
 
     // for join (when a user joins a channel)
-    let mut join = dispatcher.subscribe::<twitchchat::events::Join>();
+    let mut join = client
+        .dispatcher()
+        .await
+        .subscribe::<twitchchat::events::Join>();
+
     tokio::task::spawn(async move {
         while let Some(msg) = join.next().await {
             // we've joined a channel
@@ -50,7 +63,11 @@ async fn main() {
     });
 
     // for privmsg again
-    let mut bot = dispatcher.subscribe::<twitchchat::events::Privmsg>();
+    let mut bot = client
+        .dispatcher()
+        .await
+        .subscribe::<twitchchat::events::Privmsg>();
+
     // we can move the client to another task by cloning it
     let bot_client = client.clone();
     tokio::task::spawn(async move {
@@ -74,15 +91,11 @@ async fn main() {
         }
     });
 
-    // dispatcher has an RAII guard, so keep it scoped
-    // dropping it here so everything can proceed while keeping example brief
-    drop(dispatcher);
-
     // get a clonable writer from the client
     // join a channel, methods on writer return false if the client is disconnected
     if let Err(err) = client.writer().join(&channel).await {
         match err {
-            twitchchat::Error::InvalidChannel(..) => {
+            twitchchat::client::Error::InvalidChannel(..) => {
                 eprintln!("you cannot join a channel with an empty name. demo is ending");
                 std::process::exit(1);
             }

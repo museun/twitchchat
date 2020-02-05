@@ -76,7 +76,7 @@ let (nick, pass) = ANONYMOUS_LOGIN;
 let (read, write) = connect_easy(&nick, &pass).unwrap();
 ```
 
-[Capabilities]: ./enum.Capability.html
+[Capabilities]: ../enum.Capability.html
 [async]: ../fn.connect_easy.html
 */
 

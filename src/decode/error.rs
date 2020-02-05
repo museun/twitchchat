@@ -18,11 +18,11 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseError::EmptyLine => f.write_str("an empty line was attempted to be decoded"),
-            ParseError::IncompleteMessage { pos } => {
+            Self::EmptyLine => f.write_str("an empty line was attempted to be decoded"),
+            Self::IncompleteMessage { pos } => {
                 write!(f, "an incomplete message was parsed. at {}", pos)
             }
-            ParseError::EmptyMessage => f.write_str("an empty message was parsed"),
+            Self::EmptyMessage => f.write_str("an empty message was parsed"),
         }
     }
 }

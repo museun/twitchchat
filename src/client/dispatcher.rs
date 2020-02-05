@@ -1,4 +1,4 @@
-use super::{Event, EventStream};
+use super::{Event, EventMapped, EventStream};
 use crate::decode::Message;
 use crate::events;
 use crate::Parse;
@@ -9,6 +9,8 @@ use std::sync::Arc;
 
 use tokio::sync::mpsc;
 
+type EventRegistration = Vec<(bool, Box<dyn Any + Send>)>;
+
 /**
 An event dispatcher
 
@@ -16,13 +18,13 @@ This allows multiple sources to subscribe to specific [Events] which'll produce 
 
 The subscription will return a [EventStream] which can be used as a [Stream].
 
-[Events]: ../events/events/index.html
-[Message]: ../events/messages/index.html
+[Events]: ../events/index.html
+[Message]: ../messages/index.html
 [EventStream]: ./struct.EventStream.html
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 */
 pub struct Dispatcher {
-    event_map: HashMap<TypeId, Vec<(bool, Box<dyn Any + Send>)>>,
+    event_map: HashMap<TypeId, EventRegistration>,
 }
 
 impl std::fmt::Debug for Dispatcher {
@@ -54,7 +56,7 @@ impl Dispatcher {
     };
     ```
     # Mapping
-    Use an event from [Events][Event] and subscribe will produce an [`EventStream<Arc<T::Mapped>>`][EventStream] which corresponds to the message in [Messages][Message].
+    Use an event from [Events][Event] and subscribe will produce an [`EventStream<Arc<T>>`][EventStream] which corresponds to the message in [Messages][Message].
 
     ## A table of mappings
     Event                                    | Message                                    | Description
@@ -77,6 +79,7 @@ impl Dispatcher {
     [Ready][Ready_event]                     | [Ready][Ready_message]                     | When the Twitch connection is ready
     [Reconnect][Reconnect_event]             | [Reconnect][Reconnect_message]             | Server asking you to reconnect
     [RoomState][RoomState_event]             | [RoomState][RoomState_message]             | Server giving you information about the room
+    [UserNotice][UserNotice_event]           | [UserNotice][UserNotice_message]           | Metadata attached to an user event (e.g. a subscription)
     [UserState][UserState_event]             | [UserState][UserState_message]             | Identifies a user's chat settings or properties (e.g., chat color).
     ---                                      | ---                                        | ---
     [All][All_event]                         | [AllCommands][AllCommands_message]         | This bundles all above messages into a single enum.
@@ -86,9 +89,9 @@ impl Dispatcher {
 
     Or if the subscriptions were cleared.
 
-    [Event]: ../events/events/index.html
-    [Message]: ../events/messages/index.html
-    [EventStream]: ../events/struct.EventStream.html
+    [Event]: ../events/index.html
+    [Message]: ../messages/index.html
+    [EventStream]: ./struct.EventStream.html
     [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 
     [Cap_event]: ../events/struct.Cap.html
@@ -109,6 +112,7 @@ impl Dispatcher {
     [Ready_event]: ../events/struct.Ready.html
     [Reconnect_event]: ../events/struct.Reconnect.html
     [RoomState_event]: ../events/struct.RoomState.html
+    [UserNotice_event]: ../events/struct.UserNotice.html
     [UserState_event]: ../events/struct.UserState.html
     [All_event]: ../events/struct.All.html
 
@@ -126,17 +130,18 @@ impl Dispatcher {
     [Ping_message]: ../messages/struct.Ping.html
     [Pong_message]: ../messages/struct.Pong.html
     [Privmsg_message]: ../messages/struct.Privmsg.html
-    [Raw_message]: ../messages/struct.Raw.html
+    [Raw_message]: ../messages/type.Raw.html
     [Ready_message]: ../messages/struct.Ready.html
     [Reconnect_message]: ../messages/struct.Reconnect.html
     [RoomState_message]: ../messages/struct.RoomState.html
+    [UserNotice_message]: ../messages/struct.UserNotice.html
     [UserState_message]: ../messages/struct.UserState.html
     [AllCommands_message]: ../messages/enum.AllCommands.html
-
     */
-    pub fn subscribe<'a, T>(&mut self) -> EventStream<Arc<T::Mapped>>
+    pub fn subscribe<'a, T>(&mut self) -> EventStream<Arc<T::Owned>>
     where
         T: Event<'a> + 'static,
+        T: EventMapped<'a, T>,
     {
         self.subscribe_internal::<T>(false)
     }
@@ -144,21 +149,24 @@ impl Dispatcher {
     /// Allows marking a subscription as internal
     ///
     /// Internal subscriptions can't be removed by the user
-    pub(crate) fn subscribe_internal<'a, T>(&mut self, private: bool) -> EventStream<Arc<T::Mapped>>
+    pub(crate) fn subscribe_internal<'a, T>(&mut self, private: bool) -> EventStream<Arc<T::Owned>>
     where
         T: Event<'a> + 'static,
+        T: EventMapped<'a, T>,
     {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = mpsc::unbounded_channel::<Arc<T::Owned>>();
         self.event_map
             .get_mut(&TypeId::of::<T>())
             .unwrap()
             .push((private, Box::new(Sender::new(tx))));
+
         let name = std::any::type_name::<T>().split("::").last().unwrap();
         if !private {
             log::debug!("adding subscription: {}", name);
         } else {
             log::trace!("adding internal subscription: {}", name);
         }
+
         EventStream(rx)
     }
 
@@ -226,19 +234,28 @@ impl Dispatcher {
     }
 
     /// Tries to send this message to any subscribers
-    pub(crate) fn try_send<'a, T>(&mut self, msg: &'a Message<&'a str>)
+    pub(crate) fn try_send<'a, T>(&mut self, msg: &'a Message<'a>)
     where
         T: Event<'a> + 'static,
+        T: EventMapped<'a, T>,
     {
         if let Some(senders) = self
             .event_map
             .get_mut(&TypeId::of::<T>())
             .filter(|s| !s.is_empty())
         {
-            let msg = T::Mapped::parse(msg).map(Arc::new).expect("valid message");
+            let msg = T::Parsed::parse(msg);
+            let msg: Arc<T::Owned> = match msg {
+                Ok(msg) => Arc::new(T::into_owned(msg)),
+                Err(err) => {
+                    log::error!("cannot parse message: {}. this is a bug.", err);
+                    return;
+                }
+            };
+
             senders.retain(|(_, sender)| {
                 sender
-                    .downcast_ref::<Sender<T::Mapped>>()
+                    .downcast_ref::<Sender<T::Owned>>()
                     .unwrap()
                     .try_send(Arc::clone(&msg))
             });
@@ -247,26 +264,65 @@ impl Dispatcher {
 }
 
 impl Dispatcher {
-    make_mapping! {
-        "001"             => IrcReady
-        "PING"            => Ping
-        "PONG"            => Pong
-        "353"             => Names
-        "366"             => Names
-        "376"             => Ready
-        "JOIN"            => Join
-        "PART"            => Part
-        "PRIVMSG"         => Privmsg
-        "CAP"             => Cap
-        "HOSTARGET"       => HostTarget
-        "GLOBALUSERSTATE" => GlobalUserState
-        "NOTICE"          => Notice
-        "CLEARCHAT"       => ClearChat
-        "CLEARMSG"        => ClearMsg
-        "RECONNECT"       => Reconnect
-        "ROOMSTATE"       => RoomState
-        "USERSTATE"       => UserState
-        "MODE"            => Mode
+    pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<'a>) {
+        macro_rules! try_send {
+            ($ident:ident) => {
+                self.try_send::<events::$ident>(&msg)
+            };
+        }
+
+        match msg.command.as_ref() {
+            "001" => try_send!(IrcReady),
+            "PING" => try_send!(Ping),
+            "PONG" => try_send!(Pong),
+            "353" => try_send!(Names),
+            "366" => try_send!(Names),
+            "376" => try_send!(Ready),
+            "JOIN" => try_send!(Join),
+            "PART" => try_send!(Part),
+            "PRIVMSG" => try_send!(Privmsg),
+            "CAP" => try_send!(Cap),
+            "HOSTARGET" => try_send!(HostTarget),
+            "GLOBALUSERSTATE" => try_send!(GlobalUserState),
+            "NOTICE" => try_send!(Notice),
+            "CLEARCHAT" => try_send!(ClearChat),
+            "CLEARMSG" => try_send!(ClearMsg),
+            "RECONNECT" => try_send!(Reconnect),
+            "ROOMSTATE" => try_send!(RoomState),
+            "USERSTATE" => try_send!(UserState),
+            "MODE" => try_send!(Mode),
+            _ => {}
+        }
+
+        try_send!(All);
+        try_send!(Raw);
+    }
+
+    pub(crate) fn new() -> Self {
+        use events::*;
+        let event_map = HashMap::default();
+
+        Self { event_map }
+            .add_event::<Ready>()
+            .add_event::<All>()
+            .add_event::<Cap>()
+            .add_event::<ClearChat>()
+            .add_event::<ClearMsg>()
+            .add_event::<GlobalUserState>()
+            .add_event::<HostTarget>()
+            .add_event::<IrcReady>()
+            .add_event::<Join>()
+            .add_event::<Mode>()
+            .add_event::<Names>()
+            .add_event::<Notice>()
+            .add_event::<Part>()
+            .add_event::<Ping>()
+            .add_event::<Pong>()
+            .add_event::<Privmsg>()
+            .add_event::<Raw>()
+            .add_event::<Reconnect>()
+            .add_event::<RoomState>()
+            .add_event::<UserState>()
     }
 }
 
@@ -275,7 +331,7 @@ struct Sender<T> {
 }
 
 impl<T> Sender<T> {
-    fn new(sender: mpsc::UnboundedSender<Arc<T>>) -> Self {
+    const fn new(sender: mpsc::UnboundedSender<Arc<T>>) -> Self {
         Self { sender }
     }
 

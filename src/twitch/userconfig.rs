@@ -68,11 +68,11 @@ pub enum UserConfigError {
 impl std::fmt::Display for UserConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserConfigError::InvalidName => f.write_str("invalid name"),
-            UserConfigError::InvalidToken => {
+            Self::InvalidName => f.write_str("invalid name"),
+            Self::InvalidToken => {
                 f.write_str("invalid token. token must start with oauth: and be 36 characters")
             }
-            UserConfigError::PartialAnonymous => f.write_str(
+            Self::PartialAnonymous => f.write_str(
                 "user provided name or token provided when an anonymous login was requested",
             ),
         }
@@ -135,12 +135,12 @@ impl UserConfigBuilder {
     pub fn build(self) -> Result<UserConfig, UserConfigError> {
         let name = self
             .name
-            .filter(|s| validate_name(&s))
+            .filter(|s| validate_name(s))
             .ok_or_else(|| UserConfigError::InvalidName)?;
 
         let token = self
             .token
-            .filter(|s| validate_token(&s))
+            .filter(|s| validate_token(s))
             .ok_or_else(|| UserConfigError::InvalidToken)?;
 
         match (name.as_str(), token.as_str()) {
@@ -162,7 +162,7 @@ impl UserConfigBuilder {
 }
 
 #[inline]
-fn validate_name(s: &str) -> bool {
+const fn validate_name(s: &str) -> bool {
     !s.is_empty()
 }
 
