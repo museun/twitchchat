@@ -18,14 +18,10 @@ pub mod color;
 mod channel;
 pub use channel::{Channel, Error as ChannelError, IntoChannel};
 
-pub(crate) fn parse_emotes<T>(input: &T) -> Vec<Emotes>
-where
-    T: crate::StringMarker,
-{
-    Emotes::parse(input.as_ref()).collect()
+pub(crate) fn parse_emotes(input: &str) -> Vec<Emotes> {
+    Emotes::parse(input).collect()
 }
 
-// TODO make this work with the conversion trait
-pub(crate) fn parse_badges<'a>(input: &'a str) -> Vec<Badge<&'a str>> {
+pub(crate) fn parse_badges(input: &str) -> Vec<Badge<'_>> {
     input.split(',').filter_map(Badge::parse).collect()
 }

@@ -4,6 +4,7 @@ use crate::IntoChannel;
 
 pub(super) async fn write_loop<W>(
     write: W,
+    mut rate: RateLimit,
     mut recv: Receiver,
 ) -> std::result::Result<Status, Error>
 where
@@ -11,6 +12,7 @@ where
 {
     let mut writer = tokio::io::BufWriter::new(write);
     while let Some(data) = recv.next().await {
+        let _ = rate.take().await;
         log::trace!("> {}", std::str::from_utf8(&data).unwrap().escape_debug());
         writer.write_all(&data).await?;
         writer.flush().await?
@@ -28,7 +30,7 @@ trait SafeEncode {
         F: FnMut(&mut Self) -> std::io::Result<()>,
     {
         match func(self) {
-            Ok(res) => Ok(res),
+            Ok(_) => Ok(()),
             Err(err) => {
                 self.clear_data();
                 Err(err)

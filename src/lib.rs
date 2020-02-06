@@ -10,7 +10,6 @@
     unused_import_braces,
     unused_qualifications
 )]
-
 #![cfg_attr(docsrs, feature(doc_cfg))]
 /*!
 This crate provides a way to interface with [Twitch]'s chat.
@@ -28,9 +27,12 @@ See `examples/demo.rs` for a demo of the api
 pub mod macros;
 
 cfg_async! {
+    use tokio::io::{AsyncRead, AsyncWrite};
+}
+
+cfg_async! {
     pub mod client;
-    #[doc(inline)]
-    pub use client::{Error, Client, EventStream};
+    pub use client::Client;
 }
 
 /// Decode messages from a `&str`
@@ -66,10 +68,6 @@ pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
 
-cfg_async! {
-    use tokio::io::{AsyncRead, AsyncWrite};
-}
-
 /// Connection type
 ///
 /// Defaults to `Nope`
@@ -89,10 +87,10 @@ impl Default for Secure {
 
 impl Secure {
     /// Gets the requested (IRC) address
-    pub fn get_address(&self) -> &'static str {
+    pub fn get_address(self) -> &'static str {
         match self {
-            Secure::UseTls => TWITCH_IRC_ADDRESS_TLS,
-            Secure::Nope => TWITCH_IRC_ADDRESS,
+            Self::UseTls => TWITCH_IRC_ADDRESS_TLS,
+            Self::Nope => TWITCH_IRC_ADDRESS,
         }
     }
 }
@@ -115,10 +113,7 @@ cfg_async! {
     # });
     ```
     */
-    pub async fn register<W: ?Sized>(
-        user_config: &UserConfig,
-        writer: &mut W,
-    ) -> std::io::Result<()>
+    pub async fn register<W: ?Sized>(user_config: &UserConfig, writer: &mut W) -> std::io::Result<()>
     where
         W: AsyncWrite + Unpin,
     {
@@ -135,9 +130,9 @@ cfg_async! {
             writer.write_all(b"\r\n").await?;
         }
 
-        writer.write_all(format!("PASS {}\r\n", token).as_bytes()).await?;
-        writer.write_all(format!("NICK {}\r\n", name).as_bytes()).await?;
-
+        writer
+            .write_all(format!("PASS {}\r\nNICK {}\r\n", token,name).as_bytes())
+            .await?;
         Ok(())
     }
 }
@@ -145,9 +140,7 @@ cfg_async! {
 cfg_async! {
     const TWITCH_DOMAIN: &str = "irc.chat.twitch.tv";
 
-    type ConnectRes = std::io::Result<(
-        BoxAsyncRead, BoxAsyncWrite
-    )>;
+    type ConnectRes = std::io::Result<(BoxAsyncRead, BoxAsyncWrite)>;
 
     async fn connect_no_tls(addr: &str) -> std::io::Result<impl AsyncWrite + AsyncRead + Unpin> {
         tokio::net::TcpStream::connect(addr).await
@@ -198,10 +191,7 @@ cfg_async! {
     # });
     ```
     */
-    pub async fn connect(
-        user_config: &UserConfig,
-        secure: impl Into<Option<Secure>>,
-    ) -> ConnectRes {
+    pub async fn connect(user_config: &UserConfig, secure: impl Into<Option<Secure>>) -> ConnectRes {
         let secure = secure.into().unwrap_or_default();
         let addr = secure.get_address();
 
@@ -215,13 +205,13 @@ cfg_async! {
                 } else {
                     panic!("enable the \"tls\" feature to use this")
                 }
-            },
+            }
             Secure::Nope => {
                 let mut stream = connect_no_tls(addr).await?;
                 register(user_config, &mut stream).await?;
                 let (read, write) = tokio::io::split(stream);
                 Ok((Box::new(read), Box::new(write)))
-            },
+            }
         }
     }
 
@@ -302,38 +292,12 @@ pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
 mod internal;
-pub use internal::StringMarker;
 
 /// Synchronous methods
 pub mod sync;
 
-/// A trait for converting crate types between `Owned` and `Borrowed` representations
-///
-/// # Example
-/// ```rust
-/// # use twitchchat::*;
-/// # use twitchchat::messages::*;
-/// let input = ":test!test@test JOIN #museun\r\n";
-/// let message: Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
-/// let message_owned: Raw<String> = message.as_owned();
-///
-/// let join: Join<&str> = Join::parse(&message).unwrap();
-/// let owned: Join<String> = join.as_owned();
-/// let borrowed: Join<&str> = join.as_borrowed();
-///
-/// assert_eq!(borrowed, join);
-/// ```
-pub trait Conversion<'a> {
-    /// The borrowed type
-    type Borrowed: 'a;
-    /// The owned type
-    type Owned;
-
-    /// Get a borrowed version
-    fn as_borrowed(&'a self) -> Self::Borrowed;
-    /// Get an owned version
-    fn as_owned(&self) -> Self::Owned;
-}
+#[doc(inline)]
+pub mod rate_limit;
 
 /// A trait for parsing messages
 ///
@@ -341,16 +305,22 @@ pub trait Conversion<'a> {
 /// ```rust
 /// # use twitchchat::*;
 /// # use twitchchat::messages::*;
+/// # use std::borrow::Cow;
+///
 /// let input = ":test!test@test JOIN #museun\r\n";
-/// let message: Raw<&str> = decode::decode(&input).next().unwrap().unwrap();
-/// let join: Join<&str> = Join::parse(&message).unwrap();
-/// assert_eq!(join, Join { channel: "#museun", name: "test" });
+/// let message: Raw<'_> = decode::decode(&input).next().unwrap().unwrap();
+/// let join: Join<'_> = Join::parse(&message).unwrap();
+/// assert_eq!(join, Join { channel: Cow::Borrowed("#museun"), name: Cow::Borrowed("test") });
 /// ```
-pub trait Parse<T>
-where
-    Self: Sized,
-    Self: crate::internal::private::parse_marker::Sealed<T>,
-{
+pub trait Parse<T>: Sized + crate::internal::private::parse_marker::Sealed<T> {
     /// Tries to parse the input as this message
     fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
+}
+
+/// Converts a type to an owned version
+pub trait AsOwned: crate::internal::private::asowned_marker::Sealed {
+    /// The owned type
+    type Owned: 'static;
+    /// Get an owned version
+    fn as_owned(&self) -> Self::Owned;
 }

@@ -70,8 +70,8 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseError::InvalidHexString => f.write_str("invalid hex string"),
-            ParseError::UnknownColor => f.write_str("unknown color"),
+            Self::InvalidHexString => f.write_str("invalid hex string"),
+            Self::UnknownColor => f.write_str("unknown color"),
         }
     }
 }
@@ -108,7 +108,7 @@ pub struct RGB(pub u8, pub u8, pub u8);
 
 impl Default for RGB {
     fn default() -> Self {
-        RGB(0xFF, 0xFF, 0xFF)
+        Self(0xFF, 0xFF, 0xFF)
     }
 }
 
@@ -121,15 +121,15 @@ impl std::fmt::Display for RGB {
 
 impl RGB {
     /// The red field
-    pub fn red(self) -> u8 {
+    pub const fn red(self) -> u8 {
         self.0
     }
     /// The green field
-    pub fn green(self) -> u8 {
+    pub const fn green(self) -> u8 {
         self.1
     }
     /// The blue field
-    pub fn blue(self) -> u8 {
+    pub const fn blue(self) -> u8 {
         self.2
     }
 }
@@ -341,7 +341,7 @@ impl From<RGB> for TwitchColor {
             .iter()
             .find(|(_, color)| *color == rgb)
             .map(|&(color, _)| color)
-            .unwrap_or_else(|| TwitchColor::Turbo)
+            .unwrap_or_else(|| Self::Turbo)
     }
 }
 

@@ -89,7 +89,7 @@ fn cap_ack() {
     assert_eq!(
         msg.prefix.unwrap(),
         Prefix::Server {
-            host: "tmi.twitch.tv"
+            host: "tmi.twitch.tv".into()
         }
     );
     assert_eq!(msg.command, "CAP");

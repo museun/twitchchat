@@ -28,7 +28,7 @@ impl Emotes {
             get_parts(s, ':').and_then(|(head, tail)| {
                 let emotes = Self {
                     id: head.parse().ok()?,
-                    ranges: get_ranges(&tail).collect(),
+                    ranges: get_ranges(tail).collect(),
                 };
                 emotes.into()
             })

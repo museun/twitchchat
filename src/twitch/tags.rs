@@ -1,30 +1,18 @@
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 
 /// Tags are IRCv3 message tags. Twitch uses them extensively.
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Tags<T: crate::StringMarker>(pub(crate) HashMap<T, T>);
+pub struct Tags<'t>(pub(crate) HashMap<Cow<'t, str>, Cow<'t, str>>);
 
-impl<T: crate::StringMarker> Default for Tags<T> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
-
-impl<T: crate::StringMarker> std::fmt::Debug for Tags<T> {
+impl<'t> std::fmt::Debug for Tags<'t> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_map().entries(self.0.iter()).finish()
     }
 }
 
-impl<T: crate::StringMarker> Clone for Tags<T> {
-    fn clone(&self) -> Self {
-        Tags(self.0.clone())
-    }
-}
-
-impl<'a> Tags<&'a str> {
+impl<'t> Tags<'t> {
     /**
     Parses a `@k=v;k=v` string into a `Tags` type
 
@@ -37,21 +25,19 @@ impl<'a> Tags<&'a str> {
 
     [IRCv3]: https://ircv3.net/specs/extensions/message-tags.html
     */
-    pub fn parse(input: &'a str) -> Option<Self> {
+    pub fn parse(input: &'t str) -> Option<Self> {
         if !input.starts_with('@') || input.len() < 2 {
             return None;
         }
         let map = input[1..].split_terminator(';').filter_map(|part| {
             let pos = part.find('=')?;
-            (&part[..pos], &part[pos + 1..]).into()
+            (part[..pos].into(), part[pos + 1..].into()).into()
         });
         Self(map.collect()).into()
     }
-}
 
-impl<T: crate::StringMarker> Tags<T> {
     /// Tries to get the tag for this `key`
-    pub fn get<K: ?Sized>(&self, key: &K) -> Option<&T>
+    pub fn get<K: ?Sized>(&'t self, key: &K) -> Option<&'t Cow<'t, str>>
     where
         K: Borrow<str>,
     {
@@ -123,27 +109,22 @@ impl<T: crate::StringMarker> Tags<T> {
     }
 
     /// Get an iterator over the key,value pairs in the tags
-    pub fn iter(&self) -> impl Iterator<Item = (&T, &T)> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = (&Cow<'t, str>, &Cow<'t, str>)> + '_ {
         self.0.iter()
     }
 
     /// Get an iterator over the keys in the tags
-    pub fn keys(&self) -> impl Iterator<Item = &T> + '_ {
+    pub fn keys(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
         self.0.keys()
     }
 
     /// Get an iterator over the values in the tags
-    pub fn values(&self) -> impl Iterator<Item = &T> + '_ {
+    pub fn values(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
         self.0.values()
     }
-}
 
-impl<T> Tags<T>
-where
-    T: crate::StringMarker,
-{
     /// Take ownership of the inner HashMap
-    pub fn into_inner(self) -> HashMap<T, T> {
+    pub fn into_inner(self) -> HashMap<Cow<'t, str>, Cow<'t, str>> {
         self.0
     }
 }
@@ -232,28 +213,33 @@ mod tests {
         user-id=196450059;\
         user-type=";
 
+        let expected = &[
+            "badges",
+            "color",
+            "display-name",
+            "emotes",
+            "flags",
+            "id",
+            "login",
+            "mod",
+            "msg-id",
+            "msg-param-months",
+            "msg-param-recipient-display-name",
+            "msg-param-recipient-id",
+            "msg-param-recipient-user-name",
+            "msg-param-sub-plan-name",
+            "msg-param-sub-plan",
+            "room-id",
+            "subscriber",
+            "system-msg",
+            "tmi-sent-ts",
+            "turbo",
+            "user-id",
+            "user-type",
+        ];
         let tags = Tags::parse(input).unwrap();
-        tags.get("badges").unwrap();
-        tags.get("color").unwrap();
-        tags.get("display-name").unwrap();
-        tags.get("emotes").unwrap();
-        tags.get("flags").unwrap();
-        tags.get("id").unwrap();
-        tags.get("login").unwrap();
-        tags.get("mod").unwrap();
-        tags.get("msg-id").unwrap();
-        tags.get("msg-param-months").unwrap();
-        tags.get("msg-param-recipient-display-name").unwrap();
-        tags.get("msg-param-recipient-id").unwrap();
-        tags.get("msg-param-recipient-user-name").unwrap();
-        tags.get("msg-param-sub-plan-name").unwrap();
-        tags.get("msg-param-sub-plan").unwrap();
-        tags.get("room-id").unwrap();
-        tags.get("subscriber").unwrap();
-        tags.get("system-msg").unwrap();
-        tags.get("tmi-sent-ts").unwrap();
-        tags.get("turbo").unwrap();
-        tags.get("user-id").unwrap();
-        tags.get("user-type").unwrap();
+        for expected in expected {
+            tags.get(expected).unwrap();
+        }
     }
 }

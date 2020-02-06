@@ -9,16 +9,18 @@ type Result<T> = std::result::Result<T, ParseError>;
 ## A single message
 ```rust
 # use twitchchat::*;
+# use std::borrow::Cow;
+
 let input = ":test!test@test JOIN #museun\r\n";
 let (pos, message) = decode_one(&input).unwrap();
 assert_eq!(pos, 0); // no more messages were found
 
 let expected = messages::Raw {
-    raw: ":test!test@test JOIN #museun\r\n",
+    raw: Cow::Borrowed(":test!test@test JOIN #museun\r\n"),
     tags: Tags::default(),
-    prefix: Some(decode::Prefix::User { nick: "test" }),
-    command: "JOIN",
-    args: "#museun",
+    prefix: Some(decode::Prefix::User { nick: Cow::Borrowed("test") }),
+    command: Cow::Borrowed("JOIN"),
+    args: Cow::Borrowed("#museun"),
     data: None,
 };
 assert_eq!(message, expected);
@@ -27,16 +29,18 @@ assert_eq!(message, expected);
 # Multiple messages
 ```rust
 # use twitchchat::*;
+# use std::borrow::Cow;
+
 let input = ":test!test@test JOIN #museun\r\n:test!test@test JOIN #shaken_bot\r\n";
 let (pos, message) = decode_one(&input).unwrap();
 assert_eq!(pos, 30); // another message probably starts at offset '30'
 
 let expected = messages::Raw {
-    raw: ":test!test@test JOIN #museun\r\n",
+    raw: Cow::Borrowed(":test!test@test JOIN #museun\r\n"),
     tags: Tags::default(),
-    prefix: Some(decode::Prefix::User { nick: "test" }),
-    command: "JOIN",
-    args: "#museun",
+    prefix: Some(decode::Prefix::User { nick: Cow::Borrowed("test") }),
+    command: Cow::Borrowed("JOIN"),
+    args: Cow::Borrowed("#museun"),
     data: None,
 };
 assert_eq!(message, expected);
@@ -46,17 +50,17 @@ let (pos, message) = decode_one(&input[pos..]).unwrap();
 assert_eq!(pos, 0); // no more messages were found
 
 let expected = messages::Raw {
-    raw: ":test!test@test JOIN #shaken_bot\r\n",
+    raw: Cow::Borrowed(":test!test@test JOIN #shaken_bot\r\n"),
     tags: Tags::default(),
-    prefix: Some(decode::Prefix::User { nick: "test" }),
-    command: "JOIN",
-    args: "#shaken_bot",
+    prefix: Some(decode::Prefix::User { nick: Cow::Borrowed("test") }),
+    command: Cow::Borrowed("JOIN"),
+    args: Cow::Borrowed("#shaken_bot"),
     data: None,
 };
 assert_eq!(message, expected);
 ```
 */
-pub fn decode_one(input: &str) -> Result<(usize, Message<&'_ str>)> {
+pub fn decode_one<'t>(input: &'t str) -> Result<(usize, Message<'t>)> {
     let pos = input
         .find("\r\n")
         .ok_or_else(|| ParseError::IncompleteMessage { pos: 0 })?;
@@ -70,23 +74,25 @@ Tries to decode potentially many messages from this input string
 # Example
 ```rust
 # use twitchchat::*;
+# use std::borrow::Cow;
+
 let input = ":test!test@test JOIN #museun\r\n:test!test@test JOIN #shaken_bot\r\n";
 
 let expected = &[
     messages::Raw {
-        raw: ":test!test@test JOIN #museun\r\n",
+        raw: Cow::Borrowed(":test!test@test JOIN #museun\r\n"),
         tags: Tags::default(),
-        prefix: Some(decode::Prefix::User { nick: "test" }),
-        command: "JOIN",
-        args: "#museun",
+        prefix: Some(decode::Prefix::User { nick: Cow::Borrowed("test") }),
+        command: Cow::Borrowed("JOIN"),
+        args: Cow::Borrowed("#museun"),
         data: None,
     },
     messages::Raw {
-        raw: ":test!test@test JOIN #shaken_bot\r\n",
+        raw: Cow::Borrowed(":test!test@test JOIN #shaken_bot\r\n"),
         tags: Tags::default(),
-        prefix: Some(decode::Prefix::User { nick: "test" }),
-        command: "JOIN",
-        args: "#shaken_bot",
+        prefix: Some(decode::Prefix::User { nick: Cow::Borrowed("test") }),
+        command: Cow::Borrowed("JOIN"),
+        args: Cow::Borrowed("#shaken_bot"),
         data: None,
     },
 ];
@@ -97,7 +103,7 @@ for (message, expected) in decode(&input).zip(expected.iter()) {
 }
 ```
 */
-pub fn decode(input: &str) -> impl Iterator<Item = Result<Message<&'_ str>>> + '_ {
+pub fn decode<'t>(input: &'t str) -> impl Iterator<Item = Result<Message<'t>>> + 't {
     ParseIter::new(input)
 }
 

@@ -1,4 +1,6 @@
 /*!
+The client for reading/writing messages to Twitch
+
 # Event handling.
 
 You can [get] a [Dispatcher] from the [Client].
@@ -26,6 +28,8 @@ use std::sync::Arc;
 use tokio::prelude::*;
 use tokio::sync::{mpsc, Mutex};
 
+use crate::rate_limit::*;
+
 mod dispatcher;
 pub use dispatcher::Dispatcher;
 
@@ -34,7 +38,7 @@ pub use stream::EventStream;
 
 mod event;
 #[doc(hidden)]
-pub use event::Event;
+pub use event::{Event, EventMapped};
 
 mod error;
 pub use error::Error;
@@ -95,9 +99,9 @@ tokio::task::spawn(async move {
 client.run(read_impl, write_impl).await;
 ```
 
-[Dispatcher]: ./struct.Dispatcher.html
-[Writer]: ./client/struct.Writer.html
-[Client]: ./struct.Client.html
+[Dispatcher]: ../client/struct.Dispatcher.html
+[Writer]: ../client/struct.Writer.html
+[Client]: ../client/struct.Client.html
 [AsyncRead]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncRead.html
 [AsyncWrite]: https://docs.rs/tokio/0.2.6/tokio/io/trait.AsyncWrite.html
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
@@ -161,17 +165,20 @@ impl Client {
         Ok(())
     }
 
-    /// Run the client to completion, dispatching messages to the subscribers
+    /// This allow you provide a custom Rate Limit configuration
     ///
-    /// # Returns
-    /// * An [error][error] if one was encountered while in operation
-    /// * [`Ok(Status::Eof)`][eof] if it ran to completion
-    /// * [`Ok(Status::Canceled)`][cancel] if `stop` was called
+    /// See [Client::run](./struct.Client.html#method.run)
     ///
-    /// [error]: ./enum.Error.html
-    /// [eof]: ./client/enum.Status.html#variant.Eof
-    /// [cancel]: ./client/enum.Status.html#variant.Canceled
-    pub async fn run<R, W>(&self, read: R, write: W) -> Result<Status, Error>
+    /// # Warning
+    /// Having the wrong 'rate limit' will likely cause the server to drop you silently.
+    ///
+    /// Use this with caution, or if you know what you're doing
+    pub async fn run_with_user_rate_limit<R, W>(
+        &self,
+        read: R,
+        write: W,
+        rate: RateLimit,
+    ) -> Result<Status, Error>
     where
         R: AsyncRead + Send + Sync + Unpin + 'static,
         W: AsyncWrite + Send + Sync + Unpin + 'static,
@@ -191,7 +198,7 @@ impl Client {
             .expect("receiver to exist");
 
         let read = tokio::task::spawn(reader::read_loop(read, dispatcher));
-        let write = tokio::task::spawn(writer::write_loop(write, receiver));
+        let write = tokio::task::spawn(writer::write_loop(write, rate, receiver));
 
         let fut = futures::future::try_select(read, write);
         let (handle, token) = futures::future::AbortHandle::new_pair();
@@ -206,6 +213,29 @@ impl Client {
             Ok(Err(err)) => panic!("panic in read/write handler: {}", err.factor_first().0),
             Err(..) => Ok(Status::Canceled),
         }
+    }
+
+    /// Run the client to completion, dispatching messages to the subscribers
+    ///
+    /// # Note
+    /// This enables an internal rate limit of 50 messages sent per 30 seconds    
+    ///
+    /// # Returns
+    /// * An [error][error] if one was encountered while in operation
+    /// * [`Ok(Status::Eof)`][eof] if it ran to completion
+    /// * [`Ok(Status::Canceled)`][cancel] if `stop` was called
+    ///
+    /// [error]: ./enum.Error.html
+    /// [eof]: ../client/enum.Status.html#variant.Eof
+    /// [cancel]: ../client/enum.Status.html#variant.Canceled
+    // TODO allow for customization of the rate limiting
+    pub async fn run<R, W>(&self, read: R, write: W) -> Result<Status, Error>
+    where
+        R: AsyncRead + Send + Sync + Unpin + 'static,
+        W: AsyncWrite + Send + Sync + Unpin + 'static,
+    {
+        let rate = RateLimit::from_class(RateClass::Known);
+        self.run_with_user_rate_limit(read, write, rate).await
     }
 
     async fn initialize_handlers(&self) {

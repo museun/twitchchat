@@ -47,13 +47,13 @@ impl From<crate::ChannelError> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Utf8(err) => write!(f, "utf8 error: {}", err),
-            Error::Io(err) => write!(f, "io error: {}", err),
-            Error::Decode(err) => write!(f, "decode error: {}", err),
-            Error::NotRunning => write!(f, "tried to stop a non-running client"),
-            Error::AlreadyRunning => write!(f, "tried to start an already running client"),
-            Error::InvalidChannel(err) => write!(f, "an invalid channel was provided: {}", err),
-            Error::ClientDisconnect => write!(f, "this client has been disconnected"),
+            Self::Utf8(err) => write!(f, "utf8 error: {}", err),
+            Self::Io(err) => write!(f, "io error: {}", err),
+            Self::Decode(err) => write!(f, "decode error: {}", err),
+            Self::NotRunning => write!(f, "tried to stop a non-running client"),
+            Self::AlreadyRunning => write!(f, "tried to start an already running client"),
+            Self::InvalidChannel(err) => write!(f, "an invalid channel was provided: {}", err),
+            Self::ClientDisconnect => write!(f, "this client has been disconnected"),
         }
     }
 }
@@ -61,10 +61,10 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Error::Utf8(err) => Some(err),
-            Error::Io(err) => Some(err),
-            Error::Decode(err) => Some(err),
-            Error::InvalidChannel(err) => Some(err),
+            Self::Utf8(err) => Some(err),
+            Self::Io(err) => Some(err),
+            Self::Decode(err) => Some(err),
+            Self::InvalidChannel(err) => Some(err),
             _ => None,
         }
     }
