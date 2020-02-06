@@ -35,3 +35,10 @@ tokio   = { version = "0.2", default-features = false, features = ["dns", "io-ut
 [[example]]
 name = "demo"
 required-features = ["async"]
+
+[[example]]
+name = "short"
+required-features = ["async"]
+
+[[example]]
+name = "parse"
