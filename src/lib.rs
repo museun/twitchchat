@@ -296,8 +296,10 @@ mod internal;
 /// Synchronous methods
 pub mod sync;
 
-#[doc(inline)]
-pub mod rate_limit;
+cfg_async! {
+    #[doc(inline)]
+    pub mod rate_limit;
+}
 
 /// A trait for parsing messages
 ///
