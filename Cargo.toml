@@ -1,13 +1,13 @@
 [package]
 name          = "twitchchat"
 edition       = "2018"
-version       = "0.8.0-beta.4"
+version       = "0.8.0"
 authors       = ["museun <museun@outlook.com>"]
 keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
 license       = "MIT OR Apache-2.0"
 readme        = "README.md"
 description   = "interface to the irc-side of twitch's chat system"
-documentation = "https://docs.rs/twitchchat/0.8.0-beta.4/twitchchat/"
+documentation = "https://docs.rs/twitchchat/0.8.0/twitchchat/"
 repository    = "https://github.com/museun/twitchchat"
 categories    = ["asynchronous", "network-programming", "parser-implementations"]
 
