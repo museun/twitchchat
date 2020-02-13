@@ -1,6 +1,6 @@
 /* in your Cargo.toml
 [dependencies]
-twitchchat = "0.8.0-beta"                        # this crate
+twitchchat = "0.8.3"                             # this crate
 tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
 */
 
