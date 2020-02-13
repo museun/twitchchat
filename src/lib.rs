@@ -68,29 +68,31 @@ pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
 
-/// Connection type
-///
-/// Defaults to `Nope`
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Secure {
-    /// Use TLS
-    UseTls,
-    /// Don't use TLS
-    Nope,
-}
-
-impl Default for Secure {
-    fn default() -> Self {
-        Self::Nope
+cfg_async! {
+    /// Connection type
+    ///
+    /// Defaults to `Nope` (no TLS)
+    #[derive(Debug, Copy, Clone, PartialEq)]
+    pub enum Secure {
+        /// Use TLS
+        UseTls,
+        /// Don't use TLS
+        Nope,
     }
-}
 
-impl Secure {
-    /// Gets the requested (IRC) address
-    pub fn get_address(self) -> &'static str {
-        match self {
-            Self::UseTls => TWITCH_IRC_ADDRESS_TLS,
-            Self::Nope => TWITCH_IRC_ADDRESS,
+    impl Default for Secure {
+        fn default() -> Self {
+            Self::Nope
+        }
+    }
+
+    impl Secure {
+        /// Gets the requested (IRC) address
+        pub fn get_address(self) -> &'static str {
+            match self {
+                Self::UseTls => TWITCH_IRC_ADDRESS_TLS,
+                Self::Nope => TWITCH_IRC_ADDRESS,
+            }
         }
     }
 }
