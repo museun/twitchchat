@@ -314,14 +314,14 @@ impl Client {
 
         // set up ready
         let stream = dispatcher.subscribe_internal::<crate::events::Ready>(true);
-        self.ready.register(stream).await;
+        debug_assert!(self.ready.register(stream).await);
 
         // set up irc ready
         let stream = dispatcher.subscribe_internal::<crate::events::IrcReady>(true);
-        self.irc_ready.register(stream).await;
+        debug_assert!(self.irc_ready.register(stream).await);
 
         // set up global user state
         let stream = dispatcher.subscribe_internal::<crate::events::GlobalUserState>(true);
-        self.global_state.register(stream).await;
+        debug_assert!(self.global_state.register(stream).await);
     }
 }
