@@ -91,6 +91,10 @@ async fn main() {
         }
     });
 
+    // wait for the twitch connection to be 'registered'
+    let _ready = client.wait_for_irc_ready().await.unwrap();
+    // after this point its safe to join / send messages
+
     // get a clonable writer from the client
     // join a channel, methods on writer return false if the client is disconnected
     if let Err(err) = client.writer().join(&channel).await {

@@ -38,6 +38,11 @@ async fn main() {
         }
     });
 
+
+    // 'block' until we're connected
+    let ready = client.wait_for_irc_ready().await.unwrap();
+    eprintln!("your irc name: {}", ready.nickname);
+
     // the writer is also clonable
     client.writer().join("#museun").await.unwrap();
 

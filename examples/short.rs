@@ -1,3 +1,9 @@
+/* in your Cargo.toml
+[dependencies]
+twitchchat = "0.8.3"                             # this crate
+tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
+*/
+
 use twitchchat::{events, Client, Secure};
 
 // so .next() can be used on the EventStream
@@ -24,13 +30,20 @@ async fn main() {
         }
     });
 
+    // run the client
+    let done = client.run(read, write);
+
+    // 'block' until we're connected
+    let ready = client.wait_for_irc_ready().await.unwrap();
+    eprintln!("your irc name: {}", ready.nickname);
+
     // the writer is also clonable
     client.writer().join("#museun").await.unwrap();
 
     // this resolves when the client disconnects
     // or is forced to stop with Client::stop
     use twitchchat::client::Status;
-    match client.run(read, write).await {
+    match done.await {
         // client was disconnected by the server
         Ok(Status::Eof) => {}
         // client was canceled by the user (`stop`)

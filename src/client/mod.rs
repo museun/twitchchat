@@ -26,7 +26,7 @@ You can clear event subscriptions for [specific events][specific] or for [all ev
 use futures::stream::*;
 use std::sync::Arc;
 use tokio::prelude::*;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, watch, Mutex};
 
 use crate::rate_limit::*;
 
@@ -113,6 +113,12 @@ client.run(read_impl, write_impl).await;
 #[derive(Clone)]
 pub struct Client {
     sender: Tx,
+
+    // TODO make this something users can attach/deatch
+    ready: SimpleEvent<crate::messages::Ready<'static>>,
+    irc_ready: SimpleEvent<crate::messages::IrcReady<'static>>,
+    global_state: SimpleEvent<crate::messages::GlobalUserState<'static>>,
+
     dispatcher: Arc<Mutex<Dispatcher>>,
     receiver: Arc<Mutex<Option<Rx>>>,
     abort: Arc<Mutex<Option<futures::future::AbortHandle>>>,
@@ -127,8 +133,13 @@ impl std::fmt::Debug for Client {
 impl Default for Client {
     fn default() -> Self {
         let (sender, receiver) = mpsc::channel(64);
+
         Self {
             sender,
+            ready: SimpleEvent::new(),
+            irc_ready: SimpleEvent::new(),
+            global_state: SimpleEvent::new(),
+
             receiver: Arc::new(Mutex::new(Some(receiver))),
             dispatcher: Arc::new(Mutex::new(Dispatcher::new())),
             abort: Default::default(),
@@ -154,7 +165,7 @@ impl Client {
 
     /// Stops the running task
     ///
-    /// `run` will return `Ok(Status::Canceled) `
+    /// This will cause `Client::run` to return [`Ok(Status::Canceled)`](./enum.Status.html#variant.Canceled)
     pub async fn stop(&self) -> Result<(), Error> {
         self.abort
             .lock()
@@ -163,6 +174,44 @@ impl Client {
             .ok_or_else(|| Error::NotRunning)?
             .abort();
         Ok(())
+    }
+
+    /// Waits for the client to be in the `Ready` state
+    ///
+    /// # Returns
+    /// * [`Ok(Ready)`][ok] if the client is ready to proceed
+    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    ///
+    /// [ok]: ../messages/struct.Ready.html
+    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    pub async fn wait_for_ready(&self) -> Result<crate::messages::Ready<'static>, Error> {
+        self.ready.wait_for().await
+    }
+
+    /// Waits for the client to be in the `IrcReady` state
+    ///
+    /// # Returns
+    /// * [`Ok(IrcReady)`][ok] if the client is ready to proceed
+    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    ///
+    /// [ok]: ../messages/struct.IrcReady.html
+    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    pub async fn wait_for_irc_ready(&self) -> Result<crate::messages::IrcReady<'static>, Error> {
+        self.irc_ready.wait_for().await
+    }
+
+    /// waits for the client to receiver a `GlobalUserState`
+    ///
+    /// # Returns
+    /// * [`Ok(GlobalUserState)`][ok] if the client is ready to proceed
+    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    ///
+    /// [ok]: ../messages/struct.GlobalUserState.html
+    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    pub async fn wait_for_global_user_state(
+        &self,
+    ) -> Result<crate::messages::GlobalUserState<'static>, Error> {
+        self.global_state.wait_for().await
     }
 
     /// This allow you provide a custom Rate Limit configuration
@@ -240,27 +289,106 @@ impl Client {
         R: AsyncRead + Send + Sync + Unpin + 'static,
         W: AsyncWrite + Send + Sync + Unpin + 'static,
     {
+        use futures::prelude::*;
         let rate = RateLimit::from_class(RateClass::Known);
         let this = self.clone();
-
-        use futures::prelude::*;
-
         tokio::task::spawn(async move { this.run_with_user_rate_limit(read, write, rate).await })
             .map_ok_or_else(|_err| Err(Error::ClientDisconnect), |ok| ok)
     }
 
     async fn initialize_handlers(&self) {
         let mut dispatcher = self.dispatcher().await;
+        let mut writer = self.writer();
 
         // set up the auto PING
         let mut stream = dispatcher.subscribe_internal::<crate::events::Ping>(true);
-        let mut writer = self.writer();
-        tokio::task::spawn(async move {
+        let ping = async move {
             while let Some(msg) = stream.next().await {
                 if writer.pong(&msg.token).await.is_err() {
                     break;
                 }
             }
-        });
+        };
+        tokio::task::spawn(ping);
+
+        // set up ready
+        let stream = dispatcher.subscribe_internal::<crate::events::Ready>(true);
+        self.ready.register(stream).await;
+
+        // set up irc ready
+        let stream = dispatcher.subscribe_internal::<crate::events::IrcReady>(true);
+        self.irc_ready.register(stream).await;
+
+        // set up global user state
+        let stream = dispatcher.subscribe_internal::<crate::events::GlobalUserState>(true);
+        self.global_state.register(stream).await;
     }
+}
+
+#[derive(Clone, Debug)]
+enum ReadyState<T, E = ()> {
+    Ready(T),
+    NotReady,
+    Error(E),
+}
+
+impl<T> Default for ReadyState<T> {
+    fn default() -> Self {
+        Self::NotReady
+    }
+}
+
+#[derive(Clone)]
+struct SimpleEvent<T>
+where
+    T: Clone + Send + Sync + 'static,
+{
+    tx: Arc<Mutex<Option<watch::Sender<ReadyState<T>>>>>,
+    rx: watch::Receiver<ReadyState<T>>,
+}
+
+impl<T> SimpleEvent<T>
+where
+    T: Clone + Send + Sync + 'static,
+{
+    fn new() -> Self {
+        let (tx, rx) = watch::channel(Default::default());
+        Self {
+            tx: Arc::new(Mutex::new(Some(tx))),
+            rx,
+        }
+    }
+
+    async fn wait_for(&self) -> Result<T, Error> {
+        let mut ready = self.rx.clone();
+        loop {
+            match ready.recv().await {
+                Some(ReadyState::Ready(val)) => return Ok(val),
+                Some(ReadyState::Error(_)) | None => return Err(Error::ClientDisconnect),
+                Some(ReadyState::NotReady) => continue,
+            }
+        }
+    }
+
+    async fn register(&self, mut stream: EventStream<Arc<T>>) {
+        let tx = self.tx.lock().await.take().expect("single initialization");
+        let ready = async move {
+            let ready = match stream.next().await {
+                Some(ready) => {
+                    let ready = unwrap_arc(ready);
+                    ReadyState::Ready(ready)
+                }
+                None => ReadyState::Error(()),
+            };
+            if tx.broadcast(ready).is_err() {
+                return;
+            }
+        };
+        tokio::task::spawn(ready);
+    }
+}
+
+#[inline]
+fn unwrap_arc<T: Clone>(d: Arc<T>) -> T {
+    Arc::try_unwrap(d).map_or_else(|d| (&*d).clone(), |d| d)
 }
