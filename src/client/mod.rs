@@ -217,10 +217,12 @@ impl Client {
 
     /// Run the client to completion, dispatching messages to the subscribers
     ///
+    /// This returns a future. You should await this future at the end of your code to keep the runtime active until the client closes
+    ///
     /// # Note
     /// This enables an internal rate limit of 50 messages sent per 30 seconds    
     ///
-    /// # Returns
+    /// # Returns after resolving the future
     /// * An [error][error] if one was encountered while in operation
     /// * [`Ok(Status::Eof)`][eof] if it ran to completion
     /// * [`Ok(Status::Canceled)`][cancel] if `stop` was called
@@ -229,13 +231,22 @@ impl Client {
     /// [eof]: ../client/enum.Status.html#variant.Eof
     /// [cancel]: ../client/enum.Status.html#variant.Canceled
     // TODO allow for customization of the rate limiting
-    pub async fn run<R, W>(&self, read: R, write: W) -> Result<Status, Error>
+    pub fn run<R, W>(
+        &self,
+        read: R,
+        write: W,
+    ) -> impl std::future::Future<Output = Result<Status, Error>> + '_
     where
         R: AsyncRead + Send + Sync + Unpin + 'static,
         W: AsyncWrite + Send + Sync + Unpin + 'static,
     {
         let rate = RateLimit::from_class(RateClass::Known);
-        self.run_with_user_rate_limit(read, write, rate).await
+        let this = self.clone();
+
+        use futures::prelude::*;
+
+        tokio::task::spawn(async move { this.run_with_user_rate_limit(read, write, rate).await })
+            .map_ok_or_else(|_err| Err(Error::ClientDisconnect), |ok| ok)
     }
 
     async fn initialize_handlers(&self) {

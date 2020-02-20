@@ -25,12 +25,13 @@ futures    = { version = "0.3", optional = true, default-features = false, featu
 log        = { version = "0.4" }
 native-tls = { version = "0.2", optional = true }
 serde      = { version = "1",   optional = true, features = ["derive"] }
-tokio      = { version = "0.2", optional = true, default-features = false, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
+tokio      = { version = "0.2", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
 tokio-tls  = { version = "0.3", optional = true }
 
 [dev-dependencies]
 matches = "0.1"
-tokio   = { version = "0.2", default-features = false, features = ["dns", "io-util", "macros", "stream", "sync", "tcp", "time", "test-util" ] }
+tokio   = { version = "0.2", features = ["dns", "io-util", "stream", "sync", "tcp", "time", "test-util", "macros"] }
+flexi_logger = "0.14.8"
 
 [[example]]
 name = "demo"
@@ -41,4 +42,10 @@ name = "short"
 required-features = ["async"]
 
 [[example]]
+name = "wait_to_join"
+required-features = ["async"]
+
+[[example]]
 name = "parse"
+
+
