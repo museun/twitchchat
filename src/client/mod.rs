@@ -26,7 +26,7 @@ You can clear event subscriptions for [specific events][specific] or for [all ev
 use futures::stream::*;
 use std::sync::Arc;
 use tokio::prelude::*;
-use tokio::sync::{mpsc, watch, Mutex};
+use tokio::sync::{mpsc, Mutex};
 
 use crate::rate_limit::*;
 
@@ -37,6 +37,7 @@ mod stream;
 pub use stream::EventStream;
 
 mod event;
+pub use event::SimpleEvent;
 #[doc(hidden)]
 pub use event::{Event, EventMapped};
 
@@ -323,72 +324,4 @@ impl Client {
         let stream = dispatcher.subscribe_internal::<crate::events::GlobalUserState>(true);
         self.global_state.register(stream).await;
     }
-}
-
-#[derive(Clone, Debug)]
-enum ReadyState<T, E = ()> {
-    Ready(T),
-    NotReady,
-    Error(E),
-}
-
-impl<T> Default for ReadyState<T> {
-    fn default() -> Self {
-        Self::NotReady
-    }
-}
-
-#[derive(Clone)]
-struct SimpleEvent<T>
-where
-    T: Clone + Send + Sync + 'static,
-{
-    tx: Arc<Mutex<Option<watch::Sender<ReadyState<T>>>>>,
-    rx: watch::Receiver<ReadyState<T>>,
-}
-
-impl<T> SimpleEvent<T>
-where
-    T: Clone + Send + Sync + 'static,
-{
-    fn new() -> Self {
-        let (tx, rx) = watch::channel(Default::default());
-        Self {
-            tx: Arc::new(Mutex::new(Some(tx))),
-            rx,
-        }
-    }
-
-    async fn wait_for(&self) -> Result<T, Error> {
-        let mut ready = self.rx.clone();
-        loop {
-            match ready.recv().await {
-                Some(ReadyState::Ready(val)) => return Ok(val),
-                Some(ReadyState::Error(_)) | None => return Err(Error::ClientDisconnect),
-                Some(ReadyState::NotReady) => continue,
-            }
-        }
-    }
-
-    async fn register(&self, mut stream: EventStream<Arc<T>>) {
-        let tx = self.tx.lock().await.take().expect("single initialization");
-        let ready = async move {
-            let ready = match stream.next().await {
-                Some(ready) => {
-                    let ready = unwrap_arc(ready);
-                    ReadyState::Ready(ready)
-                }
-                None => ReadyState::Error(()),
-            };
-            if tx.broadcast(ready).is_err() {
-                return;
-            }
-        };
-        tokio::task::spawn(ready);
-    }
-}
-
-#[inline]
-fn unwrap_arc<T: Clone>(d: Arc<T>) -> T {
-    Arc::try_unwrap(d).map_or_else(|d| (&*d).clone(), |d| d)
 }
