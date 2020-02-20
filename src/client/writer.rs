@@ -5,7 +5,7 @@ use crate::IntoChannel;
 pub(super) async fn write_loop<W>(
     write: W,
     mut rate: RateLimit,
-    mut recv: Receiver,
+    mut recv: Rx,
 ) -> std::result::Result<Status, Error>
 where
     W: AsyncWrite + Send + Sync + Unpin + 'static,
@@ -49,7 +49,7 @@ impl SafeEncode for Encoder<Vec<u8>> {
 #[derive(Clone)]
 pub struct Writer {
     encoder: Encoder<Vec<u8>>,
-    sender: Sender,
+    sender: Tx,
 }
 
 impl std::fmt::Debug for Writer {
@@ -59,7 +59,7 @@ impl std::fmt::Debug for Writer {
 }
 
 impl Writer {
-    pub(super) fn new(sender: Sender) -> Self {
+    pub(super) fn new(sender: Tx) -> Self {
         Self {
             encoder: Encoder::new(vec![]),
             sender,

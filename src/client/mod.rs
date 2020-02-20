@@ -48,8 +48,8 @@ pub use writer::Writer;
 
 mod reader;
 
-type Sender<T = Vec<u8>> = mpsc::Sender<T>;
-type Receiver = mpsc::Receiver<Vec<u8>>;
+type Tx<T = Vec<u8>> = mpsc::Sender<T>;
+type Rx<T = Vec<u8>> = mpsc::Receiver<T>;
 
 /// Status of the client after running
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -112,9 +112,9 @@ client.run(read_impl, write_impl).await;
 */
 #[derive(Clone)]
 pub struct Client {
-    sender: Sender,
+    sender: Tx,
     dispatcher: Arc<Mutex<Dispatcher>>,
-    receiver: Arc<Mutex<Option<Receiver>>>,
+    receiver: Arc<Mutex<Option<Rx>>>,
     abort: Arc<Mutex<Option<futures::future::AbortHandle>>>,
 }
 

@@ -65,7 +65,7 @@ pub struct RateLimit {
 impl RateLimit {
     /// Create a rate limit from a RateClass
     pub fn from_class(rate_class: RateClass) -> Self {
-        Self::empty(rate_class.tickets(), RateClass::period())
+        Self::full(rate_class.tickets(), RateClass::period())
     }
 
     /// Create a new rate limiter of `capacity` with an `initial` number of
@@ -137,7 +137,10 @@ impl RateLimit {
         loop {
             match self.consume(tokens) {
                 Ok(rem) => return rem,
-                Err(time) => tokio::time::delay_for(time).await,
+                Err(time) => {
+                    log::debug!("blocking for: {:.3?}", time);
+                    tokio::time::delay_for(time).await
+                }
             }
         }
     }
