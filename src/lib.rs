@@ -128,14 +128,20 @@ cfg_async! {
         } = user_config;
 
         for cap in capabilities {
-            writer.write_all(cap.encode_as_str().as_bytes()).await?;
+            let cap = cap.encode_as_str();
+            log::trace!("sending CAP: {}", cap);
+            writer.write_all(cap.as_bytes()).await?;
             writer.write_all(b"\r\n").await?;
         }
 
+        log::trace!("sending PASS: {} (len={})", "*".repeat(token.len()), token.len());
+        log::trace!("sending NICK: {}", name);
         writer
-            .write_all(format!("PASS {}\r\nNICK {}\r\n", token,name).as_bytes())
+            .write_all(format!("PASS {}\r\nNICK {}\r\n", token, name).as_bytes())
             .await?;
-        Ok(())
+
+        log::trace!("flushing initial handshake");
+        writer.flush().await.map_err(Into::into)
     }
 }
 
