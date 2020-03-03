@@ -22,16 +22,15 @@ tls     = ["tokio-tls", "native-tls"]
 
 [dependencies]
 futures    = { version = "0.3.4", optional = true, default-features = false, features = ["alloc"] } # for AbortHandle
-log        = "0.4.8"
+log        = { version = "0.4.8" }
 native-tls = { version = "0.2.3", optional = true }
 serde      = { version = "1.0.104", optional = true, features = ["derive"] }
-tokio      = { version = "0.2.11", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
+tokio      = { version = "0.2.13", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
 tokio-tls  = { version = "0.3.0", optional = true }
 
 [dev-dependencies]
 matches = "0.1.8"
-tokio   = { version = "0.2.11", features = ["dns", "io-util", "stream", "sync", "tcp", "time", "test-util", "macros"] }
-flexi_logger = "0.14.8"
+tokio   = { version = "0.2.13", features = ["test-util", "macros"] }
 
 [[example]]
 name = "demo"
