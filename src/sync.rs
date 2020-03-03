@@ -96,6 +96,7 @@ pub fn connect_easy(name: &str, token: &str) -> std::io::Result<(TcpStream, TcpS
     connect(&config)
 }
 
-// TODO: should the encoder be in here?
-// TODO: should this module even exists?
 // TODO: add a SyncClient if we want to keep this
+
+#[doc(inline)]
+pub use crate::encode::Encoder;
