@@ -578,159 +578,6 @@ pub enum MessageId<'t> {
     Unknown(Cow<'t, str>),
 }
 
-impl<'t> MessageId<'t> {
-    fn parse(input: &'t str) -> MessageId<'t> {
-        use MessageId::*;
-        match input {
-            "already_banned" => AlreadyBanned,
-            "already_emote_only_off" => AlreadyEmoteOnlyOff,
-            "already_emote_only_on" => AlreadyEmoteOnlyOn,
-            "already_r9k_off" => AlreadyR9kOff,
-            "already_r9k_on" => AlreadyR9kOn,
-            "already_subs_off" => AlreadySubsOff,
-            "already_subs_on" => AlreadySubsOn,
-            "bad_ban_admin" => BadBanAdmin,
-            "bad_ban_anon" => BadBanAnon,
-            "bad_ban_broadcaster" => BadBanBroadcaster,
-            "bad_ban_global_mod" => BadBanGlobalMod,
-            "bad_ban_mod" => BadBanMod,
-            "bad_ban_self" => BadBanSelf,
-            "bad_ban_staff" => BadBanStaff,
-            "bad_commercial_error" => BadCommercialError,
-            "bad_delete_message_broadcaster" => BadDeleteMessageBroadcaster,
-            "bad_delete_message_mod" => BadDeleteMessageMod,
-            "bad_host_error" => BadHostError,
-            "bad_host_hosting" => BadHostHosting,
-            "bad_host_rate_exceeded" => BadHostRateExceeded,
-            "bad_host_rejected" => BadHostRejected,
-            "bad_host_self" => BadHostSelf,
-            "bad_marker_client" => BadMarkerClient,
-            "bad_mod_banned" => BadModBanned,
-            "bad_mod_mod" => BadModMod,
-            "bad_slow_duration" => BadSlowDuration,
-            "bad_timeout_admin" => BadTimeoutAdmin,
-            "bad_timeout_anon" => BadTimeoutAnon,
-            "bad_timeout_broadcaster" => BadTimeoutBroadcaster,
-            "bad_timeout_duration" => BadTimeoutDuration,
-            "bad_timeout_global_mod" => BadTimeoutGlobalMod,
-            "bad_timeout_mod" => BadTimeoutMod,
-            "bad_timeout_self" => BadTimeoutSelf,
-            "bad_timeout_staff" => BadTimeoutStaff,
-            "bad_unban_no_ban" => BadUnbanNoBan,
-            "bad_unhost_error" => BadUnhostError,
-            "bad_unmod_mod" => BadUnmodMod,
-            "ban_success" => BanSuccess,
-            "cmds_available" => CmdsAvailable,
-            "color_changed" => ColorChanged,
-            "commercial_success" => CommercialSuccess,
-            "delete_message_success" => DeleteMessageSuccess,
-            "emote_only_off" => EmoteOnlyOff,
-            "emote_only_on" => EmoteOnlyOn,
-            "followers_off" => FollowersOff,
-            "followers_on" => FollowersOn,
-            // ERROR: docs have this as 'followers_onzero'
-            "followers_on_zero" => FollowersOnZero,
-            "host_off" => HostOff,
-            "host_on" => HostOn,
-            "host_success" => HostSuccess,
-            "host_success_viewers" => HostSuccessViewers,
-            "host_target_went_offline" => HostTargetWentOffline,
-            "hosts_remaining" => HostsRemaining,
-            "invalid_user" => InvalidUser,
-            "mod_success" => ModSuccess,
-            "msg_banned" => MsgBanned,
-            "msg_bad_characters" => MsgBadCharacters,
-            "msg_channel_blocked" => MsgChannelBlocked,
-            "msg_channel_suspended" => MsgChannelSuspended,
-            "msg_duplicate" => MsgDuplicate,
-            "msg_emoteonly" => MsgEmoteonly,
-            "msg_facebook" => MsgFacebook,
-            "msg_followersonly" => MsgFollowersonly,
-            "msg_followersonly_followed" => MsgFollowersonlyFollowed,
-            "msg_followersonly_zero" => MsgFollowersonlyZero,
-            "msg_r9k" => MsgR9k,
-            "msg_ratelimit" => MsgRatelimit,
-            "msg_rejected" => MsgRejected,
-            "msg_rejected_mandatory" => MsgRejectedMandatory,
-            "msg_room_not_found" => MsgRoomNotFound,
-            "msg_slowmode" => MsgSlowmode,
-            "msg_subsonly" => MsgSubsonly,
-            "msg_suspended" => MsgSuspended,
-            "msg_timedout" => MsgTimedout,
-            "msg_verified_email" => MsgVerifiedEmail,
-            "no_help" => NoHelp,
-            "no_mods" => NoMods,
-            "not_hosting" => NotHosting,
-            "no_permission" => NoPermission,
-            "r9k_off" => R9kOff,
-            "r9k_on" => R9kOn,
-            "raid_error_already_raiding" => RaidErrorAlreadyRaiding,
-            "raid_error_forbidden" => RaidErrorForbidden,
-            "raid_error_self" => RaidErrorSelf,
-            "raid_error_too_many_viewers" => RaidErrorTooManyViewers,
-            "raid_error_unexpected" => RaidErrorUnexpected,
-            "raid_notice_mature" => RaidNoticeMature,
-            "raid_notice_restricted_chat" => RaidNoticeRestrictedChat,
-            "room_mods" => RoomMods,
-            "slow_off" => SlowOff,
-            "slow_on" => SlowOn,
-            "subs_off" => SubsOff,
-            "subs_on" => SubsOn,
-            "timeout_no_timeout" => TimeoutNoTimeout,
-            "timeout_success" => TimeoutSuccess,
-            "tos_ban" => TosBan,
-            "turbo_only_color" => TurboOnlyColor,
-            "unban_success" => UnbanSuccess,
-            "unmod_success" => UnmodSuccess,
-            "unraid_error_no_active_raid" => UnraidErrorNoActiveRaid,
-            "unraid_error_unexpected" => UnraidErrorUnexpected,
-            "unraid_success" => UnraidSuccess,
-            "unrecognized_cmd" => UnrecognizedCmd,
-            "unsupported_chatrooms_cmd" => UnsupportedChatroomsCmd,
-            "untimeout_banned" => UntimeoutBanned,
-            "untimeout_success" => UntimeoutSuccess,
-            "usage_ban" => UsageBan,
-            "usage_clear" => UsageClear,
-            "usage_color" => UsageColor,
-            "usage_commercial" => UsageCommercial,
-            "usage_disconnect" => UsageDisconnect,
-            "usage_emote_only_off" => UsageEmoteOnlyOff,
-            "usage_emote_only_on" => UsageEmoteOnlyOn,
-            "usage_followers_off" => UsageFollowersOff,
-            "usage_followers_on" => UsageFollowersOn,
-            "usage_help" => UsageHelp,
-            "usage_host" => UsageHost,
-            "usage_marker" => UsageMarker,
-            "usage_me" => UsageMe,
-            "usage_mod" => UsageMod,
-            "usage_mods" => UsageMods,
-            "usage_r9k_off" => UsageR9kOff,
-            "usage_r9k_on" => UsageR9kOn,
-            "usage_raid" => UsageRaid,
-            "usage_slow_off" => UsageSlowOff,
-            "usage_slow_on" => UsageSlowOn,
-            "usage_subs_off" => UsageSubsOff,
-            "usage_subs_on" => UsageSubsOn,
-            "usage_timeout" => UsageTimeout,
-            "usage_unban" => UsageUnban,
-            "usage_unhost" => UsageUnhost,
-            "usage_unmod" => UsageUnmod,
-            "usage_unraid" => UsageUnraid,
-            "usage_untimeout" => UsageUntimeout,
-            "whisper_banned" => WhisperBanned,
-            "whisper_banned_recipient" => WhisperBannedRecipient,
-            "whisper_invalid_args" => WhisperInvalidArgs,
-            "whisper_invalid_login" => WhisperInvalidLogin,
-            "whisper_invalid_self" => WhisperInvalidSelf,
-            "whisper_limit_per_min" => WhisperLimitPerMin,
-            "whisper_limit_per_sec" => WhisperLimitPerSec,
-            "whisper_restricted" => WhisperRestricted,
-            "whisper_restricted_recipient" => WhisperRestrictedRecipient,
-            _ => Unknown(Cow::Borrowed(input)),
-        }
-    }
-}
-
 /// User leave message
 ///
 /// The happens when a user (yourself included) leaves a channel
@@ -783,8 +630,7 @@ impl<'t> Privmsg<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
@@ -793,8 +639,7 @@ impl<'t> Privmsg<'t> {
     }
 
     /// Badges attached to this message
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
@@ -937,8 +782,7 @@ impl<'t> UserNotice<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
@@ -947,8 +791,7 @@ impl<'t> UserNotice<'t> {
     }
 
     /// Badges attached to this message
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
@@ -1214,8 +1057,7 @@ impl<'t> UserState<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
@@ -1224,8 +1066,7 @@ impl<'t> UserState<'t> {
     }
 
     /// Badges attached to this message
-    ///
-    // TODO: make this work with the Conversion trait
+    ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
@@ -1308,99 +1149,10 @@ pub enum AllCommands<'t> {
     UserState(UserState<'t>),
 }
 
+// manual impls because they are different
 impl<'t> From<Raw<'t>> for AllCommands<'t> {
     fn from(msg: Raw<'t>) -> Self {
         Self::Unknown(msg)
-    }
-}
-
-impl<'t> From<Cap<'t>> for AllCommands<'t> {
-    fn from(msg: Cap<'t>) -> Self {
-        Self::Cap(msg)
-    }
-}
-
-impl<'t> From<ClearChat<'t>> for AllCommands<'t> {
-    fn from(msg: ClearChat<'t>) -> Self {
-        Self::ClearChat(msg)
-    }
-}
-
-impl<'t> From<ClearMsg<'t>> for AllCommands<'t> {
-    fn from(msg: ClearMsg<'t>) -> Self {
-        Self::ClearMsg(msg)
-    }
-}
-
-impl<'t> From<GlobalUserState<'t>> for AllCommands<'t> {
-    fn from(msg: GlobalUserState<'t>) -> Self {
-        Self::GlobalUserState(msg)
-    }
-}
-
-impl<'t> From<HostTarget<'t>> for AllCommands<'t> {
-    fn from(msg: HostTarget<'t>) -> Self {
-        Self::HostTarget(msg)
-    }
-}
-
-impl<'t> From<IrcReady<'t>> for AllCommands<'t> {
-    fn from(msg: IrcReady<'t>) -> Self {
-        Self::IrcReady(msg)
-    }
-}
-
-impl<'t> From<Join<'t>> for AllCommands<'t> {
-    fn from(msg: Join<'t>) -> Self {
-        Self::Join(msg)
-    }
-}
-
-impl<'t> From<Mode<'t>> for AllCommands<'t> {
-    fn from(msg: Mode<'t>) -> Self {
-        Self::Mode(msg)
-    }
-}
-
-impl<'t> From<Names<'t>> for AllCommands<'t> {
-    fn from(msg: Names<'t>) -> Self {
-        Self::Names(msg)
-    }
-}
-
-impl<'t> From<Notice<'t>> for AllCommands<'t> {
-    fn from(msg: Notice<'t>) -> Self {
-        Self::Notice(msg)
-    }
-}
-
-impl<'t> From<Part<'t>> for AllCommands<'t> {
-    fn from(msg: Part<'t>) -> Self {
-        Self::Part(msg)
-    }
-}
-
-impl<'t> From<Ping<'t>> for AllCommands<'t> {
-    fn from(msg: Ping<'t>) -> Self {
-        Self::Ping(msg)
-    }
-}
-
-impl<'t> From<Pong<'t>> for AllCommands<'t> {
-    fn from(msg: Pong<'t>) -> Self {
-        Self::Pong(msg)
-    }
-}
-
-impl<'t> From<Privmsg<'t>> for AllCommands<'t> {
-    fn from(msg: Privmsg<'t>) -> Self {
-        Self::Privmsg(msg)
-    }
-}
-
-impl<'t> From<Ready<'t>> for AllCommands<'t> {
-    fn from(msg: Ready<'t>) -> Self {
-        Self::Ready(msg)
     }
 }
 
@@ -1410,22 +1162,38 @@ impl<'t> From<Reconnect> for AllCommands<'t> {
     }
 }
 
-impl<'t> From<RoomState<'t>> for AllCommands<'t> {
-    fn from(msg: RoomState<'t>) -> Self {
-        Self::RoomState(msg)
-    }
+macro_rules! from {
+    ($($ident:tt),* $(,)?) => {
+        $(
+            impl<'t> From<$ident<'t>> for AllCommands<'t> {
+                fn from(msg: $ident<'t>) -> Self {
+                    Self::$ident(msg)
+                }
+            }
+        )*
+    };
 }
 
-impl<'t> From<UserNotice<'t>> for AllCommands<'t> {
-    fn from(msg: UserNotice<'t>) -> Self {
-        Self::UserNotice(msg)
-    }
-}
-
-impl<'t> From<UserState<'t>> for AllCommands<'t> {
-    fn from(msg: UserState<'t>) -> Self {
-        Self::UserState(msg)
-    }
+// rote implementation
+from! {
+    Cap,
+    ClearChat,
+    ClearMsg,
+    GlobalUserState,
+    HostTarget,
+    IrcReady,
+    Join,
+    Mode,
+    Names,
+    Notice,
+    Part,
+    Ping,
+    Pong,
+    Privmsg,
+    Ready,
+    RoomState,
+    UserNotice,
+    UserState,
 }
 
 #[cfg(test)]
