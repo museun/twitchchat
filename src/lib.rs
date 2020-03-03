@@ -97,7 +97,6 @@ cfg_async! {
     pub use connect::*;
 }
 
-/// Synchronous methods
 pub mod sync;
 
 cfg_async! {

@@ -1,3 +1,12 @@
+/*! # Synchronous methods
+
+This is just provided so you can open a `std::net::TcpStream` connection
+
+And so you have a `register()` method that works with just `std::io::Write`
+
+You probably would want to use the async `connect/register` methods from the crate root.
+*/
+
 use crate::{simple_user_config, UserConfig, TWITCH_IRC_ADDRESS};
 
 use std::io::Write;
