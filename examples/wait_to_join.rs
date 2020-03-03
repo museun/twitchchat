@@ -14,8 +14,9 @@ async fn main() {
         std::env::var("TWITCH_CHANNEL").unwrap(),
     );
 
-    let tls = twitchchat::Secure::UseTls;
-    let (read, write) = twitchchat::connect_easy(&nick, &pass, tls).await.unwrap();
+    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+    // split the stream
+    let (read, write) = tokio::io::split(stream);
 
     let client = twitchchat::Client::new();
     // this runs the client in a background task, giving a future you wait on

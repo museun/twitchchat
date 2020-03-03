@@ -18,10 +18,11 @@ async fn main() {
     // putting this in the env so people don't join my channel when running this
     let channel = std::env::var("TWITCH_CHANNEL").unwrap();
 
-    // connect via (tls or normal, 'Secure' determines that) tcp with this nick and password
-    let (read, write) = twitchchat::connect_easy(&nick, &pass, twitchchat::Secure::UseTls)
-        .await
-        .unwrap();
+    // connect via tcp with tls with this nick and password
+    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+
+    // split the stream
+    let (read, write) = tokio::io::split(stream);
 
     // make a client. the client is clonable
     let client = twitchchat::Client::new();

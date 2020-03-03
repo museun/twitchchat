@@ -4,7 +4,7 @@ twitchchat = "0.8"                               # this crate
 tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
 */
 
-use twitchchat::{events, Client, Secure};
+use twitchchat::{events, Client};
 
 // so .next() can be used on the EventStream
 // futures::stream::StreamExt will also work
@@ -13,9 +13,9 @@ use tokio::stream::StreamExt as _;
 #[tokio::main]
 async fn main() {
     let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
-    let (read, write) = twitchchat::connect_easy(&nick, &pass, Secure::UseTls)
-        .await
-        .unwrap();
+    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+    // split the stream | TODO decide on R+W or R,W
+    let (read, write) = tokio::io::split(stream);
 
     let client = Client::new();
 
