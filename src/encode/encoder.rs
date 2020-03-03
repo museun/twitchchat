@@ -8,32 +8,7 @@ pub struct Encoder<W> {
     pub(crate) writer: W,
 }
 
-impl<W: Write + Default> Default for Encoder<W> {
-    fn default() -> Self {
-        Self {
-            writer: Default::default(),
-        }
-    }
-}
-
-impl<W> std::fmt::Debug for Encoder<W> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Encoder").finish()
-    }
-}
-
-impl<W: Write + Clone> Clone for Encoder<W> {
-    fn clone(&self) -> Self {
-        Self {
-            writer: self.writer.clone(),
-        }
-    }
-}
-
-impl<W> Encoder<W>
-where
-    W: Write,
-{
+impl<W: Write> Encoder<W> {
     /// Gets the inner writer out
     pub fn into_inner(self) -> W {
         self.writer
@@ -50,10 +25,8 @@ where
     }
 }
 
-impl<W> Encoder<W>
-where
-    W: Write,
-{
+// TODO get rid of these formats!() by using an internal macro that uses format_args!()
+impl<W: Write> Encoder<W> {
     /// Permanently prevent a user from chatting. Reason is optional and will be shown to the target user and other moderators.
     ///
     /// Use [unban] to remove a ban.
@@ -347,5 +320,27 @@ where
     /// Whispers the message to the username.
     pub fn whisper(&mut self, username: &str, message: &str) -> Result {
         self.command(&format!("/w {} {}", username, message))
+    }
+}
+
+impl<W: Write + Default> Default for Encoder<W> {
+    fn default() -> Self {
+        Self {
+            writer: Default::default(),
+        }
+    }
+}
+
+impl<W> std::fmt::Debug for Encoder<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Encoder").finish()
+    }
+}
+
+impl<W: Write + Clone> Clone for Encoder<W> {
+    fn clone(&self) -> Self {
+        Self {
+            writer: self.writer.clone(),
+        }
     }
 }
