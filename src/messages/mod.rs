@@ -1262,30 +1262,49 @@ impl<'t> UserState<'t> {
 /// Subscribing to [events::All][all] will produce this, so you can have a single stream for multiple messages.
 ///
 /// [all]: ../events/struct.All.html
-#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AllCommands<'t> {
+    /// An unknown event occured
     Unknown(Raw<'t>),
+    /// A capabilities event occured
     Cap(Cap<'t>),
+    /// A ClearChat event occured
     ClearChat(ClearChat<'t>),
+    /// A ClearMsg event occured
     ClearMsg(ClearMsg<'t>),
+    /// A GlobalUserState event occured
     GlobalUserState(GlobalUserState<'t>),
+    /// A HostTarget event occured
     HostTarget(HostTarget<'t>),
+    /// A IrcReady event occured
     IrcReady(IrcReady<'t>),
+    /// A Join event occured
     Join(Join<'t>),
+    /// A Mode event occured
     Mode(Mode<'t>),
+    /// A Names event occured
     Names(Names<'t>),
+    /// A Notice event occured
     Notice(Notice<'t>),
+    /// A Part event occured
     Part(Part<'t>),
+    /// A Ping event occured
     Ping(Ping<'t>),
+    /// A Pong event occured
     Pong(Pong<'t>),
+    /// A Privmsg event occured
     Privmsg(Privmsg<'t>),
+    /// A Ready event occured
     Ready(Ready<'t>),
+    /// A Reconnect event occured
     Reconnect(Reconnect),
+    /// A RoomState event occured
     RoomState(RoomState<'t>),
+    /// A UserNotice event occured
     UserNotice(UserNotice<'t>),
+    /// A UserState event occured
     UserState(UserState<'t>),
 }
 
