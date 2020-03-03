@@ -1,3 +1,4 @@
+#![allow(missing_debug_implementations, missing_copy_implementations)]
 /*!
 Available event filters.
 
@@ -10,15 +11,15 @@ See the [table]
 [Messages]: ../messages/index.html
 [table]: ../client/struct.Dispatcher.html#a-table-of-mappings
 */
-use super::*;
+use super::messages;
 use crate::client::Event;
 
 /// Used to get a [messages::Cap][Cap]
 ///
 /// [Cap]: ../messages/struct.Cap.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Cap;
+
 impl<'t> Event<'t> for Cap {
     type Parsed = messages::Cap<'t>;
 }
@@ -27,8 +28,8 @@ impl<'t> Event<'t> for Cap {
 ///
 /// [ClearChat]: ../messages/struct.ClearChat.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct ClearChat;
+
 impl<'t> Event<'t> for ClearChat {
     type Parsed = messages::ClearChat<'t>;
 }
@@ -37,8 +38,8 @@ impl<'t> Event<'t> for ClearChat {
 ///
 /// [ClearMsg]: ../messages/struct.ClearMsg.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct ClearMsg;
+
 impl<'t> Event<'t> for ClearMsg {
     type Parsed = messages::ClearMsg<'t>;
 }
@@ -47,8 +48,8 @@ impl<'t> Event<'t> for ClearMsg {
 ///
 /// [GlobalUserState]: ../messages/struct.GlobalUserState.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct GlobalUserState;
+
 impl<'t> Event<'t> for GlobalUserState {
     type Parsed = messages::GlobalUserState<'t>;
 }
@@ -57,8 +58,8 @@ impl<'t> Event<'t> for GlobalUserState {
 ///
 /// [HostTarget]: ../messages/struct.HostTarget.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct HostTarget;
+
 impl<'t> Event<'t> for HostTarget {
     type Parsed = messages::HostTarget<'t>;
 }
@@ -67,8 +68,8 @@ impl<'t> Event<'t> for HostTarget {
 ///
 /// [IrcReady]: ../messages/struct.IrcReady.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct IrcReady;
+
 impl<'t> Event<'t> for IrcReady {
     type Parsed = messages::IrcReady<'t>;
 }
@@ -77,8 +78,8 @@ impl<'t> Event<'t> for IrcReady {
 ///
 /// [Join]: ../messages/struct.Join.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Join;
+
 impl<'t> Event<'t> for Join {
     type Parsed = messages::Join<'t>;
 }
@@ -87,8 +88,8 @@ impl<'t> Event<'t> for Join {
 ///
 /// [Mode]: ../messages/struct.Mode.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Mode;
+
 impl<'t> Event<'t> for Mode {
     type Parsed = messages::Mode<'t>;
 }
@@ -97,8 +98,8 @@ impl<'t> Event<'t> for Mode {
 ///
 /// [Names]: ../messages/struct.Names.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Names;
+
 impl<'t> Event<'t> for Names {
     type Parsed = messages::Names<'t>;
 }
@@ -107,8 +108,8 @@ impl<'t> Event<'t> for Names {
 ///
 /// [Notice]: ../messages/struct.Notice.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Notice;
+
 impl<'t> Event<'t> for Notice {
     type Parsed = messages::Notice<'t>;
 }
@@ -117,8 +118,8 @@ impl<'t> Event<'t> for Notice {
 ///
 /// [Part]: ../messages/struct.Part.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Part;
+
 impl<'t> Event<'t> for Part {
     type Parsed = messages::Part<'t>;
 }
@@ -127,8 +128,8 @@ impl<'t> Event<'t> for Part {
 ///
 /// [Ping]: ../messages/struct.Ping.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Ping;
+
 impl<'t> Event<'t> for Ping {
     type Parsed = messages::Ping<'t>;
 }
@@ -137,8 +138,8 @@ impl<'t> Event<'t> for Ping {
 ///
 /// [Pong]: ../messages/struct.Pong.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Pong;
+
 impl<'t> Event<'t> for Pong {
     type Parsed = messages::Pong<'t>;
 }
@@ -147,8 +148,8 @@ impl<'t> Event<'t> for Pong {
 ///
 /// [Privmsg]: ../messages/struct.Privmsg.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Privmsg;
+
 impl<'t> Event<'t> for Privmsg {
     type Parsed = messages::Privmsg<'t>;
 }
@@ -157,8 +158,8 @@ impl<'t> Event<'t> for Privmsg {
 ///
 /// [Raw]: ../messages/type.Raw.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Raw;
+
 impl<'t> Event<'t> for Raw {
     type Parsed = messages::Raw<'t>;
 }
@@ -167,8 +168,8 @@ impl<'t> Event<'t> for Raw {
 ///
 /// [Ready]: ../messages/struct.Ready.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Ready;
+
 impl<'t> Event<'t> for Ready {
     type Parsed = messages::Ready<'t>;
 }
@@ -177,8 +178,8 @@ impl<'t> Event<'t> for Ready {
 ///
 /// [Reconnect]: ../messages/struct.Reconnect.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct Reconnect;
+
 impl<'t> Event<'t> for Reconnect {
     type Parsed = messages::Reconnect;
 }
@@ -187,8 +188,8 @@ impl<'t> Event<'t> for Reconnect {
 ///
 /// [RoomState]: ../messages/struct.RoomState.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RoomState;
+
 impl<'t> Event<'t> for RoomState {
     type Parsed = messages::RoomState<'t>;
 }
@@ -197,8 +198,8 @@ impl<'t> Event<'t> for RoomState {
 ///
 /// [UserNotice]: ../messages/struct.UserNotice.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct UserNotice;
+
 impl<'t> Event<'t> for UserNotice {
     type Parsed = messages::UserNotice<'t>;
 }
@@ -207,8 +208,8 @@ impl<'t> Event<'t> for UserNotice {
 ///
 /// [UserState]: ../messages/struct.UserState.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct UserState;
+
 impl<'t> Event<'t> for UserState {
     type Parsed = messages::UserState<'t>;
 }
@@ -217,8 +218,34 @@ impl<'t> Event<'t> for UserState {
 ///
 /// [AllCommands]: ../messages/enum.AllCommands.html
 #[non_exhaustive]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct All;
+
 impl<'t> Event<'t> for All {
     type Parsed = messages::AllCommands<'t>;
+}
+
+// TODO generate this with a macro
+use crate::client::Dispatcher;
+pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
+    dispatcher
+        .add_event::<Ready>()
+        .add_event::<All>()
+        .add_event::<Cap>()
+        .add_event::<ClearChat>()
+        .add_event::<ClearMsg>()
+        .add_event::<GlobalUserState>()
+        .add_event::<HostTarget>()
+        .add_event::<IrcReady>()
+        .add_event::<Join>()
+        .add_event::<Mode>()
+        .add_event::<Names>()
+        .add_event::<Notice>()
+        .add_event::<Part>()
+        .add_event::<Ping>()
+        .add_event::<Pong>()
+        .add_event::<Privmsg>()
+        .add_event::<Raw>()
+        .add_event::<Reconnect>()
+        .add_event::<RoomState>()
+        .add_event::<UserState>()
 }

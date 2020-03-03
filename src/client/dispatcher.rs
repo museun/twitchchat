@@ -299,30 +299,9 @@ impl Dispatcher {
     }
 
     pub(crate) fn new() -> Self {
-        use events::*;
-        let event_map = HashMap::default();
-
-        Self { event_map }
-            .add_event::<Ready>()
-            .add_event::<All>()
-            .add_event::<Cap>()
-            .add_event::<ClearChat>()
-            .add_event::<ClearMsg>()
-            .add_event::<GlobalUserState>()
-            .add_event::<HostTarget>()
-            .add_event::<IrcReady>()
-            .add_event::<Join>()
-            .add_event::<Mode>()
-            .add_event::<Names>()
-            .add_event::<Notice>()
-            .add_event::<Part>()
-            .add_event::<Ping>()
-            .add_event::<Pong>()
-            .add_event::<Privmsg>()
-            .add_event::<Raw>()
-            .add_event::<Reconnect>()
-            .add_event::<RoomState>()
-            .add_event::<UserState>()
+        events::build_event_map(Self {
+            event_map: HashMap::default(),
+        })
     }
 }
 
