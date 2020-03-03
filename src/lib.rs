@@ -327,15 +327,16 @@ cfg_async! {
 /// let join: Join<'_> = Join::parse(&message).unwrap();
 /// assert_eq!(join, Join { channel: Cow::Borrowed("#museun"), name: Cow::Borrowed("test") });
 /// ```
-pub trait Parse<T>: Sized + crate::internal::private::parse_marker::Sealed<T> {
+pub trait Parse<T>: Sized + private::ParseSealed<T> {
     /// Tries to parse the input as this message
     fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
 }
 
-/// Converts a type to an owned version
-pub trait AsOwned: crate::internal::private::asowned_marker::Sealed {
-    /// The owned type
-    type Owned: 'static;
-    /// Get an owned version
-    fn as_owned(&self) -> Self::Owned;
+mod as_owned;
+#[doc(inline)]
+pub use as_owned::AsOwned;
+
+mod private {
+    pub trait ParseSealed<E> {}
+    impl<T: crate::Parse<E>, E: Sized> ParseSealed<E> for T {}
 }
