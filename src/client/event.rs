@@ -4,14 +4,24 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::{watch, Mutex};
 
+mod private {
+    use super::{Event, EventMapped};
+
+    pub trait EventSealed {}
+    impl<'a, T: Event<'a>> EventSealed for T {}
+
+    pub trait EventMappedSealed<E> {}
+    impl<'a, T: EventMapped<'a, E>, E: Event<'a>> EventMappedSealed<E> for T {}
+}
+
 /// A marker trait for Event subscription
-pub trait Event<'a>: crate::internal::private::event_marker::Sealed {
+pub trait Event<'a>: private::EventSealed {
     /// Event message parsing
     type Parsed: crate::Parse<&'a crate::decode::Message<'a>> + AsOwned;
 }
 
 /// A trait to convert an Event::Parsed to a 'static type
-pub trait EventMapped<'a, T>: crate::internal::private::mapped_marker::Sealed<T>
+pub trait EventMapped<'a, T>: private::EventMappedSealed<T>
 where
     T: Event<'a>,
 {
