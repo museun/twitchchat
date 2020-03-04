@@ -1,7 +1,7 @@
 use super::*;
 
 fn test_encode(
-    mut func: impl FnMut(&mut Encoder<Vec<u8>>) -> std::io::Result<()>,
+    mut func: impl FnMut(&mut Encoder<Vec<u8>>) -> Result<(), crate::Error>,
     expected: impl AsRef<str>,
 ) {
     let mut encoder = Encoder::new(vec![]);

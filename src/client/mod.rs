@@ -41,8 +41,7 @@ pub use event::SimpleEvent;
 #[doc(hidden)]
 pub use event::{Event, EventMapped};
 
-mod error;
-pub use error::Error;
+use crate::error::Error;
 
 mod writer;
 pub use writer::Writer;

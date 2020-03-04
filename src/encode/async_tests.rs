@@ -5,7 +5,7 @@ use futures::prelude::*;
 async fn test_encode<F, Fut>(func: F, expected: impl AsRef<str>)
 where
     F: FnOnce(AsyncEncoder<Vec<u8>>) -> Fut + Send + 'static,
-    Fut: Future<Output = std::io::Result<AsyncEncoder<Vec<u8>>>> + Send + 'static,
+    Fut: Future<Output = Result<AsyncEncoder<Vec<u8>>, crate::Error>> + Send + 'static,
 {
     let encoder = func(Default::default()).await.unwrap();
     assert_eq!(

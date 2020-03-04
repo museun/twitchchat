@@ -1,7 +1,16 @@
+use super::conv_channel;
 use crate::color::Color;
+use crate::IntoChannel;
+
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
-type Result = std::io::Result<()>;
+type Result = std::result::Result<(), crate::Error>;
+
+// TODO the old version had a 'SafeEncode' method
+// which cleared the Vec<u8> on error
+// is that needed? and should it be baked in here?
+// we'd have to rework that macro or something
+// to fake specialization on AsyncEncoder<Vec<u8>>
 
 macro_rules! write {
     (cmd $w:expr, $($e:expr),* $(,)?) => {{
@@ -9,8 +18,8 @@ macro_rules! write {
     }};
     ($w:expr, $($e:expr),* $(,)?) => {{
         let mut w = ByteWriter::new($w);
-        $(w.write($e).await?;)*
-        w.end().await
+        $(w.append($e).await?;)*
+        w.end().await.map_err(crate::Error::from)
     }};
 }
 
@@ -23,21 +32,15 @@ impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
         Self { inner }
     }
 
-    async fn write(&mut self, data: impl AsRef<[u8]>) -> Result {
+    async fn append(&mut self, data: impl AsRef<[u8]>) -> std::io::Result<()> {
         self.inner.write_all(data.as_ref()).await
     }
 
-    async fn end(self) -> Result {
+    async fn end(self) -> std::io::Result<()> {
         self.inner.write_all(b"\r\n").await?;
         self.inner.flush().await
     }
 }
-
-// TODO the old version had a 'SafeEncode' method
-// which cleared the Vec<u8> on error
-// is that needed? and should it be baked in here?
-// we'd have to rework that macro or something
-// to fake specialization on AsyncEncoder<Vec<u8>>
 
 /// An async encoder for messages
 pub struct AsyncEncoder<W> {
@@ -51,8 +54,13 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
     }
 
     /// Get a mutable borrow of the inner writer
-    pub fn inner(&mut self) -> &mut W {
+    pub fn inner_mut(&mut self) -> &mut W {
         &mut self.writer
+    }
+
+    /// Get a borrow of the inner writer
+    pub fn inner(&self) -> &W {
+        &self.writer
     }
 
     /// Make a new encoder from this writer
@@ -154,12 +162,14 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     /// Use [unhost] to unset host mode.
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
-    pub async fn host(&mut self, channel: &str) -> Result {
+    pub async fn host(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         write!(cmd &mut self.writer, "/host ", channel)
     }
 
     /// Join a channel
-    pub async fn join(&mut self, channel: &str) -> Result {
+    pub async fn join(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         write!(&mut self.writer, "JOIN ", channel)
     }
 
@@ -176,7 +186,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub async fn me(&mut self, channel: &str, message: &str) -> Result {
+    pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
+        let channel = conv_channel(channel)?;
         write!(&mut self.writer, "PRIVMSG ", channel, " :", "/me ", message)
     }
 
@@ -186,7 +197,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Leave a channel
-    pub async fn part(&mut self, channel: &str) -> Result {
+    pub async fn part(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         write!(&mut self.writer, "PART ", channel)
     }
 
@@ -224,7 +236,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     /// Use [unraid] to cancel the Raid.
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
-    pub async fn raid(&mut self, channel: &str) -> Result {
+    pub async fn raid(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         write!(cmd &mut self.writer, "/raid ", channel)
     }
 

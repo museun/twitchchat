@@ -131,6 +131,10 @@ mod private {
     impl<T: crate::Parse<E>, E: Sized> ParseSealed<E> for T {}
 }
 
+mod error;
+#[doc(inline)]
+pub use error::Error;
+
 fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigError> {
     UserConfig::builder()
         .name(name)

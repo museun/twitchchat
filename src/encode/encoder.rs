@@ -1,7 +1,10 @@
+use super::conv_channel;
 use crate::color::Color;
+use crate::IntoChannel;
+
 use std::io::Write;
 
-type Result = std::io::Result<()>;
+type Result = std::result::Result<(), crate::Error>;
 
 /// An encoder for messages
 pub struct Encoder<W> {
@@ -15,8 +18,13 @@ impl<W: Write> Encoder<W> {
     }
 
     /// Get a mutable borrow of the inner writer
-    pub fn inner(&mut self) -> &mut W {
+    pub fn inner_mut(&mut self) -> &mut W {
         &mut self.writer
+    }
+
+    /// Get a borrow of the inner writer
+    pub fn inner(&self) -> &W {
+        &self.writer
     }
 
     /// Make a new encoder from this writer
@@ -54,6 +62,7 @@ impl<W: Write> Encoder<W> {
     pub fn command(&mut self, data: &str) -> Result {
         self.writer
             .write_fmt(format_args!("PRIVMSG jtv :{}\r\n", data))
+            .map_err(Into::into)
     }
 
     /// Triggers a commercial.
@@ -119,13 +128,17 @@ impl<W: Write> Encoder<W> {
     /// Use [unhost] to unset host mode.
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
-    pub fn host(&mut self, channel: &str) -> Result {
+    pub fn host(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         self.command(&format!("/host {}", channel))
     }
 
     /// Join a channel
-    pub fn join(&mut self, channel: &str) -> Result {
-        self.writer.write_fmt(format_args!("JOIN {}\r\n", channel))
+    pub fn join(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
+        self.writer
+            .write_fmt(format_args!("JOIN {}\r\n", channel))?;
+        Ok(())
     }
 
     // TODO limit this to 140
@@ -141,8 +154,9 @@ impl<W: Write> Encoder<W> {
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub fn me(&mut self, channel: &str, message: &str) -> Result {
-        self.privmsg(channel, &format!("/me {}", message))
+    pub fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
+        let channel = conv_channel(channel)?;
+        self.privmsg(&channel, &format!("/me {}", message))
     }
 
     /// Lists the moderators of this channel.
@@ -151,24 +165,30 @@ impl<W: Write> Encoder<W> {
     }
 
     /// Leave a channel
-    pub fn part(&mut self, channel: &str) -> Result {
-        self.writer.write_fmt(format_args!("PART {}\r\n", channel))
+    pub fn part(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
+        self.writer
+            .write_fmt(format_args!("PART {}\r\n", channel))?;
+        Ok(())
     }
 
     /// Request a heartbeat with the provided token
     pub fn ping(&mut self, token: &str) -> Result {
-        self.writer.write_fmt(format_args!("PING {}\r\n", token))
+        self.writer.write_fmt(format_args!("PING {}\r\n", token))?;
+        Ok(())
     }
 
     /// Response to a heartbeat with the provided token
     pub fn pong(&mut self, token: &str) -> Result {
-        self.writer.write_fmt(format_args!("PONG :{}\r\n", token))
+        self.writer.write_fmt(format_args!("PONG :{}\r\n", token))?;
+        Ok(())
     }
 
     /// Send data to a target
     pub fn privmsg(&mut self, target: &str, data: &str) -> Result {
         self.writer
-            .write_fmt(format_args!("PRIVMSG {} :{}\r\n", target, data))
+            .write_fmt(format_args!("PRIVMSG {} :{}\r\n", target, data))?;
+        Ok(())
     }
 
     /// Enables r9k mode.
@@ -190,14 +210,16 @@ impl<W: Write> Encoder<W> {
     /// Use [unraid] to cancel the Raid.
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
-    pub fn raid(&mut self, channel: &str) -> Result {
+    pub fn raid(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = conv_channel(channel)?;
         self.command(&format!("/raid {}", channel))
     }
 
     /// Send a raw IRC-style message
     pub fn raw(&mut self, raw: impl AsRef<[u8]>) -> Result {
         self.writer.write_all(raw.as_ref())?;
-        self.writer.write_all(b"\r\n")
+        self.writer.write_all(b"\r\n")?;
+        Ok(())
     }
 
     // TODO use `time` here

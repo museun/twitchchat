@@ -1,6 +1,4 @@
-/// An error returned by the [Client]
-///
-/// [Client]: ./struct.Client.html
+/// An error returned by this crate
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
