@@ -6,6 +6,36 @@ use std::io::Write;
 
 type Result = std::result::Result<(), crate::Error>;
 
+macro_rules! write {
+    (cmd $w:expr, $($e:expr),* $(,)?) => {{
+        write!($w, "PRIVMSG jtv :", $($e),*)
+    }};
+    ($w:expr, $($e:expr),* $(,)?) => {{
+        let mut w = ByteWriter::new($w);
+        $(w.append($e)?;)*
+        w.end().map_err(crate::Error::from)
+    }};
+}
+
+struct ByteWriter<'a, W: Write> {
+    inner: &'a mut W,
+}
+
+impl<'a, W: Write> ByteWriter<'a, W> {
+    fn new(inner: &'a mut W) -> Self {
+        Self { inner }
+    }
+
+    fn append(&mut self, data: impl AsRef<[u8]>) -> std::io::Result<()> {
+        self.inner.write_all(data.as_ref())
+    }
+
+    fn end(self) -> std::io::Result<()> {
+        self.inner.write_all(b"\r\n")?;
+        self.inner.flush()
+    }
+}
+
 /// An encoder for messages
 pub struct Encoder<W> {
     pub(crate) writer: W,
@@ -33,19 +63,19 @@ impl<W: Write> Encoder<W> {
     }
 }
 
-// TODO get rid of these formats!() by using an internal macro that uses format_args!()
+// NOTE: This is literally copy/pasted from the async_encoder, with async/await removed
 impl<W: Write> Encoder<W> {
-    /// Permanently prevent a user from chatting. Reason is optional and will be shown to the target user and other moderators.
+    /// Permanently prevent a user from chatting. Reason is optional and will be
+    /// shown to the target user and other moderators.
     ///
     /// Use [unban] to remove a ban.
     ///
     /// [unban]: ./struct.Encoder.html#method.unban
     pub fn ban<'a>(&mut self, username: &str, reason: impl Into<Option<&'a str>>) -> Result {
-        let data = match reason.into() {
-            Some(reason) => format!("/ban {} {}", username, &reason),
-            None => format!("/ban {}", username),
-        };
-        self.command(&data)
+        match reason.into() {
+            Some(reason) => write!(cmd &mut self.writer, "/ban ", username, " ", reason),
+            None => write!(cmd &mut self.writer, "/ban ", username),
+        }
     }
 
     /// Clear chat history for all users in this room.
@@ -55,14 +85,12 @@ impl<W: Write> Encoder<W> {
 
     /// Change your username color.
     pub fn color(&mut self, color: Color) -> Result {
-        self.command(&format!("/color {}", color))
+        write!(cmd &mut self.writer, "/color ", color.to_string())
     }
 
     /// Sends the command: data (e.g. /color #FFFFFF)
     pub fn command(&mut self, data: &str) -> Result {
-        self.writer
-            .write_fmt(format_args!("PRIVMSG jtv :{}\r\n", data))
-            .map_err(Into::into)
+        write!(cmd &mut self.writer, data)
     }
 
     /// Triggers a commercial.
@@ -70,7 +98,8 @@ impl<W: Write> Encoder<W> {
     /// Length (optional) must be a positive number of seconds.
     pub fn commercial(&mut self, length: impl Into<Option<usize>>) -> Result {
         match length.into() {
-            Some(length) => self.command(&format!("/commercial {}", length)),
+            // TODO fast usize to string without an allocation
+            Some(length) => write!(cmd &mut self.writer, "/commercial ", length.to_string()),
             None => self.command("/commercial"),
         }
     }
@@ -101,7 +130,7 @@ impl<W: Write> Encoder<W> {
     ///
     /// Must be less than 3 months.
     pub fn followers(&mut self, duration: &str) -> Result {
-        self.command(&format!("/followers {}", duration))
+        write!(cmd &mut self.writer, "/followers ", duration)
     }
 
     /// Disables followers-only mode.
@@ -115,7 +144,7 @@ impl<W: Write> Encoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#method.mods
     pub fn give_mod(&mut self, username: &str) -> Result {
-        self.command(&format!("/mod {}", username,))
+        write!(cmd &mut self.writer, "/mod ", username)
     }
 
     /// Lists the commands available to you in this room.
@@ -130,25 +159,23 @@ impl<W: Write> Encoder<W> {
     /// [unhost]: ./struct.Encoder.html#method.unhost
     pub fn host(&mut self, channel: impl IntoChannel) -> Result {
         let channel = conv_channel(channel)?;
-        self.command(&format!("/host {}", channel))
+        write!(cmd &mut self.writer, "/host ", channel)
     }
 
     /// Join a channel
     pub fn join(&mut self, channel: impl IntoChannel) -> Result {
         let channel = conv_channel(channel)?;
-        self.writer
-            .write_fmt(format_args!("JOIN {}\r\n", channel))?;
-        Ok(())
+        write!(&mut self.writer, "JOIN ", channel)
     }
 
     // TODO limit this to 140
-    // TODO get rid of the Into<Option<&'a str>>
+    // TODO get rid of the Into<Option<&'a str>> -- why?
     /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
     ///
     /// You can use markers in the Highlighter for easier editing.
     pub fn marker<'a>(&mut self, comment: impl Into<Option<&'a str>>) -> Result {
         match comment.into() {
-            Some(comment) => self.command(&format!("/marker {}", comment)),
+            Some(comment) => write!(cmd &mut self.writer, "/marker ", comment ),
             None => self.command("/marker"),
         }
     }
@@ -156,7 +183,7 @@ impl<W: Write> Encoder<W> {
     /// Sends an "emote" message in the third person to the channel
     pub fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
         let channel = conv_channel(channel)?;
-        self.privmsg(&channel, &format!("/me {}", message))
+        write!(&mut self.writer, "PRIVMSG ", channel, " :", "/me ", message)
     }
 
     /// Lists the moderators of this channel.
@@ -167,28 +194,22 @@ impl<W: Write> Encoder<W> {
     /// Leave a channel
     pub fn part(&mut self, channel: impl IntoChannel) -> Result {
         let channel = conv_channel(channel)?;
-        self.writer
-            .write_fmt(format_args!("PART {}\r\n", channel))?;
-        Ok(())
+        write!(&mut self.writer, "PART ", channel)
     }
 
     /// Request a heartbeat with the provided token
     pub fn ping(&mut self, token: &str) -> Result {
-        self.writer.write_fmt(format_args!("PING {}\r\n", token))?;
-        Ok(())
+        write!(&mut self.writer, "PING ", token)
     }
 
     /// Response to a heartbeat with the provided token
     pub fn pong(&mut self, token: &str) -> Result {
-        self.writer.write_fmt(format_args!("PONG :{}\r\n", token))?;
-        Ok(())
+        write!(&mut self.writer, "PONG :", token)
     }
 
     /// Send data to a target
     pub fn privmsg(&mut self, target: &str, data: &str) -> Result {
-        self.writer
-            .write_fmt(format_args!("PRIVMSG {} :{}\r\n", target, data))?;
-        Ok(())
+        write!(&mut self.writer, "PRIVMSG ", target, " :", data)
     }
 
     /// Enables r9k mode.
@@ -212,14 +233,12 @@ impl<W: Write> Encoder<W> {
     /// [unraid]: ./struct.Encoder.html#method.unraid
     pub fn raid(&mut self, channel: impl IntoChannel) -> Result {
         let channel = conv_channel(channel)?;
-        self.command(&format!("/raid {}", channel))
+        write!(cmd &mut self.writer, "/raid ", channel)
     }
 
     /// Send a raw IRC-style message
     pub fn raw(&mut self, raw: impl AsRef<[u8]>) -> Result {
-        self.writer.write_all(raw.as_ref())?;
-        self.writer.write_all(b"\r\n")?;
-        Ok(())
+        write!(&mut self.writer, raw)
     }
 
     // TODO use `time` here
@@ -231,7 +250,8 @@ impl<W: Write> Encoder<W> {
     ///
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
     pub fn slow(&mut self, duration: impl Into<Option<usize>>) -> Result {
-        self.command(&format!("/slow {}", duration.into().unwrap_or_else(|| 120)))
+        // TODO fast non-allocating usize to &[u8]
+        write!(cmd &mut self.writer, "/slow ", duration.into().unwrap_or_else(|| 120).to_string())
     }
 
     /// Disables slow mode.
@@ -277,18 +297,21 @@ impl<W: Write> Encoder<W> {
         duration: impl Into<Option<&'a str>>,
         message: impl Into<Option<&'b str>>,
     ) -> Result {
-        let data = match (duration.into(), message.into()) {
-            (Some(dur), Some(reason)) => format!("/timeout {} {} {}", username, dur, reason),
-            (None, Some(reason)) => format!("/timeout {} {}", username, reason),
-            (Some(dur), None) => format!("/timeout {} {}", username, dur),
-            (None, None) => format!("/timeout {}", username),
-        };
-        self.command(&data)
+        match (duration.into(), message.into()) {
+            (Some(dur), Some(reason)) => {
+                write!(cmd &mut self.writer, "/timeout ", username, " ", dur, " ", reason)
+            }
+            (None, Some(reason)) => {
+                write!(cmd &mut self.writer, "/timeout ", username, " ", reason)
+            }
+            (Some(dur), None) => write!(cmd &mut self.writer, "/timeout ", username, " ", dur),
+            (None, None) => write!(cmd &mut self.writer, "/timeout ", username),
+        }
     }
 
     /// Removes a ban on a user.
     pub fn unban(&mut self, username: &str) -> Result {
-        self.command(&format!("/unban {}", username))
+        write!(cmd &mut self.writer, "/unban ", username)
     }
 
     /// Stop hosting another channel.
@@ -302,7 +325,7 @@ impl<W: Write> Encoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
     pub fn unmod(&mut self, username: &str) -> Result {
-        self.command(&format!("/unmod {}", username))
+        write!(cmd &mut self.writer, "/unmod ", username)
     }
 
     /// Cancel the Raid.
@@ -312,7 +335,7 @@ impl<W: Write> Encoder<W> {
 
     /// Removes a timeout on a user.
     pub fn untimeout(&mut self, username: &str) -> Result {
-        self.command(&format!("/untimeout {}", username))
+        write!(cmd &mut self.writer, "/untimeout ", username)
     }
 
     /// Revoke VIP status from a user.
@@ -321,7 +344,7 @@ impl<W: Write> Encoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub fn unvip(&mut self, username: &str) -> Result {
-        self.command(&format!("/unvip {}", username))
+        write!(cmd &mut self.writer, "/unvip ", username)
     }
 
     /// Grant VIP status to a user.
@@ -330,18 +353,17 @@ impl<W: Write> Encoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub fn vip(&mut self, username: &str) -> Result {
-        self.command(&format!("/vip {}", username))
+        write!(cmd &mut self.writer, "/vip ", username)
     }
 
     /// Lists the VIPs of this channel.
-
     pub fn vips(&mut self) -> Result {
         self.command("/vips")
     }
 
     /// Whispers the message to the username.
     pub fn whisper(&mut self, username: &str, message: &str) -> Result {
-        self.command(&format!("/w {} {}", username, message))
+        write!(cmd &mut self.writer, "/w ", username, " ", message)
     }
 }
 
