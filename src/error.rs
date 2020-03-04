@@ -15,7 +15,7 @@ pub enum Error {
     /// An invalid channel was provided
     InvalidChannel(crate::ChannelError),
     /// The client has been disconnected
-    ClientDisconnect,
+    ClientDisconnected,
 }
 
 impl From<std::str::Utf8Error> for Error {
@@ -51,7 +51,7 @@ impl std::fmt::Display for Error {
             Self::NotRunning => write!(f, "tried to stop a non-running client"),
             Self::AlreadyRunning => write!(f, "tried to start an already running client"),
             Self::InvalidChannel(err) => write!(f, "an invalid channel was provided: {}", err),
-            Self::ClientDisconnect => write!(f, "this client has been disconnected"),
+            Self::ClientDisconnected => write!(f, "this client has been disconnected"),
         }
     }
 }

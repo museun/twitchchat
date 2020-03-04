@@ -180,10 +180,10 @@ impl Client {
     ///
     /// # Returns
     /// * [`Ok(Ready)`][ok] if the client is ready to proceed
-    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    /// * [`Err(Error::ClientDisconnected)`][error] if the client never became ready (within reason)
     ///
     /// [ok]: ../messages/struct.Ready.html
-    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    /// [error]: ./enum.Error.html#variant.ClientDisconnected
     pub async fn wait_for_ready(&self) -> Result<crate::messages::Ready<'static>, Error> {
         self.ready.wait_for().await
     }
@@ -192,10 +192,10 @@ impl Client {
     ///
     /// # Returns
     /// * [`Ok(IrcReady)`][ok] if the client is ready to proceed
-    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    /// * [`Err(Error::ClientDisconnected)`][error] if the client never became ready (within reason)
     ///
     /// [ok]: ../messages/struct.IrcReady.html
-    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    /// [error]: ./enum.Error.html#variant.ClientDisconnected
     pub async fn wait_for_irc_ready(&self) -> Result<crate::messages::IrcReady<'static>, Error> {
         self.irc_ready.wait_for().await
     }
@@ -204,10 +204,10 @@ impl Client {
     ///
     /// # Returns
     /// * [`Ok(GlobalUserState)`][ok] if the client is ready to proceed
-    /// * [`Err(Error::ClientDisconnect)`][error] if the client never became ready (within reason)
+    /// * [`Err(Error::ClientDisconnected)`][error] if the client never became ready (within reason)
     ///
     /// [ok]: ../messages/struct.GlobalUserState.html
-    /// [error]: ./enum.Error.html#variant.ClientDisconnect
+    /// [error]: ./enum.Error.html#variant.ClientDisconnected
     pub async fn wait_for_global_user_state(
         &self,
     ) -> Result<crate::messages::GlobalUserState<'static>, Error> {
@@ -293,7 +293,7 @@ impl Client {
         let rate = RateLimit::from_class(RateClass::Known);
         let this = self.clone();
         tokio::task::spawn(async move { this.run_with_user_rate_limit(read, write, rate).await })
-            .map_ok_or_else(|_err| Err(Error::ClientDisconnect), |ok| ok)
+            .map_ok_or_else(|_err| Err(Error::ClientDisconnected), |ok| ok)
     }
 
     async fn initialize_handlers(&self) {

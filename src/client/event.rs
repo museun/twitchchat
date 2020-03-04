@@ -127,7 +127,7 @@ where
         loop {
             match ready.recv().await {
                 Some(ReadyState::Ready(val)) => return Ok(val),
-                Some(ReadyState::Error(_)) | None => return Err(Error::ClientDisconnect),
+                Some(ReadyState::Error(_)) | None => return Err(Error::ClientDisconnected),
                 Some(ReadyState::NotReady) => continue,
             }
         }
