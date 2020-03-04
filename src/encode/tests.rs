@@ -138,6 +138,10 @@ fn encode_marker() {
         |enc| enc.marker("this is an example"),
         "PRIVMSG jtv :/marker this is an example\r\n",
     );
+    test_encode(
+        |enc| enc.marker("a".repeat(200).as_str()),
+        format!("PRIVMSG jtv :/marker {}\r\n", "a".repeat(140)),
+    );
     test_encode(|enc| enc.marker(None), "PRIVMSG jtv :/marker\r\n");
 }
 

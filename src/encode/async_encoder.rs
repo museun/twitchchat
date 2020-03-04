@@ -1,6 +1,5 @@
 use super::conv_channel;
-use crate::color::Color;
-use crate::IntoChannel;
+use crate::{color::Color, IntoChannel};
 
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
@@ -173,15 +172,17 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         write!(&mut self.writer, "JOIN ", channel)
     }
 
-    // TODO limit this to 140
-    // TODO get rid of the Into<Option<&'a str>> -- why?
     /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
     ///
     /// You can use markers in the Highlighter for easier editing.
+    ///
+    /// If the string exceeds 140 characters then it will be truncated
     pub async fn marker<'a>(&mut self, comment: impl Into<Option<&'a str>>) -> Result {
-        match comment.into() {
-            Some(comment) => write!(cmd &mut self.writer, "/marker ", comment ),
+        let comment = comment.into();
+        match comment {
             None => self.command("/marker").await,
+            Some(marker) if marker.len() <= 140 => write!(cmd &mut self.writer, "/marker ", marker),
+            Some(marker) => write!(cmd &mut self.writer, "/marker ", &marker[..140]),
         }
     }
 

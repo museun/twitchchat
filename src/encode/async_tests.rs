@@ -266,6 +266,7 @@ async fn encode_marker() {
         "PRIVMSG jtv :/marker this is an example\r\n",
     )
     .await;
+
     test_encode(
         |mut enc| async move {
             enc.marker("this is an example").await?;
@@ -274,6 +275,16 @@ async fn encode_marker() {
         "PRIVMSG jtv :/marker this is an example\r\n",
     )
     .await;
+
+    test_encode(
+        |mut enc| async move {
+            enc.marker("a".repeat(200).as_str()).await?;
+            Ok(enc)
+        },
+        format!("PRIVMSG jtv :/marker {}\r\n", "a".repeat(140)),
+    )
+    .await;
+
     test_encode(
         |mut enc| async move {
             enc.marker(None).await?;

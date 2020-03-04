@@ -46,5 +46,3 @@ required-features = ["async"]
 
 [[example]]
 name = "parse"
-
-
