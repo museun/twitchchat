@@ -161,7 +161,7 @@ impl Client {
 
     /// Get a new writer
     pub fn writer(&self) -> Writer {
-        Writer::new(self.sender.clone())
+        Writer::new(writer::DisjointWriter::new(self.sender.clone()))
     }
 
     /// Stops the running task

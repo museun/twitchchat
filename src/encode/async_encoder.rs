@@ -3,6 +3,17 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 type Result = std::io::Result<()>;
 
+macro_rules! write {
+    (cmd $w:expr, $($e:expr),* $(,)?) => {{
+        write!($w, "PRIVMSG jtv :", $($e),*)
+    }};
+    ($w:expr, $($e:expr),* $(,)?) => {{
+        let mut w = ByteWriter::new($w);
+        $(w.write($e).await?;)*
+        w.end().await
+    }};
+}
+
 struct ByteWriter<'a, W: AsyncWrite + Unpin> {
     inner: &'a mut W,
 }
@@ -21,6 +32,12 @@ impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
         self.inner.flush().await
     }
 }
+
+// TODO the old version had a 'SafeEncode' method
+// which cleared the Vec<u8> on error
+// is that needed? and should it be baked in here?
+// we'd have to rework that macro or something
+// to fake specialization on AsyncEncoder<Vec<u8>>
 
 /// An async encoder for messages
 pub struct AsyncEncoder<W> {
@@ -42,17 +59,6 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
     pub fn new(writer: W) -> Self {
         Self { writer }
     }
-}
-
-macro_rules! write {
-    (cmd $w:expr, $($e:expr),* $(,)?) => {{
-        write!($w, "PRIVMSG jtv :", $($e),*)
-    }};
-    ($w:expr, $($e:expr),* $(,)?) => {{
-        let mut w = ByteWriter::new($w);
-        $(w.write($e).await?;)*
-        w.end().await
-    }};
 }
 
 impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
