@@ -1,15 +1,18 @@
 use crate::{register::register, simple_user_config, UserConfig, TWITCH_IRC_ADDRESS};
 
-#[cfg(feature = "tls")]
+#[cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls"))]
 use crate::TWITCH_IRC_ADDRESS_TLS;
+
+#[cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls"))]
+const TWITCH_DOMAIN: &str = "irc.chat.twitch.tv";
 
 type TokioStream = tokio::net::TcpStream;
 
-#[cfg(feature = "tls")]
+#[cfg(feature = "tokio_native_tls")]
 type TokioTlsStream = tokio_tls::TlsStream<tokio::net::TcpStream>;
 
-#[cfg(feature = "tls")]
-const TWITCH_DOMAIN: &str = "irc.chat.twitch.tv";
+#[cfg(feature = "tokio_rustls")]
+type TokioTlsStream = tokio_rustls::client::TlsStream<tokio::net::TcpStream>;
 
 /**
 Opens an ***async*** TCP connection using the provided `UserConfig`.
@@ -41,21 +44,14 @@ let stream = connect_tls(&user_config).await.unwrap();
 # });
 ````
 */
-#[cfg(feature = "tls")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tls")))]
+#[cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls")))
+)]
 pub async fn connect_tls(user_config: &UserConfig) -> std::io::Result<TokioTlsStream> {
-    use std::io::{Error, ErrorKind};
-
     let stream = tokio::net::TcpStream::connect(TWITCH_IRC_ADDRESS_TLS).await?;
-    let conn: tokio_tls::TlsConnector = native_tls::TlsConnector::new()
-        .map_err(|err| Error::new(ErrorKind::Other, err))?
-        .into();
-
-    let mut stream = conn
-        .connect(TWITCH_DOMAIN, stream)
-        .await
-        .map_err(|err| Error::new(ErrorKind::Other, err))?;
-
+    let mut stream = tls_connect(stream).await?;
     register(user_config, &mut stream).await?;
     Ok(stream)
 }
@@ -95,9 +91,47 @@ let stream = connect_easy_tls(nick, pass).await.unwrap();
 # });
 ```
 */
-#[cfg(feature = "tls")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tls")))]
+#[cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls")))
+)]
 pub async fn connect_easy_tls(name: &str, token: &str) -> std::io::Result<TokioTlsStream> {
     let config = simple_user_config(name, token).unwrap();
     connect_tls(&config).await
+}
+
+#[cfg(feature = "tokio_native_tls")]
+async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
+    use std::io::{Error, ErrorKind};
+
+    let conn: tokio_tls::TlsConnector = native_tls::TlsConnector::new()
+        .map_err(|err| Error::new(ErrorKind::Other, err))?
+        .into();
+
+    let stream = conn
+        .connect(TWITCH_DOMAIN, stream)
+        .await
+        .map_err(|err| Error::new(ErrorKind::Other, err))?;
+
+    Ok(stream)
+}
+
+#[cfg(feature = "tokio_rustls")]
+async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
+    let domain_name = tokio_rustls::webpki::DNSNameRef::try_from_ascii_str(TWITCH_DOMAIN)
+        .expect("valid twitch domain dns/ref");
+
+    let mut config = tokio_rustls::rustls::ClientConfig::new();
+    config
+        .root_store
+        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+
+    let connector = tokio_rustls::TlsConnector::from(std::sync::Arc(config));
+    let stream = connector
+        .connect(domain_name, stream)
+        .await
+        .map_err(|err| Error::new(ErrorKind::Other, err))?;
+
+    Ok(stream)
 }

@@ -16,17 +16,31 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["async", "tls"]
+default = ["async", "tokio_native_tls"]
 async   = ["tokio", "futures"]
-tls     = ["tokio-tls", "native-tls"]
+
+tokio_native_tls = ["tokio-tls", "native-tls"]
+tokio_rustls     = ["tokio-rustls", "webpki-roots"]
 
 [dependencies]
+log               = { version = "0.4.8" }
+static_assertions = { version = "1.1.0" }
+
+# TODO do we need an abort handle now that tokio::Notify exists?
 futures    = { version = "0.3.4", optional = true, default-features = false, features = ["alloc"] } # for AbortHandle
-log        = { version = "0.4.8" }
-native-tls = { version = "0.2.3", optional = true }
-serde      = { version = "1.0.104", optional = true, features = ["derive"] }
+# TODO figure out what of these features are actually used
 tokio      = { version = "0.2.13", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
+
+# native tls
 tokio-tls  = { version = "0.3.0", optional = true }
+native-tls = { version = "0.2.3", optional = true }
+
+# rustls
+tokio-rustls  = { version = "0.13.0", optional = true }
+webpki-roots  = { version = "0.19.0", optional = true }
+
+serde      = { version = "1.0.104", optional = true, features = ["derive"] }
+
 
 [dev-dependencies]
 matches = "0.1.8"

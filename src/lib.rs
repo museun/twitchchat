@@ -22,6 +22,14 @@ See `examples/demo.rs` for a demo of the api
 [Twitch]: https://www.twitch.tv
 */
 
+static_assertions::assert_cfg!(
+    not(all(
+        feature = "tokio_native_tls", //
+        feature = "tokio_rustls",     //
+    )),
+    "only a single TLS library can be used."
+);
+
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
