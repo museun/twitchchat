@@ -42,7 +42,7 @@ Opens an ***async*** TCP connection with _TLS_ using the provided `UserConfig`.
 let user_config = UserConfig::builder().anonymous().build().unwrap();
 let stream = connect_tls(&user_config).await.unwrap();
 # });
-````
+```
 */
 #[cfg(any(feature = "tokio_native_tls", feature = "tokio_rustls"))]
 #[cfg_attr(
@@ -119,9 +119,11 @@ async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
 
 #[cfg(feature = "tokio_rustls")]
 async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
+    // This isn't actually used by rustls, but is required 'for the future'.
     let domain_name = tokio_rustls::webpki::DNSNameRef::try_from_ascii_str(TWITCH_DOMAIN)
         .expect("valid twitch domain dns/ref");
 
+    // Not sure which default roots to use, so lets trust the server
     let mut config = tokio_rustls::rustls::ClientConfig::new();
     config
         .root_store
