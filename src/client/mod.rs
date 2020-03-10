@@ -11,7 +11,7 @@ The dispatcher is clonable and the `Runner` requires a clone of it to filter the
 # use twitchchat::{Dispatcher, Runner, events, messages::AllCommands};
 # use tokio::spawn;
 # use futures::stream::StreamExt as _;
-# let conn = tokio_test::io::Builder::new().read(b"PING :0123456798\r\n").build();
+# let conn = tokio_test::io::Builder::new().read(b"PING :123456789\r\n").write(b"PONG :123456789\r\n").build();
 # let fut = async move {
 let dispatcher = Dispatcher::new();
 let mut all = dispatcher.subscribe::<events::All>();
@@ -68,7 +68,7 @@ let join = dispatcher.subscribe::<events::Join>();
 
 // join is a Stream<Item = Arc<messages::Join<'static>>>
 let fut = join.for_each(|item| async move {
-    log::trace!("{:?}", item)
+    println!("{:?}", item)
 });
 # };
 ```
