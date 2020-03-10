@@ -2,10 +2,13 @@ use super::*;
 
 /// A [Stream] that produces an item
 ///
+/// The items are found [here]. The items wil be wrapped in an `Arc` and be `'static`.
+///
 /// These are returned from an [event subscription][sub]
 ///
-/// [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
+/// [Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 /// [sub]: ./struct.Dispatcher.html#method.subscribe
+/// [here]: ../messages/index.html
 pub struct EventStream<T>(pub(super) mpsc::UnboundedReceiver<T>);
 
 impl<T> std::fmt::Debug for EventStream<T> {
@@ -16,10 +19,7 @@ impl<T> std::fmt::Debug for EventStream<T> {
     }
 }
 
-impl<T> Stream for EventStream<T>
-where
-    T: Clone,
-{
+impl<T: Clone> Stream for EventStream<T> {
     type Item = T;
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,

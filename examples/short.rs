@@ -1,49 +1,47 @@
 /* in your Cargo.toml
 [dependencies]
-twitchchat = "0.8"                               # this crate
-tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
+twitchchat = "0.9"                                         # this crate
+tokio = { version = "0.2", features = ["full", "macros"] } # you need tokio to run it
 */
 
-use twitchchat::{events, Client};
-
-// so .next() can be used on the EventStream
-// futures::stream::StreamExt will also work
+// or you can use futures::stream::StreamExt
 use tokio::stream::StreamExt as _;
+
+use twitchchat::{events, Dispatcher, Runner, Status};
 
 #[tokio::main]
 async fn main() {
-    let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
-    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
-    // split the stream | TODO decide on R+W or R,W
-    let (read, write) = tokio::io::split(stream);
+    let dispatcher = Dispatcher::new();
 
-    let client = Client::new();
-
-    // client is clonable and can be sent across tasks
-    let bot = client.clone();
+    let dispatch = dispatcher.clone();
     tokio::task::spawn(async move {
         // subscribe to 'PRIVMSG' events, this is a `Stream`
-        let mut privmsgs = bot.dispatcher().await.subscribe::<events::Privmsg>();
+        let mut privmsgs = dispatch.subscribe::<events::Privmsg>();
         // 'msg' is a twitchchat::messages::Privmsg<'static> here
         while let Some(msg) = privmsgs.next().await {
             eprintln!("[{}] {}: {}", msg.channel, msg.name, msg.data);
         }
     });
 
-    // run the client
-    let done = client.run(read, write);
+    let (runner, mut control) = Runner::new(dispatcher.clone());
+
+    let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
+    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+
+    // run to completion in the background
+    let done = tokio::task::spawn(runner.run(stream));
 
     // 'block' until we're connected
-    let ready = client.wait_for_irc_ready().await.unwrap();
+    let ready = dispatcher.one_time::<events::IrcReady>().await.unwrap();
     eprintln!("your irc name: {}", ready.nickname);
 
     // the writer is also clonable
-    client.writer().join("#museun").await.unwrap();
+    control.writer().join("#museun").await.unwrap();
 
     // this resolves when the client disconnects
-    // or is forced to stop with Client::stop
-    use twitchchat::client::Status;
-    match done.await {
+    // or is forced to stop with Control::stop
+    // unwrap the JoinHandle
+    match done.await.unwrap() {
         // client was disconnected by the server
         Ok(Status::Eof) => {}
         // client was canceled by the user (`stop`)

@@ -1,9 +1,10 @@
 /* in your Cargo.toml
 [dependencies]
-twitchchat = "0.8"                               # this crate
-tokio = { version = "0.2", features = ["full"] } # you need tokio to run it
+twitchchat = "0.9"                                         # this crate
+tokio = { version = "0.2", features = ["full", "macros"] } # you need tokio to run it
 */
 
+// or you can use futures::stream::StreamExt
 use tokio::stream::StreamExt as _;
 
 #[tokio::main]
@@ -18,27 +19,14 @@ async fn main() {
     // putting this in the env so people don't join my channel when running this
     let channel = std::env::var("TWITCH_CHANNEL").unwrap();
 
-    // connect via tcp with tls with this nick and password
-    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+    // make a dispatcher (this is how you 'subscribe' to events)
+    // this is clonable, so you can send it to other tasks/threasd
+    let dispatcher = twitchchat::Dispatcher::new();
 
-    // split the stream
-    let (read, write) = tokio::io::split(stream);
-
-    // make a client. the client is clonable
-    let client = twitchchat::Client::new();
-
-    // get a future that resolves when the client is done reading, fails to read/write or is stopped
-    let done = client.run(read, write);
-
-    // subscribe to some an event streams:
-
-    // for privmsg (what users send to channels)
-    // this event dispatcher is behind a RAII guard, so make sure you drop it.
-    // otherwise it'll block the client until its dropped
-    let mut privmsg = client
-        .dispatcher()
-        .await
-        .subscribe::<twitchchat::events::Privmsg>();
+    // subscribe to a Privmsg event stream
+    // whenever the client reads a PRIVMSG, it'll produce an item in this stream
+    // you can subscribe multiple times to the same event
+    let mut privmsg = dispatcher.subscribe::<twitchchat::events::Privmsg>();
 
     // spawn a task to consume the stream
     tokio::task::spawn(async move {
@@ -48,85 +36,92 @@ async fn main() {
     });
 
     // for join (when a user joins a channel)
-    let mut join = client
-        .dispatcher()
-        .await
-        .subscribe::<twitchchat::events::Join>();
+    let mut join = dispatcher.subscribe::<twitchchat::events::Join>();
+    // for part (when a user leaves a channel)
+    let mut part = dispatcher.subscribe::<twitchchat::events::Part>();
 
-    tokio::task::spawn(async move {
-        while let Some(msg) = join.next().await {
-            // we've joined a channel
-            if msg.name == nick {
-                eprintln!("you joined {}", msg.channel);
-                break; // returning/dropping the stream un-subscribes it
+    // there is also an `All` event which is an enum of all possible events
+    // and a `Raw` event which is the raw IRC message
+
+    // make a new runner
+    // control allows you to stop the runner, and gives you access to an async. encoder (writer)
+    let (runner, mut control) = twitchchat::Runner::new(dispatcher.clone());
+
+    // connect via TCP with TLS with this nick and password
+    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+
+    // spawn the run off in another task so we don't block the current one.
+    // you could just await on the future at the end of whatever block, but this is easier for this demonstration
+    let handle = tokio::task::spawn(runner.run(stream));
+
+    // another privmsg so we can act like a bot
+    let mut privmsg = dispatcher.subscribe::<twitchchat::events::Privmsg>();
+
+    // we can block on the dispatcher for a specific event
+    // if we call one_time again for this event, it'll return the previous one
+    eprintln!("waiting for irc ready");
+    let ready = dispatcher
+        .one_time::<twitchchat::events::IrcReady>()
+        .await
+        .unwrap();
+    eprintln!("our nickname: {}", ready.nickname);
+
+    // we can clone the writer and send it places
+    let mut writer = control.writer().clone();
+
+    // because we waited for IrcReady, we can confidently join channels
+    writer.join(channel).await.unwrap();
+
+    // a fancy main loop without using tasks
+    loop {
+        tokio::select! {
+            Some(join_msg) = join.next() => {
+                eprintln!("{} joined {}", join_msg.name, join_msg.channel);
             }
-        }
-    });
 
-    // for privmsg again
-    let mut bot = client
-        .dispatcher()
-        .await
-        .subscribe::<twitchchat::events::Privmsg>();
+            Some(part_msg) = part.next() => {
+                eprintln!("{} left {}", part_msg.name, part_msg.channel);
+            }
 
-    // we can move the client to another task by cloning it
-    let bot_client = client.clone();
-    tokio::task::spawn(async move {
-        let mut writer = bot_client.writer();
-        while let Some(msg) = bot.next().await {
-            match msg.data.split(" ").next() {
-                Some("!quit") => {
-                    // causes the client to shutdown
-                    bot_client.stop().await.unwrap();
-                }
-                Some("!hello") => {
-                    let response = format!("hello {}!", msg.name);
-                    // send a message in response
-                    if let Err(_err) = writer.privmsg(&msg.channel, &response).await {
-                        // we ran into a write error, we should probably leave this task
-                        return;
+            Some(msg) = privmsg.next() => {
+                match msg.data.split(" ").next() {
+                    Some("!hello") => {
+                        let response = format!("hello {}!", msg.name);
+                        if let Err(_err) = control.writer().privmsg(&msg.channel, &response).await {
+                            // we cannot write, so we should bail
+                            break;
+                        }
                     }
+                    Some("!quit") => {
+                        // causes the runner to shutdown
+                        control.stop();
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
-        }
-    });
 
-    // wait for the twitch connection to be 'registered'
-    let _ready = client.wait_for_irc_ready().await.unwrap();
-    // after this point its safe to join / send messages
-
-    // get a clonable writer from the client
-    // join a channel, methods on writer return false if the client is disconnected
-    if let Err(err) = client.writer().join(&channel).await {
-        match err {
-            twitchchat::Error::InvalidChannel(..) => {
-                eprintln!("you cannot join a channel with an empty name. demo is ending");
-                std::process::exit(1);
-            }
-            _ => {
-                // we'll get an error if we try to write to a disconnected client.
-                // if this happens, you should shutdown your tasks
-            }
+            // when the 3 streams in this select are done this'll get hit
+            else => { break }
         }
     }
 
     // you can clear subscriptions with
-    // client.dispatcher().await.clear_subscriptions::<event::Join>()
+    // dispatcher.clear_subscriptions::<event::Join>()
     // or all subscriptions
-    // client.dispatcher().await.clear_subscriptions_all()
+    // dispatcher.clear_subscriptions_all()
 
     // you can get the number of active subscriptions with
-    // client.dispatcher().await.count_subscribers::<event::Join>()
+    // dispatcher.count_subscribers::<event::Join>()
     // or all subscriptions
-    // client.dispatcher().await.count_subscribers_all()
+    // dispatcher.count_subscribers_all()
 
     // await for the client to be done
-    match done.await {
-        Ok(twitchchat::client::Status::Eof) => {
+    // unwrap the JoinHandle
+    match handle.await.unwrap() {
+        Ok(twitchchat::Status::Eof) => {
             eprintln!("done!");
         }
-        Ok(twitchchat::client::Status::Canceled) => {
+        Ok(twitchchat::Status::Canceled) => {
             eprintln!("client was stopped by user");
         }
         Err(err) => {
@@ -139,5 +134,5 @@ async fn main() {
 
     // another way would be to clear all subscriptions
     // clearing the subscriptions would close each event stream
-    client.dispatcher().await.clear_subscriptions_all();
+    dispatcher.clear_subscriptions_all();
 }

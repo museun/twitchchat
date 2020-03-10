@@ -1,15 +1,18 @@
 use super::{Event, EventMapped, EventStream};
 use crate::decode::Message;
 use crate::events;
-use crate::Parse;
+use crate::{Error, Parse};
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use parking_lot::Mutex;
 use tokio::sync::mpsc;
 
 type EventRegistration = Vec<(bool, Box<dyn Any + Send>)>;
+
+type AnyMap<T> = Arc<Mutex<HashMap<TypeId, T>>>;
 
 /**
 An event dispatcher
@@ -23,8 +26,17 @@ The subscription will return a [EventStream] which can be used as a [Stream].
 [EventStream]: ./struct.EventStream.html
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 */
+#[derive(Clone)]
 pub struct Dispatcher {
-    event_map: HashMap<TypeId, EventRegistration>,
+    event_map: AnyMap<EventRegistration>,
+    cached: AnyMap<Box<dyn Any + Send>>,
+}
+
+impl Default for Dispatcher {
+    fn default() -> Self {
+        let (event_map, cached) = Default::default();
+        events::build_event_map(Self { event_map, cached })
+    }
 }
 
 impl std::fmt::Debug for Dispatcher {
@@ -34,27 +46,122 @@ impl std::fmt::Debug for Dispatcher {
 }
 
 impl Dispatcher {
+    /// Create a new event dispatcher
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /** Subscribes to an event and blocks until the next item is available
+
+    This is useful when you want to wait, for say, the IrcReady event before you join channels.
+
+    ---
+    ***NOTE*** Any subsequent calls to `one_time` for this event will return a _cached_ value.
+
+    # Example
+    ```rust
+    # use twitchchat::{Dispatcher, Runner, events};
+    # use tokio::spawn;
+    # use futures::prelude::*;
+    # let conn = tokio_test::io::Builder::new().read(b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n").build();
+    # let fut = async move {
+    let dispatcher = Dispatcher::new();
+    let (runner, control) = Runner::new(dispatcher.clone());
+    // You should spawn the run() away so it can start to process events
+    let handle = spawn(runner.run(conn));
+    // block until we get an IrcReady
+    let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+    # assert!(true);
+    // it'll cache the event
+    let _ = dispatcher.one_time::<events::IrcReady>()
+        .now_or_never()
+        .expect("cached value")
+        .unwrap();
+    # assert!(true);
+    // stop the runner
+    control.stop();
+    // just to wait for the spawned task to end
+    let _ = handle.await.unwrap().unwrap();
+    # };
+    # tokio::runtime::Runtime::new().unwrap().block_on(fut);
+    ```
+    */
+    pub async fn one_time<T>(&self) -> Result<Arc<T::Owned>, Error>
+    where
+        T: Event<'static> + 'static,
+        T: EventMapped<'static, T>,
+    {
+        use futures::prelude::*;
+
+        if let Some(item) = self
+            .cached
+            .lock()
+            .get(&TypeId::of::<T>())
+            .map(|s| Arc::clone(s.downcast_ref::<Arc<T::Owned>>().expect("valid type")))
+        {
+            return Ok(item);
+        }
+
+        let item = self
+            .subscribe_internal::<T>(false)
+            .next()
+            .await
+            .ok_or_else(|| Error::ClientDisconnected)?;
+
+        self.cached
+            .lock()
+            .insert(TypeId::of::<T>(), Box::new(Arc::clone(&item)));
+
+        Ok(item)
+    }
+
     /**
     Subscribe to an [Event] which'll return a [Stream] of a corresponding [Message].
 
     # Example
-    ```rust,ignore
-    # use twitchchat::events::{self, Dispatcher};
+    ```rust
+    # use twitchchat::{Dispatcher, Runner, events};
+    # use tokio::spawn;
+    # use futures::prelude::*;
+    # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(1000)).build();
+    # let fut = async move {
+    let dispatcher = Dispatcher::new();
+    let (runner, control) = Runner::new(dispatcher.clone());
+    // spawn the runner in the background, just to drive things for us
+    // (you could select over it, or await at the end)
+    spawn(runner.run(conn));
+    # control.stop(); // this is just so things will stop now
+
     // get some streams for events you're interested in
     // when you drop the streams it'll unsubscribe them
     let mut join_stream = dispatcher.subscribe::<events::Join>();
-    let mut privmsg_stream = dispatcher.subscribe::<events::Privmsg>();
+    let privmsg_stream = dispatcher.subscribe::<events::Privmsg>();
     // you can subscribe multiple times to the same event
-    let mut another_one = dispatcher.subscribe::<events::Privmsg>();
+    let another_one = dispatcher.subscribe::<events::Privmsg>();
+    // you can also get an enum of all possible events
+    let mut all_events = dispatcher.subscribe::<events::All>();
+    // or the raw IRC message
+    let raw_event = dispatcher.subscribe::<events::Raw>();
 
-    let print_joins = async move {
-        // loop over the stream printing out the messages
-        // the message type will be JoinMessage here.
-        while let Some(msg) = join_stream.next().await {
-            println!("{:?}", msg);
+    // using for each
+    let print_raw = raw_event.for_each(|msg| async move {
+        println!("{}", msg.raw.escape_debug());
+    });
+    // and spawn that future on another task
+    spawn(print_raw);
+
+    // loop and select
+    loop {
+        tokio::select!{
+            Some(msg) = &mut join_stream.next() => {}
+            Some(all) = &mut all_events.next() => {}
+            else => break
         }
-    };
+    }
+    # };
+    # tokio::runtime::Runtime::new().unwrap().block_on(fut);
     ```
+
     # Mapping
     Use an event from [Events][Event] and subscribe will produce an [`EventStream<Arc<T>>`][EventStream] which corresponds to the message in [Messages][Message].
 
@@ -89,56 +196,60 @@ impl Dispatcher {
 
     Or if the subscriptions were cleared.
 
-    [Event]: ../events/index.html
-    [Message]: ../messages/index.html
+    ## Tip
+    If you hold onto clones of the dispatcher, you can remove the event, or all events to force the respective Stream(s) to end
+
+
+    [Event]: ./events/index.html
+    [Message]: ./messages/index.html
     [EventStream]: ./struct.EventStream.html
-    [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
+    [Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 
-    [Cap_event]: ../events/struct.Cap.html
-    [ClearChat_event]: ../events/struct.ClearChat.html
-    [ClearMsg_event]: ../events/struct.ClearMsg.html
-    [GlobalUserState_event]: ../events/struct.GlobalUserState.html
-    [HostTarget_event]: ../events/struct.HostTarget.html
-    [IrcReady_event]: ../events/struct.IrcReady.html
-    [Join_event]: ../events/struct.Join.html
-    [Mode_event]: ../events/struct.Mode.html
-    [Names_event]: ../events/struct.Names.html
-    [Notice_event]: ../events/struct.Notice.html
-    [Part_event]: ../events/struct.Part.html
-    [Ping_event]: ../events/struct.Ping.html
-    [Pong_event]: ../events/struct.Pong.html
-    [Privmsg_event]: ../events/struct.Privmsg.html
-    [Raw_event]: ../events/struct.Raw.html
-    [Ready_event]: ../events/struct.Ready.html
-    [Reconnect_event]: ../events/struct.Reconnect.html
-    [RoomState_event]: ../events/struct.RoomState.html
-    [UserNotice_event]: ../events/struct.UserNotice.html
-    [UserState_event]: ../events/struct.UserState.html
-    [All_event]: ../events/struct.All.html
+    [Cap_event]: ./events/struct.Cap.html
+    [ClearChat_event]: ./events/struct.ClearChat.html
+    [ClearMsg_event]: ./events/struct.ClearMsg.html
+    [GlobalUserState_event]: ./events/struct.GlobalUserState.html
+    [HostTarget_event]: ./events/struct.HostTarget.html
+    [IrcReady_event]: ./events/struct.IrcReady.html
+    [Join_event]: ./events/struct.Join.html
+    [Mode_event]: ./events/struct.Mode.html
+    [Names_event]: ./events/struct.Names.html
+    [Notice_event]: ./events/struct.Notice.html
+    [Part_event]: ./events/struct.Part.html
+    [Ping_event]: ./events/struct.Ping.html
+    [Pong_event]: ./events/struct.Pong.html
+    [Privmsg_event]: ./events/struct.Privmsg.html
+    [Raw_event]: ./events/struct.Raw.html
+    [Ready_event]: ./events/struct.Ready.html
+    [Reconnect_event]: ./events/struct.Reconnect.html
+    [RoomState_event]: ./events/struct.RoomState.html
+    [UserNotice_event]: ./events/struct.UserNotice.html
+    [UserState_event]: ./events/struct.UserState.html
+    [All_event]: ./events/struct.All.html
 
-    [Cap_message]: ../messages/struct.Cap.html
-    [ClearChat_message]: ../messages/struct.ClearChat.html
-    [ClearMsg_message]: ../messages/struct.ClearMsg.html
-    [GlobalUserState_message]: ../messages/struct.GlobalUserState.html
-    [HostTarget_message]: ../messages/struct.HostTarget.html
-    [IrcReady_message]: ../messages/struct.IrcReady.html
-    [Join_message]: ../messages/struct.Join.html
-    [Mode_message]: ../messages/struct.Mode.html
-    [Notice_message]: ../messages/struct.Notice.html
-    [Names_message]: ../messages/struct.Names.html
-    [Part_message]: ../messages/struct.Part.html
-    [Ping_message]: ../messages/struct.Ping.html
-    [Pong_message]: ../messages/struct.Pong.html
-    [Privmsg_message]: ../messages/struct.Privmsg.html
-    [Raw_message]: ../messages/type.Raw.html
-    [Ready_message]: ../messages/struct.Ready.html
-    [Reconnect_message]: ../messages/struct.Reconnect.html
-    [RoomState_message]: ../messages/struct.RoomState.html
-    [UserNotice_message]: ../messages/struct.UserNotice.html
-    [UserState_message]: ../messages/struct.UserState.html
-    [AllCommands_message]: ../messages/enum.AllCommands.html
+    [Cap_message]: ./messages/struct.Cap.html
+    [ClearChat_message]: ./messages/struct.ClearChat.html
+    [ClearMsg_message]: ./messages/struct.ClearMsg.html
+    [GlobalUserState_message]: ./messages/struct.GlobalUserState.html
+    [HostTarget_message]: ./messages/struct.HostTarget.html
+    [IrcReady_message]: ./messages/struct.IrcReady.html
+    [Join_message]: ./messages/struct.Join.html
+    [Mode_message]: ./messages/struct.Mode.html
+    [Notice_message]: ./messages/struct.Notice.html
+    [Names_message]: ./messages/struct.Names.html
+    [Part_message]: ./messages/struct.Part.html
+    [Ping_message]: ./messages/struct.Ping.html
+    [Pong_message]: ./messages/struct.Pong.html
+    [Privmsg_message]: ./messages/struct.Privmsg.html
+    [Raw_message]: ./messages/type.Raw.html
+    [Ready_message]: ./messages/struct.Ready.html
+    [Reconnect_message]: ./messages/struct.Reconnect.html
+    [RoomState_message]: ./messages/struct.RoomState.html
+    [UserNotice_message]: ./messages/struct.UserNotice.html
+    [UserState_message]: ./messages/struct.UserState.html
+    [AllCommands_message]: ./messages/enum.AllCommands.html
     */
-    pub fn subscribe<'a, T>(&mut self) -> EventStream<Arc<T::Owned>>
+    pub fn subscribe<'a, T>(&self) -> EventStream<Arc<T::Owned>>
     where
         T: Event<'a> + 'static,
         T: EventMapped<'a, T>,
@@ -149,13 +260,14 @@ impl Dispatcher {
     /// Allows marking a subscription as internal
     ///
     /// Internal subscriptions can't be removed by the user
-    pub(crate) fn subscribe_internal<'a, T>(&mut self, private: bool) -> EventStream<Arc<T::Owned>>
+    pub(crate) fn subscribe_internal<'a, T>(&self, private: bool) -> EventStream<Arc<T::Owned>>
     where
         T: Event<'a> + 'static,
         T: EventMapped<'a, T>,
     {
         let (tx, rx) = mpsc::unbounded_channel::<Arc<T::Owned>>();
         self.event_map
+            .lock()
             .get_mut(&TypeId::of::<T>())
             .unwrap()
             .push((private, Box::new(Sender::new(tx))));
@@ -176,6 +288,7 @@ impl Dispatcher {
         T: Event<'a> + 'static,
     {
         self.event_map
+            .lock()
             .get(&TypeId::of::<T>())
             .map(|s| s.iter().filter(|&(private, _)| !private).count())
             .unwrap_or_default()
@@ -184,18 +297,20 @@ impl Dispatcher {
     /// Get the subscriber count for all events
     pub fn count_subscribers_all(&self) -> usize {
         self.event_map
+            .lock()
             .values()
             .map(|s| s.iter().filter(|&(private, _)| !private).count())
             .sum()
     }
 
     /// Clear subscriptions for a specific event, returning how many subscribers were removed
-    pub fn clear_subscriptions<'a, T>(&mut self) -> usize
+    pub fn clear_subscriptions<'a, T>(&self) -> usize
     where
         T: Event<'a> + 'static,
     {
         let n = self
             .event_map
+            .lock()
             .get_mut(&TypeId::of::<T>())
             .map(|list| {
                 let old = list.len();
@@ -210,9 +325,10 @@ impl Dispatcher {
     }
 
     /// Clear all subscriptions, returning how many subscribers were removed
-    pub fn clear_subscriptions_all(&mut self) -> usize {
+    pub fn clear_subscriptions_all(&self) -> usize {
         let n = self
             .event_map
+            .lock()
             .values_mut()
             .map(|list| {
                 let old = list.len();
@@ -225,22 +341,23 @@ impl Dispatcher {
     }
 
     /// Add this event into the dispatcher
-    pub(crate) fn add_event<'a, T>(mut self) -> Self
+    pub(crate) fn add_event<'a, T>(self) -> Self
     where
         T: Event<'a> + 'static,
     {
-        self.event_map.entry(TypeId::of::<T>()).or_default();
+        self.event_map.lock().entry(TypeId::of::<T>()).or_default();
         self
     }
 
     /// Tries to send this message to any subscribers
-    pub(crate) fn try_send<'a, T>(&mut self, msg: &'a Message<'a>)
+    pub(crate) fn try_send<'a, T>(&self, msg: &'a Message<'a>)
     where
         T: Event<'a> + 'static,
         T: EventMapped<'a, T>,
     {
         if let Some(senders) = self
             .event_map
+            .lock()
             .get_mut(&TypeId::of::<T>())
             .filter(|s| !s.is_empty())
         {
@@ -264,7 +381,7 @@ impl Dispatcher {
 }
 
 impl Dispatcher {
-    pub(crate) fn dispatch<'a>(&mut self, msg: &'a Message<'a>) {
+    pub(crate) fn dispatch<'a>(&self, msg: &'a Message<'a>) {
         macro_rules! try_send {
             ($ident:ident) => {
                 self.try_send::<events::$ident>(&msg)
@@ -297,12 +414,6 @@ impl Dispatcher {
         try_send!(All);
         try_send!(Raw);
     }
-
-    pub(crate) fn new() -> Self {
-        events::build_event_map(Self {
-            event_map: HashMap::default(),
-        })
-    }
 }
 
 struct Sender<T> {
@@ -322,7 +433,56 @@ impl<T> Sender<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::stream::*;
+    use futures::prelude::*;
+
+    #[tokio::test]
+    async fn one_time() {
+        use crate::{Runner, Status};
+
+        let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+        let conn = tokio_test::io::Builder::new()
+            .read(data)
+            .wait(std::time::Duration::from_millis(100))
+            .build();
+
+        let dispatcher = Dispatcher::new();
+        let (runner, control) = Runner::new(dispatcher.clone());
+        let handle = tokio::spawn(runner.run(conn));
+
+        let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+        let _ = dispatcher
+            .one_time::<events::IrcReady>()
+            .now_or_never()
+            .unwrap()
+            .unwrap();
+        control.stop();
+
+        assert_eq!(handle.await.unwrap().unwrap(), Status::Canceled);
+    }
+
+    #[tokio::test]
+    async fn one_time_never() {
+        use crate::{Runner, Status};
+
+        let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+        let conn = tokio_test::io::Builder::new()
+            .read(data)
+            .wait(std::time::Duration::from_millis(100))
+            .build();
+
+        let dispatcher = Dispatcher::new();
+        let (runner, control) = Runner::new(dispatcher.clone());
+        let handle = tokio::spawn(runner.run(conn));
+
+        assert!(dispatcher
+            .one_time::<events::Join>()
+            .now_or_never()
+            .is_none());
+
+        control.stop();
+
+        assert_eq!(handle.await.unwrap().unwrap(), Status::Canceled);
+    }
 
     #[test]
     fn zombie() {
@@ -337,7 +497,7 @@ mod tests {
 
         let (mut tick_tx, mut tick_rx) = tokio::sync::mpsc::channel::<()>(1);
 
-        let mut dispatcher = Dispatcher::new();
+        let dispatcher = Dispatcher::new();
         let mut keep = dispatcher.subscribe::<events::Raw>();
         let keep = {
             let counter = Arc::clone(&counter);

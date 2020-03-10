@@ -19,6 +19,9 @@ Along with the messages as Rust types, it provides methods for sending messages.
 # Demonstration
 See `examples/demo.rs` for a demo of the api
 
+---
+Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-mappings)
+
 [Twitch]: https://www.twitch.tv
 */
 
@@ -36,7 +39,23 @@ pub mod macros;
 
 cfg_async! {
     pub mod client;
-    pub use client::Client;
+    pub use client::{Dispatcher, Runner, Control, Status};
+}
+
+cfg_async! {
+    pub mod events;
+}
+
+cfg_async! {
+    mod register;
+    #[doc(inline)]
+    pub use register::register;
+}
+
+cfg_async! {
+    mod connect;
+    #[doc(inline)]
+    pub use connect::*;
 }
 
 /// Decode messages from a `&str`
@@ -55,11 +74,20 @@ pub mod twitch;
 #[doc(inline)]
 pub use twitch::*;
 
-cfg_async! {
-    pub mod events;
-}
-
 pub mod messages;
+
+pub mod sync;
+
+mod parse;
+pub use parse::Parse;
+
+mod as_owned;
+#[doc(inline)]
+pub use as_owned::AsOwned;
+
+mod error;
+#[doc(inline)]
+pub use error::Error;
 
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
@@ -90,58 +118,7 @@ let _config = UserConfig::builder()
 ```
 */
 pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
-
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
-
-cfg_async! {
-    mod register;
-    #[doc(inline)]
-    pub use register::register;
-}
-
-cfg_async! {
-    mod connect;
-    #[doc(inline)]
-    pub use connect::*;
-}
-
-pub mod sync;
-
-cfg_async! {
-    #[doc(inline)]
-    pub mod rate_limit;
-}
-
-/// A trait for parsing messages
-///
-/// # Example
-/// ```rust
-/// # use twitchchat::*;
-/// # use twitchchat::messages::*;
-/// # use std::borrow::Cow;
-///
-/// let input = ":test!test@test JOIN #museun\r\n";
-/// let message: Raw<'_> = decode::decode(&input).next().unwrap().unwrap();
-/// let join: Join<'_> = Join::parse(&message).unwrap();
-/// assert_eq!(join, Join { channel: Cow::Borrowed("#museun"), name: Cow::Borrowed("test") });
-/// ```
-pub trait Parse<T>: Sized + private::ParseSealed<T> {
-    /// Tries to parse the input as this message
-    fn parse(input: T) -> Result<Self, crate::messages::InvalidMessage>;
-}
-
-mod as_owned;
-#[doc(inline)]
-pub use as_owned::AsOwned;
-
-mod private {
-    pub trait ParseSealed<E> {}
-    impl<T: crate::Parse<E>, E: Sized> ParseSealed<E> for T {}
-}
-
-mod error;
-#[doc(inline)]
-pub use error::Error;
 
 fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigError> {
     UserConfig::builder()
@@ -154,3 +131,9 @@ fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigE
         ])
         .build()
 }
+
+// TODO see https://github.com/museun/twitchchat/issues/91
+// cfg_async! {
+//     #[doc(inline)]
+//     pub mod rate_limit;
+// }

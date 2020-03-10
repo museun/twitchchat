@@ -40,23 +40,29 @@ tokio-rustls  = { version = "0.13.0", optional = true }
 webpki-roots  = { version = "0.19.0", optional = true }
 
 serde      = { version = "1.0.104", optional = true, features = ["derive"] }
+parking_lot = "0.10.0"
 
 
 [dev-dependencies]
 matches = "0.1.8"
 tokio   = { version = "0.2.13", features = ["test-util", "macros"] }
+tokio-test = "0.2.0"
 
 [[example]]
 name = "demo"
-required-features = ["async"]
+required-features = ["async", "tokio_native_tls"]
 
 [[example]]
 name = "short"
-required-features = ["async"]
+required-features = ["async", "tokio_native_tls"]
 
 [[example]]
 name = "wait_to_join"
-required-features = ["async"]
+required-features = ["async", "tokio_native_tls"]
+
+[[example]]
+name = "wait_to_join"
+required-features = ["async", "tokio_native_tls"]
 
 [[example]]
 name = "parse"

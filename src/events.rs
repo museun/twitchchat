@@ -227,6 +227,10 @@ impl<'t> Event<'t> for All {
 // TODO generate this with a macro
 use crate::client::Dispatcher;
 pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
+    // TODO this acquires the lock N times
+    // if we expose the inner map
+    // this we can lock once, add all of the events
+    // and release the lock
     dispatcher
         .add_event::<Ready>()
         .add_event::<All>()

@@ -4,24 +4,6 @@ use crate::encode::AsyncEncoder;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-pub(super) async fn write_loop<W>(
-    write: W,
-    mut rate: RateLimit,
-    mut recv: Rx,
-) -> Result<Status, Error>
-where
-    W: AsyncWrite + Send + Sync + Unpin + 'static,
-{
-    let mut writer = tokio::io::BufWriter::new(write);
-    while let Some(data) = recv.next().await {
-        let _ = rate.take().await;
-        log::trace!("> {}", std::str::from_utf8(&data).unwrap().escape_debug());
-        writer.write_all(&data).await?;
-        writer.flush().await?
-    }
-    Ok(Status::Eof)
-}
-
 /// A writer that allows sending messages to the client
 pub type Writer = AsyncEncoder<DisjointWriter>;
 
