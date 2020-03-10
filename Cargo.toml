@@ -61,7 +61,7 @@ name = "wait_to_join"
 required-features = ["async", "tokio_native_tls"]
 
 [[example]]
-name = "wait_to_join"
+name = "select"
 required-features = ["async", "tokio_native_tls"]
 
 [[example]]
