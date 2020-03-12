@@ -71,7 +71,7 @@ impl Runner {
         let (sender, receiver) = mpsc::channel(64);
         let abort = abort::Abort::default();
 
-        let writer = Writer::new(writer::DisjointWriter::new(sender));
+        let writer = Writer::new(writer::MpscWriter::new(sender));
         let control = Control {
             writer: writer.clone(),
             stop: abort.clone(),

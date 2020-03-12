@@ -5,20 +5,20 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 /// A writer that allows sending messages to the client
-pub type Writer = AsyncEncoder<DisjointWriter>;
+pub type Writer = AsyncEncoder<MpscWriter>;
 
-pub struct DisjointWriter {
+pub struct MpscWriter {
     buffer: Vec<u8>,
     sender: Tx,
 }
 
-impl std::fmt::Debug for DisjointWriter {
+impl std::fmt::Debug for MpscWriter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DisjointWriter").finish()
+        f.debug_struct("MpscWriter").finish()
     }
 }
 
-impl Clone for DisjointWriter {
+impl Clone for MpscWriter {
     fn clone(&self) -> Self {
         Self {
             buffer: vec![],
@@ -27,7 +27,7 @@ impl Clone for DisjointWriter {
     }
 }
 
-impl DisjointWriter {
+impl MpscWriter {
     pub(super) fn new(sender: Tx) -> Self {
         Self {
             buffer: vec![],
@@ -36,7 +36,7 @@ impl DisjointWriter {
     }
 }
 
-impl AsyncWrite for DisjointWriter {
+impl AsyncWrite for MpscWriter {
     fn poll_write(
         self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
