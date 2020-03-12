@@ -32,7 +32,7 @@ async fn main() {
     let done = tokio::task::spawn(runner.run(stream));
 
     // 'block' until we're connected
-    let ready = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+    let ready = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
     eprintln!("your irc name: {}", ready.nickname);
 
     // the writer is also clonable

@@ -41,7 +41,7 @@ async fn run_loop(mut control: Control, mut dispatcher: Dispatcher, channels: &[
         dispatcher: &mut Dispatcher,
         channels: &[String],
     ) {
-        let ready = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+        let ready = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
         eprintln!("our name: {}", ready.nickname);
 
         let w = control.writer();

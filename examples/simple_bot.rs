@@ -31,7 +31,7 @@ impl Bot {
         let mut events = dispatcher.subscribe::<events::Privmsg>();
 
         // and wait for a specific event (blocks the current task)
-        let ready = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+        let ready = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
         eprintln!("connected! our name is: {}", ready.nickname);
 
         // and then join a channel

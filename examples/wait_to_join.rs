@@ -28,7 +28,7 @@ async fn main() {
     // GlobalUserState can also be used to 'wait' for ready
     // 'block' until we've received an IrcReady event
     let _ready = dispatcher
-        .one_time::<twitchchat::events::IrcReady>()
+        .wait_for::<twitchchat::events::IrcReady>()
         .await
         .unwrap();
 

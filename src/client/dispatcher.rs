@@ -56,7 +56,7 @@ impl Dispatcher {
     This is useful when you want to wait, for say, the IrcReady event before you join channels.
 
     ---
-    ***NOTE*** Any subsequent calls to `one_time` for this event will return a _cached_ value.
+    ***NOTE*** Any subsequent calls to `wait_for` for this event will return a _cached_ value.
 
     # Example
     ```rust
@@ -70,10 +70,10 @@ impl Dispatcher {
     // You should spawn the run() away so it can start to process events
     let handle = spawn(runner.run(conn));
     // block until we get an IrcReady
-    let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+    let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
     # assert!(true);
     // it'll cache the event
-    let _ = dispatcher.one_time::<events::IrcReady>()
+    let _ = dispatcher.wait_for::<events::IrcReady>()
         .now_or_never()
         .expect("cached value")
         .unwrap();
@@ -86,7 +86,7 @@ impl Dispatcher {
     # tokio::runtime::Runtime::new().unwrap().block_on(fut);
     ```
     */
-    pub async fn one_time<T>(&self) -> Result<Arc<T::Owned>, Error>
+    pub async fn wait_for<T>(&self) -> Result<Arc<T::Owned>, Error>
     where
         T: Event<'static> + 'static,
         T: EventMapped<'static, T>,
@@ -436,7 +436,7 @@ mod tests {
     use futures::prelude::*;
 
     #[tokio::test]
-    async fn one_time() {
+    async fn wait_for() {
         use crate::{Runner, Status};
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
@@ -449,9 +449,9 @@ mod tests {
         let (runner, control) = Runner::new(dispatcher.clone());
         let handle = tokio::spawn(runner.run(conn));
 
-        let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+        let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
         let _ = dispatcher
-            .one_time::<events::IrcReady>()
+            .wait_for::<events::IrcReady>()
             .now_or_never()
             .unwrap()
             .unwrap();
@@ -461,7 +461,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn one_time_never() {
+    async fn wait_for_never() {
         use crate::{Runner, Status};
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
@@ -475,7 +475,7 @@ mod tests {
         let handle = tokio::spawn(runner.run(conn));
 
         assert!(dispatcher
-            .one_time::<events::Join>()
+            .wait_for::<events::Join>()
             .now_or_never()
             .is_none());
 
