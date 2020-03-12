@@ -39,14 +39,14 @@ native-tls = { version = "0.2.3", optional = true }
 tokio-rustls  = { version = "0.13.0", optional = true }
 webpki-roots  = { version = "0.19.0", optional = true }
 
-serde      = { version = "1.0.104", optional = true, features = ["derive"] }
+serde       = { version = "1.0.104", optional = true, features = ["derive"] }
 parking_lot = "0.10.0"
-
 
 [dev-dependencies]
 matches = "0.1.8"
 tokio   = { version = "0.2.13", features = ["test-util", "macros"] }
 tokio-test = "0.2.0"
+doc-comment = "0.3.2"
 
 [[example]]
 name = "demo"
@@ -62,6 +62,10 @@ required-features = ["async", "tokio_native_tls"]
 
 [[example]]
 name = "select"
+required-features = ["async", "tokio_native_tls"]
+
+[[example]]
+name = "simple_bot"
 required-features = ["async", "tokio_native_tls"]
 
 [[example]]

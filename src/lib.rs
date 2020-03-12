@@ -25,6 +25,9 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 static_assertions::assert_cfg!(
     not(all(
         feature = "tokio_native_tls", //
