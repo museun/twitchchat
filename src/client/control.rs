@@ -19,11 +19,11 @@ impl Control {
     ///
     /// # Example
     /// ```rust
-    /// # use twitchchat::{Runner, Status};
+    /// # use twitchchat::{Runner, Status, RateLimit, Dispatcher};
     /// # use tokio::spawn;
     /// # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
     /// # let fut = async move {
-    /// let (runner, control) = Runner::new(Default::default());
+    /// let (runner, control) = Runner::new(Dispatcher::default(), RateLimit::default());
     ///
     /// // calling stop will cause 'run' to return Ok(Status::Canceled)
     /// spawn(async move { control.stop() });

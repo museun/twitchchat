@@ -136,7 +136,8 @@ fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigE
 }
 
 // TODO see https://github.com/museun/twitchchat/issues/91
-// cfg_async! {
-//     #[doc(inline)]
-//     pub mod rate_limit;
-// }
+cfg_async! {
+    #[doc(inline)]
+    pub mod rate_limit;
+    pub use rate_limit::RateLimit;
+}

@@ -1,4 +1,8 @@
 use super::*;
+use crate::rate_limit::RateLimit;
+
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 /**
 The runner is the main "event loop" of this crate.
@@ -18,14 +22,14 @@ Interacting with the `Runner` is done via the [Control][control] type.
 # use tokio::spawn;
 # tokio::runtime::Runtime::new().unwrap().block_on(async {
 # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
-use twitchchat::{Dispatcher, Status, Runner};
+use twitchchat::{Dispatcher, Status, Runner, RateLimit};
 // make a dispatcher
 let dispatcher = Dispatcher::new();
 // do stuff with the dispatcher (its clonable)
 // ..
 
 // create a new runner
-let (runner, control) = Runner::new(dispatcher);
+let (runner, control) = Runner::new(dispatcher, RateLimit::default());
 
 // spawn a task that kills the runner after some time
 let ctl = control.clone();
@@ -67,11 +71,13 @@ impl Runner {
     [control]: ./struct.Control.html
     [dispatcher]: ./struct.Dispatcher.html
     */
-    pub fn new(dispatcher: Dispatcher) -> (Self, Control) {
+    pub fn new(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Self, Control) {
         let (sender, receiver) = mpsc::channel(64);
         let abort = abort::Abort::default();
 
-        let writer = Writer::new(writer::MpscWriter::new(sender));
+        let writer = Writer::new(writer::MpscWriter::new(sender))
+            .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
+
         let control = Control {
             writer: writer.clone(),
             stop: abort.clone(),

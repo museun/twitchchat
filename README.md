@@ -276,7 +276,7 @@ let fut = async move {
 > Finally, writing (encoding) messages.
 ```rust
 // you probably want to keep a dispatcher around so you can read from the conn
-let (_runner, mut control) = twitchchat::Runner::new(twitchchat::Dispatcher::new());
+let (_runner, mut control) = twitchchat::Runner::new(twitchchat::Dispatcher::new(), twitchchat::RateLimit::default());
 
 // the control type is also clonable
 let mut ctrl_clone = control.clone();
@@ -347,7 +347,7 @@ let cursor: Cursor<Vec<u8>> = encoder.into_inner();
 ```rust no_run
 use tokio::stream::StreamExt as _;
 use twitchchat::client::Writer;
-use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status};
+use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, RateLimit};
 
 fn get_creds() -> (String, String, String) {
     fn get_it(name: &str) -> String {
@@ -420,7 +420,7 @@ async fn main() {
     let (user, pass, channel) = get_creds();
 
     let dispatcher = Dispatcher::new();
-    let (runner, mut control) = Runner::new(dispatcher.clone());
+    let (runner, mut control) = Runner::new(dispatcher.clone(), RateLimit::default());
 
     // make a bot and get a future to its main loop
     let bot = Bot {

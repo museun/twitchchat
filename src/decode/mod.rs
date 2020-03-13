@@ -103,7 +103,7 @@ for (message, expected) in decode(&input).zip(expected.iter()) {
 }
 ```
 */
-pub fn decode<'t>(input: &'t str) -> DecodeIter<'t> {
+pub const fn decode(input: &str) -> DecodeIter<'_> {
     DecodeIter(ParseIter::new(input))
 }
 

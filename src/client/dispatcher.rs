@@ -60,13 +60,13 @@ impl Dispatcher {
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, events};
+    # use twitchchat::{Dispatcher, Runner, RateLimit, events};
     # use tokio::spawn;
     # use futures::prelude::*;
     # let conn = tokio_test::io::Builder::new().read(b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n").build();
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone());
+    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
     // You should spawn the run() away so it can start to process events
     let handle = spawn(runner.run(conn));
     // block until we get an IrcReady
@@ -120,13 +120,13 @@ impl Dispatcher {
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, events};
+    # use twitchchat::{Dispatcher, Runner, events, RateLimit};
     # use tokio::spawn;
     # use futures::prelude::*;
     # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(1000)).build();
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone());
+    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
     // spawn the runner in the background, just to drive things for us
     // (you could select over it, or await at the end)
     spawn(runner.run(conn));
@@ -433,6 +433,7 @@ impl<T> Sender<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rate_limit::RateLimit;
     use futures::prelude::*;
 
     #[tokio::test]
@@ -446,7 +447,7 @@ mod tests {
             .build();
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone());
+        let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
         let handle = tokio::spawn(runner.run(conn));
 
         let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
@@ -471,7 +472,7 @@ mod tests {
             .build();
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone());
+        let (runner, control) = Runner::new(dispatcher.clone(), <_>::default());
         let handle = tokio::spawn(runner.run(conn));
 
         assert!(dispatcher

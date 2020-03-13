@@ -23,7 +23,7 @@ async fn main() {
         }
     });
 
-    let (runner, mut control) = Runner::new(dispatcher.clone());
+    let (runner, mut control) = Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
     let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();

@@ -8,7 +8,7 @@ The dispatcher is clonable and the `Runner` requires a clone of it to filter the
 
 ### Example
 ```rust
-# use twitchchat::{Dispatcher, Runner, events, messages::AllCommands};
+# use twitchchat::{Dispatcher, Runner, RateLimit, events, messages::AllCommands};
 # use tokio::spawn;
 # use futures::stream::StreamExt as _;
 # let conn = tokio_test::io::Builder::new().read(b"PING :123456789\r\n").write(b"PONG :123456789\r\n").build();
@@ -17,7 +17,7 @@ let dispatcher = Dispatcher::new();
 let mut all = dispatcher.subscribe::<events::All>();
 
 // give our a clone of our dispatcher to the runner
-let (runner, control) = Runner::new(dispatcher.clone());
+let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
 
 // loop over our stream
 spawn(async move {

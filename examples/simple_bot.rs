@@ -73,7 +73,7 @@ async fn main() {
     let (user, pass, channel) = get_creds();
 
     let dispatcher = Dispatcher::new();
-    let (runner, mut control) = Runner::new(dispatcher.clone());
+    let (runner, mut control) = Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     // make a bot and get a future to its main loop
     let bot = Bot {

@@ -14,7 +14,7 @@ async fn main() {
     let channels = &[std::env::var("TWITCH_CHANNEL").unwrap()];
 
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone());
+    let (runner, control) = Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
     let fut = run_loop(control.clone(), dispatcher, channels);
 
     let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;

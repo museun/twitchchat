@@ -45,7 +45,8 @@ async fn main() {
 
     // make a new runner
     // control allows you to stop the runner, and gives you access to an async. encoder (writer)
-    let (runner, mut control) = twitchchat::Runner::new(dispatcher.clone());
+    let (runner, mut control) =
+        twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     // connect via TCP with TLS with this nick and password
     let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();

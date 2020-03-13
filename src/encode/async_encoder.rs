@@ -1,7 +1,10 @@
 use super::conv_channel;
-use crate::{color::Color, IntoChannel};
+use crate::{color::Color, IntoChannel, RateLimit};
+
+use std::sync::Arc;
 
 use tokio::io::{AsyncWrite, AsyncWriteExt};
+use tokio::sync::Mutex;
 
 type Result = std::result::Result<(), crate::Error>;
 
@@ -11,39 +14,57 @@ type Result = std::result::Result<(), crate::Error>;
 // we'd have to rework that macro or something
 // to fake specialization on AsyncEncoder<Vec<u8>>
 
-macro_rules! write {
-    (cmd $w:expr, $($e:expr),* $(,)?) => {{
-        write!($w, "PRIVMSG jtv :", $($e),*)
-    }};
-    ($w:expr, $($e:expr),* $(,)?) => {{
-        let mut w = ByteWriter::new($w);
-        $(w.append($e).await?;)*
-        w.end().await.map_err(crate::Error::from)
-    }};
-}
+// macro_rules! write {
+//     (cmd $($e:expr),* $(,)?) => {{
+//         write!(&mut writer, "PRIVMSG jtv :", $($e),*)
+//     }};
+//     ($($e:expr),* $(,)?) => {{
+//         $(writer.append($e).await?;)*
+//          writer.end().await.map_err(crate::Error::from)
+//     }};
+// }
 
 struct ByteWriter<'a, W: AsyncWrite + Unpin> {
     inner: &'a mut W,
+    limit: Option<Arc<Mutex<RateLimit>>>,
 }
 
 impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
-    fn new(inner: &'a mut W) -> Self {
-        Self { inner }
+    fn new(inner: &'a mut W, limit: Option<Arc<Mutex<RateLimit>>>) -> Self {
+        Self { inner, limit }
     }
 
-    async fn append(&mut self, data: impl AsRef<[u8]>) -> std::io::Result<()> {
-        self.inner.write_all(data.as_ref()).await
+    async fn command(self, parts: &[&str]) -> Result {
+        self.inner.write_all(b"PRIVMSG jtv :").await?;
+        self.parts(parts).await
     }
 
-    async fn end(self) -> std::io::Result<()> {
+    async fn parts(self, parts: &[&str]) -> Result {
+        for part in parts {
+            self.inner.write_all(part.as_bytes()).await?
+        }
+        self.end().await
+    }
+
+    async fn write_bytes(self, data: impl AsRef<[u8]>) -> Result {
+        self.inner.write_all(data.as_ref()).await?;
+        self.end().await
+    }
+
+    async fn end(self) -> Result {
         self.inner.write_all(b"\r\n").await?;
-        self.inner.flush().await
+        self.inner.flush().await?;
+        if let Some(limit) = self.limit {
+            limit.lock().await.take().await;
+        }
+        Ok(())
     }
 }
 
 /// An async encoder for messages
 pub struct AsyncEncoder<W> {
     pub(crate) writer: W,
+    pub(crate) rate_limit: Option<Arc<Mutex<RateLimit>>>,
 }
 
 impl<W: AsyncWrite> AsyncEncoder<W> {
@@ -64,7 +85,18 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
 
     /// Make a new encoder from this writer
     pub fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            rate_limit: None,
+        }
+    }
+
+    /// Compose this with a rate limiter -- intended for internal use only
+    pub(crate) fn with_rate_limiter(self, rate_limit: Arc<Mutex<RateLimit>>) -> Self {
+        Self {
+            rate_limit: Some(rate_limit),
+            ..self
+        }
     }
 }
 
@@ -76,9 +108,10 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unban]: ./struct.Encoder.html#method.unban
     pub async fn ban<'a>(&mut self, username: &str, reason: impl Into<Option<&'a str>>) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         match reason.into() {
-            Some(reason) => write!(cmd &mut self.writer, "/ban ", username, " ", reason),
-            None => write!(cmd &mut self.writer, "/ban ", username),
+            Some(reason) => writer.command(&["/ban", " ", username, " ", reason]).await,
+            None => writer.command(&["/ban", " ", username]).await,
         }
     }
 
@@ -89,21 +122,28 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Change your username color.
     pub async fn color(&mut self, color: Color) -> Result {
-        write!(cmd &mut self.writer, "/color ", color.to_string())
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/color", " ", &color.to_string()]).await
     }
 
     /// Sends the command: data (e.g. /color #FFFFFF)
     pub async fn command(&mut self, data: &str) -> Result {
-        write!(cmd &mut self.writer, data)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&[data]).await
     }
 
     /// Triggers a commercial.
     ///
     /// Length (optional) must be a positive number of seconds.
     pub async fn commercial(&mut self, length: impl Into<Option<usize>>) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         match length.into() {
             // TODO fast usize to string without an allocation
-            Some(length) => write!(cmd &mut self.writer, "/commercial ", length.to_string()),
+            Some(length) => {
+                writer
+                    .command(&["/commercial", " ", &length.to_string()])
+                    .await
+            }
             None => self.command("/commercial").await,
         }
     }
@@ -134,7 +174,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// Must be less than 3 months.
     pub async fn followers(&mut self, duration: &str) -> Result {
-        write!(cmd &mut self.writer, "/followers ", duration)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/followers", " ", duration]).await
     }
 
     /// Disables followers-only mode.
@@ -148,7 +189,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#method.mods
     pub async fn give_mod(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/mod ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/mod", " ", username]).await
     }
 
     /// Lists the commands available to you in this room.
@@ -162,14 +204,16 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
     pub async fn host(&mut self, channel: impl IntoChannel) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         let channel = conv_channel(channel)?;
-        write!(cmd &mut self.writer, "/host ", channel)
+        writer.command(&["/host", " ", &channel]).await
     }
 
     /// Join a channel
     pub async fn join(&mut self, channel: impl IntoChannel) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "JOIN ", channel)
+        writer.parts(&["JOIN", " ", &channel]).await
     }
 
     /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
@@ -178,18 +222,21 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// If the string exceeds 140 characters then it will be truncated
     pub async fn marker<'a>(&mut self, comment: impl Into<Option<&'a str>>) -> Result {
-        let comment = comment.into();
-        match comment {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        match comment.into() {
             None => self.command("/marker").await,
-            Some(marker) if marker.len() <= 140 => write!(cmd &mut self.writer, "/marker ", marker),
-            Some(marker) => write!(cmd &mut self.writer, "/marker ", &marker[..140]),
+            Some(marker) if marker.len() <= 140 => writer.command(&["/marker", " ", marker]).await,
+            Some(marker) => writer.command(&["/marker", " ", &marker[..140]]).await,
         }
     }
 
     /// Sends an "emote" message in the third person to the channel
     pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "PRIVMSG ", channel, " :", "/me ", message)
+        writer
+            .parts(&["PRIVMSG", " ", &channel, " :", "/me", " ", message])
+            .await
     }
 
     /// Lists the moderators of this channel.
@@ -199,23 +246,27 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Leave a channel
     pub async fn part(&mut self, channel: impl IntoChannel) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "PART ", channel)
+        writer.parts(&["PART", " ", &channel]).await
     }
 
     /// Request a heartbeat with the provided token
     pub async fn ping(&mut self, token: &str) -> Result {
-        write!(&mut self.writer, "PING ", token)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.parts(&["PING", " ", token]).await
     }
 
     /// Response to a heartbeat with the provided token
     pub async fn pong(&mut self, token: &str) -> Result {
-        write!(&mut self.writer, "PONG :", token)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.parts(&["PONG", " :", token]).await
     }
 
     /// Send data to a target
     pub async fn privmsg(&mut self, target: &str, data: &str) -> Result {
-        write!(&mut self.writer, "PRIVMSG ", target, " :", data)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.parts(&["PRIVMSG", " ", target, " :", data]).await
     }
 
     /// Enables r9k mode.
@@ -238,13 +289,15 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
     pub async fn raid(&mut self, channel: impl IntoChannel) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         let channel = conv_channel(channel)?;
-        write!(cmd &mut self.writer, "/raid ", channel)
+        writer.command(&["/raid", " ", &channel]).await
     }
 
     /// Send a raw IRC-style message
     pub async fn raw(&mut self, raw: impl AsRef<[u8]>) -> Result {
-        write!(&mut self.writer, raw)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.write_bytes(raw).await
     }
 
     // TODO use `time` here
@@ -256,8 +309,15 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
     pub async fn slow(&mut self, duration: impl Into<Option<usize>>) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
         // TODO fast non-allocating usize to &[u8]
-        write!(cmd &mut self.writer, "/slow ", duration.into().unwrap_or_else(|| 120).to_string())
+        writer
+            .command(&[
+                "/slow",
+                " ",
+                &duration.into().unwrap_or_else(|| 120).to_string(),
+            ])
+            .await
     }
 
     /// Disables slow mode.
@@ -303,21 +363,32 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         duration: impl Into<Option<&'a str>>,
         message: impl Into<Option<&'b str>>,
     ) -> Result {
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+
         match (duration.into(), message.into()) {
             (Some(dur), Some(reason)) => {
-                write!(cmd &mut self.writer, "/timeout ", username, " ", dur, " ", reason)
+                writer
+                    .command(&["/timeout", " ", username, " ", dur, " ", reason])
+                    .await //
             }
             (None, Some(reason)) => {
-                write!(cmd &mut self.writer, "/timeout ", username, " ", reason)
+                writer
+                    .command(&["/timeout", " ", username, " ", reason])
+                    .await //
             }
-            (Some(dur), None) => write!(cmd &mut self.writer, "/timeout ", username, " ", dur),
-            (None, None) => write!(cmd &mut self.writer, "/timeout ", username),
+            (Some(dur), None) => {
+                writer.command(&["/timeout", " ", username, " ", dur]).await //
+            }
+            (None, None) => {
+                writer.command(&["/timeout", " ", username]).await //
+            }
         }
     }
 
     /// Removes a ban on a user.
     pub async fn unban(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unban ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/unban", " ", username]).await
     }
 
     /// Stop hosting another channel.
@@ -331,7 +402,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
     pub async fn unmod(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unmod ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/unmod", " ", username]).await
     }
 
     /// Cancel the Raid.
@@ -341,7 +413,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Removes a timeout on a user.
     pub async fn untimeout(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/untimeout ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/untimeout", " ", username]).await
     }
 
     /// Revoke VIP status from a user.
@@ -350,7 +423,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub async fn unvip(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unvip ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/unvip", " ", username]).await
     }
 
     /// Grant VIP status to a user.
@@ -359,7 +433,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub async fn vip(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/vip ", username)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/vip", " ", username]).await
     }
 
     /// Lists the VIPs of this channel.
@@ -369,7 +444,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Whispers the message to the username.
     pub async fn whisper(&mut self, username: &str, message: &str) -> Result {
-        write!(cmd &mut self.writer, "/w ", username, " ", message)
+        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        writer.command(&["/w", " ", username, " ", message]).await
     }
 }
 
@@ -377,6 +453,7 @@ impl<W: AsyncWrite + Default> Default for AsyncEncoder<W> {
     fn default() -> Self {
         Self {
             writer: Default::default(),
+            rate_limit: None,
         }
     }
 }
@@ -391,6 +468,7 @@ impl<W: AsyncWrite + Clone> Clone for AsyncEncoder<W> {
     fn clone(&self) -> Self {
         Self {
             writer: self.writer.clone(),
+            rate_limit: self.rate_limit.clone(),
         }
     }
 }

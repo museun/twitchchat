@@ -16,7 +16,8 @@ async fn main() {
     );
 
     // give dispatcher to the client, also defaulting the abort signal
-    let (runner, mut control) = twitchchat::Runner::new(dispatcher.clone());
+    let (runner, mut control) =
+        twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
 
