@@ -93,8 +93,8 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
         }
     }
 
-    /// Compose this with a rate limiter -- intended for internal use only
-    pub(crate) fn with_rate_limiter(self, rate_limit: Arc<Mutex<RateLimit>>) -> Self {
+    /// Compose this encoder with a shared rate limiter
+    pub fn with_rate_limiter(self, rate_limit: Arc<Mutex<RateLimit>>) -> Self {
         Self {
             rate_limit: Some(rate_limit),
             ..self
@@ -523,8 +523,7 @@ mod tests {
                     continue;
                 }
 
-                assert!(fut.is_some(), "{},{}", i, j);
-                assert!(fut.unwrap().is_ok(), "{},{}", i, j);
+                fut.unwrap().unwrap();
             }
         }
 
