@@ -26,12 +26,11 @@ type Result = std::result::Result<(), crate::Error>;
 
 struct ByteWriter<'a, W: AsyncWrite + Unpin> {
     inner: &'a mut W,
-    limit: Option<Arc<Mutex<RateLimit>>>,
 }
 
 impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
-    fn new(inner: &'a mut W, limit: Option<Arc<Mutex<RateLimit>>>) -> Self {
-        Self { inner, limit }
+    fn new(inner: &'a mut W) -> Self {
+        Self { inner }
     }
 
     async fn command(self, parts: &[&str]) -> Result {
@@ -54,10 +53,13 @@ impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
     async fn end(self) -> Result {
         self.inner.write_all(b"\r\n").await?;
         self.inner.flush().await?;
-        if let Some(limit) = self.limit {
-            limit.lock().await.take().await;
-        }
         Ok(())
+    }
+}
+
+async fn try_rate_limit(limit: Option<Arc<Mutex<RateLimit>>>) {
+    if let Some(limit) = limit {
+        limit.lock().await.take().await;
     }
 }
 
@@ -108,7 +110,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unban]: ./struct.Encoder.html#method.unban
     pub async fn ban<'a>(&mut self, username: &str, reason: impl Into<Option<&'a str>>) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         match reason.into() {
             Some(reason) => writer.command(&["/ban", " ", username, " ", reason]).await,
             None => writer.command(&["/ban", " ", username]).await,
@@ -122,13 +125,15 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Change your username color.
     pub async fn color(&mut self, color: Color) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/color", " ", &color.to_string()]).await
     }
 
     /// Sends the command: data (e.g. /color #FFFFFF)
     pub async fn command(&mut self, data: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&[data]).await
     }
 
@@ -136,7 +141,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// Length (optional) must be a positive number of seconds.
     pub async fn commercial(&mut self, length: impl Into<Option<usize>>) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         match length.into() {
             // TODO fast usize to string without an allocation
             Some(length) => {
@@ -174,7 +180,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// Must be less than 3 months.
     pub async fn followers(&mut self, duration: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/followers", " ", duration]).await
     }
 
@@ -189,7 +196,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#method.mods
     pub async fn give_mod(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/mod", " ", username]).await
     }
 
@@ -204,14 +212,16 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
     pub async fn host(&mut self, channel: impl IntoChannel) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         let channel = conv_channel(channel)?;
         writer.command(&["/host", " ", &channel]).await
     }
 
     /// Join a channel
     pub async fn join(&mut self, channel: impl IntoChannel) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         let channel = conv_channel(channel)?;
         writer.parts(&["JOIN", " ", &channel]).await
     }
@@ -222,7 +232,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// If the string exceeds 140 characters then it will be truncated
     pub async fn marker<'a>(&mut self, comment: impl Into<Option<&'a str>>) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         match comment.into() {
             None => self.command("/marker").await,
             Some(marker) if marker.len() <= 140 => writer.command(&["/marker", " ", marker]).await,
@@ -232,7 +243,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Sends an "emote" message in the third person to the channel
     pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         let channel = conv_channel(channel)?;
         writer
             .parts(&["PRIVMSG", " ", &channel, " :", "/me", " ", message])
@@ -246,26 +258,30 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Leave a channel
     pub async fn part(&mut self, channel: impl IntoChannel) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         let channel = conv_channel(channel)?;
         writer.parts(&["PART", " ", &channel]).await
     }
 
     /// Request a heartbeat with the provided token
     pub async fn ping(&mut self, token: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.parts(&["PING", " ", token]).await
     }
 
     /// Response to a heartbeat with the provided token
     pub async fn pong(&mut self, token: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.parts(&["PONG", " :", token]).await
     }
 
     /// Send data to a target
     pub async fn privmsg(&mut self, target: &str, data: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.parts(&["PRIVMSG", " ", target, " :", data]).await
     }
 
@@ -289,14 +305,16 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
     pub async fn raid(&mut self, channel: impl IntoChannel) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         let channel = conv_channel(channel)?;
         writer.command(&["/raid", " ", &channel]).await
     }
 
     /// Send a raw IRC-style message
     pub async fn raw(&mut self, raw: impl AsRef<[u8]>) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.write_bytes(raw).await
     }
 
@@ -309,7 +327,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
     pub async fn slow(&mut self, duration: impl Into<Option<usize>>) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         // TODO fast non-allocating usize to &[u8]
         writer
             .command(&[
@@ -363,8 +382,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         duration: impl Into<Option<&'a str>>,
         message: impl Into<Option<&'b str>>,
     ) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
-
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         match (duration.into(), message.into()) {
             (Some(dur), Some(reason)) => {
                 writer
@@ -387,7 +406,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Removes a ban on a user.
     pub async fn unban(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/unban", " ", username]).await
     }
 
@@ -402,7 +422,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
     pub async fn unmod(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/unmod", " ", username]).await
     }
 
@@ -413,7 +434,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Removes a timeout on a user.
     pub async fn untimeout(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/untimeout", " ", username]).await
     }
 
@@ -423,7 +445,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub async fn unvip(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/unvip", " ", username]).await
     }
 
@@ -433,7 +456,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
     pub async fn vip(&mut self, username: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/vip", " ", username]).await
     }
 
@@ -444,7 +468,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
 
     /// Whispers the message to the username.
     pub async fn whisper(&mut self, username: &str, message: &str) -> Result {
-        let writer = ByteWriter::new(&mut self.writer, self.rate_limit.as_ref().map(Arc::clone));
+        try_rate_limit(self.rate_limit.as_ref().map(Arc::clone)).await;
+        let writer = ByteWriter::new(&mut self.writer);
         writer.command(&["/w", " ", username, " ", message]).await
     }
 }
@@ -469,6 +494,47 @@ impl<W: AsyncWrite + Clone> Clone for AsyncEncoder<W> {
         Self {
             writer: self.writer.clone(),
             rate_limit: self.rate_limit.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn rate_limit() {
+        use futures::prelude::*;
+
+        tokio::time::pause();
+
+        let rate_limit = Default::default();
+        let mut writers = std::iter::repeat(())
+            .take(10)
+            .map(|_| AsyncEncoder::new(vec![]))
+            .map(|e| e.with_rate_limiter(Arc::clone(&rate_limit)))
+            .collect::<Vec<_>>();
+
+        // `20` per `30` seconds
+        for i in 0..10 {
+            for (j, writer) in writers.iter_mut().enumerate().map(|(j, w)| (j + 1, w)) {
+                let fut = writer.ping("asdf").now_or_never();
+                if i * 10 + j > 20 {
+                    assert!(fut.is_none(), "{},{}", i, j);
+                    continue;
+                }
+
+                assert!(fut.is_some(), "{},{}", i, j);
+                assert!(fut.unwrap().is_ok(), "{},{}", i, j);
+            }
+        }
+
+        for writer in &mut writers {
+            assert!(writer.pong("asdf").now_or_never().is_none())
+        }
+
+        tokio::time::advance(std::time::Duration::from_secs(31)).await;
+        for writer in &mut writers {
+            assert!(writer.pong("asdf").now_or_never().is_some())
         }
     }
 }

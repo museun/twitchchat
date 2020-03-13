@@ -1,5 +1,6 @@
 /*!
 A simple leaky-bucket style token-based rate limiter
+
 This'll block the calling task if tokens aren't available
 
 ## Example
