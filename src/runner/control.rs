@@ -8,7 +8,7 @@ pub struct Control {
 }
 
 impl Control {
-    /// Get a mutable reference to the [Writer](../encode/struct.AsyncEncoder.html)
+    /// Get a mutable reference to the [Writer](./encode/struct.AsyncEncoder.html)
     ///
     /// You can clone this to pass around it around
     pub fn writer(&mut self) -> &mut Writer {

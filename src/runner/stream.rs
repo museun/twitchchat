@@ -8,7 +8,7 @@ use super::*;
 ///
 /// [Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 /// [sub]: ./struct.Dispatcher.html#method.subscribe
-/// [here]: ../messages/index.html
+/// [here]: ./messages/index.html
 pub struct EventStream<T>(pub(super) mpsc::UnboundedReceiver<T>);
 
 impl<T> std::fmt::Debug for EventStream<T> {

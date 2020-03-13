@@ -21,8 +21,8 @@ This allows multiple sources to subscribe to specific [Events] which'll produce 
 
 The subscription will return a [EventStream] which can be used as a [Stream].
 
-[Events]: ../events/index.html
-[Message]: ../messages/index.html
+[Events]: ./events/index.html
+[Message]: ./messages/index.html
 [EventStream]: ./struct.EventStream.html
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 */
