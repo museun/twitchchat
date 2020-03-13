@@ -37,8 +37,8 @@ static_assertions::assert_cfg!(
 );
 
 static_assertions::assert_cfg!(
-    all(
-        feature = "async", //
+    any(
+        not(feature = "async"),
         any(
             feature = "tokio_native_tls", //
             feature = "tokio_rustls",     //
