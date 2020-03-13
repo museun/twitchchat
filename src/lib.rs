@@ -16,55 +16,97 @@ This crate provides a way to interface with [Twitch]'s chat.
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
-## Runner
-The runner is the main "event loop" of this crate.
+# Event handling.
+You'll create a dispatcher which'll let you subscribe and unsubscribe for specific events.
 
-It is created with a [Dispatcher][dispatcher]. It returns the new runner and the
-[Control][control] type.
+The dispatcher is clonable and the `Runner` requires a clone of it to filter the events for you.
 
-Once you're ready to start reading from the **Reader** and processing **Writes** you should call [Runner::run](#method.run).
-
-# Returns
-- A [`future`][future] which resolves to a [Status][status] once the Runner has finished.
-
-Interacting with the `Runner` is done via the [Control][control] type.
-
-# Example
+### Example
 ```rust
+# use twitchchat::{Dispatcher, Runner, RateLimit, events, messages::AllCommands};
 # use tokio::spawn;
-# tokio::runtime::Runtime::new().unwrap().block_on(async {
-# let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
-use twitchchat::{Dispatcher, Status, Runner, RateLimit};
-// make a dispatcher
+# use futures::stream::StreamExt as _;
+# let conn = tokio_test::io::Builder::new().read(b"PING :123456789\r\n").write(b"PONG :123456789\r\n").build();
+# let fut = async move {
 let dispatcher = Dispatcher::new();
-// do stuff with the dispatcher (its clonable)
-// ..
+let mut all = dispatcher.subscribe::<events::All>();
 
-// create a new runner
-let (runner, control) = Runner::new(dispatcher, RateLimit::default());
+// give our a clone of our dispatcher to the runner
+let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
 
-// spawn a task that kills the runner after some time
-let ctl = control.clone();
+// loop over our stream
 spawn(async move {
-    // pretend some time has passed
-    ctl.stop()
+    while let Some(msg) = all.next().await {
+        // its an Arc, so you can just deref/reborrow it
+        match &*msg {
+            AllCommands::Unknown(raw) => {},
+            AllCommands::Ping(ping) => {},
+            _ => { break; /* we can end the task by returning from it */ }
+        }
+    }
+
+    // when the task ends/drops, the EventStream will unsubscribe itself
 });
 
-// run, blocking the task.
-// you can spawn this in a task and await on that join handle if you prefer
-match runner.run(conn).await {
-    // for the doc test
-    Ok(Status::Canceled) => { assert!(true) }
-    Ok(Status::Eof) => { panic!("eof") }
-    Err(err) => { panic!("err") }
-};
-# });
+// consume the runner, driving any streams we subscribe to
+// (and any writes from the 'Control')
+runner.run(conn).await.unwrap();
+# };
+# tokio::runtime::Runtime::new().unwrap().block_on(fut);
 ```
 
-[dispatcher]: ./struct.Dispatcher.html
-[control]: ./struct.Control.html
-[status]: ./enum.Status.html
-[future]: https://doc.rust-lang.org/std/future/trait.Future.html
+### Using the dispatcher
+You can [subscribe] to any number of [events][events].
+
+```rust
+# use twitchchat::{Dispatcher, events};
+let dispatcher = Dispatcher::new();
+// subscribe to a specific event
+let join = dispatcher.subscribe::<events::Join>();
+// you can do this as many times as you want
+let join2 = dispatcher.subscribe::<events::Join>();
+// there is a catch-all event type that is an enum of all possible events
+let all = dispatcher.subscribe::<events::All>();
+```
+
+These events are [Streams][stream] which produce an one of the correlated [messages][messages].
+
+```rust
+# use twitchchat::{Dispatcher, events, messages};
+# use tokio::stream::StreamExt as _;
+# use futures::stream::StreamExt as _;
+# async move {
+let dispatcher = Dispatcher::new();
+
+// subscribe to a specific event
+let join = dispatcher.subscribe::<events::Join>();
+
+// join is a Stream<Item = Arc<messages::Join<'static>>>
+let fut = join.for_each(|item| async move {
+    println!("{:?}", item)
+});
+# };
+```
+
+## Unsubscribing from events
+Dropping this [EventStream] will unsubscribe from the events.
+
+When the dispatcher is dropped, all of the streams will produce ***None***.
+
+You can also clear subscriptions to cause `EventStreams` to produce `None` on their next resolvement
+
+### Clearing subscriptions via the dispatcher
+You can clear event subscriptions for [specific events][specific] or for [all events][all]
+
+[Dispatcher]: ./struct.Dispatcher.html
+[EventStream]: ./struct.EventStream.html
+[subscribe]: ./struct.Dispatcher.html#method.subscribe
+[messages]: ../messages/index.html
+[events]: ../events/index.html
+[specific]: ./struct.Dispatcher.html#method.clear_subscriptions
+[all]: ./struct.Dispatcher.html#method.clear_subscriptions_all
+
+[Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 
 # Demonstration
 See `examples/demo.rs` for a demo of the api
