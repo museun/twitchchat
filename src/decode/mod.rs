@@ -103,8 +103,27 @@ for (message, expected) in decode(&input).zip(expected.iter()) {
 }
 ```
 */
-pub fn decode<'t>(input: &'t str) -> impl Iterator<Item = Result<Message<'t>>> + 't {
-    ParseIter::new(input)
+pub const fn decode(input: &str) -> DecodeIter<'_> {
+    DecodeIter(ParseIter::new(input))
+}
+
+/// An iterator over decoded messages
+pub struct DecodeIter<'a>(ParseIter<'a>);
+
+impl<'a> Iterator for DecodeIter<'a> {
+    type Item = Result<Message<'a>>;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+impl<'a> std::iter::FusedIterator for DecodeIter<'a> {}
+
+impl<'a> std::fmt::Debug for DecodeIter<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DebugIter").finish()
+    }
 }
 
 mod parser;

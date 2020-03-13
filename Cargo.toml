@@ -7,7 +7,7 @@ keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
 license       = "MIT OR Apache-2.0"
 readme        = "README.md"
 description   = "interface to the irc-side of twitch's chat system"
-documentation = "https://docs.rs/twitchchat/0.8.4/twitchchat/"
+documentation = "https://docs.rs/twitchchat/latest/twitchchat/"
 repository    = "https://github.com/museun/twitchchat"
 categories    = ["asynchronous", "network-programming", "parser-implementations"]
 
@@ -19,34 +19,35 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["async", "tokio_native_tls"]
 async   = ["tokio", "futures"]
 
-tokio_native_tls = ["tokio-tls", "native-tls"]
-tokio_rustls     = ["tokio-rustls", "webpki-roots"]
+tokio_native_tls = ["tokio", "futures", "tokio-tls", "native-tls"]
+tokio_rustls     = ["tokio", "futures", "tokio-rustls", "webpki-roots"]
 
 [dependencies]
-log               = { version = "0.4.8" }
-static_assertions = { version = "1.1.0" }
+log = "0.4.8"
 
-# TODO do we need an abort handle now that tokio::Notify exists?
-futures    = { version = "0.3.4", optional = true, default-features = false, features = ["alloc"] } # for AbortHandle
+futures = { version = "0.3.4", optional = true, default-features = false } 
 # TODO figure out what of these features are actually used
-tokio      = { version = "0.2.13", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
+tokio   = { version = "0.2.13", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
 
 # native tls
 tokio-tls  = { version = "0.3.0", optional = true }
-native-tls = { version = "0.2.3", optional = true }
+native-tls = { version = "0.2.4", optional = true }
 
 # rustls
-tokio-rustls  = { version = "0.13.0", optional = true }
-webpki-roots  = { version = "0.19.0", optional = true }
+tokio-rustls = { version = "0.13.0", optional = true }
+webpki-roots = { version = "0.19.0", optional = true }
 
-serde      = { version = "1.0.104", optional = true, features = ["derive"] }
-parking_lot = "0.10.0"
+serde = { version = "1.0.104", optional = true, features = ["derive"] }
 
+# internal stuff
+parking_lot       = "0.10.0"
+static_assertions = "1.1.0"
 
 [dev-dependencies]
-matches = "0.1.8"
-tokio   = { version = "0.2.13", features = ["test-util", "macros"] }
-tokio-test = "0.2.0"
+matches     = "0.1.8"
+tokio       = { version = "0.2.13", features = ["test-util", "macros"] }
+tokio-test  = "0.2.0"
+doc-comment = "0.3.2"
 
 [[example]]
 name = "demo"
@@ -62,6 +63,10 @@ required-features = ["async", "tokio_native_tls"]
 
 [[example]]
 name = "select"
+required-features = ["async", "tokio_native_tls"]
+
+[[example]]
+name = "simple_bot"
 required-features = ["async", "tokio_native_tls"]
 
 [[example]]

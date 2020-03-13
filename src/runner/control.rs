@@ -1,4 +1,4 @@
-use super::*;
+use {super::*, crate::*};
 
 #[derive(Clone)]
 /// A control type for writing messages to the client, or stopping it.
@@ -8,7 +8,7 @@ pub struct Control {
 }
 
 impl Control {
-    /// Get a mutable reference to the [Writer](../encode/struct.AsyncEncoder.html)
+    /// Get a mutable reference to the [Writer](./encode/struct.AsyncEncoder.html)
     ///
     /// You can clone this to pass around it around
     pub fn writer(&mut self) -> &mut Writer {
@@ -19,11 +19,11 @@ impl Control {
     ///
     /// # Example
     /// ```rust
-    /// # use twitchchat::{Runner, Status};
+    /// # use twitchchat::{Runner, Status, RateLimit, Dispatcher};
     /// # use tokio::spawn;
     /// # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
     /// # let fut = async move {
-    /// let (runner, control) = Runner::new(Default::default());
+    /// let (runner, control) = Runner::new(Dispatcher::default(), RateLimit::default());
     ///
     /// // calling stop will cause 'run' to return Ok(Status::Canceled)
     /// spawn(async move { control.stop() });

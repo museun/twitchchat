@@ -1,4 +1,9 @@
-use super::*;
+use {super::*, crate::*};
+
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+use tokio::prelude::*;
 
 /**
 The runner is the main "event loop" of this crate.
@@ -18,14 +23,14 @@ Interacting with the `Runner` is done via the [Control][control] type.
 # use tokio::spawn;
 # tokio::runtime::Runtime::new().unwrap().block_on(async {
 # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
-use twitchchat::{Dispatcher, Status, Runner};
+use twitchchat::{Dispatcher, Status, Runner, RateLimit};
 // make a dispatcher
 let dispatcher = Dispatcher::new();
 // do stuff with the dispatcher (its clonable)
 // ..
 
 // create a new runner
-let (runner, control) = Runner::new(dispatcher);
+let (runner, control) = Runner::new(dispatcher, RateLimit::default());
 
 // spawn a task that kills the runner after some time
 let ctl = control.clone();
@@ -67,11 +72,13 @@ impl Runner {
     [control]: ./struct.Control.html
     [dispatcher]: ./struct.Dispatcher.html
     */
-    pub fn new(dispatcher: Dispatcher) -> (Self, Control) {
+    pub fn new(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Self, Control) {
         let (sender, receiver) = mpsc::channel(64);
         let abort = abort::Abort::default();
 
-        let writer = Writer::new(writer::DisjointWriter::new(sender));
+        let writer = Writer::new(writer::MpscWriter::new(sender))
+            .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
+
         let control = Control {
             writer: writer.clone(),
             stop: abort.clone(),
@@ -115,6 +122,7 @@ impl Runner {
     where
         IO: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
     {
+        use futures::prelude::*;
         let mut stream = tokio::io::BufStream::new(io);
         let mut buffer = String::with_capacity(1024);
 
@@ -145,7 +153,7 @@ impl Runner {
                         break Ok(Status::Eof)
                     }
 
-                    for msg in crate::decode(&buffer) {
+                    for msg in decode(&buffer) {
                         let msg = msg?;
                         log::trace!("< {}", msg.raw.escape_debug());
                         self.dispatcher.dispatch(&msg);

@@ -45,7 +45,8 @@ async fn main() {
 
     // make a new runner
     // control allows you to stop the runner, and gives you access to an async. encoder (writer)
-    let (runner, mut control) = twitchchat::Runner::new(dispatcher.clone());
+    let (runner, mut control) =
+        twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     // connect via TCP with TLS with this nick and password
     let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
@@ -58,10 +59,10 @@ async fn main() {
     let mut privmsg = dispatcher.subscribe::<twitchchat::events::Privmsg>();
 
     // we can block on the dispatcher for a specific event
-    // if we call one_time again for this event, it'll return the previous one
+    // if we call wait_for again for this event, it'll return the previous one
     eprintln!("waiting for irc ready");
     let ready = dispatcher
-        .one_time::<twitchchat::events::IrcReady>()
+        .wait_for::<twitchchat::events::IrcReady>()
         .await
         .unwrap();
     eprintln!("our nickname: {}", ready.nickname);

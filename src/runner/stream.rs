@@ -1,4 +1,5 @@
 use super::*;
+use tokio::stream::Stream;
 
 /// A [Stream] that produces an item
 ///
@@ -8,8 +9,8 @@ use super::*;
 ///
 /// [Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 /// [sub]: ./struct.Dispatcher.html#method.subscribe
-/// [here]: ../messages/index.html
-pub struct EventStream<T>(pub(super) mpsc::UnboundedReceiver<T>);
+/// [here]: ./messages/index.html
+pub struct EventStream<T>(pub(crate) mpsc::UnboundedReceiver<T>);
 
 impl<T> std::fmt::Debug for EventStream<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

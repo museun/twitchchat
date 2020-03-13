@@ -23,7 +23,7 @@ async fn main() {
         }
     });
 
-    let (runner, mut control) = Runner::new(dispatcher.clone());
+    let (runner, mut control) = Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
     let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
@@ -32,7 +32,7 @@ async fn main() {
     let done = tokio::task::spawn(runner.run(stream));
 
     // 'block' until we're connected
-    let ready = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+    let ready = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
     eprintln!("your irc name: {}", ready.nickname);
 
     // the writer is also clonable

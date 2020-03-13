@@ -60,15 +60,14 @@ Use the [async version][async] if you want a TLS wrapped connection
 ```rust,no_run
 # use twitchchat::{sync::*, UserConfig};
 let user_config = UserConfig::builder().anonymous().build().unwrap();
-let (read, write) = connect(&user_config).unwrap();
+let conn = connect(&user_config).unwrap();
 ```
 
 [async]: ../fn.connect.html
 */
-pub fn connect(user_config: &UserConfig) -> std::io::Result<(TcpStream, TcpStream)> {
+pub fn connect(user_config: &UserConfig) -> std::io::Result<TcpStream> {
     let mut stream = TcpStream::connect(TWITCH_IRC_ADDRESS)?;
-    register(user_config, &mut stream)?;
-    Ok((stream.try_clone().unwrap(), stream))
+    register(user_config, &mut stream).map(|_| stream)
 }
 
 /**
@@ -85,13 +84,13 @@ Use the [async version][async] if you want a TLS wrapped connection
 ```rust,no_run
 # use twitchchat::{sync::*, ANONYMOUS_LOGIN};
 let (nick, pass) = ANONYMOUS_LOGIN;
-let (read, write) = connect_easy(&nick, &pass).unwrap();
+let conn = connect_easy(&nick, &pass).unwrap();
 ```
 
 [Capabilities]: ../enum.Capability.html
 [async]: ../fn.connect_easy.html
 */
-pub fn connect_easy(name: &str, token: &str) -> std::io::Result<(TcpStream, TcpStream)> {
+pub fn connect_easy(name: &str, token: &str) -> std::io::Result<TcpStream> {
     let config = simple_user_config(name, token).unwrap();
     connect(&config)
 }

@@ -1,13 +1,14 @@
-use super::{Event, EventMapped, EventStream};
+use super::{Event, EventMapped};
 use crate::decode::Message;
 use crate::events;
-use crate::{Error, Parse};
+use crate::{Error, EventStream, Parse};
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use tokio::stream::StreamExt as _;
 use tokio::sync::mpsc;
 
 type EventRegistration = Vec<(bool, Box<dyn Any + Send>)>;
@@ -21,10 +22,10 @@ This allows multiple sources to subscribe to specific [Events] which'll produce 
 
 The subscription will return a [EventStream] which can be used as a [Stream].
 
-[Events]: ../events/index.html
-[Message]: ../messages/index.html
+[Events]: ./events/index.html
+[Message]: ./messages/index.html
 [EventStream]: ./struct.EventStream.html
-[Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
+[Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 */
 #[derive(Clone)]
 pub struct Dispatcher {
@@ -56,24 +57,24 @@ impl Dispatcher {
     This is useful when you want to wait, for say, the IrcReady event before you join channels.
 
     ---
-    ***NOTE*** Any subsequent calls to `one_time` for this event will return a _cached_ value.
+    ***NOTE*** Any subsequent calls to `wait_for` for this event will return a _cached_ value.
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, events};
+    # use twitchchat::{Dispatcher, Runner, RateLimit, events};
     # use tokio::spawn;
     # use futures::prelude::*;
     # let conn = tokio_test::io::Builder::new().read(b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n").build();
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone());
+    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
     // You should spawn the run() away so it can start to process events
     let handle = spawn(runner.run(conn));
     // block until we get an IrcReady
-    let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+    let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
     # assert!(true);
     // it'll cache the event
-    let _ = dispatcher.one_time::<events::IrcReady>()
+    let _ = dispatcher.wait_for::<events::IrcReady>()
         .now_or_never()
         .expect("cached value")
         .unwrap();
@@ -86,13 +87,11 @@ impl Dispatcher {
     # tokio::runtime::Runtime::new().unwrap().block_on(fut);
     ```
     */
-    pub async fn one_time<T>(&self) -> Result<Arc<T::Owned>, Error>
+    pub async fn wait_for<T>(&self) -> Result<Arc<T::Owned>, Error>
     where
         T: Event<'static> + 'static,
         T: EventMapped<'static, T>,
     {
-        use futures::prelude::*;
-
         if let Some(item) = self
             .cached
             .lock()
@@ -120,13 +119,13 @@ impl Dispatcher {
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, events};
+    # use twitchchat::{Dispatcher, Runner, events, RateLimit};
     # use tokio::spawn;
     # use futures::prelude::*;
     # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(1000)).build();
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone());
+    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
     // spawn the runner in the background, just to drive things for us
     // (you could select over it, or await at the end)
     spawn(runner.run(conn));
@@ -433,11 +432,12 @@ impl<T> Sender<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::prelude::*;
+    use crate::rate_limit::RateLimit;
 
     #[tokio::test]
-    async fn one_time() {
+    async fn wait_for() {
         use crate::{Runner, Status};
+        use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
         let conn = tokio_test::io::Builder::new()
@@ -446,12 +446,12 @@ mod tests {
             .build();
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone());
+        let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
         let handle = tokio::spawn(runner.run(conn));
 
-        let _ = dispatcher.one_time::<events::IrcReady>().await.unwrap();
+        let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
         let _ = dispatcher
-            .one_time::<events::IrcReady>()
+            .wait_for::<events::IrcReady>()
             .now_or_never()
             .unwrap()
             .unwrap();
@@ -461,8 +461,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn one_time_never() {
+    async fn wait_for_never() {
         use crate::{Runner, Status};
+        use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
         let conn = tokio_test::io::Builder::new()
@@ -471,11 +472,11 @@ mod tests {
             .build();
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone());
+        let (runner, control) = Runner::new(dispatcher.clone(), <_>::default());
         let handle = tokio::spawn(runner.run(conn));
 
         assert!(dispatcher
-            .one_time::<events::Join>()
+            .wait_for::<events::Join>()
             .now_or_never()
             .is_none());
 

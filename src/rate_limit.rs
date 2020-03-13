@@ -1,5 +1,6 @@
 /*!
 A simple leaky-bucket style token-based rate limiter
+
 This'll block the calling task if tokens aren't available
 
 ## Example
@@ -38,6 +39,12 @@ pub enum RateClass {
     Verified,
 }
 
+impl Default for RateClass {
+    fn default() -> Self {
+        Self::Regular
+    }
+}
+
 impl RateClass {
     /// Number of tickets available for this class
     pub fn tickets(self) -> u64 {
@@ -60,6 +67,12 @@ impl RateClass {
 pub struct RateLimit {
     cap: u64,
     bucket: Bucket,
+}
+
+impl Default for RateLimit {
+    fn default() -> Self {
+        Self::from_class(<_>::default())
+    }
 }
 
 impl RateLimit {

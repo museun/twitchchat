@@ -25,6 +25,9 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
+#[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
+doc_comment::doctest!("../README.md");
+
 static_assertions::assert_cfg!(
     not(all(
         feature = "tokio_native_tls", //
@@ -38,8 +41,15 @@ static_assertions::assert_cfg!(
 pub mod macros;
 
 cfg_async! {
-    pub mod client;
-    pub use client::{Dispatcher, Runner, Control, Status};
+    mod runner;
+    pub use runner::{
+        writer::Writer,
+        dispatcher::Dispatcher,
+        stream::EventStream,
+        runner::Runner,
+        control::Control,
+        status::Status
+    };
 }
 
 cfg_async! {
@@ -133,7 +143,9 @@ fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigE
 }
 
 // TODO see https://github.com/museun/twitchchat/issues/91
-// cfg_async! {
-//     #[doc(inline)]
-//     pub mod rate_limit;
-// }
+cfg_async! {
+    #[doc(inline)]
+    pub mod rate_limit;
+    #[doc(inline)]
+    pub use rate_limit::RateLimit;
+}
