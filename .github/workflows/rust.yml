@@ -8,32 +8,30 @@ jobs:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}    
-    
-    features: ["", "--no-default-features", "--no-default-features --features async", "--no-default-features --features tokio_rustls" ]
-
+        
     steps:
     - uses: actions/checkout@v1
    
     - name: Build default features
-      run: cargo ${{ features }} --verbose
+      run: cargo --verbose
     
     - name: Run tests default features
-      run: cargo test ${{ features }} --verbose
+      run: cargo test --verbose
 
     - name: Build no features
-      run: cargo build ${{ features }} --verbose
+      run: cargo build --no-default-features --verbose
 
     - name: Run tests with no features
-      run: cargo test ${{ features }} --verbose
+      run: cargo test --no-default-features --verbose
 
     - name: Build only async
-      run: cargo build ${{ features }} --verbose
+      run: cargo build --no-default-features --features async --verbose
     
     - name: Run tests only async
-      run: cargo test ${{ features }} --verbose
+      run: cargo test --no-default-features --features async --verbose
 
     - name: Build rustls
-      run: cargo build ${{ features }} --verbose
+      run: cargo build --no-default-features --features tokio_rustls --verbose
     
     - name: Run tests no async
-      run: cargo test ${{ features }} --verbose
+      run: cargo test --no-default-features --features tokio_rustls --verbose
