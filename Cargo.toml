@@ -7,7 +7,7 @@ keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
 license       = "MIT OR Apache-2.0"
 readme        = "README.md"
 description   = "interface to the irc-side of twitch's chat system"
-documentation = "https://docs.rs/twitchchat/0.8.4/twitchchat/"
+documentation = "https://docs.rs/twitchchat/latest/twitchchat/"
 repository    = "https://github.com/museun/twitchchat"
 categories    = ["asynchronous", "network-programming", "parser-implementations"]
 

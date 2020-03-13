@@ -94,35 +94,23 @@ You can clear event subscriptions for [specific events][specific] or for [all ev
 [Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 */
 
-use futures::stream::*;
-use tokio::prelude::*;
 use tokio::sync::mpsc;
+
+pub(super) use crate::error::Error;
 
 type Tx<T = Vec<u8>> = mpsc::Sender<T>;
 type Rx<T = Vec<u8>> = mpsc::Receiver<T>;
 
-mod status;
-pub use status::Status;
+pub(crate) mod dispatcher;
+pub(crate) mod runner;
+pub(crate) mod status;
+pub(crate) mod stream;
 
-mod runner;
-pub use runner::Runner;
+pub(crate) mod control;
+pub(crate) mod writer;
 
-mod dispatcher;
-pub use dispatcher::Dispatcher;
-
-mod stream;
-pub use stream::EventStream;
-
-use crate::error::Error;
-
-mod writer;
-pub use writer::Writer;
-
-mod control;
-pub use control::Control;
-
-mod event;
+pub(crate) mod event;
 #[doc(hidden)]
-pub use event::{Event, EventMapped};
+pub(crate) use event::{Event, EventMapped};
 
-mod abort;
+pub(crate) mod abort;

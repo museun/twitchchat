@@ -1,13 +1,14 @@
-use super::{Event, EventMapped, EventStream};
+use super::{Event, EventMapped};
 use crate::decode::Message;
 use crate::events;
-use crate::{Error, Parse};
+use crate::{Error, EventStream, Parse};
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use tokio::stream::StreamExt as _;
 use tokio::sync::mpsc;
 
 type EventRegistration = Vec<(bool, Box<dyn Any + Send>)>;
@@ -24,7 +25,7 @@ The subscription will return a [EventStream] which can be used as a [Stream].
 [Events]: ./events/index.html
 [Message]: ./messages/index.html
 [EventStream]: ./struct.EventStream.html
-[Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
+[Stream]: https://docs.rs/tokio/0.2/tokio/stream/trait.Stream.html
 */
 #[derive(Clone)]
 pub struct Dispatcher {
@@ -91,8 +92,6 @@ impl Dispatcher {
         T: Event<'static> + 'static,
         T: EventMapped<'static, T>,
     {
-        use futures::prelude::*;
-
         if let Some(item) = self
             .cached
             .lock()
@@ -434,11 +433,11 @@ impl<T> Sender<T> {
 mod tests {
     use super::*;
     use crate::rate_limit::RateLimit;
-    use futures::prelude::*;
 
     #[tokio::test]
     async fn wait_for() {
         use crate::{Runner, Status};
+        use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
         let conn = tokio_test::io::Builder::new()
@@ -464,6 +463,7 @@ mod tests {
     #[tokio::test]
     async fn wait_for_never() {
         use crate::{Runner, Status};
+        use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
         let conn = tokio_test::io::Builder::new()

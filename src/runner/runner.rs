@@ -1,59 +1,10 @@
-use super::*;
-use crate::rate_limit::RateLimit;
+use {super::*, crate::*};
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-/**
-The runner is the main "event loop" of this crate.
+use tokio::prelude::*;
 
-It is created with a [Dispatcher][dispatcher]. It returns the new runner and the
-[Control][control] type.
-
-Once you're ready to start reading from the **Reader** and processing **Writes** you should call [Runner::run](#method.run).
-
-# Returns
-- A [`future`][future] which resolves to a [Status][status] once the Runner has finished.
-
-Interacting with the `Runner` is done via the [Control][control] type.
-
-# Example
-```rust
-# use tokio::spawn;
-# tokio::runtime::Runtime::new().unwrap().block_on(async {
-# let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
-use twitchchat::{Dispatcher, Status, Runner, RateLimit};
-// make a dispatcher
-let dispatcher = Dispatcher::new();
-// do stuff with the dispatcher (its clonable)
-// ..
-
-// create a new runner
-let (runner, control) = Runner::new(dispatcher, RateLimit::default());
-
-// spawn a task that kills the runner after some time
-let ctl = control.clone();
-spawn(async move {
-    // pretend some time has passed
-    ctl.stop()
-});
-
-// run, blocking the task.
-// you can spawn this in a task and await on that join handle if you prefer
-match runner.run(conn).await {
-    // for the doc test
-    Ok(Status::Canceled) => { assert!(true) }
-    Ok(Status::Eof) => { panic!("eof") }
-    Err(err) => { panic!("err") }
-};
-# });
-```
-
-[dispatcher]: ./struct.Dispatcher.html
-[control]: ./struct.Control.html
-[status]: ./enum.Status.html
-[future]: https://doc.rust-lang.org/std/future/trait.Future.html
-*/
 pub struct Runner {
     dispatcher: Dispatcher,
     receiver: Rx,
@@ -121,6 +72,7 @@ impl Runner {
     where
         IO: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
     {
+        use futures::prelude::*;
         let mut stream = tokio::io::BufStream::new(io);
         let mut buffer = String::with_capacity(1024);
 
@@ -151,7 +103,7 @@ impl Runner {
                         break Ok(Status::Eof)
                     }
 
-                    for msg in crate::decode(&buffer) {
+                    for msg in decode(&buffer) {
                         let msg = msg?;
                         log::trace!("< {}", msg.raw.escape_debug());
                         self.dispatcher.dispatch(&msg);

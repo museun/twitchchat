@@ -4,6 +4,8 @@ use crate::encode::AsyncEncoder;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+use tokio::io::AsyncWrite;
+
 /// A writer that allows sending messages to the client
 pub type Writer = AsyncEncoder<MpscWriter>;
 

@@ -54,26 +54,3 @@ macro_rules! parse {
         }
     };
 }
-
-/// doc comment macro for generating documentation from arb. expressions
-// from https://docs.rs/doc-comment/0.3.2/src/doc_comment/lib.rs.html#147-157
-// license is MIT. modified for inner/outer attributes
-#[macro_export]
-macro_rules! doc_comment {
-    (outer=> $x:expr) => {
-        #[doc = $x]
-        extern {}
-    };
-    (outer=> $x:expr, $($tt:tt)*) => {
-        #[doc = $x]
-        $($tt)*
-    };
-    (inner=> $x:expr) => {
-        #![doc = $x]
-        extern {}
-    };
-    (inner=> $x:expr, $($tt:tt)*) => {
-        #![doc = $x]
-        $($tt)*
-    };
-}

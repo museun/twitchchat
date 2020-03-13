@@ -1,6 +1,5 @@
 use tokio::stream::StreamExt as _;
-use twitchchat::runner::Writer;
-use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status};
+use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, Writer};
 
 fn get_creds() -> (String, String, String) {
     fn get_it(name: &str) -> String {
