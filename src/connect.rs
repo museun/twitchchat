@@ -119,6 +119,8 @@ async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
 
 #[cfg(feature = "tokio_rustls")]
 async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
+    use std::io::{Error, ErrorKind};
+
     // This isn't actually used by rustls, but is required 'for the future'.
     let domain_name = tokio_rustls::webpki::DNSNameRef::try_from_ascii_str(TWITCH_DOMAIN)
         .expect("valid twitch domain dns/ref");
@@ -129,7 +131,7 @@ async fn tls_connect(stream: TokioStream) -> std::io::Result<TokioTlsStream> {
         .root_store
         .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
 
-    let connector = tokio_rustls::TlsConnector::from(std::sync::Arc(config));
+    let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
     let stream = connector
         .connect(domain_name, stream)
         .await

@@ -19,8 +19,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["async", "tokio_native_tls"]
 async   = ["tokio", "futures"]
 
-tokio_native_tls = ["tokio-tls", "native-tls"]
-tokio_rustls     = ["tokio-rustls", "webpki-roots"]
+tokio_native_tls = ["tokio", "futures", "tokio-tls", "native-tls"]
+tokio_rustls     = ["tokio", "futures", "tokio-rustls", "webpki-roots"]
 
 [dependencies]
 log = "0.4.8"

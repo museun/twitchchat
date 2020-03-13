@@ -36,17 +36,6 @@ static_assertions::assert_cfg!(
     "only a single TLS library can be used."
 );
 
-static_assertions::assert_cfg!(
-    any(
-        not(feature = "async"),
-        any(
-            feature = "tokio_native_tls", //
-            feature = "tokio_rustls",     //
-        )
-    ),
-    "TLS requires 'async' enabled"
-);
-
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
