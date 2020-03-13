@@ -3,8 +3,8 @@
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
-            #[cfg(feature = "async")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+            #[cfg(feature = "tokio")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
             $item
         )*
     }
