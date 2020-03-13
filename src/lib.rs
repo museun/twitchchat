@@ -25,7 +25,7 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
-#[cfg(doctest)]
+#[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
 doc_comment::doctest!("../README.md");
 
 static_assertions::assert_cfg!(
@@ -34,6 +34,17 @@ static_assertions::assert_cfg!(
         feature = "tokio_rustls",     //
     )),
     "only a single TLS library can be used."
+);
+
+static_assertions::assert_cfg!(
+    all(
+        feature = "async", //
+        any(
+            feature = "tokio_native_tls", //
+            feature = "tokio_rustls",     //
+        )
+    ),
+    "TLS requires 'async' enabled"
 );
 
 #[macro_use]

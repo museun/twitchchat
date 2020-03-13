@@ -9,7 +9,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Build
+    
+    - name: Build default features
       run: cargo build --verbose
-    - name: Run tests
+    - name: Run tests default features
       run: cargo test --verbose
+
+    - name: Build no features
+      run: cargo build --no-default-features --verbose
+    - name: Run tests with no features
+      run: cargo test --no-default-features  --verbose
+
+    - name: Build rustls
+      run: cargo build --no-default-features --features async --features tokio_rustls --verbose
+    - name: Run tests no async
+      run: cargo test --no-default-features --features async --features tokio_rustls --verbose

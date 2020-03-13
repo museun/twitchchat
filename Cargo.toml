@@ -23,11 +23,9 @@ tokio_native_tls = ["tokio-tls", "native-tls"]
 tokio_rustls     = ["tokio-rustls", "webpki-roots"]
 
 [dependencies]
-log               = "0.4.8"
-static_assertions = "1.1.0"
+log = "0.4.8"
 
-# TODO do we need an abort handle now that tokio::Notify exists?
-futures = { version = "0.3.4", optional = true, default-features = false, features = ["alloc"] } # for AbortHandle
+futures = { version = "0.3.4", optional = true, default-features = false } 
 # TODO figure out what of these features are actually used
 tokio   = { version = "0.2.13", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
 
@@ -42,12 +40,13 @@ webpki-roots = { version = "0.19.0", optional = true }
 serde = { version = "1.0.104", optional = true, features = ["derive"] }
 
 # internal stuff
-parking_lot = "0.10.0"
+parking_lot       = "0.10.0"
+static_assertions = "1.1.0"
 
 [dev-dependencies]
-matches = "0.1.8"
-tokio   = { version = "0.2.13", features = ["test-util", "macros"] }
-tokio-test = "0.2.0"
+matches     = "0.1.8"
+tokio       = { version = "0.2.13", features = ["test-util", "macros"] }
+tokio-test  = "0.2.0"
 doc-comment = "0.3.2"
 
 [[example]]
