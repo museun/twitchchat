@@ -6,13 +6,13 @@ These can be used with [Dispatcher::subscribe][Subscribe] to get a [Stream] of [
 
 See the [table]
 
-[Subscribe]: ../client/struct.Dispatcher.html#method.subscribe
+[Subscribe]: ../runner/struct.Dispatcher.html#method.subscribe
 [Stream]: https://docs.rs/futures/0.3.1/futures/stream/trait.Stream.html
 [Messages]: ../messages/index.html
-[table]: ../client/struct.Dispatcher.html#a-table-of-mappings
+[table]: ../runner/struct.Dispatcher.html#a-table-of-mappings
 */
 use super::messages;
-use crate::client::Event;
+use crate::runner::Event;
 
 /// Used to get a [messages::Cap][Cap]
 ///
@@ -225,7 +225,7 @@ impl<'t> Event<'t> for All {
 }
 
 // TODO generate this with a macro
-use crate::client::Dispatcher;
+use crate::runner::Dispatcher;
 pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
     // TODO this acquires the lock N times
     // if we expose the inner map

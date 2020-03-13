@@ -346,7 +346,7 @@ let cursor: Cursor<Vec<u8>> = encoder.into_inner();
 ## Putting it together, a simple "bot"
 ```rust no_run
 use tokio::stream::StreamExt as _;
-use twitchchat::client::Writer;
+use twitchchat::runner::Writer;
 use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, RateLimit};
 
 fn get_creds() -> (String, String, String) {

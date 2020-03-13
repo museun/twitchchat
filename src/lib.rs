@@ -41,8 +41,8 @@ static_assertions::assert_cfg!(
 pub mod macros;
 
 cfg_async! {
-    pub mod client;
-    pub use client::{Dispatcher, Runner, Control, Status};
+    pub mod runner;
+    pub use runner::{Dispatcher, Runner, Control, Status};
 }
 
 cfg_async! {
