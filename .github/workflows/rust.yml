@@ -5,13 +5,13 @@ on: [push]
 jobs:
   build:
     strategy:
-    matrix:
-      platform: [ubuntu-latest, macos-latest, windows-latest]
-      runs-on: ${{ matrix.platform }}    
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        runs-on: ${{ matrix.platform }}    
+    
+    features: ["", "--no-default-features", "--no-default-features --features async", "--no-default-features --features tokio_rustls" ]
 
     steps:
-      features: ["", "--no-default-features", "--no-default-features --features async", "--no-default-features --features tokio_rustls" ]
-
     - uses: actions/checkout@v1
    
     - name: Build default features
