@@ -783,6 +783,11 @@ impl<'t> RoomState<'t> {
         self.tags.get_as_bool("r9k")
     }
 
+    /// The id of the room this message was sent to
+    pub fn room_id(&self) -> Option<u64> {
+        self.tags.get_parsed("room-id")
+    }
+
     /// Whether this room is in slow mode
     ///
     /// This returns the delay in which each message can be sent
