@@ -669,9 +669,51 @@ impl<'t> Privmsg<'t> {
             .unwrap_or_default()
     }
 
+    /// Whether the user sending this message was a broadcaster
+    pub fn is_broadcaster(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::Broadcaster)
+    }
+
     /// Whether the user sending this message was a moderator
     pub fn is_moderator(&self) -> bool {
         self.tags.get_as_bool("mod")
+    }
+
+    /// Whether the user sending this message was a vip
+    pub fn is_vip(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::Broadcaster)
+    }
+
+    /// Whether the user sending this message was a susbcriber
+    pub fn is_subscriber(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::Subscriber)
+    }
+
+    /// Whether the user sending this message was a staff member
+    pub fn is_staff(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::Staff)
+    }
+
+    /// Whether the user sending this message had turbo
+    pub fn is_turbo(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::Turbo)
+    }
+
+    /// Whether the user sending this message was a global moderator
+    pub fn is_global_moderator(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == crate::BadgeKind::GlobalMod)
     }
 
     /// The id of the room this message was sent to
@@ -739,6 +781,11 @@ impl<'t> RoomState<'t> {
     /// Whether this room is in r9k mode
     pub fn is_r9k(&self) -> bool {
         self.tags.get_as_bool("r9k")
+    }
+
+    /// The id of the room this message was sent to
+    pub fn room_id(&self) -> Option<u64> {
+        self.tags.get_parsed("room-id")
     }
 
     /// Whether this room is in slow mode

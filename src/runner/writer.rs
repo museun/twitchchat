@@ -9,6 +9,7 @@ use tokio::io::AsyncWrite;
 /// A writer that allows sending messages to the client
 pub type Writer = AsyncEncoder<MpscWriter>;
 
+/// A tokio mpsc based writer
 pub struct MpscWriter {
     buffer: Vec<u8>,
     sender: Tx,
@@ -30,7 +31,8 @@ impl Clone for MpscWriter {
 }
 
 impl MpscWriter {
-    pub(super) fn new(sender: Tx) -> Self {
+    /// Create a new MpscServer from this channel's sender
+    pub fn new(sender: Tx) -> Self {
         Self {
             buffer: vec![],
             sender,
