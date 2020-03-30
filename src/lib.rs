@@ -43,7 +43,7 @@ pub mod macros;
 cfg_async! {
     mod runner;
     pub use runner::{
-        writer::Writer,
+        writer::{MpscWriter, Writer},
         dispatcher::Dispatcher,
         stream::EventStream,
         runner::Runner,

@@ -30,7 +30,8 @@ impl Clone for MpscWriter {
 }
 
 impl MpscWriter {
-    pub(super) fn new(sender: Tx) -> Self {
+	/// Create a new MpscServer from this channel's sender
+    pub fn new(sender: Tx) -> Self {
         Self {
             buffer: vec![],
             sender,
