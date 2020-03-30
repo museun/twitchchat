@@ -252,4 +252,5 @@ pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
         .add_event::<Reconnect>()
         .add_event::<RoomState>()
         .add_event::<UserState>()
+        .add_event::<UserNotice>()
 }

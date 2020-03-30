@@ -406,6 +406,7 @@ impl Dispatcher {
             "RECONNECT" => try_send!(Reconnect),
             "ROOMSTATE" => try_send!(RoomState),
             "USERSTATE" => try_send!(UserState),
+            "USERNOTICE" => try_send!(UserNotice),
             "MODE" => try_send!(Mode),
             _ => {}
         }
