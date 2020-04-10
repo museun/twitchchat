@@ -132,6 +132,7 @@ impl Runner {
 
         let mut out = self.writer;
 
+        // TODO timer-based ping impl to check for timeout
         loop {
             tokio::select! {
                 // Abort notification
@@ -153,11 +154,20 @@ impl Runner {
                         break Ok(Status::Eof)
                     }
 
+                    let mut visited = false;
                     for msg in decode(&buffer) {
                         let msg = msg?;
                         log::trace!("< {}", msg.raw.escape_debug());
                         self.dispatcher.dispatch(&msg);
+                        visited = true;
                     }
+
+                    // if we didn't parse a message then we should signal that this was EOF
+                    // twitch sometimes just stops writing to the client
+                    if !visited {
+                        break Ok(Status::Eof)
+                    }
+
                     buffer.clear();
                 },
 
