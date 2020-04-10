@@ -27,7 +27,7 @@ log = "0.4"
 
 futures = { version = "0.3", optional = true, default-features = false } 
 # TODO figure out what of these features are actually used
-tokio   = { version = "0.2", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time"] }
+tokio   = { version = "0.2", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time", "macros"] }
 
 # native tls
 tokio-tls  = { version = "0.3", optional = true }

@@ -56,14 +56,14 @@ fn encode_privmsg() {
 #[test]
 fn encode_ban() {
     test_encode(
-        |enc| enc.ban("museun", None),
-        "PRIVMSG jtv :/ban museun\r\n",
+        |enc| enc.ban("#museun", "museun", None),
+        "PRIVMSG #museun :/ban museun\r\n",
     )
 }
 
 #[test]
 fn encode_clear() {
-    test_encode(|enc| enc.clear(), "PRIVMSG jtv :/clear\r\n")
+    test_encode(|enc| enc.clear("#museun"), "PRIVMSG #museun :/clear\r\n")
 }
 
 #[test]
@@ -77,16 +77,25 @@ fn encode_color() {
 
 #[test]
 fn encode_command() {
-    test_encode(|enc| enc.command("/testing"), "PRIVMSG jtv :/testing\r\n")
+    test_encode(
+        |enc| enc.command("#museun", "/testing"),
+        "PRIVMSG #museun :/testing\r\n",
+    )
 }
 
 #[test]
 fn encode_commercial() {
-    test_encode(|enc| enc.commercial(None), "PRIVMSG jtv :/commercial\r\n");
-    test_encode(|enc| enc.commercial(10), "PRIVMSG jtv :/commercial 10\r\n");
     test_encode(
-        |enc| enc.commercial(Some(10)),
-        "PRIVMSG jtv :/commercial 10\r\n",
+        |enc| enc.commercial("#museun", None),
+        "PRIVMSG #museun :/commercial\r\n",
+    );
+    test_encode(
+        |enc| enc.commercial("#museun", 10),
+        "PRIVMSG #museun :/commercial 10\r\n",
+    );
+    test_encode(
+        |enc| enc.commercial("#museun", Some(10)),
+        "PRIVMSG #museun :/commercial 10\r\n",
     );
 }
 
@@ -97,52 +106,67 @@ fn encode_disconnect() {
 
 #[test]
 fn encode_emoteonly() {
-    test_encode(|enc| enc.emote_only(), "PRIVMSG jtv :/emoteonly\r\n")
+    test_encode(
+        |enc| enc.emote_only("#museun"),
+        "PRIVMSG #museun :/emoteonly\r\n",
+    )
 }
 
 #[test]
 fn encode_emoteonlyoff() {
-    test_encode(|enc| enc.emote_only_off(), "PRIVMSG jtv :/emoteonlyoff\r\n")
+    test_encode(
+        |enc| enc.emote_only_off("#museun"),
+        "PRIVMSG #museun :/emoteonlyoff\r\n",
+    )
 }
 
 #[test]
 fn encode_followers() {
     test_encode(
-        |enc| enc.followers("1 week"),
-        "PRIVMSG jtv :/followers 1 week\r\n",
+        |enc| enc.followers("#museun", "1 week"),
+        "PRIVMSG #museun :/followers 1 week\r\n",
     )
 }
 
 #[test]
 fn encode_followersoff() {
-    test_encode(|enc| enc.followers_off(), "PRIVMSG jtv :/followersoff\r\n")
+    test_encode(
+        |enc| enc.followers_off("#museun"),
+        "PRIVMSG #museun :/followersoff\r\n",
+    )
 }
 
 #[test]
 fn encode_help() {
-    test_encode(|enc| enc.help(), "PRIVMSG jtv :/help\r\n")
+    test_encode(|enc| enc.help("#museun"), "PRIVMSG #museun :/help\r\n")
 }
 
 #[test]
 fn encode_host() {
-    test_encode(|enc| enc.host("#museun"), "PRIVMSG jtv :/host #museun\r\n")
+    test_encode(
+        |enc| enc.host("#museun", "#shaken_bot"),
+        "PRIVMSG #museun :/host #shaken_bot\r\n",
+    )
 }
 
 #[test]
 fn encode_marker() {
     test_encode(
-        |enc| enc.marker(Some("this is an example")),
-        "PRIVMSG jtv :/marker this is an example\r\n",
+        |enc| enc.marker("#museun", Some("this is an example")),
+        "PRIVMSG #museun :/marker this is an example\r\n",
     );
     test_encode(
-        |enc| enc.marker("this is an example"),
-        "PRIVMSG jtv :/marker this is an example\r\n",
+        |enc| enc.marker("#museun", "this is an example"),
+        "PRIVMSG #museun :/marker this is an example\r\n",
     );
     test_encode(
-        |enc| enc.marker("a".repeat(200).as_str()),
-        format!("PRIVMSG jtv :/marker {}\r\n", "a".repeat(140)),
+        |enc| enc.marker("#museun", "a".repeat(200).as_str()),
+        format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
     );
-    test_encode(|enc| enc.marker(None), "PRIVMSG jtv :/marker\r\n");
+    test_encode(
+        |enc| enc.marker("#museun", None),
+        "PRIVMSG #museun :/marker\r\n",
+    );
 }
 
 #[test]
@@ -156,117 +180,153 @@ fn encode_me() {
 #[test]
 fn encode_give_mod() {
     test_encode(
-        |enc| enc.give_mod("#museun"),
-        "PRIVMSG jtv :/mod #museun\r\n",
+        |enc| enc.give_mod("#museun", "shaken_bot"),
+        "PRIVMSG #museun :/mod shaken_bot\r\n",
     )
 }
 
 #[test]
 fn encode_mods() {
-    test_encode(|enc| enc.mods(), "PRIVMSG jtv :/mods\r\n")
+    test_encode(|enc| enc.mods("#museun"), "PRIVMSG #museun :/mods\r\n")
 }
 
 #[test]
 fn encode_r9kbeta() {
-    test_encode(|enc| enc.r9k_beta(), "PRIVMSG jtv :/r9kbeta\r\n")
+    test_encode(
+        |enc| enc.r9k_beta("#museun"),
+        "PRIVMSG #museun :/r9kbeta\r\n",
+    )
 }
 
 #[test]
 fn encode_r9kbetaoff() {
-    test_encode(|enc| enc.r9k_beta_off(), "PRIVMSG jtv :/r9kbetaoff\r\n")
+    test_encode(
+        |enc| enc.r9k_beta_off("#museun"),
+        "PRIVMSG #museun :/r9kbetaoff\r\n",
+    )
 }
 
 #[test]
 fn encode_raid() {
-    test_encode(|enc| enc.raid("#museun"), "PRIVMSG jtv :/raid #museun\r\n")
+    test_encode(
+        |enc| enc.raid("#museun", "#museun"),
+        "PRIVMSG #museun :/raid #museun\r\n",
+    )
 }
 
 #[test]
 fn encode_slow() {
-    test_encode(|enc| enc.slow(Some(42)), "PRIVMSG jtv :/slow 42\r\n");
-    test_encode(|enc| enc.slow(42), "PRIVMSG jtv :/slow 42\r\n");
-    test_encode(|enc| enc.slow(None), "PRIVMSG jtv :/slow 120\r\n");
+    test_encode(
+        |enc| enc.slow("#museun", Some(42)),
+        "PRIVMSG #museun :/slow 42\r\n",
+    );
+    test_encode(
+        |enc| enc.slow("#museun", 42),
+        "PRIVMSG #museun :/slow 42\r\n",
+    );
+    test_encode(
+        |enc| enc.slow("#museun", None),
+        "PRIVMSG #museun :/slow 120\r\n",
+    );
 }
 
 #[test]
 fn encode_slowoff() {
-    test_encode(|enc| enc.slow_off(), "PRIVMSG jtv :/slowoff\r\n")
+    test_encode(
+        |enc| enc.slow_off("#museun"),
+        "PRIVMSG #museun :/slowoff\r\n",
+    )
 }
 
 #[test]
 fn encode_subscribers() {
-    test_encode(|enc| enc.subscribers(), "PRIVMSG jtv :/subscribers\r\n")
+    test_encode(
+        |enc| enc.subscribers("#museun"),
+        "PRIVMSG #museun :/subscribers\r\n",
+    )
 }
 
 #[test]
 fn encode_subscribersoff() {
     test_encode(
-        |enc| enc.subscribers_off(),
-        "PRIVMSG jtv :/subscribersoff\r\n",
+        |enc| enc.subscribers_off("#museun"),
+        "PRIVMSG #museun :/subscribersoff\r\n",
     )
 }
 
 #[test]
 fn encode_timeout() {
     test_encode(
-        |enc| enc.timeout("museun", None, None),
-        "PRIVMSG jtv :/timeout museun\r\n",
+        |enc| enc.timeout("#museun", "museun", None, None),
+        "PRIVMSG #museun :/timeout museun\r\n",
     );
     test_encode(
-        |enc| enc.timeout("museun", Some("1d2h"), None),
-        "PRIVMSG jtv :/timeout museun 1d2h\r\n",
+        |enc| enc.timeout("#museun", "museun", Some("1d2h"), None),
+        "PRIVMSG #museun :/timeout museun 1d2h\r\n",
     );
     test_encode(
-        |enc| enc.timeout("museun", None, Some("spamming")),
-        "PRIVMSG jtv :/timeout museun spamming\r\n",
+        |enc| enc.timeout("#museun", "museun", None, Some("spamming")),
+        "PRIVMSG #museun :/timeout museun spamming\r\n",
     );
     test_encode(
-        |enc| enc.timeout("museun", Some("1d2h"), Some("spamming")),
-        "PRIVMSG jtv :/timeout museun 1d2h spamming\r\n",
+        |enc| enc.timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
+        "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
     );
 }
 
 #[test]
 fn encode_unban() {
-    test_encode(|enc| enc.unban("museun"), "PRIVMSG jtv :/unban museun\r\n")
+    test_encode(
+        |enc| enc.unban("#museun", "museun"),
+        "PRIVMSG #museun :/unban museun\r\n",
+    )
 }
 
 #[test]
 fn encode_unhost() {
-    test_encode(|enc| enc.unhost(), "PRIVMSG jtv :/unhost\r\n")
+    test_encode(|enc| enc.unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
 }
 
 #[test]
 fn encode_unmod() {
-    test_encode(|enc| enc.unmod("museun"), "PRIVMSG jtv :/unmod museun\r\n")
+    test_encode(
+        |enc| enc.unmod("#museun", "museun"),
+        "PRIVMSG #museun :/unmod museun\r\n",
+    )
 }
 
 #[test]
 fn encode_unraid() {
-    test_encode(|enc| enc.unraid(), "PRIVMSG jtv :/unraid\r\n")
+    test_encode(|enc| enc.unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
 }
 
 #[test]
 fn encode_untimeout() {
     test_encode(
-        |enc| enc.untimeout("museun"),
-        "PRIVMSG jtv :/untimeout museun\r\n",
+        |enc| enc.untimeout("#museun", "museun"),
+        "PRIVMSG #museun :/untimeout museun\r\n",
     )
 }
 
 #[test]
 fn encode_unvip() {
-    test_encode(|enc| enc.unvip("museun"), "PRIVMSG jtv :/unvip museun\r\n")
+    test_encode(
+        |enc| enc.unvip("#museun", "museun"),
+        "PRIVMSG #museun :/unvip museun\r\n",
+    )
 }
 
 #[test]
 fn encode_vip() {
-    test_encode(|enc| enc.vip("museun"), "PRIVMSG jtv :/vip museun\r\n")
+    test_encode(
+        |enc| enc.vip("#museun", "museun"),
+        "PRIVMSG #museun :/vip museun\r\n",
+    )
 }
 
 #[test]
 fn encode_vips() {
-    test_encode(|enc| enc.vips(), "PRIVMSG jtv :/vips\r\n")
+    test_encode(|enc| enc.vips("#museun"), "PRIVMSG #museun :/vips\r\n")
 }
 
 #[test]

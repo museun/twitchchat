@@ -4,6 +4,12 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Channel(String);
 
+impl AsRef<str> for Channel {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 /// An error produced by invalid channel names
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
