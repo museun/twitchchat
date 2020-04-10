@@ -1,20 +1,8 @@
-use super::conv_channel;
 use crate::{color::Color, IntoChannel};
 
 use std::io::Write;
 
 type Result = std::result::Result<(), crate::Error>;
-
-macro_rules! write {
-    (cmd $w:expr, $($e:expr),* $(,)?) => {{
-        write!($w, "PRIVMSG jtv :", $($e),*)
-    }};
-    ($w:expr, $($e:expr),* $(,)?) => {{
-        let mut w = ByteWriter::new($w);
-        $(w.append($e)?;)*
-        w.end().map_err(crate::Error::from)
-    }};
-}
 
 struct ByteWriter<'a, W: Write> {
     inner: &'a mut W,
@@ -25,13 +13,44 @@ impl<'a, W: Write> ByteWriter<'a, W> {
         Self { inner }
     }
 
-    fn append(&mut self, data: impl AsRef<[u8]>) -> std::io::Result<()> {
-        self.inner.write_all(data.as_ref())
+    fn jtv_command(self, parts: &[&dyn AsRef<str>]) -> Result {
+        self.inner.write_all(b"PRIVMSG jtv :")?;
+        self.parts(parts)
     }
 
-    fn end(self) -> std::io::Result<()> {
+    fn command(self, channel: &crate::Channel, parts: &[&dyn AsRef<str>]) -> Result {
+        self.inner.write_all(b"PRIVMSG ")?;
+        self.inner.write_all(channel.as_ref().as_bytes())?;
+        self.inner.write_all(b" :")?;
+        self.parts(parts)
+    }
+
+    fn parts(self, parts: &[&dyn AsRef<str>]) -> Result {
+        for (i, part) in parts.iter().enumerate() {
+            if i > 0 {
+                self.inner.write_all(b" ")?;
+            }
+            self.inner.write_all(part.as_ref().as_bytes())?;
+        }
+        self.end()
+    }
+
+    fn parts_term(self, parts: &[&dyn AsRef<str>]) -> Result {
+        for part in parts.iter() {
+            self.inner.write_all(part.as_ref().as_bytes())?;
+        }
+        self.end()
+    }
+
+    fn write_bytes(self, data: impl AsRef<[u8]>) -> Result {
+        self.inner.write_all(data.as_ref())?;
+        self.end()
+    }
+
+    fn end(self) -> Result {
         self.inner.write_all(b"\r\n")?;
-        self.inner.flush()
+        self.inner.flush()?;
+        Ok(())
     }
 }
 
@@ -70,42 +89,61 @@ impl<W: Write> Encoder<W> {
     /// Use [unban] to remove a ban.
     ///
     /// [unban]: ./struct.Encoder.html#method.unban
-    pub fn ban<'a>(&mut self, username: &str, reason: impl Into<Option<&'a str>>) -> Result {
+    pub fn ban<'a>(
+        &mut self,
+        channel: impl IntoChannel,
+        username: &str,
+        reason: impl Into<Option<&'a str>>,
+    ) -> Result {
+        let channel = channel.into_channel()?;
+        let writer = ByteWriter::new(&mut self.writer);
         match reason.into() {
-            Some(reason) => write!(cmd &mut self.writer, "/ban ", username, " ", reason),
-            None => write!(cmd &mut self.writer, "/ban ", username),
+            Some(reason) => writer.command(&channel, &[&"/ban", &username, &reason]),
+            None => writer.command(&channel, &[&"/ban", &username]),
         }
     }
 
     /// Clear chat history for all users in this room.
-    pub fn clear(&mut self) -> Result {
-        self.command("/clear")
+    pub fn clear(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/clear"])
     }
 
     /// Change your username color.
     pub fn color(&mut self, color: Color) -> Result {
-        write!(cmd &mut self.writer, "/color ", color.to_string())
+        ByteWriter::new(&mut self.writer).jtv_command(&[&"/color", &color.to_string()])
     }
 
     /// Sends the command: data (e.g. /color #FFFFFF)
-    pub fn command(&mut self, data: &str) -> Result {
-        write!(cmd &mut self.writer, data)
+    pub fn command(&mut self, channel: impl IntoChannel, data: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&data])
+    }
+
+    /// Sends the command: data to the 'jtv' channel (e.g. /color #FFFFFF)
+    pub fn jtv_command(&mut self, data: &str) -> Result {
+        ByteWriter::new(&mut self.writer).jtv_command(&[&data])
     }
 
     /// Triggers a commercial.
     ///
     /// Length (optional) must be a positive number of seconds.
-    pub fn commercial(&mut self, length: impl Into<Option<usize>>) -> Result {
+    pub fn commercial(
+        &mut self,
+        channel: impl IntoChannel,
+        length: impl Into<Option<usize>>,
+    ) -> Result {
+        let channel = channel.into_channel()?;
+        let writer = ByteWriter::new(&mut self.writer);
         match length.into() {
-            // TODO fast usize to string without an allocation
-            Some(length) => write!(cmd &mut self.writer, "/commercial ", length.to_string()),
-            None => self.command("/commercial"),
+            Some(length) => writer.command(&channel, &[&"/commercial", &length.to_string()]),
+            None => writer.command(&channel, &[&"/commercial"]),
         }
     }
 
     /// Reconnects to chat.
     pub fn disconnect(&mut self) -> Result {
-        self.command("/disconnect")
+        ByteWriter::new(&mut self.writer).jtv_command(&[&"/disconnect"])
     }
 
     /// Enables emote-only mode (only emoticons may be used in chat).
@@ -113,13 +151,15 @@ impl<W: Write> Encoder<W> {
     /// Use [emote_only_off] to disable.
     ///
     /// [emote_only_off]: ./struct.Encoder.html#method.emote_only_off
-    pub fn emote_only(&mut self) -> Result {
-        self.command("/emoteonly")
+    pub fn emote_only(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/emoteonly"])
     }
 
     /// Disables emote-only mode.
-    pub fn emote_only_off(&mut self) -> Result {
-        self.command("/emoteonlyoff")
+    pub fn emote_only_off(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/emoteonlyoff"])
     }
 
     // TODO use `time` here
@@ -128,13 +168,15 @@ impl<W: Write> Encoder<W> {
     /// Examples: `"30m"`, `"1 week"`, `"5 days 12 hours"`.
     ///
     /// Must be less than 3 months.
-    pub fn followers(&mut self, duration: &str) -> Result {
-        write!(cmd &mut self.writer, "/followers ", duration)
+    pub fn followers(&mut self, channel: impl IntoChannel, duration: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/followers", &duration])
     }
 
     /// Disables followers-only mode.
-    pub fn followers_off(&mut self) -> Result {
-        self.command("/followersoff")
+    pub fn followers_off(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/followersoff"])
     }
 
     /// Grant moderator status to a user.
@@ -142,13 +184,15 @@ impl<W: Write> Encoder<W> {
     /// Use [mods] to list the moderators of this channel.
     ///
     /// [mods]: ./struct.Encoder.html#method.mods
-    pub fn give_mod(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/mod ", username)
+    pub fn give_mod(&mut self, channel: impl IntoChannel, username: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/mod", &username])
     }
 
     /// Lists the commands available to you in this room.
-    pub fn help(&mut self) -> Result {
-        self.command("/help")
+    pub fn help(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/help"])
     }
 
     /// Host another channel.
@@ -156,15 +200,16 @@ impl<W: Write> Encoder<W> {
     /// Use [unhost] to unset host mode.
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
-    pub fn host(&mut self, channel: impl IntoChannel) -> Result {
-        let channel = conv_channel(channel)?;
-        write!(cmd &mut self.writer, "/host ", channel)
+    pub fn host(&mut self, source: impl IntoChannel, target: impl IntoChannel) -> Result {
+        let source = source.into_channel()?;
+        let target = target.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&source, &[&"/host", &target])
     }
 
     /// Join a channel
     pub fn join(&mut self, channel: impl IntoChannel) -> Result {
-        let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "JOIN ", channel)
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).parts(&[&"JOIN", &channel])
     }
 
     /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
@@ -172,45 +217,54 @@ impl<W: Write> Encoder<W> {
     /// You can use markers in the Highlighter for easier editing.
     ///
     /// If the string exceeds 140 characters then it will be truncated
-    pub fn marker<'a>(&mut self, comment: impl Into<Option<&'a str>>) -> Result {
-        let comment = comment.into();
-        match comment {
-            None => self.command("/marker"),
-            Some(marker) if marker.len() <= 140 => write!(cmd &mut self.writer, "/marker ", marker),
-            Some(marker) => write!(cmd &mut self.writer, "/marker ", &marker[..140]),
+    pub fn marker<'a>(
+        &mut self,
+        channel: impl IntoChannel,
+        comment: impl Into<Option<&'a str>>,
+    ) -> Result {
+        let channel = channel.into_channel()?;
+        let writer = ByteWriter::new(&mut self.writer);
+        match comment.into() {
+            None => {
+                writer.command(&channel, &[&"/marker"]) //
+            }
+            Some(marker) if marker.len() <= 140 => writer.command(&channel, &[&"/marker", &marker]),
+            Some(marker) => writer.command(&channel, &[&"/marker", &&marker[..140]]),
         }
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
-        let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "PRIVMSG ", channel, " :", "/me ", message)
+    pub fn me(&mut self, channel: impl IntoChannel, message: impl AsRef<str>) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/me", &message])
     }
 
     /// Lists the moderators of this channel.
-    pub fn mods(&mut self) -> Result {
-        self.command("/mods")
+    pub fn mods(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/mods"])
     }
 
     /// Leave a channel
     pub fn part(&mut self, channel: impl IntoChannel) -> Result {
-        let channel = conv_channel(channel)?;
-        write!(&mut self.writer, "PART ", channel)
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).parts(&[&"PART", &channel])
     }
 
     /// Request a heartbeat with the provided token
-    pub fn ping(&mut self, token: &str) -> Result {
-        write!(&mut self.writer, "PING ", token)
+    pub fn ping(&mut self, token: impl AsRef<str>) -> Result {
+        ByteWriter::new(&mut self.writer).parts(&[&"PING", &token])
     }
 
     /// Response to a heartbeat with the provided token
-    pub fn pong(&mut self, token: &str) -> Result {
-        write!(&mut self.writer, "PONG :", token)
+    pub fn pong(&mut self, token: impl AsRef<str>) -> Result {
+        ByteWriter::new(&mut self.writer).parts_term(&[&"PONG", &" :", &token])
     }
 
-    /// Send data to a target
-    pub fn privmsg(&mut self, target: &str, data: &str) -> Result {
-        write!(&mut self.writer, "PRIVMSG ", target, " :", data)
+    /// Send data to a channel
+    pub fn privmsg(&mut self, channel: impl IntoChannel, data: impl AsRef<str>) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).parts_term(&[&"PRIVMSG ", &channel, &" :", &data])
     }
 
     /// Enables r9k mode.
@@ -218,13 +272,15 @@ impl<W: Write> Encoder<W> {
     /// Use [r9k_beta_off] to disable.
     ///
     /// [r9k_beta_off]: ./struct.Encoder.html#method.r9k_beta_off
-    pub fn r9k_beta(&mut self) -> Result {
-        self.command("/r9kbeta")
+    pub fn r9k_beta(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/r9kbeta"])
     }
 
     /// Disables r9k mode.
-    pub fn r9k_beta_off(&mut self) -> Result {
-        self.command("/r9kbetaoff")
+    pub fn r9k_beta_off(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/r9kbetaoff"])
     }
 
     /// Raid another channel.
@@ -232,14 +288,15 @@ impl<W: Write> Encoder<W> {
     /// Use [unraid] to cancel the Raid.
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
-    pub fn raid(&mut self, channel: impl IntoChannel) -> Result {
-        let channel = conv_channel(channel)?;
-        write!(cmd &mut self.writer, "/raid ", channel)
+    pub fn raid(&mut self, source: impl IntoChannel, target: impl IntoChannel) -> Result {
+        let source = source.into_channel()?;
+        let target = target.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&source, &[&"/raid", &target])
     }
 
     /// Send a raw IRC-style message
     pub fn raw(&mut self, raw: impl AsRef<[u8]>) -> Result {
-        write!(&mut self.writer, raw)
+        ByteWriter::new(&mut self.writer).write_bytes(raw)
     }
 
     // TODO use `time` here
@@ -250,14 +307,20 @@ impl<W: Write> Encoder<W> {
     /// Use [slow_off] to disable.
     ///
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
-    pub fn slow(&mut self, duration: impl Into<Option<usize>>) -> Result {
-        // TODO fast non-allocating usize to &[u8]
-        write!(cmd &mut self.writer, "/slow ", duration.into().unwrap_or_else(|| 120).to_string())
+    pub fn slow(
+        &mut self,
+        channel: impl IntoChannel,
+        duration: impl Into<Option<usize>>,
+    ) -> Result {
+        let channel = channel.into_channel()?;
+        let dur = duration.into().unwrap_or_else(|| 120).to_string();
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/slow", &dur])
     }
 
     /// Disables slow mode.
-    pub fn slow_off(&mut self) -> Result {
-        self.command("/slowoff")
+    pub fn slow_off(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/slowoff"])
     }
 
     /// Enables subscribers-only mode (only subscribers may chat in this channel).
@@ -265,13 +328,15 @@ impl<W: Write> Encoder<W> {
     /// Use [subscribers_off] to disable.
     ///
     /// [subscribers_off]: ./struct.Encoder.html#methodruct.html#method.subscribers_off
-    pub fn subscribers(&mut self) -> Result {
-        self.command("/subscribers")
+    pub fn subscribers(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/subscribers"])
     }
 
     /// Disables subscribers-only mode.
-    pub fn subscribers_off(&mut self) -> Result {
-        self.command("/subscribersoff")
+    pub fn subscribers_off(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/subscribersoff"])
     }
 
     /// Temporarily prevent a user from chatting.
@@ -294,30 +359,36 @@ impl<W: Write> Encoder<W> {
     /// [untimeout]: ./struct.Encoder.html#methodruct.html#method.untimeout
     pub fn timeout<'a, 'b>(
         &mut self,
+        channel: impl IntoChannel,
         username: &str,
         duration: impl Into<Option<&'a str>>,
         message: impl Into<Option<&'b str>>,
     ) -> Result {
+        let channel = channel.into_channel()?;
+        let writer = ByteWriter::new(&mut self.writer);
         match (duration.into(), message.into()) {
             (Some(dur), Some(reason)) => {
-                write!(cmd &mut self.writer, "/timeout ", username, " ", dur, " ", reason)
+                writer.command(&channel, &[&"/timeout", &username, &dur, &reason])
             }
-            (None, Some(reason)) => {
-                write!(cmd &mut self.writer, "/timeout ", username, " ", reason)
+            (None, Some(reason)) => writer.command(&channel, &[&"/timeout", &username, &reason]),
+            (Some(dur), None) => writer.command(&channel, &[&"/timeout", &username, &dur]),
+            (None, None) => {
+                writer //
+                    .command(&channel, &[&"/timeout", &username])
             }
-            (Some(dur), None) => write!(cmd &mut self.writer, "/timeout ", username, " ", dur),
-            (None, None) => write!(cmd &mut self.writer, "/timeout ", username),
         }
     }
 
     /// Removes a ban on a user.
-    pub fn unban(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unban ", username)
+    pub fn unban(&mut self, channel: impl IntoChannel, username: impl AsRef<str>) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/unban", &username])
     }
 
     /// Stop hosting another channel.
-    pub fn unhost(&mut self) -> Result {
-        self.command("/unhost")
+    pub fn unhost(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/unhost"])
     }
 
     /// Revoke moderator status from a user.
@@ -325,18 +396,21 @@ impl<W: Write> Encoder<W> {
     /// Use [mods] to list the moderators of this channel.
     ///
     /// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
-    pub fn unmod(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unmod ", username)
+    pub fn unmod(&mut self, channel: impl IntoChannel, username: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/unmod", &username])
     }
 
     /// Cancel the Raid.
-    pub fn unraid(&mut self) -> Result {
-        self.command("/unraid")
+    pub fn unraid(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/unraid"])
     }
 
     /// Removes a timeout on a user.
-    pub fn untimeout(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/untimeout ", username)
+    pub fn untimeout(&mut self, channel: impl IntoChannel, username: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/untimeout", &username])
     }
 
     /// Revoke VIP status from a user.
@@ -344,8 +418,9 @@ impl<W: Write> Encoder<W> {
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub fn unvip(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/unvip ", username)
+    pub fn unvip(&mut self, channel: impl IntoChannel, username: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/unvip", &username])
     }
 
     /// Grant VIP status to a user.
@@ -353,18 +428,20 @@ impl<W: Write> Encoder<W> {
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub fn vip(&mut self, username: &str) -> Result {
-        write!(cmd &mut self.writer, "/vip ", username)
+    pub fn vip(&mut self, channel: impl IntoChannel, username: &str) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/vip", &username])
     }
 
     /// Lists the VIPs of this channel.
-    pub fn vips(&mut self) -> Result {
-        self.command("/vips")
+    pub fn vips(&mut self, channel: impl IntoChannel) -> Result {
+        let channel = channel.into_channel()?;
+        ByteWriter::new(&mut self.writer).command(&channel, &[&"/vips"])
     }
 
     /// Whispers the message to the username.
-    pub fn whisper(&mut self, username: &str, message: &str) -> Result {
-        write!(cmd &mut self.writer, "/w ", username, " ", message)
+    pub fn whisper(&mut self, username: impl AsRef<str>, message: impl AsRef<str>) -> Result {
+        ByteWriter::new(&mut self.writer).jtv_command(&[&"/w", &username, &message])
     }
 }
 

@@ -99,10 +99,10 @@ async fn encode_privmsg() {
 async fn encode_ban() {
     test_encode(
         |mut enc| async move {
-            enc.ban("museun", None).await?;
+            enc.ban("#museun", "museun", None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/ban museun\r\n",
+        "PRIVMSG #museun :/ban museun\r\n",
     )
     .await;
 }
@@ -111,10 +111,10 @@ async fn encode_ban() {
 async fn encode_clear() {
     test_encode(
         |mut enc| async move {
-            enc.clear().await?;
+            enc.clear("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/clear\r\n",
+        "PRIVMSG #museun :/clear\r\n",
     )
     .await;
 }
@@ -136,10 +136,10 @@ async fn encode_color() {
 async fn encode_command() {
     test_encode(
         |mut enc| async move {
-            enc.command("/testing").await?;
+            enc.command("#museun", "/testing").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/testing\r\n",
+        "PRIVMSG #museun :/testing\r\n",
     )
     .await;
 }
@@ -148,26 +148,26 @@ async fn encode_command() {
 async fn encode_commercial() {
     test_encode(
         |mut enc| async move {
-            enc.commercial(None).await?;
+            enc.commercial("#museun", None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/commercial\r\n",
+        "PRIVMSG #museun :/commercial\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.commercial(10).await?;
+            enc.commercial("#museun", 10).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/commercial 10\r\n",
+        "PRIVMSG #museun :/commercial 10\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.commercial(Some(10)).await?;
+            enc.commercial("#museun", Some(10)).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/commercial 10\r\n",
+        "PRIVMSG #museun :/commercial 10\r\n",
     )
     .await;
 }
@@ -188,10 +188,10 @@ async fn encode_disconnect() {
 async fn encode_emoteonly() {
     test_encode(
         |mut enc| async move {
-            enc.emote_only().await?;
+            enc.emote_only("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/emoteonly\r\n",
+        "PRIVMSG #museun :/emoteonly\r\n",
     )
     .await;
 }
@@ -200,10 +200,10 @@ async fn encode_emoteonly() {
 async fn encode_emoteonlyoff() {
     test_encode(
         |mut enc| async move {
-            enc.emote_only_off().await?;
+            enc.emote_only_off("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/emoteonlyoff\r\n",
+        "PRIVMSG #museun :/emoteonlyoff\r\n",
     )
     .await;
 }
@@ -212,10 +212,10 @@ async fn encode_emoteonlyoff() {
 async fn encode_followers() {
     test_encode(
         |mut enc| async move {
-            enc.followers("1 week").await?;
+            enc.followers("#museun", "1 week").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/followers 1 week\r\n",
+        "PRIVMSG #museun :/followers 1 week\r\n",
     )
     .await;
 }
@@ -224,10 +224,10 @@ async fn encode_followers() {
 async fn encode_followersoff() {
     test_encode(
         |mut enc| async move {
-            enc.followers_off().await?;
+            enc.followers_off("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/followersoff\r\n",
+        "PRIVMSG #museun :/followersoff\r\n",
     )
     .await;
 }
@@ -236,10 +236,10 @@ async fn encode_followersoff() {
 async fn encode_help() {
     test_encode(
         |mut enc| async move {
-            enc.help().await?;
+            enc.help("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/help\r\n",
+        "PRIVMSG #museun :/help\r\n",
     )
     .await;
 }
@@ -248,10 +248,10 @@ async fn encode_help() {
 async fn encode_host() {
     test_encode(
         |mut enc| async move {
-            enc.host("#museun").await?;
+            enc.host("#museun", "#shaken_bot").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/host #museun\r\n",
+        "PRIVMSG #museun :/host #shaken_bot\r\n",
     )
     .await;
 }
@@ -260,37 +260,37 @@ async fn encode_host() {
 async fn encode_marker() {
     test_encode(
         |mut enc| async move {
-            enc.marker(Some("this is an example")).await?;
+            enc.marker("#museun", Some("this is an example")).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/marker this is an example\r\n",
+        "PRIVMSG #museun :/marker this is an example\r\n",
     )
     .await;
 
     test_encode(
         |mut enc| async move {
-            enc.marker("this is an example").await?;
+            enc.marker("#museun", "this is an example").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/marker this is an example\r\n",
+        "PRIVMSG #museun :/marker this is an example\r\n",
     )
     .await;
 
     test_encode(
         |mut enc| async move {
-            enc.marker("a".repeat(200).as_str()).await?;
+            enc.marker("#museun", "a".repeat(200).as_str()).await?;
             Ok(enc)
         },
-        format!("PRIVMSG jtv :/marker {}\r\n", "a".repeat(140)),
+        format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
     )
     .await;
 
     test_encode(
         |mut enc| async move {
-            enc.marker(None).await?;
+            enc.marker("#museun", None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/marker\r\n",
+        "PRIVMSG #museun :/marker\r\n",
     )
     .await;
 }
@@ -311,10 +311,10 @@ async fn encode_me() {
 async fn encode_give_mod() {
     test_encode(
         |mut enc| async move {
-            enc.give_mod("#museun").await?;
+            enc.give_mod("#museun", "shaken_bot").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/mod #museun\r\n",
+        "PRIVMSG #museun :/mod shaken_bot\r\n",
     )
     .await;
 }
@@ -323,10 +323,10 @@ async fn encode_give_mod() {
 async fn encode_mods() {
     test_encode(
         |mut enc| async move {
-            enc.mods().await?;
+            enc.mods("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/mods\r\n",
+        "PRIVMSG #museun :/mods\r\n",
     )
     .await;
 }
@@ -335,10 +335,10 @@ async fn encode_mods() {
 async fn encode_r9kbeta() {
     test_encode(
         |mut enc| async move {
-            enc.r9k_beta().await?;
+            enc.r9k_beta("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/r9kbeta\r\n",
+        "PRIVMSG #museun :/r9kbeta\r\n",
     )
     .await;
 }
@@ -347,10 +347,10 @@ async fn encode_r9kbeta() {
 async fn encode_r9kbetaoff() {
     test_encode(
         |mut enc| async move {
-            enc.r9k_beta_off().await?;
+            enc.r9k_beta_off("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/r9kbetaoff\r\n",
+        "PRIVMSG #museun :/r9kbetaoff\r\n",
     )
     .await;
 }
@@ -359,10 +359,10 @@ async fn encode_r9kbetaoff() {
 async fn encode_raid() {
     test_encode(
         |mut enc| async move {
-            enc.raid("#museun").await?;
+            enc.raid("#museun", "#shaken_bot").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/raid #museun\r\n",
+        "PRIVMSG #museun :/raid #shaken_bot\r\n",
     )
     .await;
 }
@@ -371,26 +371,26 @@ async fn encode_raid() {
 async fn encode_slow() {
     test_encode(
         |mut enc| async move {
-            enc.slow(Some(42)).await?;
+            enc.slow("#museun", Some(42)).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/slow 42\r\n",
+        "PRIVMSG #museun :/slow 42\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.slow(42).await?;
+            enc.slow("#museun", 42).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/slow 42\r\n",
+        "PRIVMSG #museun :/slow 42\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.slow(None).await?;
+            enc.slow("#museun", None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/slow 120\r\n",
+        "PRIVMSG #museun :/slow 120\r\n",
     )
     .await;
 }
@@ -399,10 +399,10 @@ async fn encode_slow() {
 async fn encode_slowoff() {
     test_encode(
         |mut enc| async move {
-            enc.slow_off().await?;
+            enc.slow_off("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/slowoff\r\n",
+        "PRIVMSG #museun :/slowoff\r\n",
     )
     .await;
 }
@@ -411,10 +411,10 @@ async fn encode_slowoff() {
 async fn encode_subscribers() {
     test_encode(
         |mut enc| async move {
-            enc.subscribers().await?;
+            enc.subscribers("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/subscribers\r\n",
+        "PRIVMSG #museun :/subscribers\r\n",
     )
     .await;
 }
@@ -423,10 +423,10 @@ async fn encode_subscribers() {
 async fn encode_subscribersoff() {
     test_encode(
         |mut enc| async move {
-            enc.subscribers_off().await?;
+            enc.subscribers_off("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/subscribersoff\r\n",
+        "PRIVMSG #museun :/subscribersoff\r\n",
     )
     .await;
 }
@@ -435,35 +435,36 @@ async fn encode_subscribersoff() {
 async fn encode_timeout() {
     test_encode(
         |mut enc| async move {
-            enc.timeout("museun", None, None).await?;
+            enc.timeout("#museun", "museun", None, None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/timeout museun\r\n",
+        "PRIVMSG #museun :/timeout museun\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.timeout("museun", Some("1d2h"), None).await?;
+            enc.timeout("#museun", "museun", Some("1d2h"), None).await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/timeout museun 1d2h\r\n",
+        "PRIVMSG #museun :/timeout museun 1d2h\r\n",
     )
     .await;
     test_encode(
         |mut enc| async move {
-            enc.timeout("museun", None, Some("spamming")).await?;
-            Ok(enc)
-        },
-        "PRIVMSG jtv :/timeout museun spamming\r\n",
-    )
-    .await;
-    test_encode(
-        |mut enc| async move {
-            enc.timeout("museun", Some("1d2h"), Some("spamming"))
+            enc.timeout("#museun", "museun", None, Some("spamming"))
                 .await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/timeout museun 1d2h spamming\r\n",
+        "PRIVMSG #museun :/timeout museun spamming\r\n",
+    )
+    .await;
+    test_encode(
+        |mut enc| async move {
+            enc.timeout("#museun", "museun", Some("1d2h"), Some("spamming"))
+                .await?;
+            Ok(enc)
+        },
+        "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
     )
     .await;
 }
@@ -472,10 +473,10 @@ async fn encode_timeout() {
 async fn encode_unban() {
     test_encode(
         |mut enc| async move {
-            enc.unban("museun").await?;
+            enc.unban("#museun", "museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/unban museun\r\n",
+        "PRIVMSG #museun :/unban museun\r\n",
     )
     .await;
 }
@@ -484,10 +485,10 @@ async fn encode_unban() {
 async fn encode_unhost() {
     test_encode(
         |mut enc| async move {
-            enc.unhost().await?;
+            enc.unhost("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/unhost\r\n",
+        "PRIVMSG #museun :/unhost\r\n",
     )
     .await;
 }
@@ -496,10 +497,10 @@ async fn encode_unhost() {
 async fn encode_unmod() {
     test_encode(
         |mut enc| async move {
-            enc.unmod("museun").await?;
+            enc.unmod("#museun", "museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/unmod museun\r\n",
+        "PRIVMSG #museun :/unmod museun\r\n",
     )
     .await;
 }
@@ -508,10 +509,10 @@ async fn encode_unmod() {
 async fn encode_unraid() {
     test_encode(
         |mut enc| async move {
-            enc.unraid().await?;
+            enc.unraid("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/unraid\r\n",
+        "PRIVMSG #museun :/unraid\r\n",
     )
     .await;
 }
@@ -520,10 +521,10 @@ async fn encode_unraid() {
 async fn encode_untimeout() {
     test_encode(
         |mut enc| async move {
-            enc.untimeout("museun").await?;
+            enc.untimeout("#museun", "museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/untimeout museun\r\n",
+        "PRIVMSG #museun :/untimeout museun\r\n",
     )
     .await;
 }
@@ -532,10 +533,10 @@ async fn encode_untimeout() {
 async fn encode_unvip() {
     test_encode(
         |mut enc| async move {
-            enc.unvip("museun").await?;
+            enc.unvip("#museun", "museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/unvip museun\r\n",
+        "PRIVMSG #museun :/unvip museun\r\n",
     )
     .await;
 }
@@ -544,10 +545,10 @@ async fn encode_unvip() {
 async fn encode_vip() {
     test_encode(
         |mut enc| async move {
-            enc.vip("museun").await?;
+            enc.vip("#museun", "museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/vip museun\r\n",
+        "PRIVMSG #museun :/vip museun\r\n",
     )
     .await;
 }
@@ -556,22 +557,10 @@ async fn encode_vip() {
 async fn encode_vips() {
     test_encode(
         |mut enc| async move {
-            enc.vips().await?;
+            enc.vips("#museun").await?;
             Ok(enc)
         },
-        "PRIVMSG jtv :/vips\r\n",
-    )
-    .await;
-}
-
-#[tokio::test]
-async fn encode_whisper() {
-    test_encode(
-        |mut enc| async move {
-            enc.whisper("museun", "hello world").await?;
-            Ok(enc)
-        },
-        "PRIVMSG jtv :/w museun hello world\r\n",
+        "PRIVMSG #museun :/vips\r\n",
     )
     .await;
 }
