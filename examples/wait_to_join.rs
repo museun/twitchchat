@@ -42,6 +42,7 @@ async fn main() {
     match done.await.unwrap() {
         Ok(Status::Eof) => eprintln!("done!"),
         Ok(Status::Canceled) => eprintln!("client was stopped by user"),
+        Ok(Status::Timeout) => eprintln!("client connection timed out"),
         Err(err) => eprintln!("error: {}", err),
     }
 }

@@ -46,6 +46,8 @@ async fn main() {
         Ok(Status::Eof) => {}
         // client was canceled by the user (`stop`)
         Ok(Status::Canceled) => {}
+        // the client's connection timed out
+        Ok(Status::Timeout) => {}
         // an error was received when trying to read or write
         Err(err) => eprintln!("error!: {}", err),
     };

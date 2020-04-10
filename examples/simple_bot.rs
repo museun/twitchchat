@@ -98,6 +98,7 @@ async fn main() {
             match status {
                 Ok(Status::Canceled) => { eprintln!("runner was canceled") }
                 Ok(Status::Eof) => { eprintln!("got an eof, exiting") }
+                Ok(Status::Timeout) => { eprintln!("client connection timed out") }
                 Err(err) => { eprintln!("error running: {}", err) }
             }
         }

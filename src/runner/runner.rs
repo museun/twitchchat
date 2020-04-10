@@ -1,9 +1,14 @@
 use {super::*, crate::*};
 
 use std::sync::Arc;
-use tokio::sync::Mutex;
-
 use tokio::prelude::*;
+use tokio::sync::Mutex;
+use tokio::time::Duration;
+
+// 45 seconds after a receive we'll send a ping
+const PING_INACTIVITY: Duration = Duration::from_secs(45);
+// and then wait 10 seconds for a pong resposne
+const PING_WINDOW: Duration = Duration::from_secs(10);
 
 /**
 The runner is the main "event loop" of this crate.
@@ -45,7 +50,8 @@ match runner.run(conn).await {
     // for the doc test
     Ok(Status::Canceled) => { assert!(true) }
     Ok(Status::Eof) => { panic!("eof") }
-    Err(err) => { panic!("err") }
+    Ok(Status::Timeout) => { panic!("timeout") }
+    Err(err) => { panic!("{}", err) }
 };
 # });
 ```
@@ -132,9 +138,16 @@ impl Runner {
 
         let mut out = self.writer;
 
-        // TODO timer-based ping impl to check for timeout
+        let (mut check_timeout, timeout_delay) =
+            Self::check_connection(&self.dispatcher, out.clone());
+
         loop {
             tokio::select! {
+                _ = timeout_delay.notified() => {
+                    log::warn!("timeout detected, quitting loop");
+                    break Ok(Status::Timeout);
+                }
+
                 // Abort notification
                 _ = self.abort.wait_for() => {
                     let _ = self.dispatcher.clear_subscriptions_all();
@@ -169,6 +182,8 @@ impl Runner {
                     }
 
                     buffer.clear();
+
+                    let _ = check_timeout.send(()).await;
                 },
 
                 // Write half
@@ -182,6 +197,55 @@ impl Runner {
                 else => { break Ok(Status::Eof) }
             }
         }
+    }
+
+    fn check_connection(
+        dispatcher: &Dispatcher,
+        mut writer: Writer,
+    ) -> (tokio::sync::mpsc::Sender<()>, Arc<tokio::sync::Notify>) {
+        use futures::prelude::*;
+        use tokio::sync::{mpsc, Notify};
+
+        let mut pong = dispatcher.subscribe_internal::<crate::events::Pong>(true);
+        let timeout = Arc::new(Notify::new());
+        let (tx, mut rx) = mpsc::channel(1);
+
+        tokio::task::spawn({
+            let timeout = timeout.clone();
+            async move {
+                loop {
+                    tokio::select! {
+                        _ = tokio::time::delay_for(PING_INACTIVITY) => {
+                            log::debug!("inactivity detected of {:?}, sending a ping", PING_INACTIVITY);
+                            if writer.ping(&format!(
+                                "{}",
+                                std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .expect("time to not go backwards")
+                                    .as_secs()
+                            ))
+                            .await.is_err() {
+                                timeout.notify();
+                                log::error!("cannot send ping");
+                                break;
+                            }
+
+                            if tokio::time::timeout(PING_WINDOW, pong.next())
+                                .await
+                                .is_err()
+                            {
+                                timeout.notify();
+                                log::error!("did not get a ping after {:?}", PING_WINDOW);
+                                break;
+                            }
+                        }
+                        Some(..) = rx.next() => { }
+                    }
+                }
+            }
+        });
+
+        (tx, timeout)
     }
 }
 

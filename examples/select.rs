@@ -26,6 +26,7 @@ async fn main() {
             match status {
                 Ok(Status::Eof) => {}
                 Ok(Status::Canceled) => {}
+                Ok(Status::Timeout) => {}
                 Err(err) => panic!(err),
             }
         }
