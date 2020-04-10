@@ -125,6 +125,9 @@ async fn main() {
         Ok(twitchchat::Status::Canceled) => {
             eprintln!("client was stopped by user");
         }
+        Ok(twitchchat::Status::Timeout) => {
+            eprintln!("client's connection timed out");
+        }
         Err(err) => {
             eprintln!("error: {}", err);
         }
