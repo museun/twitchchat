@@ -38,6 +38,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
             "MODE" => Mode::parse(msg)?.into(),
+            "WHISPER" => Whisper::parse(msg)?.into(),
             _ => msg.clone().into(),
         };
         Ok(out)
@@ -307,6 +308,17 @@ parse! {
         msg.expect_command("USERSTATE")?;
         msg.expect_arg(0).map(|channel| Self {
             channel,
+            tags: msg.tags.clone(),
+        })
+    }
+}
+
+parse! {
+    Whisper { name, data, tags, } => |msg: &'t Message<'t>| {
+        msg.expect_command("WHISPER")?;
+        Ok(Self {
+            name: msg.expect_nick()?,
+            data: msg.expect_data()?.clone(),
             tags: msg.tags.clone(),
         })
     }

@@ -437,6 +437,21 @@ fn user_state() {
 }
 
 #[test]
+fn whisper() {
+    let input = ":test!user@host WHISPER museun :this is a test\r\n";
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Whisper::parse(&msg).unwrap(),
+            Whisper {
+                name: "test".into(),
+                data: "this is a test".into(),
+                tags: Default::default(),
+            }
+        )
+    }
+}
+
+#[test]
 fn user_notice_unknown() {
     let input = "@badge-info=subscriber/8;badges=subscriber/6,bits/100;color=#59517B;display-name=lllAirJordanlll;emotes=;flags=;id=3198b02c-eaf4-4904-9b07-eb1b2b12ba50;login=lllairjordanlll;mod=0;msg-id=resub;msg-param-cumulative-months=8;msg-param-months=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(giantwaffle);msg-param-sub-plan=1000;room-id=22552479;subscriber=1;system-msg=lllAirJordanlll\\ssubscribed\\sat\\sTier\\s1.\\sThey\'ve\\ssubscribed\\sfor\\s8\\smonths!;tmi-sent-ts=1580932171144;user-id=44979519;user-type= :tmi.twitch.tv USERNOTICE #giantwaffle\r\n";
     let msg = crate::decode(input).next().unwrap().unwrap();
