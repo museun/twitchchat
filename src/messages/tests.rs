@@ -116,8 +116,8 @@ fn global_user_state() {
 }
 
 #[test]
-fn host_target() {
-    let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun 1024\r\n";
+fn host_target_start() {
+    let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :museun 1024\r\n";
     for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::parse(&msg).unwrap(),
@@ -125,7 +125,7 @@ fn host_target() {
                 source: "#shaken_bot".into(),
                 viewers: Some(1024),
                 kind: HostTargetKind::Start {
-                    target: "#museun".into()
+                    target: "museun".into()
                 },
             }
         )
@@ -133,17 +133,15 @@ fn host_target() {
 }
 
 #[test]
-fn host_target_none() {
-    let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot #museun\r\n";
+fn host_target_end() {
+    let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :- 1024\r\n";
     for msg in crate::decode(input).map(|s| s.unwrap()) {
         assert_eq!(
             HostTarget::parse(&msg).unwrap(),
             HostTarget {
                 source: "#shaken_bot".into(),
-                viewers: None,
-                kind: HostTargetKind::Start {
-                    target: "#museun".into()
-                },
+                viewers: Some(1024),
+                kind: HostTargetKind::End,
             }
         )
     }

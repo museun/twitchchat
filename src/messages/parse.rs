@@ -28,7 +28,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "PART" => Part::parse(msg)?.into(),
             "PRIVMSG" => Privmsg::parse(msg)?.into(),
             "CAP" => Cap::parse(msg)?.into(),
-            "HOSTARGET" => HostTarget::parse(msg)?.into(),
+            "HOSTTARGET" => HostTarget::parse(msg)?.into(),
             "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
             "NOTICE" => Notice::parse(msg)?.into(),
             "CLEARCHAT" => ClearChat::parse(msg)?.into(),
@@ -150,16 +150,20 @@ parse! {
     HostTarget { source, viewers, kind } => |msg: &'t Message<'t>| {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
-        let (kind, viewers) = if let Ok(target) = msg.expect_arg(1) {
-            let viewers = msg.expect_arg(2).ok().and_then(|data| data.parse().ok());
-            (HostTargetKind::Start { target }, viewers)
-        } else {
-            let data = msg.expect_data()?;
-            if !data.starts_with('-') {
-                return Err(InvalidMessage::ExpectedData);
+        let (kind, viewers) = {
+            let mut data = msg.expect_data()?.splitn(2,|p: char| p.is_whitespace());
+            match data.next() {
+                Some("-") => {
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::End, viewers)
+                }
+                Some(target) => {
+                let target = target.into();
+                let viewers = data.next().and_then(|s| s.parse().ok());
+                (HostTargetKind::Start { target }, viewers)
+                }
+                None => return Err(InvalidMessage::ExpectedData),
             }
-            let viewers = data.get(2..).and_then(|s| s.parse().ok());
-            (HostTargetKind::End, viewers)
         };
         Ok(Self {
             source,
