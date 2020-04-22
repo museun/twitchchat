@@ -214,6 +214,16 @@ impl<'t> Event<'t> for UserState {
     type Parsed = messages::UserState<'t>;
 }
 
+/// Used to get a [messages::Whisper][Whisper]
+///
+/// [Whisper]: ../messages/struct.Whisper.html
+#[non_exhaustive]
+pub struct Whisper;
+
+impl<'t> Event<'t> for Whisper {
+    type Parsed = messages::Whisper<'t>;
+}
+
 /// Used to get a [messages::AllCommands][AllCommands]
 ///
 /// [AllCommands]: ../messages/enum.AllCommands.html
@@ -253,4 +263,5 @@ pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
         .add_event::<RoomState>()
         .add_event::<UserState>()
         .add_event::<UserNotice>()
+        .add_event::<Whisper>()
 }

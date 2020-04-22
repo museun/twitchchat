@@ -28,7 +28,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "PART" => Part::parse(msg)?.into(),
             "PRIVMSG" => Privmsg::parse(msg)?.into(),
             "CAP" => Cap::parse(msg)?.into(),
-            "HOSTARGET" => HostTarget::parse(msg)?.into(),
+            "HOSTTARGET" => HostTarget::parse(msg)?.into(),
             "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
             "NOTICE" => Notice::parse(msg)?.into(),
             "CLEARCHAT" => ClearChat::parse(msg)?.into(),
@@ -38,6 +38,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
             "MODE" => Mode::parse(msg)?.into(),
+            "WHISPER" => Whisper::parse(msg)?.into(),
             _ => msg.clone().into(),
         };
         Ok(out)
@@ -150,16 +151,20 @@ parse! {
     HostTarget { source, viewers, kind } => |msg: &'t Message<'t>| {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
-        let (kind, viewers) = if let Ok(target) = msg.expect_arg(1) {
-            let viewers = msg.expect_arg(2).ok().and_then(|data| data.parse().ok());
-            (HostTargetKind::Start { target }, viewers)
-        } else {
-            let data = msg.expect_data()?;
-            if !data.starts_with('-') {
-                return Err(InvalidMessage::ExpectedData);
+        let (kind, viewers) = {
+            let mut data = msg.expect_data()?.splitn(2, char::is_whitespace);
+            match data.next() {
+                Some("-") => {
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::End, viewers)
+                }
+                Some(target) => {
+                    let target = target.into();
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::Start { target }, viewers)
+                }
+                None => return Err(InvalidMessage::ExpectedData),
             }
-            let viewers = data.get(2..).and_then(|s| s.parse().ok());
-            (HostTargetKind::End, viewers)
         };
         Ok(Self {
             source,
@@ -224,10 +229,11 @@ parse! {
     Mode { channel, status, name,} => |msg: &'t Message<'t>| {
         msg.expect_command("MODE")?;
         let channel = msg.expect_arg(0)?;
-        let status = match msg.expect_arg(1)?.chars().next().unwrap() {
+        let kind = msg.expect_arg(1)?.chars().next().ok_or_else(|| InvalidMessage::ExpectedData)?;
+        let status = match kind {
             '+' => ModeStatus::Gained,
             '-' => ModeStatus::Lost,
-            _ => unreachable!(),
+            _ => return Err(InvalidMessage::ExpectedData),
         };
         let name = msg.expect_arg(2)?;
         Ok(Self {
@@ -303,6 +309,17 @@ parse! {
         msg.expect_command("USERSTATE")?;
         msg.expect_arg(0).map(|channel| Self {
             channel,
+            tags: msg.tags.clone(),
+        })
+    }
+}
+
+parse! {
+    Whisper { name, data, tags, } => |msg: &'t Message<'t>| {
+        msg.expect_command("WHISPER")?;
+        Ok(Self {
+            name: msg.expect_nick()?,
+            data: msg.expect_data()?.clone(),
             tags: msg.tags.clone(),
         })
     }

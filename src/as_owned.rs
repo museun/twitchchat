@@ -182,6 +182,7 @@ impl<'t> AsOwned for AllCommands<'t> {
             AllCommands::RoomState(inner) => AllCommands::RoomState(inner.as_owned()),
             AllCommands::UserNotice(inner) => AllCommands::UserNotice(inner.as_owned()),
             AllCommands::UserState(inner) => AllCommands::UserState(inner.as_owned()),
+            AllCommands::Whisper(inner) => AllCommands::Whisper(inner.as_owned()),
         }
     }
 }
