@@ -2,6 +2,7 @@
 ///
 /// This ensures the twitch channels align with IRC naming scheme.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Channel(String);
 
 impl AsRef<str> for Channel {
