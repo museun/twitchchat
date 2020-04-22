@@ -133,6 +133,23 @@ fn host_target_start() {
 }
 
 #[test]
+fn host_target_start_none() {
+    let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :museun -\r\n";
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            HostTarget::parse(&msg).unwrap(),
+            HostTarget {
+                source: "#shaken_bot".into(),
+                viewers: None,
+                kind: HostTargetKind::Start {
+                    target: "museun".into()
+                },
+            }
+        )
+    }
+}
+
+#[test]
 fn host_target_end() {
     let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :- 1024\r\n";
     for msg in crate::decode(input).map(|s| s.unwrap()) {
