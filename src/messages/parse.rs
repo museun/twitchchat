@@ -229,10 +229,11 @@ parse! {
     Mode { channel, status, name,} => |msg: &'t Message<'t>| {
         msg.expect_command("MODE")?;
         let channel = msg.expect_arg(0)?;
-        let status = match msg.expect_arg(1)?.chars().next().unwrap() {
+        let kind = msg.expect_arg(1)?.chars().next().ok_or_else(|| InvalidMessage::ExpectedData)?;
+        let status = match kind {
             '+' => ModeStatus::Gained,
             '-' => ModeStatus::Lost,
-            _ => unreachable!(),
+            _ => return Err(InvalidMessage::ExpectedData),
         };
         let name = msg.expect_arg(2)?;
         Ok(Self {
