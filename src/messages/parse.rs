@@ -152,16 +152,16 @@ parse! {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
         let (kind, viewers) = {
-            let mut data = msg.expect_data()?.splitn(2,|p: char| p.is_whitespace());
+            let mut data = msg.expect_data()?.splitn(2, char::is_whitespace);
             match data.next() {
                 Some("-") => {
                     let viewers = data.next().and_then(|s| s.parse().ok());
                     (HostTargetKind::End, viewers)
                 }
                 Some(target) => {
-                let target = target.into();
-                let viewers = data.next().and_then(|s| s.parse().ok());
-                (HostTargetKind::Start { target }, viewers)
+                    let target = target.into();
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::Start { target }, viewers)
                 }
                 None => return Err(InvalidMessage::ExpectedData),
             }

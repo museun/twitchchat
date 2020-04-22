@@ -107,10 +107,10 @@ pub enum HostTargetKind<'t> {
     /// The host event started
     Start {
         /// Target channel that is being hosted
-        /// 
+        ///
         /// ## Note
-        /// 
-        /// Does not include a `#`, e.g hosting channel `#jtv` will mean target is `jtv` 
+        ///
+        /// Does not include a `#`, e.g hosting channel `#jtv` will mean target is `jtv`
         target: Cow<'t, str>,
     },
     /// The host event ended
