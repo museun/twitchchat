@@ -1,5 +1,5 @@
 use super::*;
-use crate::Parse;
+use crate::{Parse, Tags};
 
 #[test]
 fn raw() {

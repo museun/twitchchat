@@ -24,7 +24,7 @@ impl std::fmt::Debug for MpscWriter {
 impl Clone for MpscWriter {
     fn clone(&self) -> Self {
         Self {
-            buffer: vec![],
+            buffer: Vec::new(),
             sender: self.sender.clone(),
         }
     }
@@ -32,9 +32,9 @@ impl Clone for MpscWriter {
 
 impl MpscWriter {
     /// Create a new MpscServer from this channel's sender
-    pub fn new(sender: Tx) -> Self {
+    pub const fn new(sender: Tx) -> Self {
         Self {
-            buffer: vec![],
+            buffer: Vec::new(),
             sender,
         }
     }

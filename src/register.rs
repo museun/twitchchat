@@ -22,7 +22,7 @@ assert_eq!(
 */
 pub async fn register<W: ?Sized>(user_config: &UserConfig, writer: &mut W) -> std::io::Result<()>
 where
-    W: AsyncWrite + Unpin,
+    W: AsyncWrite + Unpin + Send,
 {
     let UserConfig {
         name,
