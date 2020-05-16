@@ -1,18 +1,5 @@
 use super::*;
 
-/// The kind of the Names event
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum NamesKind<'t> {
-    /// Names begins, this'll continue until `End` is recieved
-    Start {
-        /// A list of user names
-        users: Vec<Cow<'t, str>>,
-    },
-    /// Names end, this'll mark the end of the event
-    End,
-}
-
 /// The names event
 ///
 /// This'll will list people on a channel for your user
@@ -69,6 +56,31 @@ impl<'t> AsOwned for Names<'t> {
             name: self.name.as_owned(),
             channel: self.channel.as_owned(),
             kind: self.kind.as_owned(),
+        }
+    }
+}
+
+/// The kind of the Names event
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NamesKind<'t> {
+    /// Names begins, this'll continue until `End` is recieved
+    Start {
+        /// A list of user names
+        users: Vec<Cow<'t, str>>,
+    },
+    /// Names end, this'll mark the end of the event
+    End,
+}
+
+impl<'t> AsOwned for NamesKind<'t> {
+    type Owned = NamesKind<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        match self {
+            NamesKind::Start { users } => NamesKind::Start {
+                users: users.as_owned(),
+            },
+            NamesKind::End => NamesKind::End,
         }
     }
 }

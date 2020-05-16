@@ -1,18 +1,5 @@
 use super::*;
 
-/// Event kind for determine when a Host event beings or end
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum HostTargetKind<'t> {
-    /// The host event started
-    Start {
-        /// Target channel that is being hosted
-        target: Cow<'t, str>,
-    },
-    /// The host event ended
-    End,
-}
-
 /// When a channel starts to host another channel
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -55,6 +42,31 @@ impl<'t> AsOwned for HostTarget<'t> {
             source: self.source.as_owned(),
             viewers: self.viewers.as_owned(),
             kind: self.kind.as_owned(),
+        }
+    }
+}
+
+/// Event kind for determine when a Host event beings or end
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum HostTargetKind<'t> {
+    /// The host event started
+    Start {
+        /// Target channel that is being hosted
+        target: Cow<'t, str>,
+    },
+    /// The host event ended
+    End,
+}
+
+impl<'t> AsOwned for HostTargetKind<'t> {
+    type Owned = HostTargetKind<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        match self {
+            HostTargetKind::Start { target } => HostTargetKind::Start {
+                target: target.as_owned(),
+            },
+            HostTargetKind::End => HostTargetKind::End,
         }
     }
 }

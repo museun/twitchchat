@@ -80,6 +80,34 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
     }
 }
 
+impl<'t> AsOwned for AllCommands<'t> {
+    type Owned = AllCommands<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        match self {
+            AllCommands::Unknown(inner) => AllCommands::Unknown(inner.as_owned()),
+            AllCommands::Cap(inner) => AllCommands::Cap(inner.as_owned()),
+            AllCommands::ClearChat(inner) => AllCommands::ClearChat(inner.as_owned()),
+            AllCommands::ClearMsg(inner) => AllCommands::ClearMsg(inner.as_owned()),
+            AllCommands::GlobalUserState(inner) => AllCommands::GlobalUserState(inner.as_owned()),
+            AllCommands::HostTarget(inner) => AllCommands::HostTarget(inner.as_owned()),
+            AllCommands::IrcReady(inner) => AllCommands::IrcReady(inner.as_owned()),
+            AllCommands::Join(inner) => AllCommands::Join(inner.as_owned()),
+            AllCommands::Mode(inner) => AllCommands::Mode(inner.as_owned()),
+            AllCommands::Names(inner) => AllCommands::Names(inner.as_owned()),
+            AllCommands::Notice(inner) => AllCommands::Notice(inner.as_owned()),
+            AllCommands::Part(inner) => AllCommands::Part(inner.as_owned()),
+            AllCommands::Ping(inner) => AllCommands::Ping(inner.as_owned()),
+            AllCommands::Pong(inner) => AllCommands::Pong(inner.as_owned()),
+            AllCommands::Privmsg(inner) => AllCommands::Privmsg(inner.as_owned()),
+            AllCommands::Ready(inner) => AllCommands::Ready(inner.as_owned()),
+            AllCommands::Reconnect(inner) => AllCommands::Reconnect(inner.as_owned()),
+            AllCommands::RoomState(inner) => AllCommands::RoomState(inner.as_owned()),
+            AllCommands::UserNotice(inner) => AllCommands::UserNotice(inner.as_owned()),
+            AllCommands::UserState(inner) => AllCommands::UserState(inner.as_owned()),
+        }
+    }
+}
+
 // manual impls because they are different
 impl<'t> From<Raw<'t>> for AllCommands<'t> {
     fn from(msg: Raw<'t>) -> Self {

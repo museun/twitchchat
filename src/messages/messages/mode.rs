@@ -1,15 +1,5 @@
 use super::*;
 
-/// Status of gaining or losing moderator (operator) status
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ModeStatus {
-    /// Moderator status gained
-    Gained,
-    /// Moderator status lost
-    Lost,
-}
-
 /// When a user gains or loses moderator (operator) status in a channel.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -48,5 +38,22 @@ impl<'t> AsOwned for Mode<'t> {
             status: self.status.as_owned(),
             name: self.name.as_owned(),
         }
+    }
+}
+
+/// Status of gaining or losing moderator (operator) status
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ModeStatus {
+    /// Moderator status gained
+    Gained,
+    /// Moderator status lost
+    Lost,
+}
+
+impl<'t> AsOwned for ModeStatus {
+    type Owned = Self;
+    fn as_owned(&self) -> Self::Owned {
+        *self
     }
 }
