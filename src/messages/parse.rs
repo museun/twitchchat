@@ -2,15 +2,8 @@ use super::expect::Expect as _;
 use super::*;
 use crate::{AsOwned, Parse};
 
-parse! {
-    bare Raw {
-        raw,
-        tags,
-        prefix,
-        command,
-        args,
-        data
-    } => |msg: &'t Message<'t>| {
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Raw<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         Ok(msg.clone())
     }
 }
@@ -19,43 +12,53 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         let out = match &*msg.command {
             "001" => IrcReady::parse(msg)?.into(),
-            "PING" => Ping::parse(msg)?.into(),
-            "PONG" => Pong::parse(msg)?.into(),
-            "376" => Ready::parse(msg)?.into(),
             "353" => Names::parse(msg)?.into(),
             "366" => Names::parse(msg)?.into(),
-            "JOIN" => Join::parse(msg)?.into(),
-            "PART" => Part::parse(msg)?.into(),
-            "PRIVMSG" => Privmsg::parse(msg)?.into(),
+            "376" => Ready::parse(msg)?.into(),
             "CAP" => Cap::parse(msg)?.into(),
-            "HOSTARGET" => HostTarget::parse(msg)?.into(),
-            "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
-            "NOTICE" => Notice::parse(msg)?.into(),
             "CLEARCHAT" => ClearChat::parse(msg)?.into(),
             "CLEARMSG" => ClearMsg::parse(msg)?.into(),
+            "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
+            "HOSTARGET" => HostTarget::parse(msg)?.into(),
+            "JOIN" => Join::parse(msg)?.into(),
+            "MODE" => Mode::parse(msg)?.into(),
+            "NOTICE" => Notice::parse(msg)?.into(),
+            "PART" => Part::parse(msg)?.into(),
+            "PING" => Ping::parse(msg)?.into(),
+            "PONG" => Pong::parse(msg)?.into(),
+            "PRIVMSG" => Privmsg::parse(msg)?.into(),
             "RECONNECT" => Reconnect::parse(msg)?.into(),
             "ROOMSTATE" => RoomState::parse(msg)?.into(),
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
-            "MODE" => Mode::parse(msg)?.into(),
             _ => msg.clone().into(),
         };
         Ok(out)
     }
 }
 
-parse! {
-    RoomState { tags, channel } => |msg: &'t Message<'t>| {
+impl<'a: 't, 't> Parse<&'a Message<'t>> for RoomState<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("ROOMSTATE")?;
         Ok(Self {
             channel: msg.expect_arg(0)?,
-            tags: msg.tags.clone()
+            tags: msg.tags.clone(),
         })
     }
 }
 
-parse! {
-    UserNotice { tags, channel, message } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for RoomState<'t> {
+    type Owned = RoomState<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        RoomState {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for UserNotice<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("USERNOTICE")?;
         let channel = msg.expect_arg(0)?;
         Ok(Self {
@@ -66,76 +69,82 @@ parse! {
     }
 }
 
-parse! {
-    Names { name, channel, kind } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for UserNotice<'t> {
+    type Owned = UserNotice<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        UserNotice {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+            message: self.message.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Names<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         let kind = match &*msg.command {
             "353" => {
                 let users = msg.expect_data()?.split_whitespace();
                 let users = users.map(Cow::Borrowed).collect();
-                NamesKind::Start {
-                    users
-                }
+                NamesKind::Start { users }
             }
-            "366" => {
-                NamesKind::End
+            "366" => NamesKind::End,
+            unknown => {
+                return Err(InvalidMessage::InvalidCommand {
+                    expected: "353 or 366".to_string(),
+                    got: unknown.to_string(),
+                })
             }
-            unknown => return Err(InvalidMessage::InvalidCommand {
-                expected: "353 or 366".to_string(),
-                got: unknown.to_string()
-            })
         };
-
         let name = msg.expect_arg(0)?;
         let channel = match msg.expect_arg(1)? {
             d if d == "=" => msg.expect_arg(2)?,
-            channel => channel
+            channel => channel,
         };
-
         Ok(Self {
             name,
             channel,
-            kind
+            kind,
         })
     }
 }
 
-parse! {
-    GlobalUserState {
-        user_id,
-        display_name,
-        color,
-        emote_sets,
-        badges
-    } => |msg: &'t Message<'t>| {
-        msg.expect_command("GLOBALUSERSTATE")?;
+impl<'t> AsOwned for Names<'t> {
+    type Owned = Names<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Names {
+            name: self.name.as_owned(),
+            channel: self.channel.as_owned(),
+            kind: self.kind.as_owned(),
+        }
+    }
+}
 
+impl<'a: 't, 't> Parse<&'a Message<'t>> for GlobalUserState<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
+        msg.expect_command("GLOBALUSERSTATE")?;
         let user_id = msg
             .tags
             .get("user-id")
             .cloned()
             .expect("user-id attached to message");
-
         let display_name = msg.tags.get("display-name").cloned();
-
         let color = msg
             .tags
             .get("color")
             .and_then(|s| s.parse().ok())
             .clone()
             .unwrap_or_default();
-
         let emote_sets = msg
             .tags
             .get("emotes-set")
             .map(|s| s.split(',').map(Into::into).collect())
-            .unwrap_or_else(|| vec![Cow::from("0")]);
-
+            .unwrap_or_else(|| vec!["0".into()]);
         let badges = msg
             .tags
             .get("badges")
             .map(|s| s.split(',').filter_map(crate::Badge::parse).collect())
             .unwrap_or_default();
-
         Ok(Self {
             user_id,
             display_name,
@@ -146,8 +155,21 @@ parse! {
     }
 }
 
-parse! {
-    HostTarget { source, viewers, kind } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for GlobalUserState<'t> {
+    type Owned = GlobalUserState<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        GlobalUserState {
+            user_id: self.user_id.as_owned(),
+            display_name: self.display_name.as_owned(),
+            color: self.color.as_owned(),
+            emote_sets: self.emote_sets.as_owned(),
+            badges: self.badges.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for HostTarget<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
         let (kind, viewers) = if let Ok(target) = msg.expect_arg(1) {
@@ -169,8 +191,19 @@ parse! {
     }
 }
 
-parse! {
-    Cap { capability, acknowledged } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for HostTarget<'t> {
+    type Owned = HostTarget<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        HostTarget {
+            source: self.source.as_owned(),
+            viewers: self.viewers.as_owned(),
+            kind: self.kind.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Cap<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("CAP")?;
         let acknowledged = msg.expect_arg(1)? == "ACK";
         let capability = msg.expect_data()?.clone();
@@ -181,8 +214,18 @@ parse! {
     }
 }
 
-parse! {
-    ClearChat { tags, channel, name } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Cap<'t> {
+    type Owned = Cap<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Cap {
+            capability: self.capability.as_owned(),
+            acknowledged: self.acknowledged.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for ClearChat<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("CLEARCHAT")?;
         Ok(Self {
             tags: msg.tags.clone(),
@@ -192,8 +235,19 @@ parse! {
     }
 }
 
-parse! {
-    ClearMsg { tags, channel, message } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for ClearChat<'t> {
+    type Owned = ClearChat<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        ClearChat {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+            name: self.name.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for ClearMsg<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("CLEARMSG")?;
         Ok(Self {
             tags: msg.tags.clone(),
@@ -203,15 +257,35 @@ parse! {
     }
 }
 
-parse! {
-    IrcReady { nickname } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for ClearMsg<'t> {
+    type Owned = ClearMsg<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        ClearMsg {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+            message: self.message.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for IrcReady<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("001")?;
         msg.expect_arg(0).map(|nickname| Self { nickname })
     }
 }
 
-parse! {
-    Join { name, channel } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for IrcReady<'t> {
+    type Owned = IrcReady<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        IrcReady {
+            nickname: self.nickname.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Join<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("JOIN")?;
         Ok(Self {
             name: msg.expect_nick()?,
@@ -220,8 +294,18 @@ parse! {
     }
 }
 
-parse! {
-    Mode { channel, status, name,} => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Join<'t> {
+    type Owned = Join<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Join {
+            name: self.name.as_owned(),
+            channel: self.channel.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Mode<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("MODE")?;
         let channel = msg.expect_arg(0)?;
         let status = match msg.expect_arg(1)?.chars().next().unwrap() {
@@ -238,8 +322,19 @@ parse! {
     }
 }
 
-parse! {
-    Notice { tags, channel, message } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Mode<'t> {
+    type Owned = Mode<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Mode {
+            channel: self.channel.as_owned(),
+            status: self.status.as_owned(),
+            name: self.name.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Notice<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("NOTICE")?;
         Ok(Self {
             tags: msg.tags.clone(),
@@ -249,8 +344,19 @@ parse! {
     }
 }
 
-parse! {
-    Part { name, channel } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Notice<'t> {
+    type Owned = Notice<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Notice {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+            message: self.message.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Part<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PART")?;
         Ok(Self {
             name: msg.expect_nick()?,
@@ -259,22 +365,54 @@ parse! {
     }
 }
 
-parse! {
-    Ping { token } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Part<'t> {
+    type Owned = Part<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Part {
+            name: self.name.as_owned(),
+            channel: self.channel.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Ping<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PING")?;
-        msg.expect_data().map(|token| Self { token: token.clone() })
+        msg.expect_data().map(|token| Self {
+            token: token.clone(),
+        })
     }
 }
 
-parse! {
-    Pong { token } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Ping<'t> {
+    type Owned = Ping<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Ping {
+            token: self.token.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Pong<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PONG")?;
-        msg.expect_data().map(|token| Self { token: token.clone() })
+        msg.expect_data().map(|token| Self {
+            token: token.clone(),
+        })
     }
 }
 
-parse! {
-    Privmsg { name, channel, data, tags, } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Pong<'t> {
+    type Owned = Pong<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Pong {
+            token: self.token.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Privmsg<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PRIVMSG")?;
         Ok(Self {
             name: msg.expect_nick()?,
@@ -285,26 +423,64 @@ parse! {
     }
 }
 
-parse! {
-    Ready { username } => |msg: &'t Message<'t>| {
+impl<'t> AsOwned for Privmsg<'t> {
+    type Owned = Privmsg<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Privmsg {
+            name: self.name.as_owned(),
+            channel: self.channel.as_owned(),
+            data: self.data.as_owned(),
+            tags: self.tags.as_owned(),
+        }
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Ready<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("376")?;
         msg.expect_arg(0).map(|username| Self { username })
     }
 }
 
-parse! {
-    Reconnect => |msg: &'t Message<'t>| {
-        msg.expect_command("RECONNECT").map(|_| Self{ })
+impl<'t> AsOwned for Ready<'t> {
+    type Owned = Ready<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        Ready {
+            username: self.username.as_owned(),
+        }
     }
 }
 
-parse! {
-    UserState { tags, channel } => |msg: &'t Message<'t>| {
+impl AsOwned for Reconnect {
+    type Owned = Reconnect;
+    fn as_owned(&self) -> Self::Owned {
+        Reconnect {}
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for Reconnect {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
+        msg.expect_command("RECONNECT").map(|_| Self {})
+    }
+}
+
+impl<'a: 't, 't> Parse<&'a Message<'t>> for UserState<'t> {
+    fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("USERSTATE")?;
         msg.expect_arg(0).map(|channel| Self {
             channel,
             tags: msg.tags.clone(),
         })
+    }
+}
+
+impl<'t> AsOwned for UserState<'t> {
+    type Owned = UserState<'static>;
+    fn as_owned(&self) -> Self::Owned {
+        UserState {
+            tags: self.tags.as_owned(),
+            channel: self.channel.as_owned(),
+        }
     }
 }
 
