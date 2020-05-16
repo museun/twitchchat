@@ -29,7 +29,7 @@ The subscription will return a [EventStream] which can be used as a [Stream].
 */
 #[derive(Clone)]
 pub struct Dispatcher {
-    event_map: AnyMap<EventRegistration>,
+    pub(crate) event_map: AnyMap<EventRegistration>,
     cached: AnyMap<Box<dyn Any + Send>>,
 }
 

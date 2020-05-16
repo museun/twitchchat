@@ -227,30 +227,38 @@ impl<'t> Event<'t> for All {
 // TODO generate this with a macro
 use crate::Dispatcher;
 pub(crate) fn build_event_map(dispatcher: Dispatcher) -> Dispatcher {
-    // TODO this acquires the lock N times
-    // if we expose the inner map
-    // this we can lock once, add all of the events
-    // and release the lock
+    let mut dispatcher = Dispatcher::new();
+
+    macro_rules! add {
+        ($event:ty) => {
+            dispatcher
+                .event_map
+                .entry(std::any::TypeId::of::<$event>())
+                .or_default();
+        };
+    }
+
+    add!(Ready);
+    add!(All);
+    add!(Cap);
+    add!(ClearChat);
+    add!(ClearMsg);
+    add!(GlobalUserState);
+    add!(HostTarget);
+    add!(IrcReady);
+    add!(Join);
+    add!(Mode);
+    add!(Names);
+    add!(Notice);
+    add!(Part);
+    add!(Ping);
+    add!(Pong);
+    add!(Privmsg);
+    add!(Raw);
+    add!(Reconnect);
+    add!(RoomState);
+    add!(UserState);
+    add!(UserNotice);
+
     dispatcher
-        .add_event::<Ready>()
-        .add_event::<All>()
-        .add_event::<Cap>()
-        .add_event::<ClearChat>()
-        .add_event::<ClearMsg>()
-        .add_event::<GlobalUserState>()
-        .add_event::<HostTarget>()
-        .add_event::<IrcReady>()
-        .add_event::<Join>()
-        .add_event::<Mode>()
-        .add_event::<Names>()
-        .add_event::<Notice>()
-        .add_event::<Part>()
-        .add_event::<Ping>()
-        .add_event::<Pong>()
-        .add_event::<Privmsg>()
-        .add_event::<Raw>()
-        .add_event::<Reconnect>()
-        .add_event::<RoomState>()
-        .add_event::<UserState>()
-        .add_event::<UserNotice>()
 }
