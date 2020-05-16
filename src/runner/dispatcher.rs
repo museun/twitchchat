@@ -35,8 +35,45 @@ pub struct Dispatcher {
 
 impl Default for Dispatcher {
     fn default() -> Self {
+        use crate::events::*;
+
         let (event_map, cached) = Default::default();
-        events::build_event_map(Self { event_map, cached })
+
+        macro_rules! add {
+            ($event:ty) => {
+                event_map
+                    .entry(std::any::TypeId::of::<$event>())
+                    .or_default();
+            };
+        }
+
+        add!(IrcReady);
+        add!(Ready);
+        add!(Cap);
+        add!(ClearChat);
+        add!(ClearMsg);
+        add!(GlobalUserState);
+        add!(HostTarget);
+        add!(Join);
+        add!(Notice);
+        add!(Part);
+        add!(Ping);
+        add!(Pong);
+        add!(Privmsg);
+        add!(Reconnect);
+        add!(RoomState);
+        add!(UserState);
+        add!(UserNotice);
+
+        // TODO: deprecated
+        add!(Mode);
+        add!(Names);
+
+        // the meta-events
+        add!(All);
+        add!(Raw);
+
+        Self { event_map, cached }
     }
 }
 
@@ -372,6 +409,7 @@ impl Dispatcher {
             senders.retain(|(_, sender)| {
                 sender
                     .downcast_ref::<Sender<T::Owned>>()
+                    // TODO, if we remove this unwrap then we can expose the Event traits
                     .unwrap()
                     .try_send(Arc::clone(&msg))
             });
@@ -389,24 +427,28 @@ impl Dispatcher {
 
         match msg.command.as_ref() {
             "001" => try_send!(IrcReady),
-            "PING" => try_send!(Ping),
-            "PONG" => try_send!(Pong),
-            "353" => try_send!(Names),
-            "366" => try_send!(Names),
             "376" => try_send!(Ready),
-            "JOIN" => try_send!(Join),
-            "PART" => try_send!(Part),
-            "PRIVMSG" => try_send!(Privmsg),
             "CAP" => try_send!(Cap),
-            "HOSTARGET" => try_send!(HostTarget),
-            "GLOBALUSERSTATE" => try_send!(GlobalUserState),
-            "NOTICE" => try_send!(Notice),
             "CLEARCHAT" => try_send!(ClearChat),
             "CLEARMSG" => try_send!(ClearMsg),
+            "GLOBALUSERSTATE" => try_send!(GlobalUserState),
+            "HOSTARGET" => try_send!(HostTarget),
+            "JOIN" => try_send!(Join),
+            "NOTICE" => try_send!(Notice),
+            "PART" => try_send!(Part),
+            "PING" => try_send!(Ping),
+            "PONG" => try_send!(Pong),
+            "PRIVMSG" => try_send!(Privmsg),
             "RECONNECT" => try_send!(Reconnect),
             "ROOMSTATE" => try_send!(RoomState),
-            "USERSTATE" => try_send!(UserState),
             "USERNOTICE" => try_send!(UserNotice),
+            "USERSTATE" => try_send!(UserState),
+
+            // TODO: deprecated
+            "353" => try_send!(Names),
+            // TODO: deprecated
+            "366" => try_send!(Names),
+            // TODO: deprecated
             "MODE" => try_send!(Mode),
             _ => {}
         }
