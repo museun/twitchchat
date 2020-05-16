@@ -37,10 +37,11 @@ impl Default for Dispatcher {
     fn default() -> Self {
         use crate::events::*;
 
-        let (event_map, cached) = Default::default();
+        let mut event_map = HashMap::default();
 
         macro_rules! add {
             ($event:ty) => {
+                #[allow(deprecated)]
                 event_map
                     .entry(std::any::TypeId::of::<$event>())
                     .or_default();
@@ -65,7 +66,7 @@ impl Default for Dispatcher {
         add!(UserState);
         add!(UserNotice);
 
-        // TODO: deprecated
+        // These are deprecated
         add!(Mode);
         add!(Names);
 
@@ -73,7 +74,10 @@ impl Default for Dispatcher {
         add!(All);
         add!(Raw);
 
-        Self { event_map, cached }
+        Self {
+            event_map: Arc::new(Mutex::new(event_map)),
+            cached: Default::default(),
+        }
     }
 }
 
@@ -376,15 +380,6 @@ impl Dispatcher {
         n
     }
 
-    /// Add this event into the dispatcher
-    pub(crate) fn add_event<'a, T>(self) -> Self
-    where
-        T: Event<'a> + 'static,
-    {
-        self.event_map.lock().entry(TypeId::of::<T>()).or_default();
-        self
-    }
-
     /// Tries to send this message to any subscribers
     pub(crate) fn try_send<'a, T>(&self, msg: &'a Message<'a>)
     where
@@ -420,9 +415,10 @@ impl Dispatcher {
 impl Dispatcher {
     pub(crate) fn dispatch<'a>(&self, msg: &'a Message<'a>) {
         macro_rules! try_send {
-            ($ident:ident) => {
+            ($ident:ident) => {{
+                #[allow(deprecated)]
                 self.try_send::<events::$ident>(&msg)
-            };
+            }};
         }
 
         match msg.command.as_ref() {
@@ -444,11 +440,9 @@ impl Dispatcher {
             "USERNOTICE" => try_send!(UserNotice),
             "USERSTATE" => try_send!(UserState),
 
-            // TODO: deprecated
+            // These are deprecated
             "353" => try_send!(Names),
-            // TODO: deprecated
             "366" => try_send!(Names),
-            // TODO: deprecated
             "MODE" => try_send!(Mode),
             _ => {}
         }

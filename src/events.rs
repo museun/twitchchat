@@ -88,8 +88,13 @@ impl<'t> Event<'t> for Join {
 ///
 /// [Mode]: ../messages/struct.Mode.html
 #[non_exhaustive]
+#[deprecated(
+    since = "0.10.2",
+    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
+)]
 pub struct Mode;
 
+#[allow(deprecated)]
 impl<'t> Event<'t> for Mode {
     type Parsed = messages::Mode<'t>;
 }
@@ -98,8 +103,13 @@ impl<'t> Event<'t> for Mode {
 ///
 /// [Names]: ../messages/struct.Names.html
 #[non_exhaustive]
+#[deprecated(
+    since = "0.10.2",
+    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
+)]
 pub struct Names;
 
+#[allow(deprecated)]
 impl<'t> Event<'t> for Names {
     type Parsed = messages::Names<'t>;
 }

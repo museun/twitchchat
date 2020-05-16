@@ -65,6 +65,7 @@ fn room_state() {
     }
 }
 
+#[allow(deprecated)]
 #[test]
 fn names_start() {
     let input =
@@ -83,6 +84,7 @@ fn names_start() {
     }
 }
 
+#[allow(deprecated)]
 #[test]
 fn names_end() {
     let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
@@ -302,6 +304,7 @@ fn join() {
     }
 }
 
+#[allow(deprecated)]
 #[test]
 fn mode_lost() {
     let input = ":jtv MODE #museun -o shaken_bot\r\n";
@@ -317,6 +320,7 @@ fn mode_lost() {
     }
 }
 
+#[allow(deprecated)]
 #[test]
 fn mode_gained() {
     let input = ":jtv MODE #museun +o shaken_bot\r\n";

@@ -52,10 +52,6 @@ cfg_async! {
 }
 
 cfg_async! {
-    pub mod events;
-}
-
-cfg_async! {
     mod register;
     #[doc(inline)]
     pub use register::register;
@@ -82,6 +78,8 @@ pub mod twitch;
 
 #[doc(inline)]
 pub use twitch::*;
+
+pub mod events;
 
 pub mod messages;
 

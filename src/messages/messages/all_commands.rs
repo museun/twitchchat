@@ -26,9 +26,9 @@ pub enum AllCommands<'t> {
     /// A Join event occured
     Join(Join<'t>),
     /// A Mode event occured
-    Mode(Mode<'t>),
+    Mode(#[allow(deprecated)] Mode<'t>),
     /// A Names event occured
-    Names(Names<'t>),
+    Names(#[allow(deprecated)] Names<'t>),
     /// A Notice event occured
     Notice(Notice<'t>),
     /// A Part event occured
@@ -55,8 +55,6 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         let out = match &*msg.command {
             "001" => IrcReady::parse(msg)?.into(),
-            "353" => Names::parse(msg)?.into(),
-            "366" => Names::parse(msg)?.into(),
             "376" => Ready::parse(msg)?.into(),
             "CAP" => Cap::parse(msg)?.into(),
             "CLEARCHAT" => ClearChat::parse(msg)?.into(),
@@ -64,7 +62,6 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
             "HOSTARGET" => HostTarget::parse(msg)?.into(),
             "JOIN" => Join::parse(msg)?.into(),
-            "MODE" => Mode::parse(msg)?.into(),
             "NOTICE" => Notice::parse(msg)?.into(),
             "PART" => Part::parse(msg)?.into(),
             "PING" => Ping::parse(msg)?.into(),
@@ -74,6 +71,13 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "ROOMSTATE" => RoomState::parse(msg)?.into(),
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
+
+            #[allow(deprecated)]
+            "353" => Names::parse(msg)?.into(),
+            #[allow(deprecated)]
+            "366" => Names::parse(msg)?.into(),
+            #[allow(deprecated)]
+            "MODE" => Mode::parse(msg)?.into(),
             _ => msg.clone().into(),
         };
         Ok(out)
@@ -124,6 +128,7 @@ impl<'t> From<Reconnect> for AllCommands<'t> {
 macro_rules! from {
     ($($ident:tt),* $(,)?) => {
         $(
+            #[allow(deprecated)]
             impl<'t> From<$ident<'t>> for AllCommands<'t> {
                 fn from(msg: $ident<'t>) -> Self {
                     Self::$ident(msg)

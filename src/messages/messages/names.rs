@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use super::*;
 
 /// The names event
@@ -11,6 +12,10 @@ use super::*;
 /// And once you receive an End you'll have the complete lost
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[deprecated(
+    since = "0.10.2",
+    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
+)]
 pub struct Names<'t> {
     /// Your username
     pub name: Cow<'t, str>,
@@ -63,6 +68,10 @@ impl<'t> AsOwned for Names<'t> {
 /// The kind of the Names event
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[deprecated(
+    since = "0.10.2",
+    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
+)]
 pub enum NamesKind<'t> {
     /// Names begins, this'll continue until `End` is recieved
     Start {
