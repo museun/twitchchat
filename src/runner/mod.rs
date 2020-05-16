@@ -14,8 +14,7 @@ pub mod stream;
 pub mod control;
 pub mod writer;
 
-pub mod event;
 #[doc(hidden)]
-pub use event::{Event, EventMapped};
+pub use crate::events::{Event, EventMapped};
 
 pub mod abort;
