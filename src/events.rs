@@ -76,7 +76,7 @@ mod tests {
             .unwrap()
             .unwrap();
 
-        let msg: crate::messages::Ping<'static> = e::<crate::events::Ping>(&msg);
+        let msg: crate::messages::Ping<'static> = e::<Ping>(&msg);
         assert_eq!(msg.token, "1234567890")
     }
 }
@@ -289,6 +289,16 @@ pub struct UserState;
 
 impl<'t> Event<'t> for UserState {
     type Parsed = messages::UserState<'t>;
+}
+
+/// Used to get a [messages::Whisper][Whisper]
+///
+/// [Whisper]: ../messages/struct.Whisper.html
+#[non_exhaustive]
+pub struct Whisper;
+
+impl<'t> Event<'t> for Whisper {
+    type Parsed = messages::Whisper<'t>;
 }
 
 /// Used to get a [messages::AllCommands][AllCommands]

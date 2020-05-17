@@ -16,16 +16,20 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for HostTarget<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
-        let (kind, viewers) = if let Ok(target) = msg.expect_arg(1) {
-            let viewers = msg.expect_arg(2).ok().and_then(|data| data.parse().ok());
-            (HostTargetKind::Start { target }, viewers)
-        } else {
-            let data = msg.expect_data()?;
-            if !data.starts_with('-') {
-                return Err(InvalidMessage::ExpectedData);
+        let (kind, viewers) = {
+            let mut data = msg.expect_data()?.splitn(2, char::is_whitespace);
+            match data.next() {
+                Some("-") => {
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::End, viewers)
+                }
+                Some(target) => {
+                    let target = target.into();
+                    let viewers = data.next().and_then(|s| s.parse().ok());
+                    (HostTargetKind::Start { target }, viewers)
+                }
+                None => return Err(InvalidMessage::ExpectedData),
             }
-            let viewers = data.get(2..).and_then(|s| s.parse().ok());
-            (HostTargetKind::End, viewers)
         };
         Ok(Self {
             source,

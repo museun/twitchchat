@@ -49,6 +49,9 @@ pub enum AllCommands<'t> {
     UserNotice(UserNotice<'t>),
     /// A UserState event occured
     UserState(UserState<'t>),
+
+    /// A Whisper event occured
+    Whisper(Whisper<'t>),
 }
 
 impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
@@ -71,6 +74,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "ROOMSTATE" => RoomState::parse(msg)?.into(),
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
+            "WHISPER" => Whisper::parse(msg)?.into(),
 
             #[allow(deprecated)]
             "353" => Names::parse(msg)?.into(),
@@ -108,6 +112,7 @@ impl<'t> AsOwned for AllCommands<'t> {
             AllCommands::RoomState(inner) => AllCommands::RoomState(inner.as_owned()),
             AllCommands::UserNotice(inner) => AllCommands::UserNotice(inner.as_owned()),
             AllCommands::UserState(inner) => AllCommands::UserState(inner.as_owned()),
+            AllCommands::Whisper(inner) => AllCommands::Whisper(inner.as_owned()),
         }
     }
 }
@@ -158,4 +163,5 @@ from! {
     RoomState,
     UserNotice,
     UserState,
+    Whisper,
 }

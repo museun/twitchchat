@@ -65,6 +65,7 @@ impl Default for Dispatcher {
         add!(RoomState);
         add!(UserState);
         add!(UserNotice);
+        add!(Whisper);
 
         // These are deprecated
         add!(Mode);
@@ -439,6 +440,7 @@ impl Dispatcher {
             "ROOMSTATE" => try_send!(RoomState),
             "USERNOTICE" => try_send!(UserNotice),
             "USERSTATE" => try_send!(UserState),
+            "WHISPER" => try_send!(UserState),
 
             // These are deprecated
             "353" => try_send!(Names),
