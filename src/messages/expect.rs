@@ -1,7 +1,8 @@
-use super::*;
+use super::error::InvalidMessage;
+use crate::decode::Message;
 use std::borrow::Cow;
 
-pub(crate) trait Expect<'a, 'b: 'a> {
+pub trait Expect<'a, 'b: 'a> {
     fn expect_command(&'b self, cmd: &'a str) -> Result<(), InvalidMessage>;
     fn expect_nick(&'b self) -> Result<Cow<'a, str>, InvalidMessage>;
     fn expect_arg(&'b self, nth: usize) -> Result<Cow<'a, str>, InvalidMessage>;

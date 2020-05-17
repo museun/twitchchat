@@ -5,16 +5,16 @@ pub(super) use crate::error::Error;
 type Tx<T = Vec<u8>> = mpsc::Sender<T>;
 type Rx<T = Vec<u8>> = mpsc::Receiver<T>;
 
-pub(crate) mod dispatcher;
-pub(crate) mod runner;
-pub(crate) mod status;
-pub(crate) mod stream;
+pub mod dispatcher;
+#[allow(clippy::module_inception)]
+pub mod runner;
+pub mod status;
+pub mod stream;
 
-pub(crate) mod control;
-pub(crate) mod writer;
+pub mod control;
+pub mod writer;
 
-pub(crate) mod event;
 #[doc(hidden)]
-pub(crate) use event::{Event, EventMapped};
+pub use crate::events::{Event, EventMapped};
 
-pub(crate) mod abort;
+pub mod abort;

@@ -29,14 +29,56 @@ The subscription will return a [EventStream] which can be used as a [Stream].
 */
 #[derive(Clone)]
 pub struct Dispatcher {
-    event_map: AnyMap<EventRegistration>,
+    pub(crate) event_map: AnyMap<EventRegistration>,
     cached: AnyMap<Box<dyn Any + Send>>,
 }
 
 impl Default for Dispatcher {
     fn default() -> Self {
-        let (event_map, cached) = Default::default();
-        events::build_event_map(Self { event_map, cached })
+        use crate::events::*;
+
+        let mut event_map = HashMap::default();
+
+        macro_rules! add {
+            ($event:ty) => {
+                #[allow(deprecated)]
+                event_map
+                    .entry(std::any::TypeId::of::<$event>())
+                    .or_default();
+            };
+        }
+
+        add!(IrcReady);
+        add!(Ready);
+        add!(Cap);
+        add!(ClearChat);
+        add!(ClearMsg);
+        add!(GlobalUserState);
+        add!(HostTarget);
+        add!(Join);
+        add!(Notice);
+        add!(Part);
+        add!(Ping);
+        add!(Pong);
+        add!(Privmsg);
+        add!(Reconnect);
+        add!(RoomState);
+        add!(UserState);
+        add!(UserNotice);
+        add!(Whisper);
+
+        // These are deprecated
+        add!(Mode);
+        add!(Names);
+
+        // the meta-events
+        add!(All);
+        add!(Raw);
+
+        Self {
+            event_map: Arc::new(Mutex::new(event_map)),
+            cached: Default::default(),
+        }
     }
 }
 
@@ -339,15 +381,6 @@ impl Dispatcher {
         n
     }
 
-    /// Add this event into the dispatcher
-    pub(crate) fn add_event<'a, T>(self) -> Self
-    where
-        T: Event<'a> + 'static,
-    {
-        self.event_map.lock().entry(TypeId::of::<T>()).or_default();
-        self
-    }
-
     /// Tries to send this message to any subscribers
     pub(crate) fn try_send<'a, T>(&self, msg: &'a Message<'a>)
     where
@@ -372,6 +405,7 @@ impl Dispatcher {
             senders.retain(|(_, sender)| {
                 sender
                     .downcast_ref::<Sender<T::Owned>>()
+                    // TODO, if we remove this unwrap then we can expose the Event traits
                     .unwrap()
                     .try_send(Arc::clone(&msg))
             });
@@ -382,31 +416,35 @@ impl Dispatcher {
 impl Dispatcher {
     pub(crate) fn dispatch<'a>(&self, msg: &'a Message<'a>) {
         macro_rules! try_send {
-            ($ident:ident) => {
+            ($ident:ident) => {{
+                #[allow(deprecated)]
                 self.try_send::<events::$ident>(&msg)
-            };
+            }};
         }
 
         match msg.command.as_ref() {
             "001" => try_send!(IrcReady),
-            "PING" => try_send!(Ping),
-            "PONG" => try_send!(Pong),
-            "353" => try_send!(Names),
-            "366" => try_send!(Names),
             "376" => try_send!(Ready),
-            "JOIN" => try_send!(Join),
-            "PART" => try_send!(Part),
-            "PRIVMSG" => try_send!(Privmsg),
             "CAP" => try_send!(Cap),
-            "HOSTARGET" => try_send!(HostTarget),
-            "GLOBALUSERSTATE" => try_send!(GlobalUserState),
-            "NOTICE" => try_send!(Notice),
             "CLEARCHAT" => try_send!(ClearChat),
             "CLEARMSG" => try_send!(ClearMsg),
+            "GLOBALUSERSTATE" => try_send!(GlobalUserState),
+            "HOSTARGET" => try_send!(HostTarget),
+            "JOIN" => try_send!(Join),
+            "NOTICE" => try_send!(Notice),
+            "PART" => try_send!(Part),
+            "PING" => try_send!(Ping),
+            "PONG" => try_send!(Pong),
+            "PRIVMSG" => try_send!(Privmsg),
             "RECONNECT" => try_send!(Reconnect),
             "ROOMSTATE" => try_send!(RoomState),
-            "USERSTATE" => try_send!(UserState),
             "USERNOTICE" => try_send!(UserNotice),
+            "USERSTATE" => try_send!(UserState),
+            "WHISPER" => try_send!(UserState),
+
+            // These are deprecated
+            "353" => try_send!(Names),
+            "366" => try_send!(Names),
             "MODE" => try_send!(Mode),
             _ => {}
         }

@@ -1,3 +1,5 @@
+#![allow(clippy::future_not_send)] // this is wrong
+
 use crate::{color::Color, IntoChannel, RateLimit};
 
 use std::sync::Arc;

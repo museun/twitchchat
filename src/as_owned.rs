@@ -1,5 +1,4 @@
 use crate::color::Color;
-use crate::messages::*;
 use crate::{Badge, BadgeKind};
 use std::borrow::Cow;
 
@@ -54,41 +53,10 @@ impl<T: AsOwned + Clone> AsOwned for Vec<T> {
     }
 }
 
-impl<'t> AsOwned for ModeStatus {
-    type Owned = Self;
-    fn as_owned(&self) -> Self::Owned {
-        *self
-    }
-}
-
 impl AsOwned for Color {
     type Owned = Self;
     fn as_owned(&self) -> Self::Owned {
         *self
-    }
-}
-
-impl<'t> AsOwned for HostTargetKind<'t> {
-    type Owned = HostTargetKind<'static>;
-    fn as_owned(&self) -> Self::Owned {
-        match self {
-            HostTargetKind::Start { target } => HostTargetKind::Start {
-                target: target.as_owned(),
-            },
-            HostTargetKind::End => HostTargetKind::End,
-        }
-    }
-}
-
-impl<'t> AsOwned for NamesKind<'t> {
-    type Owned = NamesKind<'static>;
-    fn as_owned(&self) -> Self::Owned {
-        match self {
-            NamesKind::Start { users } => NamesKind::Start {
-                users: users.as_owned(),
-            },
-            NamesKind::End => NamesKind::End,
-        }
     }
 }
 
@@ -154,35 +122,6 @@ impl<'t> AsOwned for crate::decode::Message<'t> {
             command: self.command.as_owned(),
             args: self.args.as_owned(),
             data: self.data.as_owned(),
-        }
-    }
-}
-
-impl<'t> AsOwned for AllCommands<'t> {
-    type Owned = AllCommands<'static>;
-    fn as_owned(&self) -> Self::Owned {
-        match self {
-            AllCommands::Unknown(inner) => AllCommands::Unknown(inner.as_owned()),
-            AllCommands::Cap(inner) => AllCommands::Cap(inner.as_owned()),
-            AllCommands::ClearChat(inner) => AllCommands::ClearChat(inner.as_owned()),
-            AllCommands::ClearMsg(inner) => AllCommands::ClearMsg(inner.as_owned()),
-            AllCommands::GlobalUserState(inner) => AllCommands::GlobalUserState(inner.as_owned()),
-            AllCommands::HostTarget(inner) => AllCommands::HostTarget(inner.as_owned()),
-            AllCommands::IrcReady(inner) => AllCommands::IrcReady(inner.as_owned()),
-            AllCommands::Join(inner) => AllCommands::Join(inner.as_owned()),
-            AllCommands::Mode(inner) => AllCommands::Mode(inner.as_owned()),
-            AllCommands::Names(inner) => AllCommands::Names(inner.as_owned()),
-            AllCommands::Notice(inner) => AllCommands::Notice(inner.as_owned()),
-            AllCommands::Part(inner) => AllCommands::Part(inner.as_owned()),
-            AllCommands::Ping(inner) => AllCommands::Ping(inner.as_owned()),
-            AllCommands::Pong(inner) => AllCommands::Pong(inner.as_owned()),
-            AllCommands::Privmsg(inner) => AllCommands::Privmsg(inner.as_owned()),
-            AllCommands::Ready(inner) => AllCommands::Ready(inner.as_owned()),
-            AllCommands::Reconnect(inner) => AllCommands::Reconnect(inner.as_owned()),
-            AllCommands::RoomState(inner) => AllCommands::RoomState(inner.as_owned()),
-            AllCommands::UserNotice(inner) => AllCommands::UserNotice(inner.as_owned()),
-            AllCommands::UserState(inner) => AllCommands::UserState(inner.as_owned()),
-            AllCommands::Whisper(inner) => AllCommands::Whisper(inner.as_owned()),
         }
     }
 }

@@ -4,7 +4,6 @@
     missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
-    unreachable_pub,
     unsafe_code,
     unstable_features,
     unused_import_braces,
@@ -53,10 +52,6 @@ cfg_async! {
 }
 
 cfg_async! {
-    pub mod events;
-}
-
-cfg_async! {
     mod register;
     #[doc(inline)]
     pub use register::register;
@@ -83,6 +78,8 @@ pub mod twitch;
 
 #[doc(inline)]
 pub use twitch::*;
+
+pub mod events;
 
 pub mod messages;
 
