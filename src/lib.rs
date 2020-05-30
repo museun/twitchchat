@@ -27,13 +27,12 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 #[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
 doc_comment::doctest!("../README.md");
 
-static_assertions::assert_cfg!(
-    not(all(
-        feature = "tokio_native_tls", //
-        feature = "tokio_rustls",     //
-    )),
-    "only a single TLS library can be used."
-);
+#[cfg(all(feature = "tokio_native_tls", feature = "tokio_rustls"))]
+compile_error!("only a single TLS library can be used.");
+
+#[cfg(feature = "tokio")]
+#[cfg(not(feature = "futures"))]
+compile_error!("'futures' must be enabled with 'tokio'");
 
 #[macro_use]
 #[doc(hidden)]
