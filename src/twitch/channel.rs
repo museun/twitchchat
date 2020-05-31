@@ -39,14 +39,14 @@ impl std::error::Error for Error {}
 /// let channel: Channel = "#museun".into_channel().unwrap();
 /// assert_eq!(*channel, "#museun");
 /// ```
-pub trait IntoChannel {
+pub trait IntoChannel: Send {
     /// Tries to convert this type a channel
     fn into_channel(self) -> Result<Channel, Error>;
 }
 
 impl<T> IntoChannel for T
 where
-    T: ToString,
+    T: ToString + Send,
 {
     fn into_channel(self) -> Result<Channel, Error> {
         Channel::validate(self.to_string())
@@ -134,9 +134,6 @@ mod tests {
             "museun".into_channel().unwrap(),
             String::from("museun").into_channel().unwrap(),
             std::sync::Arc::new(String::from("museun"))
-                .into_channel()
-                .unwrap(),
-            std::rc::Rc::new(String::from("museun"))
                 .into_channel()
                 .unwrap(),
             String::from("museun")

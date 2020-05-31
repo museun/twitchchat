@@ -119,7 +119,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// [unban]: ./struct.Encoder.html#method.unban
     pub async fn ban<'a>(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         username: &str,
         reason: impl Into<Option<&'a str>> + Send,
     ) -> Result {
@@ -138,7 +138,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Clear chat history for all users in this room.
-    pub async fn clear(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn clear(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -157,7 +157,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Sends the command: data (e.g. /color #FFFFFF)
-    pub async fn command(&mut self, channel: impl IntoChannel + Send, data: &str) -> Result {
+    pub async fn command(&mut self, channel: impl IntoChannel, data: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -180,7 +180,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Length (optional) must be a positive number of seconds.
     pub async fn commercial(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         length: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -209,7 +209,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [emote_only_off] to disable.
     ///
     /// [emote_only_off]: ./struct.Encoder.html#method.emote_only_off
-    pub async fn emote_only(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn emote_only(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -219,7 +219,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Disables emote-only mode.
-    pub async fn emote_only_off(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn emote_only_off(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -234,7 +234,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Examples: `"30m"`, `"1 week"`, `"5 days 12 hours"`.
     ///
     /// Must be less than 3 months.
-    pub async fn followers(&mut self, channel: impl IntoChannel + Send, duration: &str) -> Result {
+    pub async fn followers(&mut self, channel: impl IntoChannel, duration: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -244,7 +244,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Disables followers-only mode.
-    pub async fn followers_off(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn followers_off(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -258,7 +258,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [mods] to list the moderators of this channel.
     ///
     /// [mods]: ./struct.Encoder.html#method.mods
-    pub async fn give_mod(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn give_mod(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -268,7 +268,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Lists the commands available to you in this room.
-    pub async fn help(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn help(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -282,11 +282,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [unhost] to unset host mode.
     ///
     /// [unhost]: ./struct.Encoder.html#method.unhost
-    pub async fn host(
-        &mut self,
-        source: impl IntoChannel + Send,
-        target: impl IntoChannel + Send,
-    ) -> Result {
+    pub async fn host(&mut self, source: impl IntoChannel, target: impl IntoChannel) -> Result {
         let source = source.into_channel()?;
         let target = target.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -297,7 +293,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Join a channel
-    pub async fn join(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn join(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -313,7 +309,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// If the string exceeds 140 characters then it will be truncated
     pub async fn marker<'a>(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         comment: impl Into<Option<&'a str>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -336,7 +332,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub async fn me(&mut self, channel: impl IntoChannel + Send, message: &str) -> Result {
+    pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -346,7 +342,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Lists the moderators of this channel.
-    pub async fn mods(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn mods(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -356,7 +352,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Leave a channel
-    pub async fn part(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn part(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -384,7 +380,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Send data to a channel
-    pub async fn privmsg(&mut self, channel: impl IntoChannel + Send, data: &str) -> Result {
+    pub async fn privmsg(&mut self, channel: impl IntoChannel, data: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -398,7 +394,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [r9k_beta_off] to disable.
     ///
     /// [r9k_beta_off]: ./struct.Encoder.html#method.r9k_beta_off
-    pub async fn r9k_beta(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn r9k_beta(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -408,7 +404,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Disables r9k mode.
-    pub async fn r9k_beta_off(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn r9k_beta_off(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -422,11 +418,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [unraid] to cancel the Raid.
     ///
     /// [unraid]: ./struct.Encoder.html#method.unraid
-    pub async fn raid(
-        &mut self,
-        source: impl IntoChannel + Send,
-        target: impl IntoChannel + Send,
-    ) -> Result {
+    pub async fn raid(&mut self, source: impl IntoChannel, target: impl IntoChannel) -> Result {
         let source = source.into_channel()?;
         let target = target.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -453,7 +445,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
     pub async fn slow(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         duration: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -466,7 +458,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Disables slow mode.
-    pub async fn slow_off(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn slow_off(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -480,7 +472,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [subscribers_off] to disable.
     ///
     /// [subscribers_off]: ./struct.Encoder.html#methodruct.html#method.subscribers_off
-    pub async fn subscribers(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn subscribers(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -490,7 +482,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Disables subscribers-only mode.
-    pub async fn subscribers_off(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn subscribers_off(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -519,7 +511,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// [untimeout]: ./struct.Encoder.html#methodruct.html#method.untimeout
     pub async fn timeout<'a, 'b>(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         username: &str,
         duration: impl Into<Option<&'a str>> + Send,
         message: impl Into<Option<&'b str>> + Send,
@@ -553,7 +545,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Removes a ban on a user.
-    pub async fn unban(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn unban(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -563,7 +555,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Stop hosting another channel.
-    pub async fn unhost(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn unhost(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -577,7 +569,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [mods] to list the moderators of this channel.
     ///
     /// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
-    pub async fn unmod(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn unmod(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -587,7 +579,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Cancel the Raid.
-    pub async fn unraid(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn unraid(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -597,7 +589,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Removes a timeout on a user.
-    pub async fn untimeout(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn untimeout(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -611,7 +603,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub async fn unvip(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn unvip(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -625,7 +617,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Use [vips] to list the VIPs of this channel.
     ///
     /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-    pub async fn vip(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn vip(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -635,7 +627,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Lists the VIPs of this channel.
-    pub async fn vips(&mut self, channel: impl IntoChannel + Send) -> Result {
+    pub async fn vips(&mut self, channel: impl IntoChannel) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
