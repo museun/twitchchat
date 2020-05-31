@@ -274,7 +274,7 @@ fn join_bad_command() {
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(
+    matches!(
         err,
         InvalidMessage::InvalidCommand {..}
     );
@@ -288,7 +288,7 @@ fn join_bad_nick() {
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(err, InvalidMessage::ExpectedNick);
+    matches!(err, InvalidMessage::ExpectedNick);
 }
 
 #[test]
@@ -299,7 +299,7 @@ fn join_bad_channel() {
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(err, InvalidMessage::ExpectedArg { pos: 0 });
+    matches!(err, InvalidMessage::ExpectedArg { pos: 0 });
 }
 
 #[test]

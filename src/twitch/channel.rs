@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn bad_channel() {
         let err = Channel::validate("").unwrap_err();
-        matches::assert_matches!(err, Error::EmptyChannelName);
+        assert!(matches!(err, Error::EmptyChannelName));
     }
 
     #[test]
