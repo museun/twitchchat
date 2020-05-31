@@ -1,4 +1,8 @@
 use super::*;
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 use tokio::stream::Stream;
 
 /// A [Stream] that produces an item
@@ -22,10 +26,7 @@ impl<T> std::fmt::Debug for EventStream<T> {
 
 impl<T: Clone> Stream for EventStream<T> {
     type Item = T;
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Self::Item>> {
-        self.0.poll_recv(cx)
+    fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.0.poll_recv(ctx)
     }
 }
