@@ -18,7 +18,9 @@ async fn main() {
     let fut = run_loop(control.clone(), dispatcher, channels);
 
     let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
-    let conn = twitchchat::connect_easy_tls(nick, pass).await.unwrap();
+    let conn = twitchchat::native_tls::connect_easy(nick, pass)
+        .await
+        .unwrap();
 
     tokio::select! {
         _ = fut => { control.stop() }

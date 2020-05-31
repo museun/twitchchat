@@ -14,12 +14,9 @@ fn main() {
         assert_eq!(user_notice, owned);
 
         // or parse the message into a 'All' type
-        match AllCommands::parse(&msg).unwrap() {
-            AllCommands::UserNotice(notice) => {
-                // user_notice is a messages::UserNotice here
-                assert_eq!(user_notice, notice);
-            }
-            _ => {}
+        if let AllCommands::UserNotice(notice) = AllCommands::parse(&msg).unwrap() {
+            // user_notice is a messages::UserNotice here
+            assert_eq!(user_notice, notice);
         }
 
         // the tags are parsed and are accessible as methods
@@ -38,7 +35,7 @@ fn main() {
             .tags
             .get_parsed::<_, u64>("tmi-sent-ts")
             .unwrap();
-        assert_eq!(ts, 1580932171144);
+        assert_eq!(ts, 1_580_932_171_144);
     }
 
     // parse one message at a time

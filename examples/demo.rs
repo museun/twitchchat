@@ -49,7 +49,9 @@ async fn main() {
         twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
     // connect via TCP with TLS with this nick and password
-    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+    let stream = twitchchat::native_tls::connect_easy(&nick, &pass)
+        .await
+        .unwrap();
 
     // spawn the run off in another task so we don't block the current one.
     // you could just await on the future at the end of whatever block, but this is easier for this demonstration
@@ -85,7 +87,7 @@ async fn main() {
             }
 
             Some(msg) = privmsg.next() => {
-                match msg.data.split(" ").next() {
+                match msg.data.split(' ').next() {
                     Some("!hello") => {
                         let response = format!("hello {}!", msg.name);
                         if let Err(_err) = control.writer().privmsg(&msg.channel, &response).await {

@@ -10,7 +10,7 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AllCommands<'t> {
     /// An unknown event occured
-    Unknown(Raw<'t>),
+    Unknown(Box<Raw<'t>>),
     /// A capabilities event occured
     Cap(Cap<'t>),
     /// A ClearChat event occured
@@ -92,7 +92,7 @@ impl<'t> AsOwned for AllCommands<'t> {
     type Owned = AllCommands<'static>;
     fn as_owned(&self) -> Self::Owned {
         match self {
-            AllCommands::Unknown(inner) => AllCommands::Unknown(inner.as_owned()),
+            AllCommands::Unknown(inner) => AllCommands::Unknown(Box::new((**inner).as_owned())),
             AllCommands::Cap(inner) => AllCommands::Cap(inner.as_owned()),
             AllCommands::ClearChat(inner) => AllCommands::ClearChat(inner.as_owned()),
             AllCommands::ClearMsg(inner) => AllCommands::ClearMsg(inner.as_owned()),
@@ -120,7 +120,7 @@ impl<'t> AsOwned for AllCommands<'t> {
 // manual impls because they are different
 impl<'t> From<Raw<'t>> for AllCommands<'t> {
     fn from(msg: Raw<'t>) -> Self {
-        Self::Unknown(msg)
+        Self::Unknown(Box::new(msg))
     }
 }
 

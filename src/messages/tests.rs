@@ -176,10 +176,7 @@ fn cap_acknowledged() {
         "twitch.tv/tags",
         "twitch.tv/commands",
     ];
-    for (msg, expected) in crate::decode(&input)
-        .map(|s| s.unwrap())
-        .zip(expected.into_iter())
-    {
+    for (msg, expected) in crate::decode(&input).map(|s| s.unwrap()).zip(expected) {
         let msg = Cap::parse(&msg).unwrap();
         assert!(msg.acknowledged);
         assert_eq!(msg.capability, *expected);
@@ -271,7 +268,7 @@ fn irc_ready() {
 
 #[test]
 fn join_bad_command() {
-    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -285,7 +282,7 @@ fn join_bad_command() {
 
 #[test]
 fn join_bad_nick() {
-    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
@@ -296,7 +293,7 @@ fn join_bad_nick() {
 
 #[test]
 fn join_bad_channel() {
-    let input = crate::decode(":tmi.twitch.tv JOIN\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv JOIN\r\n")
         .flatten()
         .next()
         .unwrap();
