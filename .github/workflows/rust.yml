@@ -18,6 +18,12 @@ jobs:
     - name: Run tests default features
       run: cargo test --verbose
 
+    - name: Build all features
+      run: cargo build --all-features --verbose
+
+    - name: Run tests all features
+      run: cargo test --all-features --verbose
+
     - name: Build no features
       run: cargo build --no-default-features --verbose
 
@@ -33,5 +39,11 @@ jobs:
     - name: Build rustls
       run: cargo build --no-default-features --features tokio_rustls --verbose
     
-    - name: Run tests no async
+    - name: Run tests rustls
       run: cargo test --no-default-features --features tokio_rustls --verbose
+
+    - name: Build native_tls
+      run: cargo build --no-default-features --features tokio_native_tls --verbose
+    
+    - name: Run tests native_ts
+      run: cargo test --no-default-features --features tokio_native_tls --verbose
