@@ -85,7 +85,9 @@ async fn main() {
     .run(dispatcher, channel);
 
     // connect to twitch
-    let conn = twitchchat::connect_easy_tls(&user, &pass).await.unwrap();
+    let conn = twitchchat::native_tls::connect_easy(&user, &pass)
+        .await
+        .unwrap();
     // and run the dispatcher/writer loop
     let done = runner.run(conn);
 
