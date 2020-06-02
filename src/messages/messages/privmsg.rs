@@ -18,7 +18,6 @@ impl<'t> Privmsg<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
             .get("badge-info")
@@ -27,13 +26,13 @@ impl<'t> Privmsg<'t> {
     }
 
     /// Badges attached to this message
-    ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
             .get("badges")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
+
     /// How many bits were attached to this message
     pub fn bits(&self) -> Option<u64> {
         self.tags.get_parsed("bits")
@@ -44,7 +43,30 @@ impl<'t> Privmsg<'t> {
         self.tags.get_parsed("color")
     }
 
-    /// display_name
+    /// Returns the display name of the user, if set.
+    ///
+    /// Users can changed the casing and encoding of their names, if they choose to.
+    ///
+    /// By default, their display name is not set. If the user **foo** changes their display name to **FOO** then this'll return that **FOO**. Otherwise it'll return `None`. This also applies to users who have decided to user a localized version of their name.
+    ///
+    /// You can get their username with the field [`name`](#structfield.name).
+    ///
+    /// ```rust
+    /// # use twitchchat::*;
+    /// // without their display name set
+    /// let data = ":foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode::decode(data).next().unwrap().unwrap();
+    /// let pm = messages::Privmsg::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert!(pm.display_name().is_none());
+    ///
+    /// // with their display name set
+    /// let data = "@display-name=FOO :foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode::decode(data).next().unwrap().unwrap();
+    /// let pm = messages::Privmsg::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert_eq!(pm.display_name().unwrap(), "FOO");
+    /// ```
     pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
         self.tags.get("display-name")
     }
