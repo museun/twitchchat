@@ -10,9 +10,55 @@ pub trait AsOwned: private::AsOwnedSealed {
     fn as_owned(&self) -> Self::Owned;
 }
 
+/// Helper to reborrow a Cow without moving it
+pub trait Reborrow<'a>: private::ReborrowSealed
+where
+    Self: 'a,
+{
+    /// The borrowed output
+    type Output: 'a;
+    /// Reborrow self.
+    ///
+    /// This is intended for internal use.
+    fn reborrow(&self) -> Self::Output;
+}
+
+impl<'a> Reborrow<'a> for &'a Cow<'a, str> {
+    type Output = Cow<'a, str>;
+    fn reborrow(&self) -> Self::Output {
+        match self {
+            Cow::Borrowed(s) => Cow::Borrowed(*s),
+            Cow::Owned(s) => Cow::Borrowed(s.as_ref()),
+        }
+    }
+}
+
+impl<'a> Reborrow<'a> for &'a Option<Cow<'a, str>> {
+    type Output = Option<Cow<'a, str>>;
+    fn reborrow(&self) -> Self::Output {
+        self.as_ref().map(|s| match s {
+            Cow::Borrowed(s) => Cow::Borrowed(*s),
+            Cow::Owned(s) => Cow::Borrowed(s.as_ref()),
+        })
+    }
+}
+
+impl<'a> Reborrow<'a> for Option<&'a Cow<'a, str>> {
+    type Output = Option<Cow<'a, str>>;
+    fn reborrow(&self) -> Self::Output {
+        self.map(|s| match s {
+            Cow::Borrowed(s) => Cow::Borrowed(*s),
+            Cow::Owned(s) => Cow::Borrowed(s.as_ref()),
+        })
+    }
+}
+
 mod private {
     pub trait AsOwnedSealed {}
     impl<T> AsOwnedSealed for T where T: crate::AsOwned {}
+
+    pub trait ReborrowSealed {}
+    impl<'a, T> ReborrowSealed for T where T: crate::Reborrow<'a> {}
 }
 
 impl AsOwned for bool {
