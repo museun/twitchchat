@@ -37,8 +37,8 @@ impl<'t> UserState<'t> {
     }
 
     /// The user's display name, if set
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("display-name")
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("display-name").reborrow()
     }
 
     /// Emotes attached to this message
