@@ -42,7 +42,6 @@ webpki-roots = { version = "0.19.0", optional = true }
 parking_lot = "0.10.2"
 
 [dev-dependencies]
-# matches     = "0.1.8"
 tokio       = { version = "0.2.21", features = ["test-util", "macros"] }
 tokio-test  = "0.2.1" # this is used for sequenced IO in the test
 doc-comment = "0.3.3"
