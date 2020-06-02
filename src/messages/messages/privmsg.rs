@@ -173,7 +173,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Privmsg<'t> {
         Ok(Self {
             name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
-            data: msg.expect_data()?.clone(),
+            data: msg.expect_data()?,
             tags: msg.tags.clone(),
         })
     }

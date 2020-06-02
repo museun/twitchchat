@@ -384,7 +384,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Notice<'t> {
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            message: msg.expect_data()?.clone(),
+            message: msg.expect_data()?,
         })
     }
 }

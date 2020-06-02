@@ -1,15 +1,18 @@
 use super::error::InvalidMessage;
 use crate::decode::Message;
+use crate::Reborrow;
+
 use std::borrow::Cow;
 
-pub trait Expect<'a, 'b: 'a> {
-    fn expect_command(&'b self, cmd: &'a str) -> Result<(), InvalidMessage>;
+pub trait Expect<'b: 'a, 'a> {
+    fn expect_command(&'b self, cmd: &str) -> Result<(), InvalidMessage>;
     fn expect_nick(&'b self) -> Result<Cow<'a, str>, InvalidMessage>;
     fn expect_arg(&'b self, nth: usize) -> Result<Cow<'a, str>, InvalidMessage>;
-    fn expect_data(&'b self) -> Result<&'a Cow<'a, str>, InvalidMessage>;
+    fn expect_data(&'b self) -> Result<Cow<'a, str>, InvalidMessage>;
+    fn expect_data_ref(&'b self) -> Result<&'b Cow<'a, str>, InvalidMessage>;
 }
 
-impl<'a, 'b: 'a> Expect<'a, 'b> for Message<'a> {
+impl<'b: 'a, 'a> Expect<'b, 'a> for Message<'a> {
     fn expect_command(&'b self, cmd: &str) -> Result<(), InvalidMessage> {
         if self.command != cmd {
             return Err(InvalidMessage::InvalidCommand {
@@ -36,7 +39,14 @@ impl<'a, 'b: 'a> Expect<'a, 'b> for Message<'a> {
             .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
     }
 
-    fn expect_data(&'b self) -> Result<&'b Cow<'a, str>, InvalidMessage> {
+    fn expect_data(&'b self) -> Result<Cow<'a, str>, InvalidMessage> {
+        self.data
+            .as_ref()
+            .map(|s| s.reborrow())
+            .ok_or_else(|| InvalidMessage::ExpectedData)
+    }
+
+    fn expect_data_ref(&'b self) -> Result<&'b Cow<'a, str>, InvalidMessage> {
         self.data
             .as_ref()
             .ok_or_else(|| InvalidMessage::ExpectedData)

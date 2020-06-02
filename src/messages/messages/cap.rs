@@ -14,7 +14,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Cap<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("CAP")?;
         let acknowledged = msg.expect_arg(1)? == "ACK";
-        let capability = msg.expect_data()?.clone();
+        let capability = msg.expect_data()?;
         Ok(Self {
             capability,
             acknowledged,

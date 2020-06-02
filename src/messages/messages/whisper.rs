@@ -125,7 +125,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Whisper<'t> {
         msg.expect_command("WHISPER")?;
         Ok(Self {
             name: msg.expect_nick()?,
-            data: msg.expect_data()?.clone(),
+            data: msg.expect_data()?,
             tags: msg.tags.clone(),
         })
     }
