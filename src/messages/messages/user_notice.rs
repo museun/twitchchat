@@ -19,7 +19,7 @@ impl<'t> UserNotice<'t> {
     ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
-            .get("badge-info")
+            .get_ref("badge-info")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
@@ -28,7 +28,7 @@ impl<'t> UserNotice<'t> {
     ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
-            .get("badges")
+            .get_ref("badges")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
@@ -39,7 +39,7 @@ impl<'t> UserNotice<'t> {
     }
 
     /// The user's display name, if set
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("display-name")
     }
 
@@ -47,19 +47,19 @@ impl<'t> UserNotice<'t> {
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(|s| crate::parse_emotes(s))
+            .map(|s| crate::parse_emotes(&s))
             .unwrap_or_default()
     }
 
     /// A unique id (UUID) attached to this message
     ///
     /// (this is used for localization)
-    pub fn id(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn id(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("id")
     }
 
     /// The name of the user who sent this notice
-    pub fn login(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn login(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("login")
     }
 
@@ -70,7 +70,7 @@ impl<'t> UserNotice<'t> {
 
     /// The kind of notice this message is
     pub fn msg_id(&'t self) -> Option<NoticeType<'t>> {
-        let kind = self.tags.get("msg-id")?;
+        let kind = self.tags.get_ref("msg-id")?;
         match kind.as_ref() {
             "sub" => NoticeType::Sub,
             "resub" => NoticeType::Resub,
@@ -84,7 +84,7 @@ impl<'t> UserNotice<'t> {
             "unraid" => NoticeType::Unraid,
             "ritual" => NoticeType::Ritual,
             "bitsbadgetier" => NoticeType::BitsBadgeTier,
-            _ => NoticeType::Unknown(kind.clone()),
+            _ => NoticeType::Unknown(kind.reborrow()),
         }
         .into()
     }
@@ -126,12 +126,12 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on raid) The display name of the source user raiding this
     /// channel.
-    pub fn msg_param_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_display_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-displayName")
     }
 
     /// (Sent on only raid) The name of the source user raiding this channel.
-    pub fn msg_param_login(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_login(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-login")
     }
 
@@ -150,13 +150,13 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on anongiftpaidupgrade, giftpaidupgrade) The subscriptions
     /// promo, if any, that is ongoing; e.g. Subtember 2018.
-    pub fn msg_param_promo_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_promo_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-promo-name")
     }
 
     /// (Sent only on subgift, anonsubgift) The display name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_recipient_display_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-recipient-display-name")
     }
 
@@ -168,19 +168,19 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on subgift, anonsubgift) The user name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_user_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_recipient_user_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-recipient-user-name")
     }
 
     /// (Sent only on giftpaidupgrade) The login of the user who gifted the
     /// subscription.
-    pub fn msg_param_sender_login(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_sender_login(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-sender-login")
     }
 
     /// (Sent only on giftpaidupgrade) The display name of the user who gifted
     /// the subscription.
-    pub fn msg_param_sender_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_sender_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-sender-name")
     }
 
@@ -216,7 +216,7 @@ impl<'t> UserNotice<'t> {
     /// (Sent only on sub, resub, subgift, anonsubgift) The display name of the
     /// subscription plan. This may be a default name or one created by the
     /// channel owner.
-    pub fn msg_param_sub_plan_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_sub_plan_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-sub-plan-name")
     }
 
@@ -228,7 +228,7 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on ritual) The name of the ritual this notice is for. Valid
     /// value: new_chatter.
-    pub fn msg_param_ritual_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn msg_param_ritual_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("msg-param-ritual-name")
     }
 

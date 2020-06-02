@@ -19,28 +19,32 @@ pub struct GlobalUserState<'t> {
 impl<'a: 't, 't> Parse<&'a Message<'t>> for GlobalUserState<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("GLOBALUSERSTATE")?;
+
         let user_id = msg
             .tags
             .get("user-id")
-            .cloned()
             .expect("user-id attached to message");
-        let display_name = msg.tags.get("display-name").cloned();
+
+        let display_name = msg.tags.get("display-name");
+
         let color = msg
             .tags
             .get("color")
             .and_then(|s| s.parse().ok())
-            .clone()
             .unwrap_or_default();
+
         let emote_sets = msg
             .tags
-            .get("emotes-set")
+            .get_ref("emotes-set")
             .map(|s| s.split(',').map(Into::into).collect())
             .unwrap_or_else(|| vec!["0".into()]);
+
         let badges = msg
             .tags
-            .get("badges")
+            .get_ref("badges")
             .map(|s| s.split(',').filter_map(crate::Badge::parse).collect())
             .unwrap_or_default();
+
         Ok(Self {
             user_id,
             display_name,

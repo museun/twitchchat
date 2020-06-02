@@ -19,7 +19,7 @@ impl<'t> Notice<'t> {
     ///
     /// Returns None if this tag wasn't found on the message
     pub fn msg_id(&'t self) -> Option<MessageId<'t>> {
-        let input = self.tags.get("msg-id")?;
+        let input = self.tags.get_ref("msg-id")?;
         MessageId::parse(input).into()
     }
 }
@@ -384,7 +384,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Notice<'t> {
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            message: msg.expect_data()?.clone(),
+            message: msg.expect_data()?,
         })
     }
 }

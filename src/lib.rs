@@ -76,7 +76,7 @@ pub use parse::Parse;
 
 mod as_owned;
 #[doc(inline)]
-pub use as_owned::AsOwned;
+pub use as_owned::{AsOwned, Reborrow};
 
 mod error;
 #[doc(inline)]

@@ -18,22 +18,21 @@ impl<'t> Privmsg<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    ///    
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
-            .get("badge-info")
+            .get_ref("badge-info")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
 
     /// Badges attached to this message
-    ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
-            .get("badges")
+            .get_ref("badges")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
+
     /// How many bits were attached to this message
     pub fn bits(&self) -> Option<u64> {
         self.tags.get_parsed("bits")
@@ -44,8 +43,56 @@ impl<'t> Privmsg<'t> {
         self.tags.get_parsed("color")
     }
 
-    /// display_name
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
+    /// Returns the display name of the user, if set.
+    ///
+    /// Users can changed the casing and encoding of their names, if they choose to.
+    ///
+    /// By default, their display name is not set. If the user **foo** changes their display name to **FOO** then this'll return that **FOO**. Otherwise it'll return `None`. This also applies to users who have decided to user a localized version of their name.
+    ///
+    /// You can get their username with the field [`name`](#structfield.name).
+    ///
+    /// ```rust
+    /// # use twitchchat::{*, messages::*};
+    /// // without their display name set
+    /// let data = ":foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert!(pm.display_name().is_none());
+    ///
+    /// // with their display name set
+    /// let data = "@display-name=FOO :foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert_eq!(pm.display_name().unwrap(), "FOO");
+    /// ```
+    ///
+    /// A useful thing to do is to try to get the `display_name` and fallback to the `username`.
+    ///
+    /// ```rust
+    /// # use twitchchat::{*, messages::*};
+    /// use std::borrow::Cow;
+    /// fn get_user_or_display<'a>(msg: &'a Privmsg<'_>) -> Cow<'a, str> {
+    ///     msg.display_name()
+    ///         .unwrap_or_else(|| Cow::Borrowed(&*msg.name))
+    /// }
+    ///
+    /// let data = ":foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "foo");
+    ///
+    /// let data = "@display-name=FOO :foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "FOO");    
+    /// ```
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("display-name")
     }
 
@@ -53,7 +100,7 @@ impl<'t> Privmsg<'t> {
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(|s| crate::parse_emotes(s))
+            .map(|s| crate::parse_emotes(&s))
             .unwrap_or_default()
     }
 
@@ -126,7 +173,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Privmsg<'t> {
         Ok(Self {
             name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
-            data: msg.expect_data()?.clone(),
+            data: msg.expect_data()?,
             tags: msg.tags.clone(),
         })
     }

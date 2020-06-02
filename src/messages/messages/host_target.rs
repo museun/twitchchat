@@ -17,7 +17,8 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for HostTarget<'t> {
         msg.expect_command("HOSTTARGET")?;
         let source = msg.expect_arg(0)?;
         let (kind, viewers) = {
-            let mut data = msg.expect_data()?.splitn(2, char::is_whitespace);
+            // This has to borrow the data for 'a first before it can be moved to a 't
+            let mut data = msg.expect_data_ref()?.splitn(2, char::is_whitespace);
             match data.next() {
                 Some("-") => {
                     let viewers = data.next().and_then(|s| s.parse().ok());

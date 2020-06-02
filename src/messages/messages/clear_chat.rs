@@ -27,7 +27,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for ClearChat<'t> {
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            name: msg.expect_data().ok().cloned(),
+            name: msg.expect_data().ok(),
         })
     }
 }

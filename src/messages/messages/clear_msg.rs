@@ -16,12 +16,12 @@ pub struct ClearMsg<'t> {
 
 impl<'t> ClearMsg<'t> {
     /// Name of the user who sent the message
-    pub fn login(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn login(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("login")
     }
 
     /// UUID of the message
-    pub fn target_msg_id(&'t self) -> Option<&'t Cow<'t, str>> {
+    pub fn target_msg_id(&'t self) -> Option<Cow<'t, str>> {
         self.tags.get("target-msg-id")
     }
 }
@@ -32,7 +32,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for ClearMsg<'t> {
         Ok(Self {
             tags: msg.tags.clone(),
             channel: msg.expect_arg(0)?,
-            message: msg.expect_data().ok().cloned(),
+            message: msg.expect_data().ok(),
         })
     }
 }
