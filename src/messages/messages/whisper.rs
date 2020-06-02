@@ -27,9 +27,57 @@ impl<'t> Whisper<'t> {
         self.tags.get_parsed("color")
     }
 
-    /// display_name
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("display-name")
+    /// Returns the display name of the user, if set.
+    ///
+    /// Users can changed the casing and encoding of their names, if they choose to.
+    ///
+    /// By default, their display name is not set. If the user **foo** changes their display name to **FOO** then this'll return that **FOO**. Otherwise it'll return `None`. This also applies to users who have decided to user a localized version of their name.
+    ///
+    /// You can get their username with the field [`name`](#structfield.name).
+    ///
+    /// ```rust
+    /// # use twitchchat::{*, messages::*};
+    /// // without their display name set
+    /// let data = ":foo!foo@foo WHISPER testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Whisper::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert!(pm.display_name().is_none());
+    ///
+    /// // with their display name set
+    /// let data = "@display-name=FOO :foo!foo@foo WHISPER testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Whisper::parse(&msg).unwrap();
+    /// assert_eq!(pm.name, "foo");
+    /// assert_eq!(pm.display_name().unwrap(), "FOO");
+    /// ```
+    ///
+    /// A useful thing to do is to try to get the `display_name` and fallback to the `username`.
+    ///
+    /// ```rust
+    /// # use twitchchat::{*, messages::*};
+    /// use std::borrow::Cow;
+    /// fn get_user_or_display<'a>(msg: &'a Whisper<'_>) -> Cow<'a, str> {
+    ///     msg.display_name()
+    ///         .unwrap_or_else(|| Cow::Borrowed(&*msg.name))
+    /// }
+    ///
+    /// let data = ":foo!foo@foo WHISPER testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Whisper::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "foo");
+    ///
+    /// let data = "@display-name=FOO :foo!foo@foo WHISPER testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Whisper::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "FOO");    
+    /// ```
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("display-name").reborrow()
     }
 
     /// Emotes attached to this message
