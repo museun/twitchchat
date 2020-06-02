@@ -52,23 +52,48 @@ impl<'t> Privmsg<'t> {
     /// You can get their username with the field [`name`](#structfield.name).
     ///
     /// ```rust
-    /// # use twitchchat::*;
+    /// # use twitchchat::{*, messages::*};
     /// // without their display name set
     /// let data = ":foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
-    /// let msg = decode::decode(data).next().unwrap().unwrap();
-    /// let pm = messages::Privmsg::parse(&msg).unwrap();
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
     /// assert_eq!(pm.name, "foo");
     /// assert!(pm.display_name().is_none());
     ///
     /// // with their display name set
     /// let data = "@display-name=FOO :foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
-    /// let msg = decode::decode(data).next().unwrap().unwrap();
-    /// let pm = messages::Privmsg::parse(&msg).unwrap();
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
     /// assert_eq!(pm.name, "foo");
     /// assert_eq!(pm.display_name().unwrap(), "FOO");
     /// ```
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("display-name")
+    ///
+    /// A useful thing to do is to try to get the `display_name` and fallback to the `username`.
+    ///
+    /// ```rust
+    /// # use twitchchat::{*, messages::*};
+    /// use std::borrow::Cow;
+    /// fn get_user_or_display<'a>(msg: &'a Privmsg<'_>) -> Cow<'a, str> {
+    ///     msg.display_name()
+    ///         .unwrap_or_else(|| Cow::Borrowed(&*msg.name))
+    /// }
+    ///
+    /// let data = ":foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "foo");
+    ///
+    /// let data = "@display-name=FOO :foo!foo@foo PRIVMSG #testing :this is a test.\r\n";
+    /// let msg = decode(data).next().unwrap().unwrap();
+    /// let pm = Privmsg::parse(&msg).unwrap();
+    ///
+    /// let name = get_user_or_display(&pm);
+    /// assert_eq!(name, "FOO");    
+    /// ```
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("display-name").reborrow()
     }
 
     /// Emotes attached to this message

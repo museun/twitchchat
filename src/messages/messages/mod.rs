@@ -2,7 +2,7 @@ use super::error::InvalidMessage;
 use super::expect::Expect;
 
 use crate::decode::Message;
-use crate::{AsOwned, Parse, Tags};
+use crate::{AsOwned, Parse, Reborrow, Tags};
 
 use std::borrow::Cow;
 
