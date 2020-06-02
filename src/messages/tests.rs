@@ -347,6 +347,43 @@ fn privmsg() {
                 channel: "#museun".into(),
                 data: "this is a test".into(),
                 tags: Default::default(),
+                ctcp: None,
+            }
+        )
+    }
+}
+
+#[test]
+fn privmsg_action() {
+    let input = ":test!user@host PRIVMSG #museun :\x01ACTION this is a test\x01\r\n";
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Privmsg::parse(&msg).unwrap(),
+            Privmsg {
+                name: "test".into(),
+                channel: "#museun".into(),
+                data: "this is a test".into(),
+                tags: Default::default(),
+                ctcp: Some(Ctcp::Action),
+            }
+        )
+    }
+}
+
+#[test]
+fn privmsg_unknown() {
+    let input = ":test!user@host PRIVMSG #museun :\x01FOOBAR this is a test\x01\r\n";
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Privmsg::parse(&msg).unwrap(),
+            Privmsg {
+                name: "test".into(),
+                channel: "#museun".into(),
+                data: "this is a test".into(),
+                tags: Default::default(),
+                ctcp: Some(Ctcp::Unknown {
+                    command: "FOOBAR".into()
+                }),
             }
         )
     }

@@ -12,6 +12,8 @@ pub struct Privmsg<'t> {
     pub data: Cow<'t, str>,
     /// Tags attached to the message
     pub tags: Tags<'t>,
+    /// The kind of CTCP this message contains, if any.
+    pub ctcp: Option<Ctcp<'t>>,
 }
 
 impl<'t> Privmsg<'t> {
@@ -104,6 +106,24 @@ impl<'t> Privmsg<'t> {
             .unwrap_or_default()
     }
 
+    /// Whether this message was an Action (a `/me` or `/action`)
+    pub fn is_action(&self) -> bool {
+        match self.ctcp.as_ref() {
+            Some(Ctcp::Action) => true,
+            _ => false,
+        }
+    }
+
+    /// Gets the 'CTCP' kind associated with this message, if any;
+    pub fn ctcp(&'t self) -> Option<Ctcp<'t>> {
+        match self.ctcp.as_ref()? {
+            Ctcp::Unknown { command } => Some(Ctcp::Unknown {
+                command: command.reborrow(),
+            }),
+            d => Some(d.clone()),
+        }
+    }
+
     /// Whether the user sending this message was a broadcaster
     pub fn is_broadcaster(&self) -> bool {
         self.badges()
@@ -170,11 +190,31 @@ impl<'t> Privmsg<'t> {
 impl<'a: 't, 't> Parse<&'a Message<'t>> for Privmsg<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PRIVMSG")?;
+
+        let data = msg.expect_data_ref()?;
+        let (ctcp, data) = if &data[0..=0] == "\x01" && &data[data.len() - 1..] == "\x01" {
+            let mut iter = data[1..data.len() - 1].splitn(2, ' ');
+            let ctcp = match iter.next() {
+                Some("ACTION") => Ctcp::Action,
+                Some(d) => Ctcp::Unknown { command: d.into() },
+                None => return Err(InvalidMessage::ExpectedData),
+            };
+
+            let data = iter
+                .next()
+                .map(|s| s.into())
+                .ok_or_else(|| InvalidMessage::ExpectedData)?;
+            (Some(ctcp), data)
+        } else {
+            (None, data.reborrow())
+        };
+
         Ok(Self {
             name: msg.expect_nick()?,
             channel: msg.expect_arg(0)?,
-            data: msg.expect_data()?,
+            data,
             tags: msg.tags.clone(),
+            ctcp,
         })
     }
 }
@@ -187,6 +227,7 @@ impl<'t> AsOwned for Privmsg<'t> {
             channel: self.channel.as_owned(),
             data: self.data.as_owned(),
             tags: self.tags.as_owned(),
+            ctcp: self.ctcp.as_owned(),
         }
     }
 }
