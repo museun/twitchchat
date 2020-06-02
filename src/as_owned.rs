@@ -80,7 +80,7 @@ impl<'a> AsOwned for Cow<'a, str> {
     fn as_owned(&self) -> <Self as AsOwned>::Owned {
         match self {
             Cow::Borrowed(r) => Cow::Owned(r.to_owned().into()),
-            Cow::Owned(s) => Cow::Owned(s.clone()),
+            Cow::Owned(s) => Cow::Owned(s.to_owned()),
         }
     }
 }

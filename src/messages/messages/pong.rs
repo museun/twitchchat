@@ -13,8 +13,8 @@ pub struct Pong<'t> {
 impl<'a: 't, 't> Parse<&'a Message<'t>> for Pong<'t> {
     fn parse(msg: &'a Message<'t>) -> Result<Self, InvalidMessage> {
         msg.expect_command("PONG")?;
-        msg.expect_data().map(|token| Self {
-            token: token.clone(),
+        msg.expect_data_ref().map(|token| Self {
+            token: token.reborrow(),
         })
     }
 }

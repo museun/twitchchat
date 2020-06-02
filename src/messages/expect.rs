@@ -27,7 +27,7 @@ impl<'b: 'a, 'a> Expect<'b, 'a> for Message<'a> {
         self.prefix
             .as_ref()
             .and_then(|s| s.nick())
-            .cloned()
+            .reborrow()
             .ok_or_else(|| InvalidMessage::ExpectedNick)
     }
 

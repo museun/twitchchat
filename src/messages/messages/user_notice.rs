@@ -70,7 +70,7 @@ impl<'t> UserNotice<'t> {
 
     /// The kind of notice this message is
     pub fn msg_id(&'t self) -> Option<NoticeType<'t>> {
-        let kind = self.tags.get("msg-id")?;
+        let kind = self.tags.get_ref("msg-id")?;
         match kind.as_ref() {
             "sub" => NoticeType::Sub,
             "resub" => NoticeType::Resub,
@@ -84,7 +84,7 @@ impl<'t> UserNotice<'t> {
             "unraid" => NoticeType::Unraid,
             "ritual" => NoticeType::Ritual,
             "bitsbadgetier" => NoticeType::BitsBadgeTier,
-            _ => NoticeType::Unknown(kind.clone()),
+            _ => NoticeType::Unknown(kind.reborrow()),
         }
         .into()
     }
