@@ -39,8 +39,8 @@ impl<'t> UserNotice<'t> {
     }
 
     /// The user's display name, if set
-    pub fn display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("display-name")
+    pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("display-name").reborrow()
     }
 
     /// Emotes attached to this message
@@ -54,13 +54,13 @@ impl<'t> UserNotice<'t> {
     /// A unique id (UUID) attached to this message
     ///
     /// (this is used for localization)
-    pub fn id(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("id")
+    pub fn id(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("id").reborrow()
     }
 
     /// The name of the user who sent this notice
-    pub fn login(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("login")
+    pub fn login(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("login").reborrow()
     }
 
     /// Whether this user is a moderator
@@ -126,13 +126,13 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on raid) The display name of the source user raiding this
     /// channel.
-    pub fn msg_param_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-displayName")
+    pub fn msg_param_display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-displayName").reborrow()
     }
 
     /// (Sent on only raid) The name of the source user raiding this channel.
-    pub fn msg_param_login(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-login")
+    pub fn msg_param_login(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-login").reborrow()
     }
 
     /// (Sent only on subgift, anonsubgift) The total number of months the user
@@ -150,14 +150,14 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on anongiftpaidupgrade, giftpaidupgrade) The subscriptions
     /// promo, if any, that is ongoing; e.g. Subtember 2018.
-    pub fn msg_param_promo_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-promo-name")
+    pub fn msg_param_promo_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-promo-name").reborrow()
     }
 
     /// (Sent only on subgift, anonsubgift) The display name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_display_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-recipient-display-name")
+    pub fn msg_param_recipient_display_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-recipient-display-name").reborrow()
     }
 
     /// (Sent only on subgift, anonsubgift) The user ID of the subscription gift
@@ -168,20 +168,20 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on subgift, anonsubgift) The user name of the subscription
     /// gift recipient.
-    pub fn msg_param_recipient_user_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-recipient-user-name")
+    pub fn msg_param_recipient_user_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-recipient-user-name").reborrow()
     }
 
     /// (Sent only on giftpaidupgrade) The login of the user who gifted the
     /// subscription.
-    pub fn msg_param_sender_login(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-sender-login")
+    pub fn msg_param_sender_login(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-sender-login").reborrow()
     }
 
     /// (Sent only on giftpaidupgrade) The display name of the user who gifted
     /// the subscription.
-    pub fn msg_param_sender_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-sender-name")
+    pub fn msg_param_sender_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-sender-name").reborrow()
     }
 
     /// (Sent only on sub, resub) Boolean indicating whether users want their
@@ -216,8 +216,8 @@ impl<'t> UserNotice<'t> {
     /// (Sent only on sub, resub, subgift, anonsubgift) The display name of the
     /// subscription plan. This may be a default name or one created by the
     /// channel owner.
-    pub fn msg_param_sub_plan_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-sub-plan-name")
+    pub fn msg_param_sub_plan_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-sub-plan-name").reborrow()
     }
 
     /// (Sent only on raid) The number of viewers watching the source channel
@@ -228,8 +228,8 @@ impl<'t> UserNotice<'t> {
 
     /// (Sent only on ritual) The name of the ritual this notice is for. Valid
     /// value: new_chatter.
-    pub fn msg_param_ritual_name(&'t self) -> Option<&'t Cow<'t, str>> {
-        self.tags.get("msg-param-ritual-name")
+    pub fn msg_param_ritual_name(&'t self) -> Option<Cow<'t, str>> {
+        self.tags.get("msg-param-ritual-name").reborrow()
     }
 
     /// (Sent only on bitsbadgetier) The tier of the bits badge the user just
