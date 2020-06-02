@@ -125,6 +125,20 @@ impl UserConfigBuilder {
         self
     }
 
+    /// Enables all of the capabilities.
+    ///
+    /// This is just a shortcut for enabling all of the Capabilities listed [here][here].
+    ///
+    /// [here]: ./enum.Capability.html
+    pub fn enable_all_capabilities(self) -> Self {
+        self.capabilities(&[
+            Capability::Membership,
+            Capability::Tags,
+            Capability::Commands,
+            Capability::ChatRooms,
+        ])
+    }
+
     /// Tries to build the UserConfig
     ///
     /// This returns an error if the name or token are invalid
