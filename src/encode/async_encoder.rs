@@ -178,7 +178,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Length (optional) must be a positive number of seconds.
     pub async fn commercial(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         length: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -311,7 +311,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// If the string exceeds 140 characters then it will be truncated
     pub async fn marker<'a>(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         comment: impl Into<Option<&'a str>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -334,7 +334,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub async fn me(&mut self, channel: impl IntoChannel + Send, message: &str) -> Result {
+    pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -382,7 +382,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Send data to a channel
-    pub async fn privmsg(&mut self, channel: impl IntoChannel + Send, data: &str) -> Result {
+    pub async fn privmsg(&mut self, channel: impl IntoChannel, data: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -451,7 +451,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// [slow_off]: ./struct.Encoder.html#method.slow_off
     pub async fn slow(
         &mut self,
-        channel: impl IntoChannel + Send,
+        channel: impl IntoChannel,
         duration: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
@@ -551,7 +551,7 @@ impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     }
 
     /// Removes a ban on a user.
-    pub async fn unban(&mut self, channel: impl IntoChannel + Send, username: &str) -> Result {
+    pub async fn unban(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 

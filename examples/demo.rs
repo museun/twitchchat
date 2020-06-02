@@ -35,6 +35,7 @@ async fn main() {
         }
     });
 
+    // these can fail if the event wasn't registered. but the included events are always registered
     // for join (when a user joins a channel)
     let mut join = dispatcher.subscribe::<twitchchat::events::Join>();
     // for part (when a user leaves a channel)

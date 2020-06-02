@@ -30,12 +30,6 @@ pub use irc_ready::*;
 mod join;
 pub use join::*;
 
-mod mode;
-pub use mode::*;
-
-mod names;
-pub use names::*;
-
 mod notice;
 pub use notice::*;
 

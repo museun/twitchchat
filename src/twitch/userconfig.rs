@@ -177,7 +177,6 @@ fn validate_token(s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use matches::matches;
 
     #[test]
     fn valid_user_config_no_caps() {
