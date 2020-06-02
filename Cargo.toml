@@ -19,34 +19,32 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["async", "tokio_native_tls"]
 async   = ["tokio", "futures"]
 
-tokio_native_tls = ["tokio", "futures", "tokio-tls", "native-tls"]
+tokio_native_tls = ["tokio", "futures", "tokio-native-tls", "native-tls"]
 tokio_rustls     = ["tokio", "futures", "tokio-rustls", "webpki-roots"]
 
 [dependencies]
-log = "0.4"
+log = "0.4.8"
 
-futures = { version = "0.3", optional = true, default-features = false } 
+futures = { version = "0.3.5", optional = true, default-features = false }
 # TODO figure out what of these features are actually used
-tokio   = { version = "0.2", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time", "macros"] }
+tokio   = { version = "0.2.21", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time", "macros"] }
+serde = { version = "1.0.111", optional = true, features = ["derive"] }
 
 # native tls
-tokio-tls  = { version = "0.3", optional = true }
-native-tls = { version = "0.2", optional = true }
+tokio-native-tls  = { version = "0.1.0", optional = true }
+native-tls        = { version = "0.2.4", optional = true }
 
 # rustls
-tokio-rustls = { version = "0.13", optional = true }
-webpki-roots = { version = "0.19", optional = true }
-
-serde = { version = "1.0", optional = true, features = ["derive"] }
+tokio-rustls = { version = "0.13.1", optional = true }
+webpki-roots = { version = "0.19.0", optional = true }
 
 # internal stuff
-parking_lot       = "0.10"
-static_assertions = "1.1"
+parking_lot = "0.10.2"
 
 [dev-dependencies]
-matches     = "0.1.8"
-tokio       = { version = "0.2.13", features = ["test-util", "macros"] }
-tokio-test  = "0.2.0"
+# matches     = "0.1.8"
+tokio       = { version = "0.2.21", features = ["test-util", "macros"] }
+tokio-test  = "0.2.1" # this is used for sequenced IO in the test
 doc-comment = "0.3.3"
 
 [[example]]

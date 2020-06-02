@@ -151,36 +151,6 @@ impl<'t> Event<'t> for Join {
     type Parsed = messages::Join<'t>;
 }
 
-/// Used to get a [messages::Mode][Mode]
-///
-/// [Mode]: ../messages/struct.Mode.html
-#[non_exhaustive]
-#[deprecated(
-    since = "0.10.2",
-    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
-)]
-pub struct Mode;
-
-#[allow(deprecated)]
-impl<'t> Event<'t> for Mode {
-    type Parsed = messages::Mode<'t>;
-}
-
-/// Used to get a [messages::Names][Names]
-///
-/// [Names]: ../messages/struct.Names.html
-#[non_exhaustive]
-#[deprecated(
-    since = "0.10.2",
-    note = "Twitch has deprecated this event. see https://discuss.dev.twitch.tv/t/irc-update-removing-mode-and-names-capabilities/25568"
-)]
-pub struct Names;
-
-#[allow(deprecated)]
-impl<'t> Event<'t> for Names {
-    type Parsed = messages::Names<'t>;
-}
-
 /// Used to get a [messages::Notice][Notice]
 ///
 /// [Notice]: ../messages/struct.Notice.html

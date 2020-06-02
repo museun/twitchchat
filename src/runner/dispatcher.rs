@@ -41,7 +41,6 @@ impl Default for Dispatcher {
 
         macro_rules! add {
             ($event:ty) => {
-                #[allow(deprecated)]
                 event_map
                     .entry(std::any::TypeId::of::<$event>())
                     .or_default();
@@ -66,10 +65,6 @@ impl Default for Dispatcher {
         add!(UserState);
         add!(UserNotice);
         add!(Whisper);
-
-        // These are deprecated
-        add!(Mode);
-        add!(Names);
 
         // the meta-events
         add!(All);
@@ -216,8 +211,6 @@ impl Dispatcher {
     [HostTarget][HostTarget_event]           | [HostTarget][HostTarget_message]           | When a channel hosts/unhosts another channel
     [IrcReady][IrcReady_event]               | [IrcReady][IrcReady_message]               | When the IRC connection is ready
     [Join][Join_event]                       | [Join][Join_message]                       | When a user joins a channel
-    [Mode][Mode_event]                       | [Mode][Mode_message]                       | When someone gains/loses moderator status
-    [Names][Names_event]                     | [Names][Names_message]                     | Server giving you a stream of names for a channel
     [Notice][Notice_event]                   | [Notice][Notice_message]                   | General notices from the server
     [Part][Part_event]                       | [Part][Part_message]                       | When a user leaves a channel
     [Ping][Ping_event]                       | [Ping][Ping_message]                       | Server requesting a response (for heartbeat/connection tracking)
@@ -254,8 +247,6 @@ impl Dispatcher {
     [IrcReady_event]: ./events/struct.IrcReady.html
     [Join_event]: ./events/struct.Join.html
     [Mode_event]: ./events/struct.Mode.html
-    [Names_event]: ./events/struct.Names.html
-    [Notice_event]: ./events/struct.Notice.html
     [Part_event]: ./events/struct.Part.html
     [Ping_event]: ./events/struct.Ping.html
     [Pong_event]: ./events/struct.Pong.html
@@ -276,8 +267,6 @@ impl Dispatcher {
     [IrcReady_message]: ./messages/struct.IrcReady.html
     [Join_message]: ./messages/struct.Join.html
     [Mode_message]: ./messages/struct.Mode.html
-    [Notice_message]: ./messages/struct.Notice.html
-    [Names_message]: ./messages/struct.Names.html
     [Part_message]: ./messages/struct.Part.html
     [Ping_message]: ./messages/struct.Ping.html
     [Pong_message]: ./messages/struct.Pong.html
@@ -417,7 +406,6 @@ impl Dispatcher {
     pub(crate) fn dispatch<'a>(&self, msg: &'a Message<'a>) {
         macro_rules! try_send {
             ($ident:ident) => {{
-                #[allow(deprecated)]
                 self.try_send::<events::$ident>(&msg)
             }};
         }
@@ -441,11 +429,6 @@ impl Dispatcher {
             "USERNOTICE" => try_send!(UserNotice),
             "USERSTATE" => try_send!(UserState),
             "WHISPER" => try_send!(UserState),
-
-            // These are deprecated
-            "353" => try_send!(Names),
-            "366" => try_send!(Names),
-            "MODE" => try_send!(Mode),
             _ => {}
         }
 

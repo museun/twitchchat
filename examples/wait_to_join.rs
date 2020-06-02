@@ -19,7 +19,9 @@ async fn main() {
     let (runner, mut control) =
         twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
 
-    let stream = twitchchat::connect_easy_tls(&nick, &pass).await.unwrap();
+    let stream = twitchchat::native_tls::connect_easy(&nick, &pass)
+        .await
+        .unwrap();
 
     // this runs the client in a background task, giving a future you wait on
     // you should call run before you 'block'

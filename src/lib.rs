@@ -24,16 +24,8 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
-#[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
-doc_comment::doctest!("../README.md");
-
-static_assertions::assert_cfg!(
-    not(all(
-        feature = "tokio_native_tls", //
-        feature = "tokio_rustls",     //
-    )),
-    "only a single TLS library can be used."
-);
+// #[cfg(all(doctest, feature = "async"))]
+// doc_comment::doctest!("../README.md");
 
 #[macro_use]
 #[doc(hidden)]
@@ -54,13 +46,7 @@ cfg_async! {
 cfg_async! {
     mod register;
     #[doc(inline)]
-    pub use register::register;
-}
-
-cfg_async! {
-    mod connect;
-    #[doc(inline)]
-    pub use connect::*;
+    pub use register::{register_easy, register};
 }
 
 /// Decode messages from a `&str`
@@ -139,10 +125,20 @@ fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigE
         .build()
 }
 
-// TODO see https://github.com/museun/twitchchat/issues/91
 cfg_async! {
     #[doc(inline)]
     pub mod rate_limit;
     #[doc(inline)]
     pub use rate_limit::RateLimit;
 }
+
+cfg_async! {
+    mod connect;
+    pub use connect::{connect_easy, connect};
+}
+
+#[cfg(feature = "tokio_rustls")]
+pub mod rustls;
+
+#[cfg(feature = "tokio_native_tls")]
+pub mod native_tls;

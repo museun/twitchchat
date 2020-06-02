@@ -1,5 +1,3 @@
-#![allow(clippy::future_not_send)] // this is wrong
-
 use crate::{color::Color, IntoChannel, RateLimit};
 
 use std::sync::Arc;
@@ -9,11 +7,11 @@ use tokio::sync::Mutex;
 
 type Result = std::result::Result<(), crate::Error>;
 
-struct ByteWriter<'a, W: AsyncWrite + Unpin> {
+struct ByteWriter<'a, W: AsyncWrite + Send + Unpin> {
     inner: &'a mut W,
 }
 
-impl<'a, W: AsyncWrite + Unpin> ByteWriter<'a, W> {
+impl<'a, W: AsyncWrite + Send + Unpin> ByteWriter<'a, W> {
     fn new(inner: &'a mut W) -> Self {
         Self { inner }
     }
@@ -110,7 +108,7 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
     }
 }
 
-impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
+impl<W: AsyncWrite + Send + Unpin> AsyncEncoder<W> {
     /// Permanently prevent a user from chatting. Reason is optional and will be
     /// shown to the target user and other moderators.
     ///
@@ -121,7 +119,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         &mut self,
         channel: impl IntoChannel,
         username: &str,
-        reason: impl Into<Option<&'a str>>,
+        reason: impl Into<Option<&'a str>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -181,7 +179,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     pub async fn commercial(
         &mut self,
         channel: impl IntoChannel,
-        length: impl Into<Option<usize>>,
+        length: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -310,7 +308,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     pub async fn marker<'a>(
         &mut self,
         channel: impl IntoChannel,
-        comment: impl Into<Option<&'a str>>,
+        comment: impl Into<Option<&'a str>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -332,11 +330,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Sends an "emote" message in the third person to the channel
-    pub async fn me(
-        &mut self,
-        channel: impl IntoChannel,
-        message: impl AsRef<str> + Send + Sync,
-    ) -> Result {
+    pub async fn me(&mut self, channel: impl IntoChannel, message: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -366,7 +360,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Request a heartbeat with the provided token
-    pub async fn ping(&mut self, token: impl AsRef<str> + Send + Sync) -> Result {
+    pub async fn ping(&mut self, token: &str) -> Result {
         try_rate_limit!(&self.rate_limit);
 
         ByteWriter::new(&mut self.writer)
@@ -375,7 +369,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Response to a heartbeat with the provided token
-    pub async fn pong(&mut self, token: impl AsRef<str> + Send + Sync) -> Result {
+    pub async fn pong(&mut self, token: &str) -> Result {
         try_rate_limit!(&self.rate_limit);
 
         ByteWriter::new(&mut self.writer)
@@ -384,11 +378,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Send data to a channel
-    pub async fn privmsg(
-        &mut self,
-        channel: impl IntoChannel,
-        data: impl AsRef<str> + Send + Sync,
-    ) -> Result {
+    pub async fn privmsg(&mut self, channel: impl IntoChannel, data: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -437,7 +427,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Send a raw IRC-style message
-    pub async fn raw(&mut self, raw: impl AsRef<[u8]> + Send + Sync) -> Result {
+    pub async fn raw(&mut self, raw: &str) -> Result {
         try_rate_limit!(&self.rate_limit);
 
         ByteWriter::new(&mut self.writer).write_bytes(raw).await
@@ -454,7 +444,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     pub async fn slow(
         &mut self,
         channel: impl IntoChannel,
-        duration: impl Into<Option<usize>>,
+        duration: impl Into<Option<usize>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -521,8 +511,8 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         &mut self,
         channel: impl IntoChannel,
         username: &str,
-        duration: impl Into<Option<&'a str>>,
-        message: impl Into<Option<&'b str>>,
+        duration: impl Into<Option<&'a str>> + Send,
+        message: impl Into<Option<&'b str>> + Send,
     ) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
@@ -553,11 +543,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Removes a ban on a user.
-    pub async fn unban(
-        &mut self,
-        channel: impl IntoChannel,
-        username: impl AsRef<str> + Send + Sync,
-    ) -> Result {
+    pub async fn unban(&mut self, channel: impl IntoChannel, username: &str) -> Result {
         let channel = channel.into_channel()?;
         try_rate_limit!(&self.rate_limit);
 
@@ -649,11 +635,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 
     /// Whispers the message to the username.
-    pub async fn whisper(
-        &mut self,
-        username: impl AsRef<str> + Send + Sync,
-        message: impl AsRef<str> + Send + Sync,
-    ) -> Result {
+    pub async fn whisper(&mut self, username: &str, message: &str) -> Result {
         try_rate_limit!(&self.rate_limit);
 
         ByteWriter::new(&mut self.writer)

@@ -65,41 +65,6 @@ fn room_state() {
     }
 }
 
-#[allow(deprecated)]
-#[test]
-fn names_start() {
-    let input =
-        ":museun!museun@museun.tmi.twitch.tv 353 museun = #museun :shaken_bot4 shaken_bot5\r\n";
-    for msg in crate::decode(input).map(|s| s.unwrap()) {
-        assert_eq!(
-            Names::parse(&msg).unwrap(),
-            Names {
-                name: "museun".into(),
-                channel: "#museun".into(),
-                kind: NamesKind::Start {
-                    users: vec!["shaken_bot4".into(), "shaken_bot5".into()]
-                }
-            }
-        )
-    }
-}
-
-#[allow(deprecated)]
-#[test]
-fn names_end() {
-    let input = ":museun!museun@museun.tmi.twitch.tv 366 museun #museun :End of /NAMES list\r\n";
-    for msg in crate::decode(input).map(|s| s.unwrap()) {
-        assert_eq!(
-            Names::parse(&msg).unwrap(),
-            Names {
-                name: "museun".into(),
-                channel: "#museun".into(),
-                kind: NamesKind::End
-            }
-        )
-    }
-}
-
 #[test]
 fn global_user_state() {
     let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
@@ -176,10 +141,7 @@ fn cap_acknowledged() {
         "twitch.tv/tags",
         "twitch.tv/commands",
     ];
-    for (msg, expected) in crate::decode(&input)
-        .map(|s| s.unwrap())
-        .zip(expected.into_iter())
-    {
+    for (msg, expected) in crate::decode(&input).map(|s| s.unwrap()).zip(expected) {
         let msg = Cap::parse(&msg).unwrap();
         assert!(msg.acknowledged);
         assert_eq!(msg.capability, *expected);
@@ -271,13 +233,13 @@ fn irc_ready() {
 
 #[test]
 fn join_bad_command() {
-    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv NOT_JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(
+    matches!(
         err,
         InvalidMessage::InvalidCommand {..}
     );
@@ -285,24 +247,24 @@ fn join_bad_command() {
 
 #[test]
 fn join_bad_nick() {
-    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv JOIN #foo\r\n")
         .flatten()
         .next()
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(err, InvalidMessage::ExpectedNick);
+    matches!(err, InvalidMessage::ExpectedNick);
 }
 
 #[test]
 fn join_bad_channel() {
-    let input = crate::decode(":tmi.twitch.tv JOIN\r\n".into())
+    let input = crate::decode(":tmi.twitch.tv JOIN\r\n")
         .flatten()
         .next()
         .unwrap();
 
     let err = Join::parse(&input).unwrap_err();
-    matches::matches!(err, InvalidMessage::ExpectedArg { pos: 0 });
+    matches!(err, InvalidMessage::ExpectedArg { pos: 0 });
 }
 
 #[test]
@@ -314,38 +276,6 @@ fn join() {
             Join {
                 name: "test".into(),
                 channel: "#foo".into()
-            }
-        )
-    }
-}
-
-#[allow(deprecated)]
-#[test]
-fn mode_lost() {
-    let input = ":jtv MODE #museun -o shaken_bot\r\n";
-    for msg in crate::decode(input).map(|s| s.unwrap()) {
-        assert_eq!(
-            Mode::parse(&msg).unwrap(),
-            Mode {
-                channel: "#museun".into(),
-                status: ModeStatus::Lost,
-                name: "shaken_bot".into()
-            }
-        )
-    }
-}
-
-#[allow(deprecated)]
-#[test]
-fn mode_gained() {
-    let input = ":jtv MODE #museun +o shaken_bot\r\n";
-    for msg in crate::decode(input).map(|s| s.unwrap()) {
-        assert_eq!(
-            Mode::parse(&msg).unwrap(),
-            Mode {
-                channel: "#museun".into(),
-                status: ModeStatus::Gained,
-                name: "shaken_bot".into(),
             }
         )
     }
