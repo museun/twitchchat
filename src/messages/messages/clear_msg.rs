@@ -17,12 +17,12 @@ pub struct ClearMsg<'t> {
 impl<'t> ClearMsg<'t> {
     /// Name of the user who sent the message
     pub fn login(&'t self) -> Option<Cow<'t, str>> {
-        self.tags.get("login").reborrow()
+        self.tags.get("login")
     }
 
     /// UUID of the message
     pub fn target_msg_id(&'t self) -> Option<Cow<'t, str>> {
-        self.tags.get("target-msg-id").reborrow()
+        self.tags.get("target-msg-id")
     }
 }
 

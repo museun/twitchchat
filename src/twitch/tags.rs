@@ -1,3 +1,5 @@
+use crate::Reborrow;
+
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 
@@ -36,8 +38,22 @@ impl<'t> Tags<'t> {
         Self(map.collect()).into()
     }
 
-    /// Tries to get the tag for this `key`
-    pub fn get<K: ?Sized>(&'t self, key: &K) -> Option<&'t Cow<'t, str>>
+    /// Tries to get the tag for this `key`.
+    ///
+    /// # Note
+    /// This doesn't `clone`, but rather reborrows the key as another `Cow`
+    pub fn get<K: ?Sized>(&'t self, key: &K) -> Option<Cow<'t, str>>
+    where
+        K: Borrow<str>,
+    {
+        self.0.get(key.borrow()).reborrow()
+    }
+
+    /// Tries to get a reference to the tag for this `key`
+    ///
+    /// # Note
+    /// This is provided so you don't have to play as much type-tetris
+    pub fn get_ref<K: ?Sized>(&'t self, key: &K) -> Option<&'t Cow<'t, str>>
     where
         K: Borrow<str>,
     {
@@ -109,17 +125,50 @@ impl<'t> Tags<'t> {
     }
 
     /// Get an iterator over the key,value pairs in the tags
-    pub fn iter(&self) -> impl Iterator<Item = (&Cow<'t, str>, &Cow<'t, str>)> + '_ {
+    ///
+    /// # Note
+    /// This doesn't `clone`, but rather reborrows the key as another `Cow`
+    pub fn iter(&'t self) -> impl Iterator<Item = (Cow<'t, str>, Cow<'t, str>)> + '_ {
+        self.0.iter().map(|(k, v)| (k.reborrow(), v.reborrow()))
+    }
+
+    /// Get an iterator over the key,value pairs in the tags
+    ///
+    /// # Note
+    /// This is provided so you don't have to play as much type-tetris
+    pub fn iter_ref(&self) -> impl Iterator<Item = (&Cow<'t, str>, &Cow<'t, str>)> + '_ {
         self.0.iter()
     }
 
     /// Get an iterator over the keys in the tags
-    pub fn keys(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
+    ///
+    /// # Note
+    /// This doesn't `clone`, but rather reborrows the key as another `Cow`
+    pub fn keys(&'t self) -> impl Iterator<Item = Cow<'t, str>> + '_ {
+        self.0.keys().map(|s| s.reborrow())
+    }
+
+    /// Get an iterator over the keys in the tags
+    ///
+    /// # Note
+    /// This is provided so you don't have to play as much type-tetris
+    pub fn keys_ref(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
         self.0.keys()
     }
 
     /// Get an iterator over the values in the tags
-    pub fn values(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
+    ///
+    /// # Note
+    /// This doesn't `clone`, but rather reborrows the key as another `Cow`
+    pub fn values(&'t self) -> impl Iterator<Item = Cow<'t, str>> + '_ {
+        self.0.values().map(|s| s.reborrow())
+    }
+
+    /// Get an iterator over the values in the tags
+    ///
+    /// # Note
+    /// This is provided so you don't have to play as much type-tetris
+    pub fn values_ref(&self) -> impl Iterator<Item = &Cow<'t, str>> + '_ {
         self.0.values()
     }
 

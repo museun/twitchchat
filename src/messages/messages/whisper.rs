@@ -17,7 +17,7 @@ impl<'t> Whisper<'t> {
     ///    
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
-            .get("badges")
+            .get_ref("badges")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
@@ -77,14 +77,14 @@ impl<'t> Whisper<'t> {
     /// assert_eq!(name, "FOO");    
     /// ```
     pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
-        self.tags.get("display-name").reborrow()
+        self.tags.get("display-name")
     }
 
     /// Emotes attached to this message
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(|s| crate::parse_emotes(s))
+            .map(|s| crate::parse_emotes(&s))
             .unwrap_or_default()
     }
 

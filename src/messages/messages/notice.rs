@@ -19,7 +19,7 @@ impl<'t> Notice<'t> {
     ///
     /// Returns None if this tag wasn't found on the message
     pub fn msg_id(&'t self) -> Option<MessageId<'t>> {
-        let input = self.tags.get("msg-id")?;
+        let input = self.tags.get_ref("msg-id")?;
         MessageId::parse(input).into()
     }
 }

@@ -20,7 +20,7 @@ impl<'t> Privmsg<'t> {
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
     pub fn badge_info(&'t self) -> Vec<crate::BadgeInfo<'t>> {
         self.tags
-            .get("badge-info")
+            .get_ref("badge-info")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
@@ -28,7 +28,7 @@ impl<'t> Privmsg<'t> {
     /// Badges attached to this message
     pub fn badges(&'t self) -> Vec<crate::Badge<'t>> {
         self.tags
-            .get("badges")
+            .get_ref("badges")
             .map(|s| crate::parse_badges(s))
             .unwrap_or_default()
     }
@@ -93,14 +93,14 @@ impl<'t> Privmsg<'t> {
     /// assert_eq!(name, "FOO");    
     /// ```
     pub fn display_name(&'t self) -> Option<Cow<'t, str>> {
-        self.tags.get("display-name").reborrow()
+        self.tags.get("display-name")
     }
 
     /// Emotes attached to this message
     pub fn emotes(&self) -> Vec<crate::Emotes> {
         self.tags
             .get("emotes")
-            .map(|s| crate::parse_emotes(s))
+            .map(|s| crate::parse_emotes(&s))
             .unwrap_or_default()
     }
 
