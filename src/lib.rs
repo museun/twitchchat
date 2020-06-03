@@ -49,17 +49,14 @@ cfg_async! {
     pub use register::{register_easy, register};
 }
 
-/// Decode messages from a `&str`
 pub mod decode;
 #[doc(inline)]
 pub use decode::{decode, decode_one};
 
-/// Encode data to a `Writer`
 pub mod encode;
 #[doc(inline)]
 pub use encode::Encoder;
 
-/// Common Twitch types
 pub mod twitch;
 
 #[doc(inline)]
@@ -137,6 +134,7 @@ cfg_async! {
     pub use connect::{connect_easy, connect};
 }
 
+// TODO make these show up in the doc.rs build
 #[cfg(feature = "tokio_rustls")]
 pub mod rustls;
 

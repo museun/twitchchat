@@ -1,3 +1,10 @@
+//! Decode messages from a [`&str`](https://doc.rust-lang.org/std/primitive.str.html)
+//!
+//! These messages can then be [parsed] into a Twitch [command]
+//!
+//! [parsed]: ../trait.Parse.html
+//! [command]: ../messages/index.html
+
 use crate::Tags;
 type Result<T> = std::result::Result<T, ParseError>;
 
@@ -108,6 +115,8 @@ pub const fn decode(input: &str) -> DecodeIter<'_> {
 }
 
 /// An iterator over decoded messages
+///
+/// This is created by using [decode](../fn.decode.html)
 pub struct DecodeIter<'a>(ParseIter<'a>);
 
 impl<'a> Iterator for DecodeIter<'a> {

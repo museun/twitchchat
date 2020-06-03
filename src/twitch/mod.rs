@@ -1,3 +1,5 @@
+//! Common Twitch types
+
 mod capability;
 pub use capability::Capability;
 
