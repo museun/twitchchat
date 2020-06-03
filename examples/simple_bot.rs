@@ -1,25 +1,25 @@
 use tokio::stream::StreamExt as _;
-use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, Writer};
+use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Writer};
 
-fn get_creds() -> (String, String, String) {
-    fn get_it(name: &str) -> String {
-        std::env::var(name).unwrap_or_else(|_| {
-            eprintln!("env var `{}` is required", name);
-            std::process::exit(1);
-        })
-    }
+// your twitch name. it should be associated with your oauth token
+fn get_nick() -> String {
+    std::env::var("TWITCH_NICK").unwrap()
+}
 
-    (
-        get_it("TWITCH_NICK"),
-        get_it("TWITCH_PASS"),
-        get_it("TWITCH_CHANNEL"),
-    )
+// your oauth token
+fn get_pass() -> String {
+    std::env::var("TWITCH_PASS").unwrap()
+}
+
+// a channel to join
+fn get_channel() -> String {
+    std::env::var("TWITCH_CHANNEL").unwrap()
 }
 
 struct Bot {
     // you can store the writer (and clone it)
     writer: Writer,
-    // and you can store/clone the Control
+    // and you can store the Control (and clone it)
     control: Control,
     start: std::time::Instant,
 }
@@ -46,6 +46,7 @@ impl Bot {
     }
 
     async fn handle(&mut self, msg: &messages::Privmsg<'_>) -> bool {
+        // protip: we can reborrow/deref the `data` field (a `Cow`) to get a `&str`
         match &*msg.data {
             "!hello" => {
                 let resp = format!("hello {}!", msg.name);
@@ -69,10 +70,11 @@ impl Bot {
 
 #[tokio::main]
 async fn main() {
-    let (user, pass, channel) = get_creds();
-
     let dispatcher = Dispatcher::new();
-    let (runner, mut control) = Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
+    let (mut runner, mut control) = Runner::new(dispatcher.clone());
+
+    // get the channel from the env
+    let channel = get_channel();
 
     // make a bot and get a future to its main loop
     let bot = Bot {
@@ -84,12 +86,18 @@ async fn main() {
     }
     .run(dispatcher, channel);
 
-    // connect to twitch
-    let conn = twitchchat::native_tls::connect_easy(&user, &pass)
-        .await
-        .unwrap();
+    // create a connector, this can be used to reconnect.
+    let connector = twitchchat::Connector::new(|| async move {
+        let (nick, pass) = (get_nick(), get_pass());
+        // connect to twitch
+        twitchchat::native_tls::connect_easy(&nick, &pass).await
+    });
+
     // and run the dispatcher/writer loop
-    let done = runner.run(conn);
+    //
+    // this uses a retry strategy that'll reconnect with the connect.
+    // using the `run_with_retry` method will consume the 'Status' types
+    let done = runner.run_with_retry(connector, twitchchat::RetryStrategy::on_timeout);
 
     // and select over our two futures
     tokio::select! {
@@ -98,9 +106,7 @@ async fn main() {
         // or wait for the runner to complete
         status = done => {
             match status {
-                Ok(Status::Canceled) => { eprintln!("runner was canceled") }
-                Ok(Status::Eof) => { eprintln!("got an eof, exiting") }
-                Ok(Status::Timeout) => { eprintln!("client connection timed out") }
+                Ok(()) => { eprintln!("we're done") }
                 Err(err) => { eprintln!("error running: {}", err) }
             }
         }
