@@ -36,20 +36,14 @@ impl<'a> Reborrow<'a> for &'a Cow<'a, str> {
 impl<'a> Reborrow<'a> for &'a Option<Cow<'a, str>> {
     type Output = Option<Cow<'a, str>>;
     fn reborrow(&self) -> Self::Output {
-        self.as_ref().map(|s| match s {
-            Cow::Borrowed(s) => Cow::Borrowed(*s),
-            Cow::Owned(s) => Cow::Borrowed(s.as_ref()),
-        })
+        self.as_ref().map(|s| s.reborrow())
     }
 }
 
 impl<'a> Reborrow<'a> for Option<&'a Cow<'a, str>> {
     type Output = Option<Cow<'a, str>>;
     fn reborrow(&self) -> Self::Output {
-        self.map(|s| match s {
-            Cow::Borrowed(s) => Cow::Borrowed(*s),
-            Cow::Owned(s) => Cow::Borrowed(s.as_ref()),
-        })
+        self.map(|s| s.reborrow())
     }
 }
 
