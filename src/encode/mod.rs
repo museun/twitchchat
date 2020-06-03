@@ -1,3 +1,5 @@
+//! Encode data to an [`std::io::Write`](https://doc.rust-lang.org/std/io/trait.Write.html) or [`tokio::io::AsyncWrite`](https://docs.rs/tokio/latest/tokio/io/trait.AsyncWrite.html)
+
 mod encoder;
 pub use encoder::Encoder;
 
