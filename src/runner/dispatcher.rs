@@ -98,15 +98,16 @@ impl Dispatcher {
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, RateLimit, events};
+    # use twitchchat::{Dispatcher, Runner, RateLimit, Connector, events};
     # use tokio::spawn;
     # use futures::prelude::*;
-    # let conn = tokio_test::io::Builder::new().read(b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n").build();
+    # let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+    # let conn = Connector::new(move || async move { Ok(tokio_test::io::Builder::new().read(data).wait(std::time::Duration::from_millis(10000)).build()) });
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
+    let (mut runner, control) = Runner::new(dispatcher.clone());
     // You should spawn the run() away so it can start to process events
-    let handle = spawn(runner.run(conn));
+    let handle = spawn(async move { runner.run_to_completion(conn).await });
     // block until we get an IrcReady
     let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
     # assert!(true);
@@ -156,16 +157,17 @@ impl Dispatcher {
 
     # Example
     ```rust
-    # use twitchchat::{Dispatcher, Runner, events, RateLimit};
+    # use twitchchat::{Dispatcher, Runner, Connector, events, RateLimit};
     # use tokio::spawn;
     # use futures::prelude::*;
-    # let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(1000)).build();
+    # let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+    # let conn = Connector::new(move || async move { Ok(tokio_test::io::Builder::new().read(data).wait(std::time::Duration::from_millis(1000)).build()) });
     # let fut = async move {
     let dispatcher = Dispatcher::new();
-    let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
+    let (mut runner, control) = Runner::new(dispatcher.clone());
     // spawn the runner in the background, just to drive things for us
     // (you could select over it, or await at the end)
-    spawn(runner.run(conn));
+    spawn(async move { runner.run_to_completion(conn).await });
     # control.stop(); // this is just so things will stop now
 
     // get some streams for events you're interested in
@@ -454,7 +456,6 @@ impl<T> Sender<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rate_limit::RateLimit;
 
     #[tokio::test]
     async fn wait_for() {
@@ -462,21 +463,27 @@ mod tests {
         use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-        let conn = tokio_test::io::Builder::new()
-            .read(data)
-            .wait(std::time::Duration::from_millis(100))
-            .build();
+
+        let connector = crate::Connector::new(move || async move {
+            Ok(tokio_test::io::Builder::new()
+                .read(data)
+                .wait(std::time::Duration::from_millis(100))
+                .build())
+        });
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone(), RateLimit::default());
-        let handle = tokio::spawn(runner.run(conn));
+
+        let (mut runner, control) = Runner::new(dispatcher.clone());
+        let handle = tokio::spawn(async move { runner.run_to_completion(connector).await });
 
         let _ = dispatcher.wait_for::<events::IrcReady>().await.unwrap();
+
         let _ = dispatcher
             .wait_for::<events::IrcReady>()
             .now_or_never()
             .unwrap()
             .unwrap();
+
         control.stop();
 
         assert_eq!(handle.await.unwrap().unwrap(), Status::Canceled);
@@ -488,14 +495,18 @@ mod tests {
         use futures::future::FutureExt as _;
 
         let data = b":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-        let conn = tokio_test::io::Builder::new()
-            .read(data)
-            .wait(std::time::Duration::from_millis(100))
-            .build();
+
+        let connector = crate::Connector::new(move || async move {
+            Ok(tokio_test::io::Builder::new()
+                .read(data)
+                .wait(std::time::Duration::from_millis(100))
+                .build())
+        });
 
         let dispatcher = Dispatcher::new();
-        let (runner, control) = Runner::new(dispatcher.clone(), <_>::default());
-        let handle = tokio::spawn(runner.run(conn));
+
+        let (mut runner, control) = Runner::new(dispatcher.clone());
+        let handle = tokio::spawn(async move { runner.run_to_completion(connector).await });
 
         assert!(dispatcher
             .wait_for::<events::Join>()

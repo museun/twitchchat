@@ -25,11 +25,11 @@ type Stream = tokio::net::TcpStream;
 /// # use twitchchat::*;
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
 /// let user_config = UserConfig::builder().anonymous().build()?;
-/// let mut stream = twitchchat::connect(&user_config).await?;
+/// let mut stream = twitchchat::connect_no_tls(&user_config).await?;
 /// # Ok::<_, Box<dyn std::error::Error>>(())
 /// # }).unwrap();
 /// ```
-pub async fn connect(config: &UserConfig) -> std::io::Result<Stream> {
+pub async fn connect_no_tls(config: &UserConfig) -> std::io::Result<Stream> {
     let mut stream = tokio::net::TcpStream::connect(crate::TWITCH_IRC_ADDRESS_TLS).await?;
     crate::register(config, &mut stream).await?;
     Ok(stream)
@@ -57,11 +57,11 @@ pub async fn connect(config: &UserConfig) -> std::io::Result<Stream> {
 /// # use twitchchat::*;
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
 /// let (name, token) = ANONYMOUS_LOGIN;
-/// let mut stream = twitchchat::connect_easy(&name, &token).await?;
+/// let mut stream = twitchchat::connect_easy_no_tls(&name, &token).await?;
 /// # Ok::<_, Box<dyn std::error::Error>>(())
 /// # }).unwrap();
 /// ```
-pub async fn connect_easy(name: &str, token: &str) -> std::io::Result<Stream> {
+pub async fn connect_easy_no_tls(name: &str, token: &str) -> std::io::Result<Stream> {
     use std::io::{Error, ErrorKind};
 
     let mut stream = tokio::net::TcpStream::connect(crate::TWITCH_IRC_ADDRESS_TLS).await?;

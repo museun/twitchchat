@@ -37,7 +37,7 @@ cfg_async! {
         writer::{MpscWriter, Writer},
         dispatcher::Dispatcher,
         stream::EventStream,
-        runner::Runner,
+        runner::{Connector, Runner, RetryStrategy},
         control::Control,
         status::Status
     };
@@ -131,7 +131,7 @@ cfg_async! {
 
 cfg_async! {
     mod connect;
-    pub use connect::{connect_easy, connect};
+    pub use connect::{connect_easy_no_tls, connect_no_tls};
 }
 
 // TODO make these show up in the doc.rs build

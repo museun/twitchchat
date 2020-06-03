@@ -1,24 +1,34 @@
 /* in your Cargo.toml
 [dependencies]
-twitchchat = "0.10"                                        # this crate
-tokio = { version = "0.2", features = ["full", "macros"] } # you need tokio to run it
+# this crate
+twitchchat = "0.10"
+
+# and now for tokio
+# macros allows you to use `#[tokio::main]` and `tokio::pin!` and `tokio::select!`
+# rt-multi gives you a multi-threaded runtime.
+tokio = { version = "0.2", features = ["rt-multi", "macros"] }
 */
 
-// or you can use futures::stream::StreamExt
+// or you can use `futures::stream::StreamExt`
 use tokio::stream::StreamExt as _;
+
+// your twitch name. it should be associated with your oauth token
+fn get_nick() -> String {
+    std::env::var("TWITCH_NICK").unwrap()
+}
+
+// your oauth token
+fn get_pass() -> String {
+    std::env::var("TWITCH_PASS").unwrap()
+}
+
+// a channel to join
+fn get_channel() -> String {
+    std::env::var("TWITCH_CHANNEL").unwrap()
+}
 
 #[tokio::main]
 async fn main() {
-    let (nick, pass) = (
-        // twitch name
-        std::env::var("TWITCH_NICK").unwrap(),
-        // oauth token for twitch name
-        std::env::var("TWITCH_PASS").unwrap(),
-    );
-
-    // putting this in the env so people don't join my channel when running this
-    let channel = std::env::var("TWITCH_CHANNEL").unwrap();
-
     // make a dispatcher (this is how you 'subscribe' to events)
     // this is clonable, so you can send it to other tasks/threasd
     let dispatcher = twitchchat::Dispatcher::new();
@@ -38,25 +48,34 @@ async fn main() {
     // these can fail if the event wasn't registered. but the included events are always registered
     // for join (when a user joins a channel)
     let mut join = dispatcher.subscribe::<twitchchat::events::Join>();
+
     // for part (when a user leaves a channel)
     let mut part = dispatcher.subscribe::<twitchchat::events::Part>();
 
     // there is also an `All` event which is an enum of all possible events
     // and a `Raw` event which is the raw IRC message
 
-    // make a new runner
-    // control allows you to stop the runner, and gives you access to an async. encoder (writer)
-    let (runner, mut control) =
-        twitchchat::Runner::new(dispatcher.clone(), twitchchat::RateLimit::default());
+    // make a new runner. this gives you the runner and a control type
+    // the control type allows you to stop the runner, and gives you access to an async. encoder (writer)
+    //
+    // you have to give it your dispatcher (which is clonable)
+    let (mut runner, mut control) = twitchchat::Runner::new(dispatcher.clone());
 
+    // make a connector, this acts a factory incase you want to reconnect easily.
     // connect via TCP with TLS with this nick and password
-    let stream = twitchchat::native_tls::connect_easy(&nick, &pass)
-        .await
-        .unwrap();
+    let connector = twitchchat::Connector::new(|| async move {
+        let (nick, pass) = (get_nick(), get_pass());
+        twitchchat::native_tls::connect_easy(&nick, &pass).await
+    });
 
     // spawn the run off in another task so we don't block the current one.
     // you could just await on the future at the end of whatever block, but this is easier for this demonstration
-    let handle = tokio::task::spawn(runner.run(stream));
+    let handle = tokio::task::spawn(async move {
+        // we have to use an async block to for a move.
+        //
+        // this takes the connector
+        runner.run_to_completion(connector).await
+    });
 
     // another privmsg so we can act like a bot
     let mut privmsg = dispatcher.subscribe::<twitchchat::events::Privmsg>();
@@ -73,6 +92,7 @@ async fn main() {
     // we can clone the writer and send it places
     let mut writer = control.writer().clone();
 
+    let channel = get_channel();
     // because we waited for IrcReady, we can confidently join channels
     writer.join(channel).await.unwrap();
 
@@ -97,7 +117,7 @@ async fn main() {
                         }
                     }
                     Some("!quit") => {
-                        // causes the runner to shutdown
+                        // this causes the runner to shutdown
                         control.stop();
                     }
                     _ => {}
@@ -136,7 +156,7 @@ async fn main() {
         }
     }
 
-    // note you should wait for all of your tasks to join before exiting
+    // *note*: you should wait for all of your tasks to join before exiting
     // but we detached them to make this shorter
 
     // another way would be to clear all subscriptions

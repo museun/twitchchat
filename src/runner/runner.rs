@@ -1,66 +1,106 @@
 use {super::*, crate::*};
 
+use std::future::Future;
 use std::sync::Arc;
+
+use futures::prelude::*;
+
 use tokio::prelude::*;
+use tokio::prelude::{AsyncRead, AsyncWrite};
+
 use tokio::sync::Mutex;
 use tokio::time::Duration;
 
 // 45 seconds after a receive we'll send a ping
 const PING_INACTIVITY: Duration = Duration::from_secs(45);
+
 // and then wait 10 seconds for a pong resposne
 const PING_WINDOW: Duration = Duration::from_secs(10);
 
-/**
-The runner is the main "event loop" of this crate.
+type BoxFuture<'a, T> = std::pin::Pin<Box<dyn Future<Output = T> + 'a + Send>>;
+type ConnectFuture<IO> = BoxFuture<'static, Result<IO, std::io::Error>>;
 
-It is created with a [Dispatcher][dispatcher]. It returns the new runner and the
-[Control][control] type.
+/// A connector type that acts as a factory for connecting to Twitch
+pub struct Connector<IO> {
+    connect: Arc<dyn Fn() -> ConnectFuture<IO> + Send + Sync + 'static>,
+}
 
-Once you're ready to start reading from the **Reader** and processing **Writes** you should call [Runner::run](#method.run).
+impl<IO> Connector<IO>
+where
+    IO: AsyncRead + AsyncWrite,
+    IO: Send + Sync + 'static,
+{
+    /// Create a new connector with this factory function
+    pub fn new<F, R>(connect_func: F) -> Self
+    where
+        F: Fn() -> R + Send + Sync + 'static,
+        R: Future<Output = Result<IO, std::io::Error>> + Send + Sync + 'static,
+    {
+        Self {
+            connect: Arc::new(move || Box::pin(connect_func())),
+        }
+    }
+}
 
-# Returns
-- A [`future`][future] which resolves to a [Status][status] once the Runner has finished.
+impl<IO> Clone for Connector<IO> {
+    fn clone(&self) -> Self {
+        Self {
+            connect: Arc::clone(&self.connect),
+        }
+    }
+}
 
-Interacting with the `Runner` is done via the [Control][control] type.
+impl<IO> std::fmt::Debug for Connector<IO> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Connector").finish()
+    }
+}
 
-# Example
-```rust
-# use tokio::spawn;
-# tokio::runtime::Runtime::new().unwrap().block_on(async {
-# let conn = tokio_test::io::Builder::new().wait(std::time::Duration::from_millis(10000)).build();
-use twitchchat::{Dispatcher, Status, Runner, RateLimit};
-// make a dispatcher
-let dispatcher = Dispatcher::new();
-// do stuff with the dispatcher (its clonable)
-// ..
+/// Some common retry strategies.
+///
+/// These are used with [`Runner::run_with_retry`][retry].
+///
+/// You can provide your own by simplying having an async function with the same
+/// signature.
+///
+/// That is `async fn(result: Result<Status, Error>) -> Result<bool, Error>`.
+///
+/// Return one of:
+/// * `Ok(true)` to cause it to reconnect.
+/// * `Ok(false)` will gracefully exit with `Ok(Status::Eof)`
+/// * `Err(err)` will return that error
+#[derive(Copy, Clone, Debug, Default)]
+pub struct RetryStrategy;
 
-// create a new runner
-let (runner, control) = Runner::new(dispatcher, RateLimit::default());
+impl RetryStrategy {
+    /// Reconnect immediately unless the `Status` was `Canceled`
+    pub async fn immediately(result: Result<Status, Error>) -> Result<bool, Error> {
+        if let Ok(Status::Canceled) = result {
+            return Ok(false);
+        }
+        Ok(true)
+    }
 
-// spawn a task that kills the runner after some time
-let ctl = control.clone();
-spawn(async move {
-    // pretend some time has passed
-    ctl.stop()
-});
+    /// Retries if `Status` was a **Timeout**, otherwise return the `Err` or `false` (to stop the connection loop).
+    pub async fn on_timeout(result: Result<Status, Error>) -> Result<bool, Error> {
+        let status = if let Status::Timeout = result? {
+            true
+        } else {
+            false
+        };
 
-// run, blocking the task.
-// you can spawn this in a task and await on that join handle if you prefer
-match runner.run(conn).await {
-    // for the doc test
-    Ok(Status::Canceled) => { assert!(true) }
-    Ok(Status::Eof) => { panic!("eof") }
-    Ok(Status::Timeout) => { panic!("timeout") }
-    Err(err) => { panic!("{}", err) }
-};
-# });
-```
+        Ok(status)
+    }
 
-[dispatcher]: ./struct.Dispatcher.html
-[control]: ./struct.Control.html
-[status]: ./enum.Status.html
-[future]: https://doc.rust-lang.org/std/future/trait.Future.html
-*/
+    /// Retries if the `Result` was an error
+    pub async fn on_error(result: Result<Status, Error>) -> Result<bool, Error> {
+        Ok(result.is_err())
+    }
+}
+
+/// A type that drive the __event loop__ to completion, and optionally retries on an return condition.
+///
+/// This type is used to 'drive' the dispatcher and internal read/write futures.
 pub struct Runner {
     dispatcher: Dispatcher,
     receiver: Rx,
@@ -69,66 +109,109 @@ pub struct Runner {
 }
 
 impl Runner {
-    /**
-    Create a new client runner with this [`Dispatcher`][dispatcher]
+    /// Create a Runner with the provided dispatcher with the default rate limiter
+    ///
+    /// # Returns
+    /// This returns the [`Runner`] and a [`Control`] type that'll let you interact with the Runner.
+    ///
+    /// [`Runner`]: ./struct.Runner.html
+    /// [`Control`]: ./struct.Control.html
+    pub fn new(dispatcher: Dispatcher) -> (Runner, Control) {
+        Self::new_with_rate_limit(dispatcher, RateLimit::default())
+    }
 
-    # Returns
-    The [`Runner`]() and a [`Control`][control] type
-
-    [control]: ./struct.Control.html
-    [dispatcher]: ./struct.Dispatcher.html
-    */
-    pub fn new(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Self, Control) {
+    /// Create a Runner without a rate limiter.
+    ///
+    /// # Warning
+    /// This is not advisable and goes against the 'rules' of the API.
+    ///
+    /// You should prefer to use [`Runner::new`](#method.new) to use a default rate limiter
+    ///
+    /// Or, [`Runner::new_with_rate_limit`](#method.new_with_rate_limit) if you
+    /// know your 'bot' status is higher than normal.
+    ///
+    /// # Returns
+    /// This returns the [`Runner`] and a [`Control`] type that'll let you interact with the Runner.
+    ///
+    /// [`Runner`]: ./struct.Runner.html
+    /// [`Control`]: ./struct.Control.html
+    pub fn new_without_rate_limit(dispatcher: Dispatcher) -> (Runner, Control) {
         let (sender, receiver) = mpsc::channel(64);
-        let abort = abort::Abort::default();
+        let stop = abort::Abort::default();
+
+        let writer = Writer::new(writer::MpscWriter::new(sender));
+
+        let this = Self {
+            dispatcher,
+            receiver,
+            abort: stop.clone(),
+            writer: writer.clone(),
+        };
+
+        let control = Control { writer, stop };
+        (this, control)
+    }
+
+    /// Crate a new Runner with the provided dispatcher and rate limiter
+    ///
+    /// # Returns
+    /// This returns the [`Runner`] and a [`Control`] type that'll let you interact with the Runner.
+    ///
+    /// [`Runner`]: ./struct.Runner.html
+    /// [`Control`]: ./struct.Control.html
+    ///
+    pub fn new_with_rate_limit(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Runner, Control) {
+        let (sender, receiver) = mpsc::channel(64);
+        let stop = abort::Abort::default();
 
         let writer = Writer::new(writer::MpscWriter::new(sender))
             .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
 
-        let control = Control {
-            writer: writer.clone(),
-            stop: abort.clone(),
-        };
-
         let this = Self {
-            receiver,
             dispatcher,
-            writer,
-            abort,
+            receiver,
+            abort: stop.clone(),
+            writer: writer.clone(),
         };
 
-        (this, control)
+        (this, Control { writer, stop })
     }
 
-    /**
-    Run to completion, dispatching messages to the subscribers.
-
-    This returns a future. You should await this future at the end of your code
-    to keep the runtime active until the client closes.
-
-    # Interacting with the runner
-    You can interact with the runner via the `Control` type returned by [`Runner::new`](#method.new).
-
-    To _stop_ this early, you can use the [`Control::stop`][stop] method.
-
-    To get a _writer_, you can use the [`Control::writer`][writer] method.
-
-    # Returns after resolving the future
-    * An [error][error] if one was encountered while in operation
-    * [`Ok(Status::Eof)`][eof] if it ran to completion
-    * [`Ok(Status::Canceled)`][cancel] if the associated [`Control::stop`][stop] was called
-
-    [error]: ./enum.Error.html
-    [eof]: ./enum.Status.html#variant.Eof
-    [cancel]: ./enum.Status.html#variant.Canceled
-    [stop]: ./struct.Control.html#method.stop
-    [writer]: ./struct.Control.html#method.writer
-    */
-    pub async fn run<IO>(mut self, io: IO) -> Result<Status, Error>
+    /// Run to completion.
+    ///
+    /// This takes a [`Connector`][connector] which acts a factory for producing IO types.
+    ///
+    /// This will only call the connector factory once. If you want to reconnect
+    /// automatically, refer to [`Runner::run_with_retry`][retry]. That function takes in
+    /// a retry strategy for determining how to continue on disconnection.
+    ///
+    /// The follow happens during the operation of this future
+    /// * Connects using the provided [`Connector`][connector]
+    /// * Automatically `PING`s the connection when a `PONG` is received
+    /// * Checks for timeouts.
+    /// * Reads from the IO type, parsing and dispatching messages
+    /// * Reads from the writer and forwards it to the IO type
+    /// * Listens for user cancellation from the [`Control::stop`][stop] method.
+    ///
+    /// # Returns a future that resolves to..
+    /// * An [error] if one was encountered while in operation
+    /// * [`Ok(Status::Eof)`][eof] if it ran to completion
+    /// * [`Ok(Status::Canceled)`][cancel] if the associated [`Control::stop`][stop] was called
+    ///
+    /// [connector]: ./struct.Connector.html
+    /// [error]: ./enum.Error.html
+    /// [eof]: ./enum.Status.html#variant.Eof
+    /// [cancel]: ./enum.Status.html#variant.Canceled
+    /// [stop]: ./struct.Control.html#method.stop    
+    /// [retry]: #method.run_with_retry
+    ///
+    pub async fn run_to_completion<IO>(&mut self, connector: Connector<IO>) -> Result<Status, Error>
     where
-        IO: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
+        IO: AsyncRead + AsyncWrite,
+        IO: Unpin + Send + Sync + 'static,
     {
-        use futures::prelude::*;
+        let io = (connector.connect)().await.map_err(Error::Io)?;
+
         let mut stream = tokio::io::BufStream::new(io);
         let mut buffer = String::with_capacity(1024);
 
@@ -136,20 +219,15 @@ impl Runner {
             .dispatcher
             .subscribe_internal::<crate::events::Ping>(true);
 
-        let mut out = self.writer;
-
-        let (mut check_timeout, timeout_delay) =
-            Self::check_connection(&self.dispatcher, out.clone());
+        let mut out = self.writer.clone();
+        let (mut check_timeout, timeout_delay, timeout_task) =
+            check_connection(&self.dispatcher, out.clone());
 
         loop {
             tokio::select! {
-                _ = timeout_delay.notified() => {
-                    log::warn!("timeout detected, quitting loop");
-                    break Ok(Status::Timeout);
-                }
-
                 // Abort notification
                 _ = self.abort.wait_for() => {
+                    log::debug!("received signal from user to stop");
                     let _ = self.dispatcher.clear_subscriptions_all();
                     break Ok(Status::Canceled)
                 }
@@ -157,6 +235,7 @@ impl Runner {
                 // Auto-ping
                 Some(msg) = ping.next() => {
                     if out.pong(&msg.token).await.is_err() {
+                        log::debug!("cannot send pong");
                         break Ok(Status::Eof);
                     }
                 }
@@ -164,13 +243,14 @@ impl Runner {
                 // Read half
                 Ok(n) = &mut stream.read_line(&mut buffer) => {
                     if n == 0 {
+                        log::info!("read 0 bytes. this is an EOF");
                         break Ok(Status::Eof)
                     }
 
                     let mut visited = false;
                     for msg in decode(&buffer) {
                         let msg = msg?;
-                        log::trace!("< {}", msg.raw.escape_debug());
+                        log::trace!(target: "twitchchat::runner::read", "< {}", msg.raw.escape_debug());
                         self.dispatcher.dispatch(&msg);
                         visited = true;
                     }
@@ -178,9 +258,9 @@ impl Runner {
                     // if we didn't parse a message then we should signal that this was EOF
                     // twitch sometimes just stops writing to the client
                     if !visited {
+                        log::warn!("twitch sent an incomplete message");
                         break Ok(Status::Eof)
                     }
-
                     buffer.clear();
 
                     let _ = check_timeout.send(()).await;
@@ -188,65 +268,116 @@ impl Runner {
 
                 // Write half
                 Some(data) = &mut self.receiver.next() => {
-                    log::trace!("> {}", std::str::from_utf8(&data).unwrap().escape_debug());
+                    log::trace!(target: "twitchchat::runner::write", "> {}", std::str::from_utf8(&data).unwrap().escape_debug());
                     stream.write_all(&data).await?;
                     stream.flush().await?
                 },
 
+                // We received a timeout
+                _ = timeout_delay.notified() => {
+                    log::warn!(target: "twitchchat::runner::timeout", "timeout detected, quitting loop");
+                    drop(check_timeout);
+                    timeout_task.await;
+                    break Ok(Status::Timeout);
+                },
+
                 // All of the futures are dead, so the loop should end
-                else => { break Ok(Status::Eof) }
+                else => {
+                    log::info!("all futures are dead. ending loop");
+                    break Ok(Status::Eof)
+                }
             }
         }
     }
 
-    fn check_connection(
-        dispatcher: &Dispatcher,
-        mut writer: Writer,
-    ) -> (tokio::sync::mpsc::Sender<()>, Arc<tokio::sync::Notify>) {
-        use futures::prelude::*;
-        use tokio::sync::{mpsc, Notify};
+    /// Run to completion and applies a retry functor to the result.
+    ///
+    /// This takes in a:
+    /// * [`Connector`][connector] which acts a factory for producing IO types.
+    /// * `retry_check` is a functor from `Result<Status, Error>` to a ___future___ of a `Result<bool, Error>`.
+    ///
+    /// You can pause in the `retry_check` to cause the next connection attempt to be delayed.
+    ///
+    /// `retry_check` return values:
+    /// * `Ok(true)` will cause this to reconnect.
+    /// * `Ok(false)` will cause this to exit with `Ok(Status::Eof)`
+    /// * `Err(..)` will cause this to exit with `Err(err)`
+    ///
+    /// [connector]: ./struct.Connector.html     
 
-        let mut pong = dispatcher.subscribe_internal::<crate::events::Pong>(true);
-        let timeout = Arc::new(Notify::new());
-        let (tx, mut rx) = mpsc::channel(1);
+    pub async fn run_with_retry<IO, F, R>(
+        &mut self,
+        connector: Connector<IO>,
+        retry_check: F,
+    ) -> Result<(), Error>
+    where
+        IO: AsyncRead + AsyncWrite,
+        IO: Unpin + Send + Sync + 'static,
 
-        tokio::task::spawn({
-            let timeout = timeout.clone();
-            async move {
-                loop {
-                    tokio::select! {
-                        _ = tokio::time::delay_for(PING_INACTIVITY) => {
-                            log::debug!("inactivity detected of {:?}, sending a ping", PING_INACTIVITY);
-                            if writer.ping(&format!(
-                                "{}",
-                                std::time::SystemTime::now()
-                                    .duration_since(std::time::UNIX_EPOCH)
-                                    .expect("time to not go backwards")
-                                    .as_secs()
-                            ))
-                            .await.is_err() {
-                                timeout.notify();
-                                log::error!("cannot send ping");
-                                break;
-                            }
+        F: Fn(Result<Status, Error>) -> R,
+        R: Future<Output = Result<bool, Error>> + Send + Sync + 'static,
+    {
+        loop {
+            // how do handle this move
+            let res = self.run_to_completion(connector.clone()).await;
+            match retry_check(res).await {
+                Err(err) => break Err(err),
+                Ok(false) => break Ok(()),
+                Ok(true) => {}
+            }
+        }
+    }
+}
 
-                            if tokio::time::timeout(PING_WINDOW, pong.next())
-                                .await
-                                .is_err()
-                            {
-                                timeout.notify();
-                                log::error!("did not get a ping after {:?}", PING_WINDOW);
-                                break;
-                            }
-                        }
-                        Some(..) = rx.next() => { }
+fn check_connection(
+    dispatcher: &Dispatcher,
+    mut writer: Writer,
+) -> (
+    tokio::sync::mpsc::Sender<()>,
+    Arc<tokio::sync::Notify>,
+    impl Future,
+) {
+    use tokio::sync::{mpsc, Notify};
+
+    let mut pong = dispatcher.subscribe_internal::<crate::events::Pong>(true);
+    let timeout_notify = Arc::new(Notify::new());
+    let (tx, mut rx) = mpsc::channel(1);
+
+    let timeout = timeout_notify.clone();
+    let task = async move {
+        loop {
+            tokio::select! {
+                _ = tokio::time::delay_for(PING_INACTIVITY) => {
+                    log::debug!(target: "twitchchat::runner::timeout", "inactivity detected of {:?}, sending a ping", PING_INACTIVITY);
+
+                    let ts = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .expect("time to not go backwards")
+                        .as_secs();
+
+                    if writer.ping(&format!("{}", ts)).await.is_err() {
+                        timeout.notify();
+                        log::error!(target: "twitchchat::runner::timeout", "cannot send ping");
+                        break;
+                    }
+
+                    if tokio::time::timeout(PING_WINDOW, pong.next())
+                        .await
+                        .is_err()
+                    {
+                        timeout.notify();
+                        log::error!(target: "twitchchat::runner::timeout", "did not get a ping after {:?}", PING_WINDOW);
+                        break;
                     }
                 }
-            }
-        });
+                Some(..) = rx.next() => { }
 
-        (tx, timeout)
-    }
+                else => { break }
+            }
+        }
+    };
+
+    (tx, timeout_notify, tokio::task::spawn(task))
 }
 
 impl std::fmt::Debug for Runner {
