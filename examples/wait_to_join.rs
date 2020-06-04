@@ -5,8 +5,8 @@ twitchchat = "0.10"
 
 # and now for tokio
 # macros allows you to use `#[tokio::main]` and `tokio::pin!` and `tokio::select!`
-# rt-multi gives you a multi-threaded runtime.
-tokio = { version = "0.2", features = ["rt-multi", "macros"] }
+# rt-threaded gives you a multi-threaded runtime.
+tokio = { version = "0.2", features = ["rt-threaded", "macros"] }
 */
 
 // your twitch name. it should be associated with your oauth token
