@@ -33,31 +33,25 @@ jobs:
 
       - name: Build all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Test all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Build no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
@@ -87,31 +81,25 @@ jobs:
 
       - name: Build all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Test all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Build no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
@@ -139,30 +127,24 @@ jobs:
 
       - name: Build all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Test all features
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.has_native_tls }}
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
 
       - name: Build no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: build
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.use_cross }}
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features
