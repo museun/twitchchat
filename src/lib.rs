@@ -24,8 +24,8 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
-// #[cfg(all(doctest, feature = "async"))]
-// doc_comment::doctest!("../README.md");
+#[cfg(all(doctest, feature = "async"))]
+doc_comment::doctest!("../README.md");
 
 #[macro_use]
 #[doc(hidden)]
