@@ -139,19 +139,6 @@ impl Runner {
     pub fn new_without_rate_limit(dispatcher: Dispatcher) -> (Runner, Control) {
         let (sender, receiver) = mpsc::channel(64);
         let stop = abort::Abort::default();
-<<<<<<< HEAD
-
-        let writer = Writer::new(writer::MpscWriter::new(sender));
-
-        let this = Self {
-            dispatcher,
-            receiver,
-            abort: stop.clone(),
-            writer: writer.clone(),
-        };
-
-        let control = Control { writer, stop };
-=======
         let writer = Writer::new(writer::MpscWriter::new(sender));
         let ready = Arc::new(tokio::sync::Notify::default());
 
@@ -168,7 +155,6 @@ impl Runner {
             stop,
             ready,
         };
->>>>>>> dev
         (this, control)
     }
 
@@ -183,20 +169,6 @@ impl Runner {
     pub fn new_with_rate_limit(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Runner, Control) {
         let (sender, receiver) = mpsc::channel(64);
         let stop = abort::Abort::default();
-<<<<<<< HEAD
-
-        let writer = Writer::new(writer::MpscWriter::new(sender))
-            .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
-
-        let this = Self {
-            dispatcher,
-            receiver,
-            abort: stop.clone(),
-            writer: writer.clone(),
-        };
-
-        (this, Control { writer, stop })
-=======
 
         let writer = Writer::new(writer::MpscWriter::new(sender))
             .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
@@ -218,7 +190,6 @@ impl Runner {
         };
 
         (this, control)
->>>>>>> dev
     }
 
     /// Run to completion.
@@ -263,11 +234,6 @@ impl Runner {
             .dispatcher
             .subscribe_internal::<crate::events::Ping>(true);
 
-<<<<<<< HEAD
-        let mut out = self.writer.clone();
-        let (mut check_timeout, timeout_delay, timeout_task) =
-            check_connection(&self.dispatcher, out.clone());
-=======
         struct Token(Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>);
         impl Drop for Token {
             fn drop(&mut self) {
@@ -288,7 +254,6 @@ impl Runner {
         // and if we didn't a PONG response within PING_WINDOW we'll consider the connection stale and exit
         let (mut check_timeout, timeout_delay, timeout_task) =
             check_connection(restart, &self.dispatcher, out.clone());
->>>>>>> dev
 
         loop {
             tokio::select! {
@@ -344,13 +309,9 @@ impl Runner {
                 // We received a timeout
                 _ = timeout_delay.notified() => {
                     log::warn!(target: "twitchchat::runner::timeout", "timeout detected, quitting loop");
-<<<<<<< HEAD
-                    drop(check_timeout);
-=======
                     // force the loop to exit (we could also use the 'restart' notify here)
                     drop(check_timeout);
                     // and wait for the task to join
->>>>>>> dev
                     timeout_task.await;
                     break Ok(Status::Timeout);
                 },
@@ -360,47 +321,6 @@ impl Runner {
                     log::info!("all futures are dead. ending loop");
                     break Ok(Status::Eof)
                 }
-<<<<<<< HEAD
-            }
-        }
-    }
-
-    /// Run to completion and applies a retry functor to the result.
-    ///
-    /// This takes in a:
-    /// * [`Connector`][connector] which acts a factory for producing IO types.
-    /// * `retry_check` is a functor from `Result<Status, Error>` to a ___future___ of a `Result<bool, Error>`.
-    ///
-    /// You can pause in the `retry_check` to cause the next connection attempt to be delayed.
-    ///
-    /// `retry_check` return values:
-    /// * `Ok(true)` will cause this to reconnect.
-    /// * `Ok(false)` will cause this to exit with `Ok(Status::Eof)`
-    /// * `Err(..)` will cause this to exit with `Err(err)`
-    ///
-    /// [connector]: ./struct.Connector.html     
-
-    pub async fn run_with_retry<IO, F, R>(
-        &mut self,
-        connector: Connector<IO>,
-        retry_check: F,
-    ) -> Result<(), Error>
-    where
-        IO: AsyncRead + AsyncWrite,
-        IO: Unpin + Send + Sync + 'static,
-
-        F: Fn(Result<Status, Error>) -> R,
-        R: Future<Output = Result<bool, Error>> + Send + Sync + 'static,
-    {
-        loop {
-            // how do handle this move
-            let res = self.run_to_completion(connector.clone()).await;
-            match retry_check(res).await {
-                Err(err) => break Err(err),
-                Ok(false) => break Ok(()),
-                Ok(true) => {}
-=======
->>>>>>> dev
             }
         }
     }
@@ -438,8 +358,6 @@ fn check_connection(
                         break;
                     }
 
-<<<<<<< HEAD
-=======
     /// Run to completion and applies a retry functor to the result.
     ///
     /// This takes in a:
@@ -516,24 +434,16 @@ fn check_connection(
                     }
 
                     // and if we didn't get a response in time
->>>>>>> dev
                     if tokio::time::timeout(PING_WINDOW, pong.next())
                         .await
                         .is_err()
                     {
-<<<<<<< HEAD
-=======
                         // exit
->>>>>>> dev
                         timeout.notify();
                         log::error!(target: "twitchchat::runner::timeout", "did not get a ping after {:?}", PING_WINDOW);
                         break;
                     }
                 }
-<<<<<<< HEAD
-                Some(..) = rx.next() => { }
-
-=======
 
                 // we write something in time, do nothing
                 Some(..) = rx.next() => { }
@@ -541,7 +451,6 @@ fn check_connection(
                 // when the main loop drops, this is triggered
                 _ = restart.notified() => { break }
 
->>>>>>> dev
                 else => { break }
             }
         }
