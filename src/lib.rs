@@ -24,7 +24,7 @@ Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-m
 [Twitch]: https://www.twitch.tv
 */
 
-#[cfg(all(doctest, feature = "async"))]
+#[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
 doc_comment::doctest!("../README.md");
 
 #[macro_use]
