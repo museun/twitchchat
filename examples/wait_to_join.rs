@@ -1,7 +1,7 @@
 /* in your Cargo.toml
 [dependencies]
 # this crate
-twitchchat = "0.10"
+twitchchat = "0.11"
 
 # and now for tokio
 # macros allows you to use `#[tokio::main]` and `tokio::pin!` and `tokio::select!`

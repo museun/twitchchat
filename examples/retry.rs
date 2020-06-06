@@ -1,3 +1,14 @@
+/* in your Cargo.toml
+[dependencies]
+# this crate
+twitchchat = "0.11"
+
+# and now for tokio
+# macros allows you to use `#[tokio::main]` and `tokio::pin!` and `tokio::select!`
+# rt-threaded gives you a multi-threaded runtime.
+tokio = { version = "0.2", features = ["rt-threaded", "macros"] }
+*/
+
 use tokio::stream::StreamExt as _;
 
 // your twitch name. it should be associated with your oauth token
