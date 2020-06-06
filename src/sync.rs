@@ -49,6 +49,36 @@ pub fn register<W: ?Sized + Write>(
 }
 
 /**
+Write the provided `name` and `token` to the ***sync*** writer
+# Example
+```rust
+# use twitchchat::sync::*;
+
+let (name, token) = ("hunter2", "hunter2");
+
+let mut writer = vec![];
+register_easy(&name, &token, &mut writer).unwrap();
+
+assert_eq!(
+    std::str::from_utf8(&writer).unwrap(),
+    "PASS hunter2\r\nNICK hunter2\r\n"
+);
+```
+*/
+pub fn register_easy<W: ?Sized + Write>(
+    name: &str,
+    token: &str,
+    writer: &mut W,
+) -> std::io::Result<()> {
+    use std::io::{Error, ErrorKind};
+
+    let config = simple_user_config(name, token) //
+        .map_err(|err| Error::new(ErrorKind::Other, err))?;
+
+    register(&config, writer)
+}
+
+/**
 Opens a ***sync*** TCP connection using the provided `UserConfig`
 
 # Note
