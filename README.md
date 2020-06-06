@@ -19,27 +19,25 @@ tokio_native_tls | uses [`native_tls`](https://crates.io/crates/native-tls) _(Op
 tokio_rustls     | uses [`rusttls`](https://crates.io/crates/rustls) for TLS
 serde | enables [`serde`](https://crates.io/crates/serde) Serialize/Deserialize on most of the types
 
-***NOTE***: Only one _TLS_ feature can be enabled at once.
 
-
-## Connecting to twitch
+## Connecting to Twitch
 This crate allows you connect to Twitch with a TLS stream, or without one.
 
 ### With TLS
 **NOTE** the async blocks are here so the doctests will work, you'll likely have it in a 'larger' async context
 
-> Connect with a UserConfig:
+> Connect with a `UserConfig`:
 ```rust no_run
 // make a user config, builder lets you configure it.
 let user_config = twitchchat::UserConfig::builder().build().unwrap();
 // the conn type is an tokio::io::{AsyncRead + AsyncWrite}
-let conn = async { twitchchat::connect_tls(&user_config).await.unwrap() };
+let conn = async { twitchchat::native_tls::connect(&user_config).await.unwrap() };
 ```
 > Connect with default capabilities using just a username and oauth token:
 ```rust no_run
 let my_oauth = std::env::var("MY_TWITCH_OAUTH").unwrap();
 // the conn type is an tokio::io::{AsyncRead + AsyncWrite}
-let conn = async { twitchchat::connect_easy_tls("my_name", &my_oauth).await.unwrap() };
+let conn = async { twitchchat::native_tls::connect_easy("my_name", &my_oauth).await.unwrap() };
 ```
 
 ### Without TLS (an unsecure plain-text connection)
@@ -48,14 +46,14 @@ let conn = async { twitchchat::connect_easy_tls("my_name", &my_oauth).await.unwr
 // make a user config, builder lets you configure it.
 let user_config = twitchchat::UserConfig::builder().build().unwrap();
 // the conn type is an tokio::io::{AsyncRead+AsyncWrite}
-let conn = async { twitchchat::connect(&user_config).await.unwrap() };
+let conn = async { twitchchat::connect_no_tls(&user_config).await.unwrap() };
 
 ```
 > Connect with default capabilities using just a username and oauth token:
 ```rust no_run
 let my_oauth = std::env::var("MY_TWITCH_OAUTH").unwrap();
 // the conn type is an tokio::io::{AsyncRead+AsyncWrite}
-let conn = async { twitchchat::connect_easy("my_name", &my_oauth).await.unwrap() };
+let conn = async { twitchchat::connect_easy_no_tls("my_name", &my_oauth).await.unwrap() };
 ```
 
 You can even connect with an ***anonymous*** users that _doesn't_ require an OAuth token.
@@ -66,13 +64,13 @@ Also you'd be limited in what sort of metadata you can receive.
 > With TLS
 ```rust no_run
 let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
-let conn = async { twitchchat::connect_easy_tls(nick, pass).await.unwrap() };
+let conn = async { twitchchat::native_tls::connect_easy(nick, pass).await.unwrap() };
 ```
 
 > Without TLS
 ```rust no_run
 let (nick, pass) = twitchchat::ANONYMOUS_LOGIN;
-let conn = async { twitchchat::connect_easy(nick, pass).await.unwrap() };
+let conn = async { twitchchat::connect_easy_no_tls(nick, pass).await.unwrap() };
 ```
 
 ---
@@ -276,7 +274,7 @@ let fut = async move {
 > Finally, writing (encoding) messages.
 ```rust
 // you probably want to keep a dispatcher around so you can read from the conn
-let (_runner, mut control) = twitchchat::Runner::new(twitchchat::Dispatcher::new(), twitchchat::RateLimit::default());
+let (_runner, mut control) = twitchchat::Runner::new(twitchchat::Dispatcher::new());
 
 // the control type is also clonable
 let mut ctrl_clone = control.clone();
@@ -346,21 +344,14 @@ let cursor: Cursor<Vec<u8>> = encoder.into_inner();
 ## Putting it together, a simple "bot"
 ```rust no_run
 use tokio::stream::StreamExt as _;
-use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, RateLimit, Writer};
+use twitchchat::{events, messages, Control, Dispatcher, IntoChannel, Runner, Status, Writer};
 
-fn get_creds() -> (String, String, String) {
-    fn get_it(name: &str) -> String {
-        std::env::var(name).unwrap_or_else(|_| {
-            eprintln!("env var `{}` is required", name);
-            std::process::exit(1);
-        })
-    }
+fn get_user_pass() -> (String, String) {
+    (std::env::var("TWITCH_NICK").unwrap(), std::env::var("TWITCH_PASS").unwrap())
+}
 
-    (
-        get_it("TWITCH_NICK"),
-        get_it("TWITCH_PASS"),
-        get_it("TWITCH_CHANNEL"),
-    )
+fn get_channel() -> String {
+    std::env::var("TWITCH_CHANNEL").unwrap()
 }
 
 struct Bot {
@@ -416,10 +407,8 @@ impl Bot {
 
 #[tokio::main]
 async fn main() {
-    let (user, pass, channel) = get_creds();
-
     let dispatcher = Dispatcher::new();
-    let (runner, mut control) = Runner::new(dispatcher.clone(), RateLimit::default());
+    let (mut runner, mut control) = Runner::new(dispatcher.clone());
 
     // make a bot and get a future to its main loop
     let bot = Bot {
@@ -429,12 +418,17 @@ async fn main() {
         control,
         start: std::time::Instant::now(),
     }
-    .run(dispatcher, channel);
+    .run(dispatcher, get_channel());
 
     // connect to twitch
-    let conn = twitchchat::connect_easy_tls(&user, &pass).await.unwrap();
+    // the runner requires a 'connector' factory so reconnect support is possible
+    let connector = twitchchat::Connector::new(|| async move {
+        let (user, pass) = get_user_pass();
+        twitchchat::native_tls::connect_easy(&user, &pass).await
+    });
+
     // and run the dispatcher/writer loop
-    let done = runner.run(conn);
+    let done = runner.run_to_completion(connector);
 
     // and select over our two futures
     tokio::select! {
