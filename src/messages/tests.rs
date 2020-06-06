@@ -354,6 +354,23 @@ fn privmsg() {
 }
 
 #[test]
+fn privmsg_boundary() {
+    let input = ":test!user@host PRIVMSG #museun :\u{FFFD}\u{1F468}\r\n";
+    for msg in crate::decode(input).map(|s| s.unwrap()) {
+        assert_eq!(
+            Privmsg::parse(&msg).unwrap(),
+            Privmsg {
+                name: "test".into(),
+                channel: "#museun".into(),
+                data: "\u{FFFD}\u{1F468}".into(),
+                tags: Default::default(),
+                ctcp: None,
+            }
+        )
+    }
+}
+
+#[test]
 fn privmsg_action() {
     let input = ":test!user@host PRIVMSG #museun :\x01ACTION this is a test\x01\r\n";
     for msg in crate::decode(input).map(|s| s.unwrap()) {
