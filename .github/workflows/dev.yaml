@@ -3,7 +3,7 @@ name: Push to dev
 on:
   push:
     branches:
-      - staging-dev
+      - dev
 
 jobs:
   linux:
