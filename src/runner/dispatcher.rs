@@ -136,6 +136,7 @@ impl Dispatcher {
             .get(&TypeId::of::<T>())
             .map(|s| Arc::clone(s.downcast_ref::<Arc<T::Owned>>().expect("valid type")))
         {
+            log::debug!("got a cached event for: {}", std::any::type_name::<T>());
             return Ok(item);
         }
 
@@ -148,6 +149,8 @@ impl Dispatcher {
         self.cached
             .lock()
             .insert(TypeId::of::<T>(), Box::new(Arc::clone(&item)));
+
+        log::debug!("got an event for: {}", std::any::type_name::<T>());
 
         Ok(item)
     }
@@ -333,6 +336,16 @@ impl Dispatcher {
             .values()
             .map(|s| s.iter().filter(|&(private, _)| !private).count())
             .sum()
+    }
+
+    /// Reset the internal subscriptions. This prevents a resource leak in the retry-connect loop.
+    pub(crate) fn reset_internal_subscriptions(&self) {
+        // clear the cache
+        self.cached.lock().clear();
+
+        for value in self.event_map.lock().values_mut() {
+            value.retain(|(i, _)| !i);
+        }
     }
 
     /// Clear subscriptions for a specific event, returning how many subscribers were removed

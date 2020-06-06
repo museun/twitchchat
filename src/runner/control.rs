@@ -5,6 +5,7 @@ use {super::*, crate::*};
 pub struct Control {
     pub(super) writer: Writer,
     pub(super) stop: abort::Abort,
+    pub(super) ready: std::sync::Arc<tokio::sync::Notify>,
 }
 
 impl Control {
@@ -34,6 +35,15 @@ impl Control {
     /// ```
     pub fn stop(&self) {
         self.stop.cancel()
+    }
+
+    /// This will block until you're reconnected
+    ///
+    /// If you've not connected yet then this won't block
+    ///
+    /// This is useful for determining when a reconnect has happened
+    pub async fn wait_for_reconnect(&self) {
+        self.ready.notified().await
     }
 }
 
