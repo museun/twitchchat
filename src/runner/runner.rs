@@ -324,39 +324,6 @@ impl Runner {
             }
         }
     }
-}
-
-fn check_connection(
-    dispatcher: &Dispatcher,
-    mut writer: Writer,
-) -> (
-    tokio::sync::mpsc::Sender<()>,
-    Arc<tokio::sync::Notify>,
-    impl Future,
-) {
-    use tokio::sync::{mpsc, Notify};
-
-    let mut pong = dispatcher.subscribe_internal::<crate::events::Pong>(true);
-    let timeout_notify = Arc::new(Notify::new());
-    let (tx, mut rx) = mpsc::channel(1);
-
-    let timeout = timeout_notify.clone();
-    let task = async move {
-        loop {
-            tokio::select! {
-                _ = tokio::time::delay_for(PING_INACTIVITY) => {
-                    log::debug!(target: "twitchchat::runner::timeout", "inactivity detected of {:?}, sending a ping", PING_INACTIVITY);
-
-                    let ts = std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .expect("time to not go backwards")
-                        .as_secs();
-
-                    if writer.ping(&format!("{}", ts)).await.is_err() {
-                        timeout.notify();
-                        log::error!(target: "twitchchat::runner::timeout", "cannot send ping");
-                        break;
-                    }
 
     /// Run to completion and applies a retry functor to the result.
     ///
