@@ -192,7 +192,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for Privmsg<'t> {
         msg.expect_command("PRIVMSG")?;
 
         let data = msg.expect_data_ref()?;
-        let (ctcp, data) = if &data[0..=0] == "\x01" && &data[data.len() - 1..] == "\x01" {
+        let (ctcp, data) = if data.starts_with('\x01') && data.ends_with('\x01') {
             let mut iter = data[1..data.len() - 1].splitn(2, ' ');
             let ctcp = match iter.next() {
                 Some("ACTION") => Ctcp::Action,
