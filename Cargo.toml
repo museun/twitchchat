@@ -58,4 +58,8 @@ name = "simple_bot"
 required-features = ["async", "tokio_native_tls"]
 
 [[example]]
+name = "retry"
+required-features = ["async", "tokio_native_tls"]
+
+[[example]]
 name = "parse"
