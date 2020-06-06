@@ -135,7 +135,7 @@ jobs:
         toolchain:
           - stable
         has_native_tls: [true]
-        use_cross: [true]
+        use_cross: [false]
 
     steps:
       - uses: actions/checkout@v2
