@@ -58,7 +58,7 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "CLEARCHAT" => ClearChat::parse(msg)?.into(),
             "CLEARMSG" => ClearMsg::parse(msg)?.into(),
             "GLOBALUSERSTATE" => GlobalUserState::parse(msg)?.into(),
-            "HOSTARGET" => HostTarget::parse(msg)?.into(),
+            "HOSTTARGET" => HostTarget::parse(msg)?.into(),
             "JOIN" => Join::parse(msg)?.into(),
             "NOTICE" => Notice::parse(msg)?.into(),
             "PART" => Part::parse(msg)?.into(),
