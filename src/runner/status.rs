@@ -7,5 +7,5 @@ pub enum Status {
     /// It ran to completion
     Eof,
     /// It was canceled
-    Canceled,
+    Cancelled,
 }
