@@ -6,6 +6,6 @@ pub enum Status {
     Timeout,
     /// It ran to completion
     Eof,
-    /// It was canceled
+    /// It was cancelled
     Cancelled,
 }
