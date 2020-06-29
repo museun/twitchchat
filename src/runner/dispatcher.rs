@@ -443,7 +443,7 @@ impl Dispatcher {
             "ROOMSTATE" => try_send!(RoomState),
             "USERNOTICE" => try_send!(UserNotice),
             "USERSTATE" => try_send!(UserState),
-            "WHISPER" => try_send!(UserState),
+            "WHISPER" => try_send!(Whisper),
             _ => {}
         }
 
