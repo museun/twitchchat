@@ -1,4 +1,3 @@
-use super::*;
 use crate::encode::AsyncEncoder;
 
 use std::pin::Pin;
@@ -6,22 +5,25 @@ use std::task::{Context, Poll};
 
 use tokio::io::AsyncWrite;
 
+type Tx<T = Vec<u8>> = tokio::sync::mpsc::Sender<T>;
+
 /// A writer that allows sending messages to the client
-pub type Writer = AsyncEncoder<MpscWriter>;
+// TODO this was renamed
+pub type AsyncWriter = AsyncEncoder<AsyncMpscWriter>;
 
 /// A tokio mpsc based writer
-pub struct MpscWriter {
+pub struct AsyncMpscWriter {
     buffer: Vec<u8>,
     sender: Tx,
 }
 
-impl std::fmt::Debug for MpscWriter {
+impl std::fmt::Debug for AsyncMpscWriter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MpscWriter").finish()
+        f.debug_struct("AsyncMpscWriter").finish()
     }
 }
 
-impl Clone for MpscWriter {
+impl Clone for AsyncMpscWriter {
     fn clone(&self) -> Self {
         Self {
             buffer: Vec::new(),
@@ -30,8 +32,8 @@ impl Clone for MpscWriter {
     }
 }
 
-impl MpscWriter {
-    /// Create a new MpscServer from this channel's sender
+impl AsyncMpscWriter {
+    /// Create a new AsyncMpscWriter from this channel's sender
     pub const fn new(sender: Tx) -> Self {
         Self {
             buffer: Vec::new(),
@@ -40,7 +42,7 @@ impl MpscWriter {
     }
 }
 
-impl AsyncWrite for MpscWriter {
+impl AsyncWrite for AsyncMpscWriter {
     fn poll_write(
         self: Pin<&mut Self>,
         _cx: &mut Context<'_>,

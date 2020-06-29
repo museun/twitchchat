@@ -10,7 +10,13 @@ cfg_async! {
 
     #[cfg(test)]
     mod async_tests;
+
+    mod async_writer;
+    pub use async_writer::{AsyncWriter, AsyncMpscWriter};
 }
+
+mod writer;
+pub use writer::{SyncMpscWriter, SyncWriter};
 
 #[cfg(test)]
 mod tests;

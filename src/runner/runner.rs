@@ -139,7 +139,7 @@ impl Runner {
     pub fn new_without_rate_limit(dispatcher: Dispatcher) -> (Runner, Control) {
         let (sender, receiver) = mpsc::channel(64);
         let stop = abort::Abort::default();
-        let writer = Writer::new(writer::MpscWriter::new(sender));
+        let writer = Writer::new(crate::encode::AsyncMpscWriter::new(sender));
         let ready = Arc::new(tokio::sync::Notify::default());
 
         let this = Self {
@@ -170,7 +170,7 @@ impl Runner {
         let (sender, receiver) = mpsc::channel(64);
         let stop = abort::Abort::default();
 
-        let writer = Writer::new(writer::MpscWriter::new(sender))
+        let writer = Writer::new(crate::encode::AsyncMpscWriter::new(sender))
             .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
 
         let ready = Arc::new(tokio::sync::Notify::default());
@@ -349,7 +349,9 @@ impl Runner {
         IO: Unpin + Send + Sync + 'static,
 
         F: Fn(Result<Status, Error>) -> R,
+        F: Send + Sync,
         R: Future<Output = Result<bool, Error>> + Send + Sync + 'static,
+        R::Output: Send,
     {
         loop {
             let res = self.run_to_completion(connector.clone()).await;

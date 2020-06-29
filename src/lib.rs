@@ -34,7 +34,6 @@ pub mod macros;
 cfg_async! {
     mod runner;
     pub use runner::{
-        writer::{MpscWriter, Writer},
         dispatcher::Dispatcher,
         stream::EventStream,
         runner::{Connector, Runner, RetryStrategy},
@@ -55,7 +54,11 @@ pub use decode::{decode, decode_one};
 
 pub mod encode;
 #[doc(inline)]
-pub use encode::Encoder;
+pub use encode::{Encoder, SyncMpscWriter, SyncWriter};
+
+cfg_async! {
+    pub use encode::{AsyncMpscWriter, AsyncWriter as Writer};
+}
 
 pub mod twitch;
 

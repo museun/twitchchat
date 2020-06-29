@@ -18,7 +18,7 @@ async   | enables [`tokio`](https://crates.io/crates/tokio) support (and all of 
 tokio_native_tls | uses [`native_tls`](https://crates.io/crates/native-tls) _(OpenSSL, SChannel, SecureTransport)_ for TLS
 tokio_rustls     | uses [`rusttls`](https://crates.io/crates/rustls) for TLS
 serde | enables [`serde`](https://crates.io/crates/serde) Serialize/Deserialize on most of the types
-
+crossbeam_channel | enables a [`crossbeam_channel`](https://crates.io/crates/crossbeam_channel) backend for the `SyncEncoder` / `SyncMpscWriter`
 
 ## Connecting to Twitch
 This crate allows you connect to Twitch with a TLS stream, or without one.
