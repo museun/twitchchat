@@ -1,13 +1,13 @@
 #[allow(dead_code)]
 pub mod channel {
-    #[cfg(feature = "crossbeam_channel")]
+    #[cfg(feature = "crossbeam-channel")]
     mod inner {
         pub type Tx<T> = crossbeam_channel::Sender<T>;
         pub type Rx<T> = crossbeam_channel::Receiver<T>;
         pub use crossbeam_channel::SendError;
     }
 
-    #[cfg(not(feature = "crossbeam_channel"))]
+    #[cfg(not(feature = "crossbeam-channel"))]
     mod inner {
         pub type Tx<T> = std::sync::mpsc::Sender<T>;
         pub type Rx<T> = std::sync::mpsc::Receiver<T>;
@@ -16,13 +16,13 @@ pub mod channel {
 
     pub use inner::*;
 
-    #[cfg(feature = "crossbeam_channel")]
+    #[cfg(feature = "crossbeam-channel")]
     /// Create an unbounded channel
     pub fn channel<T>() -> (Tx<T>, Rx<T>) {
         crossbeam_channel::unbounded()
     }
 
-    #[cfg(not(feature = "crossbeam_channel"))]
+    #[cfg(not(feature = "crossbeam-channel"))]
     /// Create an unbounded channel
     pub fn channel<T>() -> (Tx<T>, Rx<T>) {
         std::sync::mpsc::channel()
