@@ -16,7 +16,7 @@ cfg_async! {
 }
 
 mod writer;
-pub use writer::{SyncMpscWriter, SyncWriter};
+pub use writer::{channel, SyncMpscWriter, SyncWriter};
 
 #[cfg(test)]
 mod tests;

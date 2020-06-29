@@ -1,16 +1,23 @@
 #[allow(dead_code)]
+/// Abstracts crossbeam-channel and std::sync::mpsc
 pub mod channel {
     #[cfg(feature = "crossbeam-channel")]
     mod inner {
+        /// The sender side
         pub type Tx<T> = crossbeam_channel::Sender<T>;
+        /// The receiver side
         pub type Rx<T> = crossbeam_channel::Receiver<T>;
+        /// An error returned on Send
         pub use crossbeam_channel::SendError;
     }
 
     #[cfg(not(feature = "crossbeam-channel"))]
     mod inner {
+        /// The sender side
         pub type Tx<T> = std::sync::mpsc::Sender<T>;
+        /// The receiver side
         pub type Rx<T> = std::sync::mpsc::Receiver<T>;
+        /// An error returned on Send
         pub use std::sync::mpsc::SendError;
     }
 
