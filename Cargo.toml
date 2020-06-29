@@ -12,7 +12,7 @@ repository    = "https://github.com/museun/twitchchat"
 categories    = ["asynchronous", "network-programming", "parser-implementations"]
 
 [package.metadata.docs.rs]
-features = [ "default", "serde" ]
+features = [ "default", "serde", "crossbeam_channel" ]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
