@@ -70,7 +70,6 @@ impl<'a: 't, 't> Parse<&'a Message<'t>> for AllCommands<'t> {
             "USERNOTICE" => UserNotice::parse(msg)?.into(),
             "USERSTATE" => UserState::parse(msg)?.into(),
             "WHISPER" => Whisper::parse(msg)?.into(),
-
             _ => msg.clone().into(),
         };
         Ok(out)
@@ -131,6 +130,79 @@ macro_rules! from {
 
 // rote implementation
 from! {
+    Cap,
+    ClearChat,
+    ClearMsg,
+    GlobalUserState,
+    HostTarget,
+    IrcReady,
+    Join,
+    Notice,
+    Part,
+    Ping,
+    Pong,
+    Privmsg,
+    Ready,
+    RoomState,
+    UserNotice,
+    UserState,
+    Whisper,
+}
+
+/// Extract a value from the AllCommands enum
+///
+/// An example:
+/// ```
+/// # use twitchchat::{decode, messages::{AllCommands, Privmsg, Extract as _}, Parse as _};
+/// let input = ":test!user@host PRIVMSG #museun :this is a test\r\n";
+/// let msg: decode::Message<'_> = decode(input).next().map(|c| c.unwrap()).unwrap();
+///
+/// let all = AllCommands::parse(&msg).unwrap();
+/// let all_ref = &all; // has to be a borrowed AllCommands. this doesn't move anything
+///
+/// let pm: Option<&Privmsg<'_>> = all_ref.extract();
+/// let pm: &Privmsg<'_> = pm.unwrap();
+/// ```
+pub trait Extract<'a, T: 'a> {
+    /// Tries to extract the value
+    fn extract(&'a self) -> Option<T>;
+}
+
+// manual impls because they are different
+impl<'a: 't, 't> Extract<'a, &'a Reconnect> for &'a AllCommands<'t> {
+    fn extract(&'a self) -> Option<&'a Reconnect> {
+        match self {
+            AllCommands::Reconnect(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
+impl<'a: 't, 't> Extract<'a, &'a Raw<'t>> for &'a AllCommands<'t> {
+    fn extract(&'a self) -> Option<&'a Raw<'t>> {
+        match self {
+            AllCommands::Unknown(inner) => Some(&*inner),
+            _ => None,
+        }
+    }
+}
+
+macro_rules! impl_extract {
+    ($($ident:tt),* $(,)?) => {
+        $(
+            impl<'a: 't, 't> Extract<'a, &'a $ident<'t>> for &'a AllCommands<'t> {
+                fn extract(&'a self) -> Option<&'a $ident<'t>> {
+                    match self {
+                        AllCommands::$ident(inner) => Some(inner),
+                        _ => None
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_extract! {
     Cap,
     ClearChat,
     ClearMsg,
