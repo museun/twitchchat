@@ -26,7 +26,8 @@ impl<'t> Message<'t> {
             return Err(ParseError::IncompleteMessage { pos: 0 });
         }
 
-        let input = &input.trim_start_matches(' ')[..input.len() - 2];
+        let input = &input.trim_start_matches(' ');
+        let input = &input[..input.len() - 2];
         if input.is_empty() {
             return Err(ParseError::EmptyMessage);
         }
