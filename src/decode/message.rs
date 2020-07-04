@@ -48,3 +48,17 @@ impl<'t> Message<'t> {
         self.args.split_whitespace().nth(nth)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_empty_spaces() {
+        for i in 0..10 {
+            let s = format!("{}\r\n", " ".repeat(i));
+            let msg = Message::parse(&s).unwrap_err();
+            assert!(matches!(msg, ParseError::EmptyMessage));
+        }
+    }
+}
