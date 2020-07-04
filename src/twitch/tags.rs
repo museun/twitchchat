@@ -104,24 +104,40 @@ impl<'t> Tags<'t> {
 
     ```rust
     # use twitchchat::Tags;
-    let input = "@foo=42;ok=true;nope=false";
+    let input = "@foo=42;ok=true;nope=false;test=1;not_test=0";
     let tags = Tags::parse(input).unwrap();
 
-    // 'foo' is not a bool
+
+
+    // key 'foo' is not a bool
     assert!(!tags.get_as_bool("foo"));
 
-    // 'ok' is a bool and is true
+    // key 'ok' is a bool and is true
     assert!(tags.get_as_bool("ok"));
 
-    // 'nope' is a bool but its false
+    // key 'nope' is a bool but its false
     assert!(!tags.get_as_bool("nope"));
+
+    // key 'test' is 1, which is true
+    assert!(tags.get_as_bool("test"));
+
+    // key 'not_test' is 0, which is false
+    assert!(!tags.get_as_bool("not_test"));
+
+    // missing key 'foobar' is missing, which is false
+    assert!(!tags.get_as_bool("this-key-is-missing"));
     ```
     */
     pub fn get_as_bool<K: ?Sized>(&self, key: &K) -> bool
     where
         K: Borrow<str>,
     {
-        self.get_parsed(key).unwrap_or_default()
+        match self.get_ref(key) {
+            Some(d) if &*d == "1" => true,
+            Some(d) if &*d == "0" => false,
+            Some(d) => d.parse().ok().unwrap_or_default(),
+            None => false,
+        }
     }
 
     /// Get an iterator over the key,value pairs in the tags
