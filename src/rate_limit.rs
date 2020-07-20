@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 /*!
 A simple leaky-bucket style token-based rate limiter
 
@@ -28,39 +29,39 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub trait BlockerAsync: Send + 'static {
+pub trait AsyncBlocker: Send + 'static {
     fn block(&self, duration: Duration) -> Boxed<()>;
 }
 
-impl<T: BlockerAsync + Send + Sync> BlockerAsync for &'static T {
+impl<T: AsyncBlocker + Send + Sync> AsyncBlocker for &'static T {
     fn block(&self, duration: Duration) -> Boxed<()> {
         (*self).block(duration)
     }
 }
 
-impl<T: BlockerAsync + Send> BlockerAsync for &'static mut T {
+impl<T: AsyncBlocker + Send> AsyncBlocker for &'static mut T {
     fn block(&self, duration: Duration) -> Boxed<()> {
-        (*self).block(duration)
+        (**self).block(duration)
     }
 }
 
-impl<T: BlockerAsync + Send> BlockerAsync for Box<T> {
+impl<T: AsyncBlocker + Send> AsyncBlocker for Box<T> {
     fn block(&self, duration: Duration) -> Boxed<()> {
-        (*self).block(duration)
+        (**self).block(duration)
     }
 }
 
-impl<T: BlockerAsync + Send + Sync> BlockerAsync for Arc<T> {
+impl<T: AsyncBlocker + Send + Sync> AsyncBlocker for Arc<T> {
     fn block(&self, duration: Duration) -> Boxed<()> {
-        (*self).block(duration)
+        (**self).block(duration)
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct NullBlocker {}
 
-impl BlockerAsync for NullBlocker {
-    fn block(&self, duration: Duration) -> Boxed<()> {
+impl AsyncBlocker for NullBlocker {
+    fn block(&self, _: Duration) -> Boxed<()> {
         Box::pin(async move {})
     }
 }
@@ -202,7 +203,7 @@ impl RateLimit {
     /// the amount of tokens remaining
     pub async fn throttle_async<B>(&mut self, tokens: u64, blocker: &B) -> u64
     where
-        B: BlockerAsync + ?Sized,
+        B: AsyncBlocker + ?Sized,
     {
         loop {
             match self.consume(tokens) {
@@ -241,7 +242,7 @@ impl RateLimit {
     #[inline]
     pub async fn take_async<B>(&mut self, blocker: &B) -> u64
     where
-        B: BlockerAsync + ?Sized,
+        B: AsyncBlocker + ?Sized,
     {
         self.throttle_async(1, blocker).await
     }
