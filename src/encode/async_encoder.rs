@@ -1,4 +1,4 @@
-use crate::{color::Color, rate_limit::BlockerAsync, IntoChannel, RateLimit};
+use crate::{color::Color, rate_limit::AsyncBlocker, IntoChannel, RateLimit};
 
 use async_mutex::Mutex;
 use futures_lite::{AsyncWrite, AsyncWriteExt};
@@ -76,7 +76,7 @@ macro_rules! try_rate_limit {
 pub struct AsyncEncoder<W> {
     pub(crate) writer: W,
     pub(crate) rate_limit: Option<Arc<Mutex<RateLimit>>>,
-    pub(crate) blocker: Option<Arc<dyn BlockerAsync>>,
+    pub(crate) blocker: Option<Arc<dyn AsyncBlocker>>,
 }
 
 impl<W: AsyncWrite> AsyncEncoder<W> {
@@ -107,7 +107,7 @@ impl<W: AsyncWrite> AsyncEncoder<W> {
     /// Compose this encoder with a shared rate limiter
     pub fn with_rate_limiter<B>(self, rate_limit: Arc<Mutex<RateLimit>>, blocker: B) -> Self
     where
-        B: BlockerAsync,
+        B: AsyncBlocker,
     {
         Self {
             rate_limit: Some(rate_limit),
