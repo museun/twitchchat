@@ -1,11 +1,11 @@
 use crate::encode::AsyncEncoder;
 
+use async_channel::TrySendError;
+use futures_lite::AsyncWrite;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use tokio::io::AsyncWrite;
-
-type Tx<T = Vec<u8>> = tokio::sync::mpsc::Sender<T>;
+type Tx<T = Vec<u8>> = async_channel::Sender<T>;
 
 /// A writer that allows sending messages to the client
 // TODO this was renamed
@@ -54,14 +54,13 @@ impl AsyncWrite for AsyncMpscWriter {
 
     fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
         use std::io::{Error, ErrorKind};
-        use tokio::sync::mpsc::error;
 
         let this = self.get_mut();
         let data = std::mem::take(&mut this.buffer);
 
         match this.sender.try_send(data) {
             Ok(..) => Poll::Ready(Ok(())),
-            Err(error::TrySendError::Closed(..)) => {
+            Err(TrySendError::Closed(..)) => {
                 let err = Err(Error::new(ErrorKind::Other, "client disconnected"));
                 Poll::Ready(err)
             }
@@ -69,7 +68,7 @@ impl AsyncWrite for AsyncMpscWriter {
         }
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 }

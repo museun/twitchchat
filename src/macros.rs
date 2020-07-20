@@ -1,3 +1,4 @@
+#[allow(unused_macros)]
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(

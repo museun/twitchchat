@@ -1,19 +1,22 @@
-use std::sync::Arc;
-use tokio::sync::Notify;
+pub type Abort = Notify;
 
-/// An Abort token that can be used for stopping the client early
-#[derive(Clone, Debug, Default)]
-pub(super) struct Abort {
-    inner: Arc<Notify>,
+#[derive(Debug, Default)]
+pub(super) struct Notify {
+    // TODO why isn't this wrapped in a clonable type?
+    inner: event_listener::Event,
 }
 
-impl Abort {
+impl Notify {
+    pub(super) fn new() -> Self {
+        Self::default()
+    }
+
     /// Cancel this token
     pub(super) fn cancel(&self) {
-        self.inner.notify();
+        self.inner.notify(0);
     }
 
     pub(super) async fn wait_for(&self) {
-        self.inner.notified().await;
+        self.inner.listen().await
     }
 }
