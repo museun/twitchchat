@@ -31,22 +31,25 @@ doc_comment::doctest!("../README.md");
 #[doc(hidden)]
 pub mod macros;
 
-cfg_async! {
-    mod runner;
-    pub use runner::{
-        dispatcher::Dispatcher,
-        stream::EventStream,
-        runner::{Connector, Runner, RetryStrategy},
-        control::Control,
-        status::Status
-    };
+// mod runner;
+// pub use runner::{
+//     control::Control,
+//     dispatcher::Dispatcher,
+//     runner::{Connector, RetryStrategy, Runner},
+//     status::Status,
+//     stream::EventStream,
+// };
+
+mod runner {
+    // dispatcher
+    // runner
+    // control
+    // eventstream
 }
 
-cfg_async! {
-    mod register;
-    #[doc(inline)]
-    pub use register::{register_easy, register};
-}
+mod register;
+#[doc(inline)]
+pub use register::{register, register_easy};
 
 pub mod decode;
 #[doc(inline)]
@@ -56,9 +59,7 @@ pub mod encode;
 #[doc(inline)]
 pub use encode::{Encoder, SyncMpscWriter, SyncWriter};
 
-cfg_async! {
-    pub use encode::{AsyncMpscWriter, AsyncWriter as Writer};
-}
+pub use encode::{AsyncMpscWriter, AsyncWriter as Writer};
 
 pub mod twitch;
 
@@ -125,17 +126,13 @@ fn simple_user_config(name: &str, token: &str) -> Result<UserConfig, UserConfigE
         .build()
 }
 
-cfg_async! {
-    #[doc(inline)]
-    pub mod rate_limit;
-    #[doc(inline)]
-    pub use rate_limit::RateLimit;
-}
+#[doc(inline)]
+pub mod rate_limit;
+#[doc(inline)]
+pub use rate_limit::RateLimit;
 
-cfg_async! {
-    mod connect;
-    pub use connect::{connect_easy_no_tls, connect_no_tls};
-}
+// mod connect;
+// pub use connect::{connect_easy_no_tls, connect_no_tls};
 
 // TODO make these show up in the doc.rs build
 #[cfg(feature = "tokio_rustls")]

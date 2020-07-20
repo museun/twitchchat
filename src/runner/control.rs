@@ -1,11 +1,12 @@
+use std::sync::Arc;
 use {super::*, crate::*};
 
 #[derive(Clone)]
 /// A control type for writing messages to the client, or stopping it.
 pub struct Control {
     pub(super) writer: Writer,
-    pub(super) stop: abort::Abort,
-    pub(super) ready: std::sync::Arc<tokio::sync::Notify>,
+    pub(super) stop: Arc<abort::Abort>,
+    pub(super) ready: Arc<abort::Notify>,
 }
 
 impl Control {
@@ -43,7 +44,7 @@ impl Control {
     ///
     /// This is useful for determining when a reconnect has happened
     pub async fn wait_for_reconnect(&self) {
-        self.ready.notified().await
+        self.ready.wait_for().await;
     }
 }
 

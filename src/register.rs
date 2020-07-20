@@ -1,5 +1,5 @@
 use crate::UserConfig;
-use tokio::prelude::*;
+use futures_lite::{AsyncWrite, AsyncWriteExt};
 
 /**
 Write the provided [`UserConfig`](./struct.UserConfig.html) to the ***async*** writer

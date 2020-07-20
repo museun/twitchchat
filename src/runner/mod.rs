@@ -1,8 +1,6 @@
-use tokio::sync::mpsc;
-
 pub(super) use crate::error::Error;
 
-type Rx<T = Vec<u8>> = mpsc::Receiver<T>;
+type Rx<T = Vec<u8>> = async_channel::Receiver<T>;
 
 pub mod dispatcher;
 #[allow(clippy::module_inception)]

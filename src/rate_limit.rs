@@ -22,8 +22,62 @@ assert_eq!(rate.take().await, 2); // we're unblocked
 # });
 ```
 */
-use std::time::Duration;
-use tokio::time::Instant;
+use futures_lite::future::Boxed;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+pub trait BlockerAsync: Send + 'static {
+    fn block(&self, duration: Duration) -> Boxed<()>;
+}
+
+impl<T: BlockerAsync + Send + Sync> BlockerAsync for &'static T {
+    fn block(&self, duration: Duration) -> Boxed<()> {
+        (*self).block(duration)
+    }
+}
+
+impl<T: BlockerAsync + Send> BlockerAsync for &'static mut T {
+    fn block(&self, duration: Duration) -> Boxed<()> {
+        (*self).block(duration)
+    }
+}
+
+impl<T: BlockerAsync + Send> BlockerAsync for Box<T> {
+    fn block(&self, duration: Duration) -> Boxed<()> {
+        (*self).block(duration)
+    }
+}
+
+impl<T: BlockerAsync + Send + Sync> BlockerAsync for Arc<T> {
+    fn block(&self, duration: Duration) -> Boxed<()> {
+        (*self).block(duration)
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct NullBlocker {}
+
+impl BlockerAsync for NullBlocker {
+    fn block(&self, duration: Duration) -> Boxed<()> {
+        Box::pin(async move {})
+    }
+}
+
+// struct TokioBlocker {}
+
+// impl Blocker for TokioBlocker {
+//     type F = Boxed<'static, ()>;
+//     fn block(&self, duration: Duration) -> Self::F
+//     where
+//         <Self::F as Future>::Output: Send + 'static,
+//     {
+//         Box::pin(async move {
+//             tokio::time::delay_for(duration).await;
+//         })
+//     }
+// }
 
 /// A preset number of tokens as described by Twitch
 #[non_exhaustive]
@@ -146,13 +200,36 @@ impl RateLimit {
     ///
     /// # Returns
     /// the amount of tokens remaining
-    pub async fn throttle(&mut self, tokens: u64) -> u64 {
+    pub async fn throttle_async<B>(&mut self, tokens: u64, blocker: &B) -> u64
+    where
+        B: BlockerAsync + ?Sized,
+    {
         loop {
             match self.consume(tokens) {
                 Ok(rem) => return rem,
                 Err(time) => {
                     log::debug!("blocking for: {:.3?}", time);
-                    tokio::time::delay_for(time).await
+                    blocker.block(time).await;
+                }
+            }
+        }
+    }
+
+    /// Throttle the current task, consuming a specific amount of tokens and
+    /// possibly blocking until tokens are available
+    ///
+    /// # Returns
+    /// the amount of tokens remaining
+    pub fn throttle<F>(&mut self, tokens: u64, blocker: F) -> u64
+    where
+        F: Fn(Duration),
+    {
+        loop {
+            match self.consume(tokens) {
+                Ok(rem) => return rem,
+                Err(time) => {
+                    log::debug!("blocking for: {:.3?}", time);
+                    blocker(time)
                 }
             }
         }
@@ -162,8 +239,22 @@ impl RateLimit {
     ///
     /// This'll block the task if none are available
     #[inline]
-    pub async fn take(&mut self) -> u64 {
-        self.throttle(1).await
+    pub async fn take_async<B>(&mut self, blocker: &B) -> u64
+    where
+        B: BlockerAsync + ?Sized,
+    {
+        self.throttle_async(1, blocker).await
+    }
+
+    /// Take a single token, returning how many are available
+    ///
+    /// This'll block the task if none are available
+    #[inline]
+    pub fn take<F>(&mut self, blocker: F) -> u64
+    where
+        F: Fn(Duration),
+    {
+        self.throttle(1, blocker)
     }
 }
 
@@ -208,7 +299,7 @@ impl Bucket {
         until + self.period * (periods as u32 - 1)
     }
 }
-
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,3 +345,4 @@ mod tests {
         assert_eq!(rate.take().now_or_never().unwrap(), 9);
     }
 }
+*/

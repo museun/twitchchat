@@ -6,3 +6,4 @@ TODO.txt
 *.json
 *.log
 .vscode/*
+/t_examples

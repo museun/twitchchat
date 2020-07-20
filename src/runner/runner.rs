@@ -3,13 +3,10 @@ use {super::*, crate::*};
 use std::future::Future;
 use std::sync::Arc;
 
-use futures::prelude::*;
-
-use tokio::prelude::*;
-use tokio::prelude::{AsyncRead, AsyncWrite};
-
-use tokio::sync::Mutex;
-use tokio::time::Duration;
+use async_mutex::Mutex;
+use futures_lite::{AsyncRead, AsyncWrite};
+use rate_limit::NullBlocker;
+use std::time::Duration;
 
 // 45 seconds after a receive we'll send a ping
 const PING_INACTIVITY: Duration = Duration::from_secs(45);
@@ -27,8 +24,8 @@ pub struct Connector<IO> {
 
 impl<IO> Connector<IO>
 where
-    IO: AsyncRead + AsyncWrite,
     IO: Send + Sync + 'static,
+    IO: AsyncRead + AsyncWrite,
 {
     /// Create a new connector with this factory function
     pub fn new<F, R>(connect_func: F) -> Self
@@ -105,8 +102,8 @@ pub struct Runner {
     dispatcher: Dispatcher,
     receiver: Rx,
     writer: Writer,
-    abort: abort::Abort,
-    ready: Arc<tokio::sync::Notify>,
+    abort: Arc<abort::Abort>,
+    ready: Arc<abort::Notify>,
 }
 
 impl Runner {
@@ -137,10 +134,11 @@ impl Runner {
     /// [`Runner`]: ./struct.Runner.html
     /// [`Control`]: ./struct.Control.html
     pub fn new_without_rate_limit(dispatcher: Dispatcher) -> (Runner, Control) {
-        let (sender, receiver) = mpsc::channel(64);
-        let stop = abort::Abort::default();
+        let (sender, receiver) = async_channel::bounded(64);
+        let stop = Arc::new(abort::Abort::default());
+
         let writer = Writer::new(crate::encode::AsyncMpscWriter::new(sender));
-        let ready = Arc::new(tokio::sync::Notify::default());
+        let ready = Arc::new(abort::Notify::default());
 
         let this = Self {
             dispatcher,
@@ -167,13 +165,13 @@ impl Runner {
     /// [`Control`]: ./struct.Control.html
     ///
     pub fn new_with_rate_limit(dispatcher: Dispatcher, rate_limit: RateLimit) -> (Runner, Control) {
-        let (sender, receiver) = mpsc::channel(64);
-        let stop = abort::Abort::default();
+        let (sender, receiver) = async_channel::bounded(64);
+        let stop = Arc::new(abort::Abort::default());
 
         let writer = Writer::new(crate::encode::AsyncMpscWriter::new(sender))
-            .with_rate_limiter(Arc::new(Mutex::new(rate_limit)));
+            .with_rate_limiter(Arc::new(Mutex::new(rate_limit)), NullBlocker::default());
 
-        let ready = Arc::new(tokio::sync::Notify::default());
+        let ready = Arc::new(abort::Notify::default());
 
         let this = Self {
             dispatcher,
@@ -234,15 +232,15 @@ impl Runner {
             .dispatcher
             .subscribe_internal::<crate::events::Ping>(true);
 
-        struct Token(Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>);
+        struct Token(Arc<abort::Notify>, Arc<abort::Notify>);
         impl Drop for Token {
             fn drop(&mut self) {
-                self.0.notify();
-                self.1.notify();
+                self.0.cancel();
+                self.1.cancel();
             }
         }
 
-        let restart = Arc::new(tokio::sync::Notify::default());
+        let restart = Arc::new(abort::Notify::default());
 
         // when this drops, the check_connection loop will exit
         let _token = Token(restart.clone(), self.ready.clone());
@@ -368,19 +366,13 @@ impl Runner {
 }
 
 fn check_connection(
-    restart: Arc<tokio::sync::Notify>,
+    restart: Arc<abort::Notify>,
     dispatcher: &Dispatcher,
     mut writer: Writer,
-) -> (
-    tokio::sync::mpsc::Sender<()>,
-    Arc<tokio::sync::Notify>,
-    impl Future,
-) {
-    use tokio::sync::{mpsc, Notify};
-
+) -> (async_channel::Sender<()>, Arc<abort::Notify>, impl Future) {
     let mut pong = dispatcher.subscribe_internal::<crate::events::Pong>(true);
-    let timeout_notify = Arc::new(Notify::new());
-    let (tx, mut rx) = mpsc::channel(1);
+    let timeout_notify = Arc::new(abort::Notify::default());
+    let (tx, mut rx) = async_channel::bounded(1);
 
     let timeout = timeout_notify.clone();
     let task = async move {
@@ -425,6 +417,7 @@ fn check_connection(
         }
     };
 
+    // TODO not this
     (tx, timeout_notify, tokio::task::spawn(task))
 }
 

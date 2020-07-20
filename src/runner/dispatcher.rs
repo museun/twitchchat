@@ -3,13 +3,12 @@ use crate::decode::Message;
 use crate::events;
 use crate::{Error, EventStream, Parse};
 
+use futures_lite::StreamExt;
+use parking_lot::Mutex;
+
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-use parking_lot::Mutex;
-use tokio::stream::StreamExt as _;
-use tokio::sync::mpsc;
 
 type EventRegistration = Vec<(bool, Box<dyn Any + Send>)>;
 
@@ -29,6 +28,8 @@ The subscription will return a [EventStream] which can be used as a [Stream].
 */
 #[derive(Clone)]
 pub struct Dispatcher {
+    // TODO this should be using a normal mutex, its locking time is generally
+    // just for a single insertion into a hashmap so it won't block the executor
     pub(crate) event_map: AnyMap<EventRegistration>,
     cached: AnyMap<Box<dyn Any + Send>>,
 }
@@ -40,35 +41,38 @@ impl Default for Dispatcher {
         let mut event_map = HashMap::default();
 
         macro_rules! add {
-            ($event:ty) => {
+            ($($event:ty)*) => {
+                $(
                 event_map
                     .entry(std::any::TypeId::of::<$event>())
                     .or_default();
+                )*
             };
         }
 
-        add!(IrcReady);
-        add!(Ready);
-        add!(Cap);
-        add!(ClearChat);
-        add!(ClearMsg);
-        add!(GlobalUserState);
-        add!(HostTarget);
-        add!(Join);
-        add!(Notice);
-        add!(Part);
-        add!(Ping);
-        add!(Pong);
-        add!(Privmsg);
-        add!(Reconnect);
-        add!(RoomState);
-        add!(UserState);
-        add!(UserNotice);
-        add!(Whisper);
-
-        // the meta-events
-        add!(All);
-        add!(Raw);
+        add! {
+            IrcReady
+            Ready
+            Cap
+            ClearChat
+            ClearMsg
+            GlobalUserState
+            HostTarget
+            Join
+            Notice
+            Part
+            Ping
+            Pong
+            Privmsg
+            Reconnect
+            RoomState
+            UserState
+            UserNotice
+            Whisper
+            // the meta-events
+            All
+            Raw
+        }
 
         Self {
             event_map: Arc::new(Mutex::new(event_map)),
@@ -300,7 +304,7 @@ impl Dispatcher {
         T: Event<'a> + 'static,
         T: EventMapped<'a, T>,
     {
-        let (tx, rx) = mpsc::unbounded_channel::<Arc<T::Owned>>();
+        let (tx, rx) = async_channel::unbounded::<Arc<T::Owned>>();
         self.event_map
             .lock()
             .get_mut(&TypeId::of::<T>())
@@ -314,7 +318,7 @@ impl Dispatcher {
             log::trace!("adding internal subscription: {}", name);
         }
 
-        EventStream(rx)
+        EventStream { inner: rx }
     }
 
     /// Get the subscriber count for a specific event
@@ -453,19 +457,20 @@ impl Dispatcher {
 }
 
 struct Sender<T> {
-    sender: mpsc::UnboundedSender<Arc<T>>,
+    sender: async_channel::Sender<Arc<T>>,
 }
 
 impl<T> Sender<T> {
-    const fn new(sender: mpsc::UnboundedSender<Arc<T>>) -> Self {
+    const fn new(sender: async_channel::Sender<Arc<T>>) -> Self {
         Self { sender }
     }
 
     fn try_send(&self, msg: Arc<T>) -> bool {
-        self.sender.send(msg).is_ok()
+        self.sender.try_send(msg).is_ok()
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -622,3 +627,4 @@ mod tests {
             .block_on(test);
     }
 }
+*/

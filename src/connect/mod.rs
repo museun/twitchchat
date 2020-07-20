@@ -1,6 +1,6 @@
 use crate::UserConfig;
 
-type Stream = tokio::net::TcpStream;
+type Stream = std::net::TcpStream;
 
 /// Connect to Twitch without TLS. Using the provided [`UserConfig`][UserConfig].
 ///
@@ -30,7 +30,8 @@ type Stream = tokio::net::TcpStream;
 /// # }).unwrap();
 /// ```
 pub async fn connect_no_tls(config: &UserConfig) -> std::io::Result<Stream> {
-    let mut stream = tokio::net::TcpStream::connect(crate::TWITCH_IRC_ADDRESS_TLS).await?;
+    // TODO dns lookup blocks here
+    let mut stream = Stream::connect(crate::TWITCH_IRC_ADDRESS_TLS)?;
     crate::register(config, &mut stream).await?;
     Ok(stream)
 }
@@ -64,7 +65,8 @@ pub async fn connect_no_tls(config: &UserConfig) -> std::io::Result<Stream> {
 pub async fn connect_easy_no_tls(name: &str, token: &str) -> std::io::Result<Stream> {
     use std::io::{Error, ErrorKind};
 
-    let mut stream = tokio::net::TcpStream::connect(crate::TWITCH_IRC_ADDRESS_TLS).await?;
+    // TODO dns lookup blocks here
+    let mut stream = Stream::connect(crate::TWITCH_IRC_ADDRESS_TLS)?;
 
     let config = crate::simple_user_config(name, token) //
         .map_err(|err| Error::new(ErrorKind::Other, err))?;
