@@ -3,7 +3,7 @@ use crate::{Badge, BadgeKind};
 use std::borrow::Cow;
 
 /// Converts a type to an owned version
-pub trait AsOwned: private::AsOwnedSealed {
+pub trait AsOwned {
     /// The owned type
     type Owned: 'static;
     /// Get an owned version
@@ -11,7 +11,7 @@ pub trait AsOwned: private::AsOwnedSealed {
 }
 
 /// Helper to reborrow a Cow without moving it
-pub trait Reborrow<'a>: private::ReborrowSealed
+pub trait Reborrow<'a>
 where
     Self: 'a,
 {
@@ -45,14 +45,6 @@ impl<'a> Reborrow<'a> for Option<&'a Cow<'a, str>> {
     fn reborrow(&self) -> Self::Output {
         self.map(|s| s.reborrow())
     }
-}
-
-mod private {
-    pub trait AsOwnedSealed {}
-    impl<T> AsOwnedSealed for T where T: crate::AsOwned {}
-
-    pub trait ReborrowSealed {}
-    impl<'a, T> ReborrowSealed for T where T: crate::Reborrow<'a> {}
 }
 
 impl AsOwned for bool {
