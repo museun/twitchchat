@@ -40,13 +40,6 @@ pub mod macros;
 //     stream::EventStream,
 // };
 
-mod runner {
-    // dispatcher
-    // runner
-    // control
-    // eventstream
-}
-
 mod register;
 #[doc(inline)]
 pub use register::{register, register_easy};
@@ -140,3 +133,6 @@ pub mod rustls;
 
 #[cfg(feature = "tokio_native_tls")]
 pub mod native_tls;
+
+// TODO WIP
+mod ng;

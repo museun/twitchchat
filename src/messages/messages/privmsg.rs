@@ -16,6 +16,17 @@ pub struct Privmsg<'t> {
     pub ctcp: Option<Ctcp<'t>>,
 }
 
+#[test]
+fn how_big() {
+    use crate::Parse as _;
+    let msg = "@foo=bar;baz=quux :foo!foo@foo PRIVMSG #foo :this is a test\r\n";
+
+    let msg = crate::decode(msg).next().unwrap().unwrap();
+    let m = Privmsg::parse(&msg);
+    eprintln!("{}", std::mem::size_of_val(&m));
+    eprintln!("{}", std::mem::size_of_val(&msg));
+}
+
 impl<'t> Privmsg<'t> {
     /// Metadata related to the chat badges
     ///
