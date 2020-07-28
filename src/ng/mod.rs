@@ -1,12 +1,8 @@
-#![cfg_attr(debug_assertions, allow(dead_code,))]
-
-// dispatcher
-// runner
-// control
-// eventstream
-
+#![cfg_attr(debug_assertions, allow(missing_docs, dead_code, unused_imports))]
+// this has to be first for the macro
+#[macro_use]
 mod maybe_owned;
-pub use maybe_owned::{MaybeOwned as Str, Reborrow};
+pub use maybe_owned::{AsOwned, MaybeOwned as Str, Reborrow};
 
 mod dispatcher;
 pub use dispatcher::{DispatchError, Dispatcher};
@@ -26,5 +22,5 @@ pub mod messages;
 pub mod channel;
 pub use channel::{Receiver, Sender};
 
-mod irc;
+pub mod irc;
 pub use irc::{IrcMessage, Prefix, Tags};

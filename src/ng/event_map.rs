@@ -44,7 +44,6 @@ impl EventMap {
                 }
             }
         }
-
         self.remove::<T>(bad);
     }
 
@@ -66,7 +65,7 @@ impl EventMap {
         })
     }
 
-    pub fn remove<T: 'static>(&mut self, mut values: HashSet<Id>) {
+    pub(crate) fn remove<T: 'static>(&mut self, mut values: HashSet<Id>) {
         if values.is_empty() {
             // quick path because remove is called every dispatch
             return;

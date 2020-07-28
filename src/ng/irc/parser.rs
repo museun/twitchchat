@@ -50,7 +50,7 @@ impl<'a> Parser<'a> {
         }
 
         let input = self.input.get(self.pos..)?;
-        let pos = input.find(' ').unwrap_or_else(|| input.len());
+        let pos = input.find(" :").unwrap_or_else(|| input.len());
         self.pos += pos + 1;
         input.get(..pos).map(Str::from)
     }

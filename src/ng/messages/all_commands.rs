@@ -23,11 +23,9 @@ pub enum AllCommands<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
-    type Error = ();
-    fn from_irc(msg: &IrcMessage<'a>) -> Result<Self, Self::Error>
-    where
-        Self: Sized + 'a,
-    {
+    type Error = Infallible;
+
+    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error> {
         let this = match &*msg.command {
             // "001" => Self::IrcReady(IrcReady::from_irc(msg)?),
             // "376" => Self::Ready(Ready::from_irc(msg)?),
@@ -51,5 +49,22 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
         };
 
         Ok(this)
+    }
+}
+
+impl<'a> Reborrow<'a> for AllCommands<'a> {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        match this {
+            AllCommands::Raw(raw) => AllCommands::Raw(Reborrow::reborrow(raw)),
+        }
+    }
+}
+
+impl<'a> AsOwned for AllCommands<'a> {
+    type Owned = AllCommands<'static>;
+    fn as_owned(this: &Self) -> Self::Owned {
+        match this {
+            AllCommands::Raw(raw) => AllCommands::Raw(AsOwned::as_owned(raw)),
+        }
     }
 }
