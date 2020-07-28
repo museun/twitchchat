@@ -1,10 +1,10 @@
-use super::super::{Reborrow, Str};
-use super::{parser::Parser, Prefix};
+use super::super::{AsOwned, Reborrow, Str};
+use super::{parser::Parser, Prefix, Tags};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct IrcMessage<'a> {
     pub raw: Str<'a>,
-    pub tags: Option<Str<'a>>,
+    pub tags: Option<Tags<'a>>,
     pub prefix: Option<Prefix<'a>>,
     pub command: Str<'a>,
     pub args: Option<Str<'a>>,
@@ -28,7 +28,7 @@ impl<'a> IrcMessage<'a> {
 
         Self {
             raw: Str::from(input),
-            tags: p.tags(),
+            tags: p.tags().map(Tags::parse),
             prefix: p.prefix(),
             command: p.command(),
             args: p.args(),
@@ -36,11 +36,11 @@ impl<'a> IrcMessage<'a> {
         }
     }
 
-    pub fn get_data<'b: 'a>(&'b self) -> Option<Str<'a>> {
+    pub fn get_data(&self) -> Option<Str<'_>> {
         self.data.as_ref().map(Str::reborrow)
     }
 
-    pub fn nth_arg<'b: 'a>(&'b self, nth: usize) -> Option<Str<'a>> {
+    pub fn nth_arg(&self, nth: usize) -> Option<Str<'_>> {
         self.args
             .as_ref()?
             .split_ascii_whitespace()
@@ -62,24 +62,33 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
     }
 }
 
-impl<'a> Reborrow<'a> for IrcMessage<'a> {
-    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
-        let Self {
-            raw,
-            tags,
-            prefix,
-            command,
-            args,
-            data,
-        } = this;
+reborrow_and_asowned!(IrcMessage {
+    raw,
+    tags,
+    prefix,
+    command,
+    args,
+    data
+});
 
-        IrcMessage {
-            raw: Str::reborrow(raw),
-            tags: tags.as_ref().map(Str::reborrow),
-            prefix: prefix.as_ref().map(Prefix::reborrow),
-            command: Str::reborrow(command),
-            args: args.as_ref().map(Str::reborrow),
-            data: data.as_ref().map(Str::reborrow),
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn parse_cap() {
+        let input = ":tmi.twitch.tv CAP * ACK :twitch.tv/membership\r\n";
+
+        let msg = IrcMessage::parse(input);
+        assert_eq!(msg.raw, input);
+        assert_eq!(msg.tags, None);
+        assert_eq!(
+            msg.prefix,
+            Some(Prefix::Server {
+                host: "tmi.twitch.tv".into()
+            })
+        );
+        assert_eq!(msg.command, "CAP");
+        assert_eq!(msg.args, Some("* ACK".into()));
+        assert_eq!(msg.data, Some("twitch.tv/membership".into()));
     }
 }

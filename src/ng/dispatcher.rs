@@ -1,19 +1,25 @@
 use super::{
-    messages::{AllCommands, FromIrcMessage, ParseError},
-    EventMap, EventStream, IrcMessage,
+    messages::{AllCommands, Cap, FromIrcMessage, InvalidMessage},
+    AsOwned, EventMap, EventStream, IrcMessage,
 };
 
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum DispatchError {
-    ParseError(ParseError),
-    Foo,
+    InvalidMessage(InvalidMessage),
 }
 
-impl From<()> for DispatchError {
-    fn from(_: ()) -> Self {
-        Self::Foo
+impl From<InvalidMessage> for DispatchError {
+    fn from(msg: InvalidMessage) -> Self {
+        Self::InvalidMessage(msg)
+    }
+}
+
+impl From<Infallible> for DispatchError {
+    fn from(_: Infallible) -> Self {
+        unreachable!("you cannot produce this error")
     }
 }
 
@@ -28,11 +34,11 @@ impl Dispatcher {
         EventStream { inner: rx }
     }
 
-    pub fn dispatch(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError> {
+    pub fn dispatch<'a>(&mut self, message: &'a IrcMessage<'a>) -> Result<(), DispatchError> {
         match &*message.command {
             // "001" => self.dispatch_inner::<IrcReady>(message)?,
             // "376" => self.dispatch_inner::<Ready>(message)?,
-            // "CAP" => self.dispatch_inner::<Cap>(message)?,
+            "CAP" => self.dispatch_inner::<Cap>(message)?,
             // "CLEARCHAT" => self.dispatch_inner::<ClearChat>(message)?,
             // "CLEARMSG" => self.dispatch_inner::<ClearMsg>(message)?,
             // "GLOBALUSERSTATE" => self.dispatch_inner::<GlobalUserState>(message)?,
@@ -50,10 +56,10 @@ impl Dispatcher {
             // "WHISPER" => self.dispatch_inner::<Whisper>(message)?,
             // TODO allow for user defined mappings
             _ => {
-                self.dispatch_inner::<IrcMessage>(message.clone())
-                    .expect("identity conversion should be upheld");
-                self.dispatch_inner::<AllCommands>(message)
-                    .expect("identity conversion should be upheld");
+                // self.dispatch_inner::<IrcMessage>(message)
+                //     .expect("identity conversion should be upheld");
+                // self.dispatch_inner::<AllCommands>(message)
+                //     .expect("identity conversion should be upheld");
             }
         };
 
@@ -64,12 +70,16 @@ impl Dispatcher {
         std::mem::take(&mut self.map);
     }
 
-    fn dispatch_inner<T>(&mut self, message: IrcMessage<'static>) -> Result<(), T::Error>
+    fn dispatch_inner<'a, T>(&mut self, message: &'a IrcMessage<'a>) -> Result<(), DispatchError>
     where
-        T: FromIrcMessage<'static> + 'static,
+        T: FromIrcMessage<'a>,
+        T: AsOwned + 'a,
         DispatchError: From<T::Error>,
     {
-        let msg = T::from_irc(&message).map(Arc::new)?;
+        let msg = T::from_irc(message)
+            .map(|s| AsOwned::as_owned(&s))
+            .map(Arc::new)?;
+
         self.map.send(msg);
         Ok(())
     }

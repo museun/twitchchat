@@ -1,4 +1,28 @@
-#![cfg_attr(debug_assertions, allow(missing_docs))]
+use crate::{color::Color, Badge, BadgeKind};
+use std::{
+    borrow::{Borrow, Cow},
+    fmt::{Debug, Display},
+    ops::Deref,
+};
+
+#[macro_export]
+macro_rules! reborrow_and_asowned {
+    ($ty:ident { $($field:tt),* $(,)?}) => {
+        impl<'a> Reborrow<'a> for $ty<'a> {
+            fn reborrow<'b: 'a>(this: &'b $ty<'a>) -> $ty<'b> {
+                $ty { $( $field: Reborrow::reborrow(&this.$field), )* }
+            }
+        }
+
+        impl<'a> AsOwned for $ty<'a> {
+            type Owned = $ty<'static>;
+
+            fn as_owned(this: &$ty<'a>) -> <Self as AsOwned>::Owned {
+                $ty { $( $field: AsOwned::as_owned(&this.$field), )* }
+            }
+        }
+    };
+}
 
 pub trait Reborrow<'a>
 where
@@ -7,10 +31,165 @@ where
     fn reborrow<'b: 'a>(this: &'b Self) -> Self;
 }
 
+impl<'a, T> Reborrow<'a> for Option<T>
+where
+    T: Reborrow<'a> + 'a,
+{
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        this.as_ref().map(Reborrow::reborrow)
+    }
+}
+
+impl<'a> Reborrow<'a> for bool {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        *this
+    }
+}
+
+impl<'a, T> Reborrow<'a> for Vec<T>
+where
+    T: Reborrow<'a>,
+{
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        this.iter().map(Reborrow::reborrow).collect()
+    }
+}
+
+pub trait AsOwned {
+    type Owned: 'static;
+    fn as_owned(this: &Self) -> Self::Owned;
+}
+
+impl<T> AsOwned for Option<T>
+where
+    T: AsOwned,
+{
+    type Owned = Option<<T as AsOwned>::Owned>;
+    fn as_owned(this: &Self) -> Self::Owned {
+        this.as_ref().map(AsOwned::as_owned)
+    }
+}
+
+impl AsOwned for bool {
+    type Owned = bool;
+    fn as_owned(this: &Self) -> Self::Owned {
+        *this
+    }
+}
+
+impl<T> AsOwned for Vec<T>
+where
+    T: AsOwned,
+{
+    type Owned = Vec<T::Owned>;
+    fn as_owned(this: &Self) -> Self::Owned {
+        this.iter().map(AsOwned::as_owned).collect()
+    }
+}
+
+impl<'a> Reborrow<'a> for Badge<'a> {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        Badge {
+            kind: Reborrow::reborrow(&this.kind),
+            data: Reborrow::reborrow(&this.data),
+        }
+    }
+}
+
+impl<'a> Reborrow<'a> for BadgeKind<'a> {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        match this {
+            Self::Admin => BadgeKind::Admin,
+            Self::Bits => BadgeKind::Bits,
+            Self::Broadcaster => BadgeKind::Broadcaster,
+            Self::GlobalMod => BadgeKind::GlobalMod,
+            Self::Moderator => BadgeKind::Moderator,
+            Self::Subscriber => BadgeKind::Subscriber,
+            Self::Staff => BadgeKind::Staff,
+            Self::Turbo => BadgeKind::Turbo,
+            Self::Premium => BadgeKind::Premium,
+            Self::VIP => BadgeKind::VIP,
+            Self::Partner => BadgeKind::Partner,
+            Self::Unknown(badge) => BadgeKind::Unknown(Reborrow::reborrow(badge)),
+        }
+    }
+}
+
+impl<'a> AsOwned for Badge<'a> {
+    type Owned = Badge<'static>;
+
+    fn as_owned(this: &Self) -> Self::Owned {
+        Badge {
+            kind: AsOwned::as_owned(&this.kind),
+            data: AsOwned::as_owned(&this.data),
+        }
+    }
+}
+
+impl<'a> AsOwned for BadgeKind<'a> {
+    type Owned = BadgeKind<'static>;
+
+    fn as_owned(this: &Self) -> Self::Owned {
+        match this {
+            Self::Admin => BadgeKind::Admin,
+            Self::Bits => BadgeKind::Bits,
+            Self::Broadcaster => BadgeKind::Broadcaster,
+            Self::GlobalMod => BadgeKind::GlobalMod,
+            Self::Moderator => BadgeKind::Moderator,
+            Self::Subscriber => BadgeKind::Subscriber,
+            Self::Staff => BadgeKind::Staff,
+            Self::Turbo => BadgeKind::Turbo,
+            Self::Premium => BadgeKind::Premium,
+            Self::VIP => BadgeKind::VIP,
+            Self::Partner => BadgeKind::Partner,
+            Self::Unknown(badge) => BadgeKind::Unknown(AsOwned::as_owned(badge)),
+        }
+    }
+}
+
+impl AsOwned for Color {
+    type Owned = Color;
+    fn as_owned(this: &Self) -> Self::Owned {
+        *this
+    }
+}
+
+impl<'a> Reborrow<'a> for Color {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        *this
+    }
+}
+
+// TODO
+impl<'a> Reborrow<'a> for Cow<'a, str> {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        match this {
+            Cow::Borrowed(s) => Cow::Borrowed(*s),
+            Cow::Owned(s) => Cow::Borrowed(&*s),
+        }
+    }
+}
+
+impl<'a> AsOwned for Cow<'a, str> {
+    type Owned = Cow<'static, str>;
+    fn as_owned(this: &Self) -> <Self as AsOwned>::Owned {
+        match this {
+            Cow::Borrowed(s) => Cow::Owned(s.to_string()),
+            Cow::Owned(s) => Cow::Owned(s.clone()),
+        }
+    }
+}
+
 #[derive(Clone, Ord, Eq, Hash)]
 pub enum MaybeOwned<'a> {
     Borrowed(&'a str),
     Owned(Box<str>),
+}
+
+impl Default for MaybeOwned<'static> {
+    fn default() -> Self {
+        Self::Borrowed("")
+    }
 }
 
 impl<'a> MaybeOwned<'a> {
@@ -18,6 +197,13 @@ impl<'a> MaybeOwned<'a> {
         match this {
             Self::Borrowed(s) => Self::Borrowed(s),
             Self::Owned(t) => Self::Borrowed(&*t),
+        }
+    }
+
+    pub fn as_owned(this: &Self) -> MaybeOwned<'static> {
+        match this {
+            MaybeOwned::Borrowed(s) => MaybeOwned::Owned(s.to_string().into_boxed_str()),
+            MaybeOwned::Owned(s) => MaybeOwned::Owned(s.clone()),
         }
     }
 
@@ -34,6 +220,20 @@ impl<'a> MaybeOwned<'a> {
             Self::Borrowed(s) => s.into(),
             Self::Owned(s) => s,
         }
+    }
+}
+
+impl<'a> Reborrow<'a> for MaybeOwned<'a> {
+    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+        Self::reborrow(this)
+    }
+}
+
+impl<'a> AsOwned for MaybeOwned<'a> {
+    type Owned = MaybeOwned<'static>;
+
+    fn as_owned(this: &Self) -> <Self as AsOwned>::Owned {
+        Self::as_owned(this)
     }
 }
 
@@ -67,7 +267,7 @@ impl<'a> PartialOrd for MaybeOwned<'a> {
     }
 }
 
-impl<'a> std::fmt::Debug for MaybeOwned<'a> {
+impl<'a> Debug for MaybeOwned<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(r#""{}""#, self.as_ref().escape_debug()))
     }
@@ -82,13 +282,13 @@ impl<'a> AsRef<str> for MaybeOwned<'a> {
     }
 }
 
-impl<'a> std::borrow::Borrow<str> for MaybeOwned<'a> {
+impl<'a> Borrow<str> for MaybeOwned<'a> {
     fn borrow(&self) -> &str {
         &*self
     }
 }
 
-impl<'a> std::ops::Deref for MaybeOwned<'a> {
+impl<'a> Deref for MaybeOwned<'a> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
         match self {
@@ -98,13 +298,14 @@ impl<'a> std::ops::Deref for MaybeOwned<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for MaybeOwned<'a> {
+impl<'a> Display for MaybeOwned<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO write this a "string"
         write!(f, "{}", self.as_ref())
     }
 }
 
-impl<'a> From<MaybeOwned<'a>> for std::borrow::Cow<'a, str> {
+impl<'a> From<MaybeOwned<'a>> for Cow<'a, str> {
     fn from(s: MaybeOwned<'a>) -> Self {
         match s {
             MaybeOwned::Borrowed(s) => Self::Borrowed(s),
@@ -192,22 +393,20 @@ mod tests {
     use super::super::Str;
     use super::*;
 
-    #[test]
-    fn reborrow() {
-        let asdf = String::from("asdf").into();
+    struct Foo<'a> {
+        inner: Str<'a>,
+    }
 
-        struct Foo<'a> {
-            inner: Str<'a>,
-        }
-
-        impl<'a> Reborrow<'a> for Foo<'a> {
-            fn reborrow<'b: 'a>(this: &'b Self) -> Self {
-                Foo {
-                    inner: Str::reborrow(&this.inner),
-                }
+    impl<'a> Reborrow<'a> for Foo<'a> {
+        fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+            Foo {
+                inner: Str::reborrow(&this.inner),
             }
         }
+    }
 
+    #[test]
+    fn reborrow() {
         fn try_it<'b: 'a, 'a>(p: &'b Foo<'b>) -> Foo<'a> {
             Reborrow::reborrow(p)
         }
@@ -216,6 +415,7 @@ mod tests {
             Reborrow::reborrow(p)
         }
 
+        let asdf = String::from("asdf").into();
         let left = Foo { inner: asdf };
 
         let right = try_it(&left);

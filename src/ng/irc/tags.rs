@@ -1,8 +1,11 @@
 use super::super::{Reborrow, Str};
+use crate::ng::AsOwned;
+use std::borrow::Borrow;
 
 #[derive(Default, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Tags<'a> {
     map: Vec<(Str<'a>, Str<'a>)>,
+    data: Str<'a>,
 }
 
 impl<'a> std::fmt::Debug for Tags<'a> {
@@ -15,7 +18,7 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 
 impl<'a> Tags<'a> {
     // TODO should this be public?
-    pub(crate) fn parse<'b: 'a>(input: &'b Str<'a>) -> Tags<'b> {
+    pub(crate) fn parse(input: Str<'a>) -> Tags<'a> {
         if !input.starts_with('@') {
             return Self::default();
         }
@@ -29,12 +32,12 @@ impl<'a> Tags<'a> {
             .map(|(k, v)| (Str::from(k), Str::from(v)))
             .collect();
 
-        Self { map }
+        Self { map, data: input }
     }
 
-    pub fn get<K: ?Sized>(&'a self, key: &K) -> Option<Str<'a>>
+    pub fn get<'t, K: ?Sized>(&'t self, key: &K) -> Option<Str<'t>>
     where
-        K: std::borrow::Borrow<str>,
+        K: Borrow<str>,
         Str<'a>: PartialEq<K>,
     {
         self.map
@@ -43,9 +46,18 @@ impl<'a> Tags<'a> {
             .map(Str::reborrow)
     }
 
+    pub(crate) fn remove<K: ?Sized>(&mut self, key: &K) -> Option<Str<'a>>
+    where
+        K: Borrow<str>,
+        Str<'a>: PartialEq<K>,
+    {
+        let t = self.map.iter().position(|(k, _)| *k == *key)?;
+        Some(self.map.swap_remove(t).1)
+    }
+
     pub fn get_ref<K: ?Sized>(&self, key: &K) -> Option<&Str<'a>>
     where
-        K: std::borrow::Borrow<str>,
+        K: Borrow<str>,
         Str<'a>: PartialEq<K>,
     {
         self.map
@@ -55,7 +67,7 @@ impl<'a> Tags<'a> {
 
     pub fn get_parsed<K: ?Sized, E>(&self, key: &K) -> Option<E>
     where
-        K: std::borrow::Borrow<str>,
+        K: Borrow<str>,
         Str<'a>: PartialEq<K>,
         E: std::str::FromStr,
     {
@@ -64,7 +76,7 @@ impl<'a> Tags<'a> {
 
     pub fn get_as_bool<K: ?Sized>(&self, key: &K) -> bool
     where
-        K: std::borrow::Borrow<str>,
+        K: Borrow<str>,
         Str<'a>: PartialEq<K>,
     {
         match self.get_ref(key) {
@@ -98,6 +110,22 @@ impl<'a> Reborrow<'a> for Tags<'a> {
                 .iter()
                 .map(|(k, v)| (Str::reborrow(k), Str::reborrow(v)))
                 .collect::<Vec<_>>(),
+            data: Str::reborrow(&this.data),
+        }
+    }
+}
+
+impl<'a> AsOwned for Tags<'a> {
+    type Owned = Tags<'static>;
+
+    fn as_owned(this: &Self) -> Self::Owned {
+        Tags {
+            map: this
+                .map
+                .iter()
+                .map(|(k, v)| (AsOwned::as_owned(k), AsOwned::as_owned(v)))
+                .collect::<Vec<_>>(),
+            data: Str::as_owned(&this.data),
         }
     }
 }

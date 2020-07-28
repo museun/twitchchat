@@ -1,5 +1,6 @@
-use super::IrcMessage;
+use super::{AsOwned, IrcMessage, Reborrow, Str, Tags};
 
+#[allow(unused_macros)]
 macro_rules! tags {
     () => {
         pub fn tags(&self) -> &Tags<'_> {
@@ -8,46 +9,69 @@ macro_rules! tags {
     };
 }
 
-macro_rules! into_inner {
-    () => {
-        pub fn into_inner(self) -> IrcMessage<'a> {
-            self.msg
-        }
-    };
-}
-macro_rules! reborrow {
-    ($ty:ident { $($field:tt),* }) => {
-        impl<'a> Reborrow<'a> for $ty<'a> {
-            fn reborrow<'b: 'a>(this: &'b $ty<'a>) -> $ty<'b> {
-                $ty { $( $field: Reborrow::reborrow(&this.$field), )* }
-            }
-        }
-    };
-}
-
 #[derive(Debug)]
-pub enum ParseError {
+pub enum InvalidMessage {
     InvalidCommand { expected: String, got: String },
     ExpectedNick,
+
     ExpectedArg { pos: usize },
     ExpectedData,
 }
 
 pub trait FromIrcMessage<'a> {
     type Error;
-    fn from_irc(msg: &IrcMessage<'a>) -> Result<Self, Self::Error>
+
+    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error>
     where
         Self: Sized + 'a;
 }
 
 impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
-    type Error = ();
-    fn from_irc(msg: &IrcMessage<'a>) -> Result<IrcMessage<'a>, Self::Error>
-    where
-        Self: Sized + 'a,
-    {
-        // TODO use the new MaybeOwned idea
+    type Error = Infallible;
+
+    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error> {
         Ok(msg.clone())
+    }
+}
+
+trait Validator<'b: 'a, 'a> {
+    fn parse_tags(&'b self) -> Tags<'b>;
+    fn expect_command(&'b self, cmd: &str) -> Result<(), InvalidMessage>;
+    fn expect_nick(&'b self) -> Result<Str<'b>, InvalidMessage>;
+    fn expect_arg(&'b self, nth: usize) -> Result<Str<'b>, InvalidMessage>;
+    fn expect_data(&'b self) -> Result<Str<'b>, InvalidMessage>;
+}
+
+impl<'b: 'a, 'a> Validator<'b, 'a> for IrcMessage<'a> {
+    fn parse_tags(&'b self) -> Tags<'b> {
+        self.tags.unwrap_or_default()
+    }
+
+    fn expect_command(&'b self, cmd: &str) -> Result<(), InvalidMessage> {
+        if self.command != cmd {
+            return Err(InvalidMessage::InvalidCommand {
+                expected: cmd.to_string(),
+                got: self.command.to_string(),
+            });
+        }
+
+        Ok(())
+    }
+
+    fn expect_nick(&'b self) -> Result<Str<'b>, InvalidMessage> {
+        self.prefix
+            .as_ref()
+            .and_then(|p| p.get_nick())
+            .ok_or_else(|| InvalidMessage::ExpectedNick)
+    }
+
+    fn expect_arg(&'b self, nth: usize) -> Result<Str<'b>, InvalidMessage> {
+        self.nth_arg(nth)
+            .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
+    }
+
+    fn expect_data(&'b self) -> Result<Str<'b>, InvalidMessage> {
+        self.get_data().ok_or_else(|| InvalidMessage::ExpectedData)
     }
 }
 
@@ -106,4 +130,5 @@ mod user_state;
 pub use user_state::UserState;
 
 mod whisper;
+use std::convert::Infallible;
 pub use whisper::Whisper;

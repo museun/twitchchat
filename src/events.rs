@@ -18,14 +18,14 @@ use std::fmt::Debug;
 
 /// A marker trait for Event subscription
 #[doc(hidden)]
-pub trait Event<'a>: private::EventSealed {
+pub trait Event<'a> {
     /// Event message parsing
     type Parsed: crate::Parse<&'a crate::decode::Message<'a>> + AsOwned;
 }
 
 /// A trait to convert an Event::Parsed to a 'static type
 #[doc(hidden)]
-pub trait EventMapped<'a, T>: private::EventMappedSealed<T>
+pub trait EventMapped<'a, T>
 where
     T: Event<'a>,
 {
@@ -45,16 +45,6 @@ where
     fn into_owned(data: T::Parsed) -> Self::Owned {
         <T::Parsed as AsOwned>::as_owned(&data)
     }
-}
-
-mod private {
-    use super::{Event, EventMapped};
-
-    pub trait EventSealed {}
-    impl<'a, T: Event<'a>> EventSealed for T {}
-
-    pub trait EventMappedSealed<E> {}
-    impl<'a, T: EventMapped<'a, E>, E: Event<'a>> EventMappedSealed<E> for T {}
 }
 
 #[cfg(test)]

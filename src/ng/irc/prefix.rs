@@ -24,7 +24,8 @@ impl<'a> Prefix<'a> {
     }
 }
 
-use super::super::Reborrow;
+// TODO this
+use super::super::{AsOwned, Reborrow};
 
 impl<'a> Reborrow<'a> for Prefix<'a> {
     fn reborrow<'b: 'a>(this: &'b Self) -> Self {
@@ -34,6 +35,20 @@ impl<'a> Reborrow<'a> for Prefix<'a> {
             },
             Prefix::Server { host } => Prefix::Server {
                 host: Str::reborrow(host),
+            },
+        }
+    }
+}
+
+impl<'a> AsOwned for Prefix<'a> {
+    type Owned = Prefix<'static>;
+    fn as_owned(this: &Self) -> Self::Owned {
+        match this {
+            Prefix::User { nick } => Prefix::User {
+                nick: AsOwned::as_owned(nick),
+            },
+            Prefix::Server { host } => Prefix::Server {
+                host: AsOwned::as_owned(host),
             },
         }
     }
