@@ -1,5 +1,5 @@
-use super::super::Str;
-use super::{IrcMessage, Prefix};
+use super::super::{Str, StrIndex};
+use super::{IrcMessage, PrefixIndex};
 
 pub(super) struct Parser<'a> {
     pub(super) input: &'a str,
@@ -7,28 +7,32 @@ pub(super) struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub(super) fn tags(&mut self) -> Option<Str<'a>> {
+    fn mark_index(&mut self, pos: usize) -> StrIndex {
+        let index = StrIndex::raw(self.pos, self.pos + pos);
+        self.pos += pos + 1;
+        index
+    }
+
+    pub(super) fn tags(&mut self) -> Option<StrIndex> {
         let input = self.input.get(self.pos..)?;
         if input.starts_with('@') {
             if let Some(pos) = input.find(' ') {
-                self.pos += pos + 1;
-                return input.get(..pos).map(Str::from);
+                return Some(self.mark_index(pos));
             }
         }
         None
     }
 
-    pub(super) fn prefix(&mut self) -> Option<Prefix<'a>> {
+    pub(super) fn prefix(&mut self) -> Option<PrefixIndex> {
         let input = &self.input.get(self.pos..)?;
         if input.starts_with(':') {
             if let Some(pos) = input.find(' ') {
-                self.pos += pos + 1;
                 let prefix = match input.find('!') {
-                    Some(pos) => Prefix::User {
-                        nick: input.get(1..pos).map(Str::from)?,
+                    Some(pos) => PrefixIndex::User {
+                        nick: self.mark_index(pos),
                     },
-                    None => Prefix::Server {
-                        host: input.get(1..pos).map(Str::from)?,
+                    None => PrefixIndex::Server {
+                        host: self.mark_index(pos),
                     },
                 };
                 return Some(prefix);
@@ -37,30 +41,28 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub(super) fn command(&mut self) -> Str<'a> {
+    pub(super) fn command(&mut self) -> StrIndex {
         let input = &self.input[self.pos..];
         let pos = input.find(' ').unwrap_or_else(|| input.len());
-        self.pos += pos + 1;
-        Str::from(&input[..pos])
+        self.mark_index(pos)
     }
 
-    pub(super) fn args(&mut self) -> Option<Str<'a>> {
+    pub(super) fn args(&mut self) -> Option<StrIndex> {
         if self.pos > self.input.len() || self.input[self.pos..].starts_with(':') {
             return None;
         }
 
         let input = self.input.get(self.pos..)?;
         let pos = input.find(" :").unwrap_or_else(|| input.len());
-        self.pos += pos + 1;
-        input.get(..pos).map(Str::from)
+        Some(self.mark_index(pos))
     }
 
-    pub(super) fn data(self) -> Option<Str<'a>> {
+    pub(super) fn data(self) -> Option<StrIndex> {
         let pos = self.input.get(self.pos..).and_then(|s| s.find(':'))?;
         self.input
             .get(self.pos + pos + 1..)
             .filter(|s| !s.is_empty())
-            .map(Str::from)
+            .map(|_| StrIndex::raw(self.pos + pos + 1, self.input.len()))
     }
 }
 

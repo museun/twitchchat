@@ -1,9 +1,15 @@
-use super::super::Str;
+use super::super::{Str, StrIndex};
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum Prefix<'a> {
-    User { nick: Str<'a> },
-    Server { host: Str<'a> },
+// TODO is this borrow going to be a problem?
+pub struct Prefix<'a> {
+    pub(crate) data: &'a Str<'a>,
+    pub(crate) index: PrefixIndex,
+}
+
+impl<'a> std::fmt::Debug for Prefix<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.data[self.index.as_index()])
+    }
 }
 
 impl<'a> Prefix<'a> {
@@ -12,44 +18,32 @@ impl<'a> Prefix<'a> {
     }
 
     pub fn is_user(&self) -> bool {
-        matches!(self, Self::User{ .. })
+        matches!(self.index, PrefixIndex::User{ .. })
     }
 
-    pub fn get_nick<'b: 'a>(&'b self) -> Option<Str<'a>> {
+    pub fn get_prefix(&self) -> &'a str {
+        &self.data[self.index.as_index()]
+    }
+
+    pub fn get_nick(&self) -> Option<&'a str> {
+        match self.index {
+            PrefixIndex::User { nick } => Some(&self.data[nick]),
+            PrefixIndex::Server { .. } => None,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum PrefixIndex {
+    User { nick: StrIndex },
+    Server { host: StrIndex },
+}
+
+impl PrefixIndex {
+    pub fn as_index(self) -> StrIndex {
         match self {
-            Self::User { nick } => Some(nick),
-            Self::Server { .. } => None,
-        }
-        .map(Str::reborrow)
-    }
-}
-
-// TODO this
-use super::super::{AsOwned, Reborrow};
-
-impl<'a> Reborrow<'a> for Prefix<'a> {
-    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
-        match this {
-            Prefix::User { nick } => Prefix::User {
-                nick: Str::reborrow(nick),
-            },
-            Prefix::Server { host } => Prefix::Server {
-                host: Str::reborrow(host),
-            },
-        }
-    }
-}
-
-impl<'a> AsOwned for Prefix<'a> {
-    type Owned = Prefix<'static>;
-    fn as_owned(this: &Self) -> Self::Owned {
-        match this {
-            Prefix::User { nick } => Prefix::User {
-                nick: AsOwned::as_owned(nick),
-            },
-            Prefix::Server { host } => Prefix::Server {
-                host: AsOwned::as_owned(host),
-            },
+            PrefixIndex::User { nick } => nick,
+            PrefixIndex::Server { host } => host,
         }
     }
 }

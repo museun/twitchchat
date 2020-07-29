@@ -1,14 +1,16 @@
-use super::super::{AsOwned, Reborrow, Str};
-use super::{parser::Parser, Prefix, Tags};
+use super::super::{Str, StrIndex};
 
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+use super::{parser::Parser, Prefix, PrefixIndex, Tags};
+
+#[derive(Clone)]
 pub struct IrcMessage<'a> {
     pub raw: Str<'a>,
-    pub tags: Option<Tags<'a>>,
-    pub prefix: Option<Prefix<'a>>,
-    pub command: Str<'a>,
-    pub args: Option<Str<'a>>,
-    pub data: Option<Str<'a>>,
+    pub tags: Option<StrIndex>,
+    // TODO make this less weird to use
+    pub prefix: Option<PrefixIndex>,
+    pub command: StrIndex,
+    pub args: Option<StrIndex>,
+    pub data: Option<StrIndex>,
 }
 
 impl<'a> IrcMessage<'a> {
@@ -28,7 +30,7 @@ impl<'a> IrcMessage<'a> {
 
         Self {
             raw: Str::from(input),
-            tags: p.tags().map(Tags::parse),
+            tags: p.tags(),
             prefix: p.prefix(),
             command: p.command(),
             args: p.args(),
@@ -36,16 +38,35 @@ impl<'a> IrcMessage<'a> {
         }
     }
 
-    pub fn get_data(&self) -> Option<Str<'_>> {
-        self.data.as_ref().map(Str::reborrow)
+    pub fn get_raw(&self) -> &str {
+        &*self.raw
     }
 
-    pub fn nth_arg(&self, nth: usize) -> Option<Str<'_>> {
+    pub fn get_tags(&self) -> Option<&str> {
+        self.tags.map(|index| &self.raw[index])
+    }
+
+    pub fn get_prefix(&self) -> Option<&str> {
+        self.prefix.map(|index| &self.raw[index.as_index()])
+    }
+
+    pub fn get_command(&self) -> &str {
+        &self.raw[self.command]
+    }
+
+    pub fn get_args(&self) -> Option<&str> {
+        self.args.map(|index| &self.raw[index])
+    }
+
+    pub fn get_data(&self) -> Option<&str> {
+        self.data.map(|index| &self.raw[index])
+    }
+
+    pub fn nth_arg(&self, nth: usize) -> Option<&str> {
         self.args
-            .as_ref()?
+            .map(|index| &self.raw[index])?
             .split_ascii_whitespace()
             .nth(nth)
-            .map(Str::from)
     }
 }
 
@@ -53,42 +74,17 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IrcMessage")
             .field("raw", &&*self.raw)
-            .field("tags", &self.tags)
-            .field("prefix", &self.prefix)
-            .field("command", &self.command)
-            .field("args", &self.args)
-            .field("data", &self.data)
+            .field("tags", &self.tags.map(|index| &self.raw[index]))
+            .field(
+                "prefix",
+                &self.prefix.map(|index| Prefix {
+                    data: &self.raw,
+                    index,
+                }),
+            )
+            .field("command", &&self.raw[self.command])
+            .field("args", &self.args.map(|index| &self.raw[index]))
+            .field("data", &self.data.map(|index| &self.raw[index]))
             .finish()
-    }
-}
-
-reborrow_and_asowned!(IrcMessage {
-    raw,
-    tags,
-    prefix,
-    command,
-    args,
-    data
-});
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn parse_cap() {
-        let input = ":tmi.twitch.tv CAP * ACK :twitch.tv/membership\r\n";
-
-        let msg = IrcMessage::parse(input);
-        assert_eq!(msg.raw, input);
-        assert_eq!(msg.tags, None);
-        assert_eq!(
-            msg.prefix,
-            Some(Prefix::Server {
-                host: "tmi.twitch.tv".into()
-            })
-        );
-        assert_eq!(msg.command, "CAP");
-        assert_eq!(msg.args, Some("* ACK".into()));
-        assert_eq!(msg.data, Some("twitch.tv/membership".into()));
     }
 }
