@@ -1,14 +1,59 @@
-use super::super::{Reborrow, Str};
-use crate::ng::AsOwned;
-use std::borrow::Borrow;
+use super::super::{Str, StrIndex};
+use std::{borrow::Borrow, str::FromStr};
 
-#[derive(Default, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct Tags<'a> {
-    map: Vec<(Str<'a>, Str<'a>)>,
-    data: Str<'a>,
+#[derive(Clone)]
+pub struct Tags<'a, 'b> {
+    data: &'a Str<'a>,
+    indices: &'b TagIndices,
 }
 
-impl<'a> std::fmt::Debug for Tags<'a> {
+impl<'a, 'b> Tags<'a, 'b> {
+    // TODO return a Str or a str?
+    pub fn get<K>(&self, key: &K) -> Option<&'_ str>
+    where
+        K: ?Sized + Borrow<str>,
+    {
+        self.indices.get(key.borrow(), &*self.data)
+    }
+
+    pub fn get_parsed<K, E>(&self, key: &K) -> Option<E>
+    where
+        K: ?Sized + Borrow<str>,
+        E: FromStr,
+    {
+        self.get(key)
+            .map(FromStr::from_str)
+            .transpose()
+            .ok()
+            .flatten()
+    }
+
+    pub fn get_as_bool<K>(&self, key: &K) -> bool
+    where
+        K: ?Sized + Borrow<str>,
+    {
+        match self.get(key) {
+            Some("1") => true,
+            Some("0") | None => false,
+            Some(d) => d.parse().ok().unwrap_or(false),
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ str)> + '_ {
+        self.indices.iter(&self.data)
+    }
+
+    pub fn into_inner(self) -> &'a str {
+        self.data
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct TagIndices {
+    map: Vec<(StrIndex, StrIndex)>,
+}
+
+impl std::fmt::Debug for TagIndices {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_map()
             .entries(self.map.iter().map(|(k, v)| (k, v)))
@@ -16,116 +61,62 @@ impl<'a> std::fmt::Debug for Tags<'a> {
     }
 }
 
-impl<'a> Tags<'a> {
+impl TagIndices {
     // TODO should this be public?
-    pub(crate) fn parse(input: Str<'a>) -> Tags<'a> {
+    pub(crate) fn parse(input: &str) -> Self {
         if !input.starts_with('@') {
             return Self::default();
         }
 
-        let map = input[1..]
-            .split_terminator(';')
-            .filter_map(|s| {
-                let mut iter = s.splitn(2, '=');
-                Some((iter.next()?, iter.next()?))
-            })
-            .map(|(k, v)| (Str::from(k), Str::from(v)))
-            .collect();
-
-        Self { map, data: input }
-    }
-
-    pub fn get<'t, K: ?Sized>(&'t self, key: &K) -> Option<Str<'t>>
-    where
-        K: Borrow<str>,
-        Str<'a>: PartialEq<K>,
-    {
-        self.map
-            .iter()
-            .find_map(|(k, v)| if *k == *key { Some(v) } else { None })
-            .map(Str::reborrow)
-    }
-
-    pub(crate) fn remove<K: ?Sized>(&mut self, key: &K) -> Option<Str<'a>>
-    where
-        K: Borrow<str>,
-        Str<'a>: PartialEq<K>,
-    {
-        let t = self.map.iter().position(|(k, _)| *k == *key)?;
-        Some(self.map.swap_remove(t).1)
-    }
-
-    pub fn get_ref<K: ?Sized>(&self, key: &K) -> Option<&Str<'a>>
-    where
-        K: Borrow<str>,
-        Str<'a>: PartialEq<K>,
-    {
-        self.map
-            .iter()
-            .find_map(|(k, v)| if *k == *key { Some(v) } else { None })
-    }
-
-    pub fn get_parsed<K: ?Sized, E>(&self, key: &K) -> Option<E>
-    where
-        K: Borrow<str>,
-        Str<'a>: PartialEq<K>,
-        E: std::str::FromStr,
-    {
-        self.get_ref(key).and_then(|s| s.as_ref().parse().ok())
-    }
-
-    pub fn get_as_bool<K: ?Sized>(&self, key: &K) -> bool
-    where
-        K: Borrow<str>,
-        Str<'a>: PartialEq<K>,
-    {
-        match self.get_ref(key) {
-            Some(d) if &*d == "1" => true,
-            Some(d) if &*d == "0" => false,
-            Some(d) => d.parse().ok().unwrap_or_default(),
-            None => false,
+        enum Mode {
+            Head,
+            Tail,
         }
-    }
 
-    pub fn iter(&'a self) -> impl Iterator<Item = (Str<'a>, Str<'a>)> + 'a {
-        self.map
-            .iter()
-            .map(|(k, v)| (Str::reborrow(k), Str::reborrow(v)))
-    }
+        let mut map = Vec::with_capacity(input.chars().filter(|&c| c == ';').count() + 1);
+        let (mut key, mut value) = (StrIndex::new(1), StrIndex::new(1));
 
-    pub fn iter_ref<'b: 'a>(&'b self) -> impl Iterator<Item = &'b (Str<'a>, Str<'a>)> + 'b {
-        self.map.iter()
-    }
+        let mut mode = Mode::Head;
 
-    pub fn into_inner(self) -> Vec<(Str<'a>, Str<'a>)> {
-        self.map
-    }
-}
-
-impl<'a> Reborrow<'a> for Tags<'a> {
-    fn reborrow<'b: 'a>(this: &'b Self) -> Self {
-        Tags {
-            map: this
-                .map
-                .iter()
-                .map(|(k, v)| (Str::reborrow(k), Str::reborrow(v)))
-                .collect::<Vec<_>>(),
-            data: Str::reborrow(&this.data),
+        for (i, ch) in input.char_indices().skip(1) {
+            let i = i + 1;
+            match ch {
+                ';' => {
+                    mode = Mode::Head;
+                    map.push((key.replace(i), value.replace(i)));
+                }
+                '=' => {
+                    mode = Mode::Tail;
+                    value.replace(i);
+                }
+                _ => {
+                    match mode {
+                        Mode::Head => &mut key,
+                        Mode::Tail => &mut value,
+                    }
+                    .bump_tail();
+                }
+            }
         }
-    }
-}
 
-impl<'a> AsOwned for Tags<'a> {
-    type Owned = Tags<'static>;
-
-    fn as_owned(this: &Self) -> Self::Owned {
-        Tags {
-            map: this
-                .map
-                .iter()
-                .map(|(k, v)| (AsOwned::as_owned(k), AsOwned::as_owned(v)))
-                .collect::<Vec<_>>(),
-            data: Str::as_owned(&this.data),
+        if !key.is_empty() && !value.is_empty() {
+            map.push((key, value));
         }
+
+        Self { map }
+    }
+
+    pub fn get<'t>(&'t self, key: &str, data: &'t str) -> Option<&'t str> {
+        self.map.iter().find_map(|(k, v)| {
+            if key == &data[k] {
+                Some(&data[v])
+            } else {
+                None
+            }
+        })
+    }
+
+    fn iter<'t>(&'t self, data: &'t str) -> impl Iterator<Item = (&'t str, &'t str)> + 't {
+        self.map.iter().map(move |(k, v)| (&data[k], &data[v]))
     }
 }

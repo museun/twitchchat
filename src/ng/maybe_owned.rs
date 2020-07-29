@@ -338,90 +338,90 @@ impl From<Box<str>> for MaybeOwned<'static> {
     }
 }
 
-#[cfg(feature = "serde")]
-impl<'a> serde::Serialize for MaybeOwned<'a> {
-    fn serialize<S>(&self, serialize: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serialize.serialize_str(self.as_ref())
-    }
-}
+// #[cfg(feature = "serde")]
+// impl<'a> serde::Serialize for MaybeOwned<'a> {
+//     fn serialize<S>(&self, serialize: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         serialize.serialize_str(self.as_ref())
+//     }
+// }
 
-#[cfg(feature = "serde")]
-impl<'de: 'a, 'a> serde::Deserialize<'de> for MaybeOwned<'a> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde::de::{Error, Unexpected, Visitor};
-        struct MaybeOwnedVisitor;
+// #[cfg(feature = "serde")]
+// impl<'de: 'a, 'a> serde::Deserialize<'de> for MaybeOwned<'a> {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         use serde::de::{Error, Unexpected, Visitor};
+//         struct MaybeOwnedVisitor;
 
-        impl<'d> Visitor<'d> for MaybeOwnedVisitor {
-            type Value = MaybeOwned<'d>;
-            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.write_str("a borrowed string")
-            }
+//         impl<'d> Visitor<'d> for MaybeOwnedVisitor {
+//             type Value = MaybeOwned<'d>;
+//             fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//                 f.write_str("a borrowed string")
+//             }
 
-            fn visit_borrowed_str<E: Error>(self, v: &'d str) -> Result<Self::Value, E> {
-                Ok(MaybeOwned::Borrowed(v))
-            }
+//             fn visit_borrowed_str<E: Error>(self, v: &'d str) -> Result<Self::Value, E> {
+//                 Ok(MaybeOwned::Borrowed(v))
+//             }
 
-            fn visit_borrowed_bytes<E: Error>(self, v: &'d [u8]) -> Result<Self::Value, E> {
-                std::str::from_utf8(v)
-                    .map_err(|_| Error::invalid_value(Unexpected::Bytes(v), &self))
-                    .map(Self::Value::from)
-            }
+//             fn visit_borrowed_bytes<E: Error>(self, v: &'d [u8]) -> Result<Self::Value, E> {
+//                 std::str::from_utf8(v)
+//                     .map_err(|_| Error::invalid_value(Unexpected::Bytes(v), &self))
+//                     .map(Self::Value::from)
+//             }
 
-            fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
-                // TODO it should be using transient references
-                Ok(MaybeOwned::Owned(v.to_string().into()))
-            }
+//             fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
+//                 // TODO it should be using transient references
+//                 Ok(MaybeOwned::Owned(v.to_string().into()))
+//             }
 
-            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
-                // TODO it should be using transient references
-                Ok(MaybeOwned::Owned(v.into()))
-            }
-        }
+//             fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+//                 // TODO it should be using transient references
+//                 Ok(MaybeOwned::Owned(v.into()))
+//             }
+//         }
 
-        deserializer.deserialize_str(MaybeOwnedVisitor)
-    }
-}
+//         deserializer.deserialize_str(MaybeOwnedVisitor)
+//     }
+// }
 
-#[cfg(test)]
-mod tests {
-    use super::super::Str;
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::super::Str;
+//     use super::*;
 
-    struct Foo<'a> {
-        inner: Str<'a>,
-    }
+//     struct Foo<'a> {
+//         inner: Str<'a>,
+//     }
 
-    impl<'a> Reborrow<'a> for Foo<'a> {
-        fn reborrow<'b: 'a>(this: &'b Self) -> Self {
-            Foo {
-                inner: Str::reborrow(&this.inner),
-            }
-        }
-    }
+//     impl<'a> Reborrow<'a> for Foo<'a> {
+//         fn reborrow<'b: 'a>(this: &'b Self) -> Self {
+//             Foo {
+//                 inner: Str::reborrow(&this.inner),
+//             }
+//         }
+//     }
 
-    #[test]
-    fn reborrow() {
-        fn try_it<'b: 'a, 'a>(p: &'b Foo<'b>) -> Foo<'a> {
-            Reborrow::reborrow(p)
-        }
+//     #[test]
+//     fn reborrow() {
+//         fn try_it<'b: 'a, 'a>(p: &'b Foo<'b>) -> Foo<'a> {
+//             Reborrow::reborrow(p)
+//         }
 
-        fn try_it_cov<'b: 'a, 'a>(p: &'b Foo<'a>) -> Foo<'a> {
-            Reborrow::reborrow(p)
-        }
+//         fn try_it_cov<'b: 'a, 'a>(p: &'b Foo<'a>) -> Foo<'a> {
+//             Reborrow::reborrow(p)
+//         }
 
-        let asdf = String::from("asdf").into();
-        let left = Foo { inner: asdf };
+//         let asdf = String::from("asdf").into();
+//         let left = Foo { inner: asdf };
 
-        let right = try_it(&left);
-        assert!(std::ptr::eq(left.inner.as_ptr(), right.inner.as_ptr()));
+//         let right = try_it(&left);
+//         assert!(std::ptr::eq(left.inner.as_ptr(), right.inner.as_ptr()));
 
-        let right = try_it_cov(&left);
-        assert!(std::ptr::eq(left.inner.as_ptr(), right.inner.as_ptr()));
-    }
-}
+//         let right = try_it_cov(&left);
+//         assert!(std::ptr::eq(left.inner.as_ptr(), right.inner.as_ptr()));
+//     }
+// }

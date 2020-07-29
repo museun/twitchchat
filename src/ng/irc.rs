@@ -2,10 +2,10 @@ mod message;
 pub use message::IrcMessage;
 
 mod prefix;
-pub use prefix::Prefix;
+pub use prefix::{Prefix, PrefixIndex};
 
 mod tags;
-pub use tags::Tags;
+pub use tags::{TagIndices, Tags};
 
 mod parser;
 
