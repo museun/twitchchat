@@ -26,10 +26,7 @@ impl<'a> Prefix<'a> {
     }
 
     pub fn get_nick(&self) -> Option<&'a str> {
-        match self.index {
-            PrefixIndex::User { nick } => Some(&self.data[nick]),
-            PrefixIndex::Server { .. } => None,
-        }
+        self.index.nick_index().map(|index| &self.data[index])
     }
 }
 
@@ -40,6 +37,13 @@ pub enum PrefixIndex {
 }
 
 impl PrefixIndex {
+    pub fn nick_index(self) -> Option<StrIndex> {
+        match self {
+            PrefixIndex::User { nick } => Some(nick),
+            PrefixIndex::Server { .. } => None,
+        }
+    }
+
     pub fn as_index(self) -> StrIndex {
         match self {
             PrefixIndex::User { nick } => nick,

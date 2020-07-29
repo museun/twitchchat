@@ -13,14 +13,17 @@ pub struct IrcMessage<'a> {
     pub data: Option<StrIndex>,
 }
 
-impl<'a> IrcMessage<'a> {
+impl<'a> IrcMessage<'a>
+where
+    Self: 'a,
+{
     // TODO should this be public?
-    pub(crate) fn parse(input: &'a str) -> Self {
+    pub(crate) fn parse(input: Str<'a>) -> Self {
         // trim any \r\n off incase this was directly called
         let data = if input.ends_with("\r\n") {
-            &input[..input.len() - 2]
+            &input.as_ref()[..input.len() - 2]
         } else {
-            input
+            input.as_ref()
         };
 
         let mut p = Parser {
@@ -29,12 +32,12 @@ impl<'a> IrcMessage<'a> {
         };
 
         Self {
-            raw: Str::from(input),
             tags: p.tags(),
             prefix: p.prefix(),
             command: p.command(),
             args: p.args(),
             data: p.data(),
+            raw: input,
         }
     }
 
@@ -68,6 +71,27 @@ impl<'a> IrcMessage<'a> {
             .split_ascii_whitespace()
             .nth(nth)
     }
+}
+
+impl<'a> IrcMessage<'a> {
+    pub const IRCREADY: &'static str = "001";
+    pub const READY: &'static str = "376";
+    pub const CAP: &'static str = "CAP";
+    pub const CLEARCHAT: &'static str = "CLEARCHAT";
+    pub const CLEARMSG: &'static str = "CLEARMSG";
+    pub const GLOBALUSERSTATE: &'static str = "GLOBALUSERSTATE";
+    pub const HOSTTARGET: &'static str = "HOSTARGET";
+    pub const JOIN: &'static str = "JOIN";
+    pub const NOTICE: &'static str = "NOTICE";
+    pub const PART: &'static str = "PART";
+    pub const PING: &'static str = "PING";
+    pub const PONG: &'static str = "PONG";
+    pub const PRIVMSG: &'static str = "PRIVMSG";
+    pub const RECONNECT: &'static str = "RECONNECT";
+    pub const ROOMSTATE: &'static str = "ROOMSTATE";
+    pub const USERNOTICE: &'static str = "USERNOTICE";
+    pub const USERSTATE: &'static str = "USERSTATE";
+    pub const WHISPER: &'static str = "WHISPER";
 }
 
 impl<'a> std::fmt::Debug for IrcMessage<'a> {

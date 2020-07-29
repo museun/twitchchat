@@ -95,6 +95,10 @@ impl<'a> Iterator for IrcParserIter<'a> {
         };
 
         let pos = std::mem::replace(&mut self.pos, index);
-        self.data.get(pos..index).map(IrcMessage::parse).map(Ok)
+        self.data
+            .get(pos..index)
+            .map(Str::from)
+            .map(IrcMessage::parse)
+            .map(Ok)
     }
 }

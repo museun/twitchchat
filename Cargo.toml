@@ -28,7 +28,7 @@ log = "0.4.8"
 # futures = { version = "0.3.5", optional = true, default-features = false }
 # tokio   = { version = "0.2.21", optional = true, features = ["dns", "io-util", "stream", "sync", "tcp", "time", "macros"] }
 
-serde   = { version = "1.0.114", optional = true, features = ["derive"] }
+serde   = { version = "1.0.114", features = ["derive"] } # optional = true,
 
 # native tls
 # tokio-native-tls  = { version = "0.1.0", optional = true }
@@ -55,6 +55,7 @@ pin-project-lite = "0.1.7"
 tokio       = { version = "0.2.21", features = ["test-util", "macros"] }
 tokio-test  = "0.2.1"
 doc-comment = "0.3.3"
+serde_json = { version = "1.0.57", features = ["raw_value"] }
 
 # [[example]]
 # name = "demo"
