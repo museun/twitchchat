@@ -1,38 +1,75 @@
-use super::{AsOwned, FromIrcMessage, InvalidMessage, IrcMessage, Reborrow, Str, Validator};
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, Validator};
+use crate::ng::{irc::parse_one, RawVisitor, StrIndex};
+use serde::{de::Visitor, Deserializer, Serializer};
+use std::convert::Infallible;
 
-/// Acknowledgement (or not) for a CAPS request
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cap<'t> {
-    /// The capability name
-    pub capability: Str<'t>,
-    /// Whether it was acknowledged
-    pub acknowledged: bool,
+    raw: Str<'t>,
+    capability: StrIndex,
+    acknowledged: bool,
+}
+
+impl<'t> Cap<'t> {
+    pub fn raw(&self) -> &str {
+        &*self.raw
+    }
+
+    pub fn capability(&self) -> &str {
+        &self.raw[self.capability]
+    }
+
+    pub fn acknowledged(&self) -> bool {
+        self.acknowledged
+    }
 }
 
 impl<'a> FromIrcMessage<'a> for Cap<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error> {
-        msg.expect_command("CAP")?;
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
+        const ACK: &str = "ACK";
+
+        msg.expect_command(IrcMessage::CAP)?;
 
         let this = Self {
-            acknowledged: msg.expect_arg(1)? == "ACK",
             capability: msg.expect_data()?,
+            acknowledged: msg.expect_arg(1)? == ACK,
+            raw: msg.raw,
         };
 
         Ok(this)
     }
 }
 
-reborrow_and_asowned!(Cap {
-    capability,
-    acknowledged
-});
+impl<'t> serde::Serialize for Cap<'t> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use serde::ser::SerializeStruct as _;
+        let mut s = serializer.serialize_struct("Cap", 3)?;
+        s.serialize_field("raw", &self.raw)?;
+        s.serialize_field("capability", &self.raw[self.capability])?;
+        s.serialize_field("acknowledged", &self.acknowledged)?;
+        s.end()
+    }
+}
+
+impl<'t, 'de: 't> serde::Deserialize<'de> for Cap<'t> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(RawVisitor::new())
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ng::irc;
+    use irc::parse;
 
     #[test]
     fn cap_acknowledged() {
@@ -44,20 +81,20 @@ mod tests {
             "twitch.tv/tags",
             "twitch.tv/commands",
         ];
-        for (msg, expected) in irc::parse(&input).map(|s| s.unwrap()).zip(expected) {
-            let msg = Cap::from_irc(&msg).unwrap();
-            assert!(msg.acknowledged);
-            assert_eq!(msg.capability, *expected);
+        for (msg, expected) in parse(&input).map(|s| s.unwrap()).zip(expected) {
+            let msg = Cap::from_irc(msg).unwrap();
+            assert!(msg.acknowledged());
+            assert_eq!(msg.capability(), *expected);
         }
     }
 
     #[test]
     fn cap_failed() {
         let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
-            let cap = Cap::from_irc(&msg).unwrap();
-            assert!(!cap.acknowledged);
-            assert_eq!(cap.capability, "foobar");
+        for msg in parse(input).map(|s| s.unwrap()) {
+            let cap = Cap::from_irc(msg).unwrap();
+            assert!(!cap.acknowledged());
+            assert_eq!(cap.capability(), "foobar");
         }
     }
 }
