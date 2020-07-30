@@ -2,9 +2,9 @@ use super::*;
 
 pub enum AllCommands<'a> {
     Raw(IrcMessage<'a>),
-    // IrcReady(IrcReady<'a>),
+    IrcReady(IrcReady<'a>),
     // Ready(Ready<'a>),
-    // Cap(Cap<'a>),
+    Cap(Cap<'a>),
     // ClearChat(ClearChat<'a>),
     // ClearMsg(ClearMsg<'a>),
     // GlobalUserState(GlobalUserState<'a>),
@@ -23,13 +23,13 @@ pub enum AllCommands<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
-    type Error = Infallible;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         let this = match msg.get_command() {
-            // "001" => Self::IrcReady(IrcReady::from_irc(msg)?),
+            "001" => Self::IrcReady(IrcReady::from_irc(msg)?),
             // "376" => Self::Ready(Ready::from_irc(msg)?),
-            // "CAP" => Self::Cap(Cap::from_irc(msg)?),
+            "CAP" => Self::Cap(Cap::from_irc(msg)?),
             // "CLEARCHAT" => Self::ClearChat(ClearChat::from_irc(msg)?),
             // "CLEARMSG" => Self::ClearMsg(ClearMsg::from_irc(msg)?),
             // "GLOBALUSERSTATE" => Self::GlobalUserState(GlobalUserState::from_irc(msg)?),
@@ -45,7 +45,7 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
             // "USERNOTICE" => Self::UserNotice(UserNotice::from_irc(msg)?),
             // "USERSTATE" => Self::UserState(UserState::from_irc(msg)?),
             // "WHISPER" => Self::Whisper(Whisper::from_irc(msg)?),
-            _ => Self::Raw(IrcMessage::from_irc(msg)?),
+            _ => Self::Raw(IrcMessage::from_irc(msg).expect("infallible conversion")),
         };
 
         Ok(this)

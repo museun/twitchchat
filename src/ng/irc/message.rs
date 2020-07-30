@@ -65,11 +65,40 @@ where
         self.data.map(|index| &self.raw[index])
     }
 
+    // TODO this is wrong. this is grabbing the 'COMMAND' as well
     pub fn nth_arg(&self, nth: usize) -> Option<&str> {
         self.args
             .map(|index| &self.raw[index])?
             .split_ascii_whitespace()
             .nth(nth)
+    }
+
+    pub fn nth_arg_index(&self, nth: usize) -> Option<StrIndex> {
+        let index = self.args?;
+        let args = &self.raw[index];
+
+        let mut seen = 0;
+        let (mut head, mut tail) = (index.start, index.start);
+
+        for ch in args.chars() {
+            if ch.is_ascii_whitespace() {
+                if seen == nth {
+                    return Some(StrIndex::raw(head, tail));
+                }
+
+                // skip the space
+                head = tail + 1;
+                seen += 1;
+            }
+
+            tail += 1;
+        }
+
+        if seen == nth {
+            return Some(StrIndex::raw(head, tail));
+        }
+
+        None
     }
 }
 

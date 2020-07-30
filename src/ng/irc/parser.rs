@@ -7,34 +7,36 @@ pub(super) struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    fn mark_index(&mut self, pos: usize) -> StrIndex {
-        let index = StrIndex::raw(self.pos, self.pos + pos);
-        self.pos += pos + 1;
+    fn mark_index(&mut self, tail: usize, adv: usize) -> StrIndex {
+        let index = StrIndex::raw(self.pos, self.pos + tail);
+        self.pos += adv;
         index
     }
 
     pub(super) fn tags(&mut self) -> Option<StrIndex> {
         let input = self.input.get(self.pos..)?;
         if input.starts_with('@') {
-            if let Some(pos) = input.find(' ') {
-                return Some(self.mark_index(pos));
+            if let Some(end) = input.find(' ') {
+                return Some(self.mark_index(end, end + 1));
             }
         }
         None
     }
 
     pub(super) fn prefix(&mut self) -> Option<PrefixIndex> {
-        let input = &self.input.get(self.pos..)?;
+        let input = self.input.get(self.pos..)?;
         if input.starts_with(':') {
             if let Some(pos) = input.find(' ') {
+                self.pos += 1;
                 let prefix = match input.find('!') {
-                    Some(pos) => PrefixIndex::User {
-                        nick: self.mark_index(pos),
+                    Some(bang) => PrefixIndex::User {
+                        nick: self.mark_index(bang - 1, pos),
                     },
                     None => PrefixIndex::Server {
-                        host: self.mark_index(pos),
+                        host: self.mark_index(pos - 1, pos),
                     },
                 };
+
                 return Some(prefix);
             }
         }
@@ -44,7 +46,7 @@ impl<'a> Parser<'a> {
     pub(super) fn command(&mut self) -> StrIndex {
         let input = &self.input[self.pos..];
         let pos = input.find(' ').unwrap_or_else(|| input.len());
-        self.mark_index(pos)
+        self.mark_index(pos, pos + 1)
     }
 
     pub(super) fn args(&mut self) -> Option<StrIndex> {
@@ -54,7 +56,7 @@ impl<'a> Parser<'a> {
 
         let input = self.input.get(self.pos..)?;
         let pos = input.find(" :").unwrap_or_else(|| input.len());
-        Some(self.mark_index(pos))
+        Some(self.mark_index(pos, pos))
     }
 
     pub(super) fn data(self) -> Option<StrIndex> {
@@ -102,3 +104,24 @@ impl<'a> Iterator for IrcParserIter<'a> {
             .map(Ok)
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     #[test]
+//     fn parse_components() {
+//         let inputs = &[
+//             "@tag1=val;tag2=bar :foo!bar@baz COMMAND arg1 arg2 arg3 :data\r\n",
+//             ":foo!bar@baz COMMAND arg1 arg2 arg3 :data\r\n",
+//             ":foo COMMAND arg1 arg2 arg3 :data\r\n",
+//             ":foo COMMAND arg1 arg2\r\n",
+//             ":foo COMMAND arg1\r\n",
+//             ":foo COMMAND :data\r\n",
+//             ":foo COMMAND arg1 :data with spaces\r\n",
+//         ];
+
+//         for input in inputs.iter().copied().map(Str::from) {
+//             eprintln!("{:#?}\n\n", IrcMessage::parse(input));
+//         }
+//     }
+// }
