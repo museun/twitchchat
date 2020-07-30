@@ -37,6 +37,14 @@ pub enum PrefixIndex {
 }
 
 impl PrefixIndex {
+    pub fn is_server(&self) -> bool {
+        !self.is_nick()
+    }
+
+    pub fn is_nick(&self) -> bool {
+        matches!(self, PrefixIndex::User{ .. })
+    }
+
     pub fn nick_index(self) -> Option<StrIndex> {
         match self {
             PrefixIndex::User { nick } => Some(nick),
