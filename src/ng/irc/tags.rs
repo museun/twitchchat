@@ -8,6 +8,10 @@ pub struct Tags<'a> {
 }
 
 impl<'a> Tags<'a> {
+    pub fn raw_tags(&self) -> &'a str {
+        &*self.data
+    }
+
     pub fn len(&self) -> usize {
         self.indices.map.len()
     }
@@ -48,10 +52,6 @@ impl<'a> Tags<'a> {
 
     pub fn iter(&self) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
         self.indices.iter(&self.data)
-    }
-
-    pub fn into_inner(self) -> &'a str {
-        self.data
     }
 }
 
