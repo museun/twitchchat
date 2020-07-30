@@ -2,6 +2,8 @@ use super::*;
 use crate::ng::{FromIrcMessage, InvalidMessage};
 
 #[derive(Debug, Clone, PartialEq)]
+//
+#[derive(::serde::Serialize, ::serde::Deserialize)]
 pub enum AllCommands<'a> {
     Raw(IrcMessage<'a>),
     IrcReady(IrcReady<'a>),
@@ -66,9 +68,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn all_commands_serde() {
+        let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
+        crate::ng::serde::round_trip_json::<AllCommands>(input);
+    }
+
+    #[test]
     fn ensure_const_match() {
-        let s = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        let msg = IrcMessage::parse(Str::Borrowed(s));
-        assert!(matches!(AllCommands::from_irc(msg).unwrap(), AllCommands::Privmsg{..}));
+        let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
+        let msg = IrcMessage::parse(Str::Borrowed(input));
+        let all = AllCommands::from_irc(msg).unwrap();
+        assert!(matches!(all, AllCommands::Privmsg{..}));
     }
 }

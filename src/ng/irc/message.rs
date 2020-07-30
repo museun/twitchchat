@@ -6,7 +6,6 @@ use super::{parser::Parser, Prefix, PrefixIndex};
 pub struct IrcMessage<'a> {
     pub raw: Str<'a>,
     pub tags: Option<StrIndex>,
-    // TODO make this less weird to use
     pub prefix: Option<PrefixIndex>,
     pub command: StrIndex,
     pub args: Option<StrIndex>,
@@ -135,5 +134,42 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
             .field("args", &self.args.map(|index| &self.raw[index]))
             .field("data", &self.data.map(|index| &self.raw[index]))
             .finish()
+    }
+}
+
+impl<'t> ::serde::Serialize for IrcMessage<'t> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        use ::serde::ser::SerializeStruct as _;
+
+        let mut s = serializer.serialize_struct("IrcMessage", 6)?;
+        s.serialize_field("raw", &&*self.raw)?;
+        s.serialize_field("tags", &self.tags.map(|index| &self.raw[index]))?;
+        s.serialize_field("prefix", &self.get_prefix())?;
+        s.serialize_field("command", &self.raw[self.command])?;
+        s.serialize_field("args", &self.args.map(|index| &self.raw[index]))?;
+        s.serialize_field("data", &self.data.map(|index| &self.raw[index]))?;
+        s.end()
+    }
+}
+
+impl<'de, 't> ::serde::Deserialize<'de> for IrcMessage<'t> {
+    fn deserialize<D>(deserializer: D) -> Result<IrcMessage<'t>, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(crate::ng::serde::RawVisitor::default())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn irc_message_serde() {
+        let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
+        crate::ng::serde::round_trip_json::<IrcMessage>(input);
     }
 }
