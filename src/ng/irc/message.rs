@@ -1,6 +1,6 @@
-use super::super::{Str, StrIndex};
+use crate::ng::{Str, StrIndex};
 
-use super::{parser::Parser, Prefix, PrefixIndex, Tags};
+use super::{parser::Parser, Prefix, PrefixIndex};
 
 #[derive(Clone)]
 pub struct IrcMessage<'a> {
@@ -13,10 +13,7 @@ pub struct IrcMessage<'a> {
     pub data: Option<StrIndex>,
 }
 
-impl<'a> IrcMessage<'a>
-where
-    Self: 'a,
-{
+impl<'a> IrcMessage<'a> {
     // TODO should this be public?
     pub(crate) fn parse(input: Str<'a>) -> Self {
         // trim any \r\n off incase this was directly called
@@ -65,7 +62,6 @@ where
         self.data.map(|index| &self.raw[index])
     }
 
-    // TODO this is wrong. this is grabbing the 'COMMAND' as well
     pub fn nth_arg(&self, nth: usize) -> Option<&str> {
         self.args
             .map(|index| &self.raw[index])?

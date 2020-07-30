@@ -72,11 +72,11 @@ serde_struct!(UserState {
     tags,
     channel,
     // TODO determine if we want to serialize these
-    // display_name,
-    // color,
-    // emotes,
-    // badges,
-    // badge_info
+    display_name,
+    color,
+    emotes,
+    badges,
+    badge_info
 });
 
 #[cfg(test)]

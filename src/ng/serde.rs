@@ -1,10 +1,7 @@
 use super::{messages::FromIrcMessage, IrcMessage, Str};
-use serde::de::{Error, IntoDeserializer, MapAccess, Visitor};
+use serde::de::{Error, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
-use std::{
-    marker::PhantomData,
-    ops::{Deref, Index, Range},
-};
+use std::marker::PhantomData;
 
 #[allow(unused_macros)]
 macro_rules! serde_struct {

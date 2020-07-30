@@ -1,4 +1,4 @@
-use super::{IrcMessage, Prefix, PrefixIndex, Str, StrIndex, TagIndices, Tags};
+use super::{IrcMessage, Str, StrIndex, TagIndices};
 use std::convert::Infallible;
 
 #[allow(unused_macros)]
@@ -7,6 +7,11 @@ macro_rules! raw {
         /// Get the raw message
         pub fn raw(&self) -> &str {
             &*self.raw
+        }
+
+        /// Get the raw `Str<'a>` out
+        pub fn into_inner(self) -> Str<'t> {
+            self.raw
         }
     };
 }
