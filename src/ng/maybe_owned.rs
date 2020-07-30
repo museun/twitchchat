@@ -54,6 +54,12 @@ impl<'a> PartialEq<str> for MaybeOwned<'a> {
     }
 }
 
+impl<'a> PartialEq<&str> for MaybeOwned<'a> {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_ref() == *other
+    }
+}
+
 impl<'a> AsRef<str> for MaybeOwned<'a> {
     fn as_ref(&self) -> &str {
         match self {
