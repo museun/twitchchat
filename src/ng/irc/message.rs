@@ -2,7 +2,7 @@ use crate::ng::{Str, StrIndex};
 
 use super::{parser::Parser, Prefix, PrefixIndex};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct IrcMessage<'a> {
     pub raw: Str<'a>,
     pub tags: Option<StrIndex>,
