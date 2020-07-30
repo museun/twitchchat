@@ -32,7 +32,7 @@ impl<'t> serde::Serialize for IrcReady<'t> {
         S: serde::Serializer,
     {
         use serde::ser::SerializeStruct as _;
-        let mut s = serializer.serialize_struct("Cap", 3)?;
+        let mut s = serializer.serialize_struct("IrcReady", 3)?;
         s.serialize_field("raw", &self.raw)?;
         s.serialize_field("nickname", &self.raw[self.nickname])?;
         s.end()

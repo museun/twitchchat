@@ -1,7 +1,4 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, Validator};
-use crate::ng::{irc::parse_one, RawVisitor, StrIndex};
-use serde::{de::Visitor, Deserializer, Serializer};
-use std::convert::Infallible;
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cap<'t> {
@@ -40,7 +37,7 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
 impl<'t> serde::Serialize for Cap<'t> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer,
+        S: serde::Serializer,
     {
         use serde::ser::SerializeStruct as _;
         let mut s = serializer.serialize_struct("Cap", 3)?;
@@ -54,9 +51,9 @@ impl<'t> serde::Serialize for Cap<'t> {
 impl<'t, 'de: 't> serde::Deserialize<'de> for Cap<'t> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>,
+        D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_map(RawVisitor::new())
+        deserializer.deserialize_map(crate::ng::RawVisitor::new())
     }
 }
 
