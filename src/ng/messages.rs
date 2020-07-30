@@ -61,8 +61,8 @@ pub use clear_chat::ClearChat;
 mod clear_msg;
 pub use clear_msg::ClearMsg;
 
-// mod global_user_state;
-// pub use global_user_state::GlobalUserState;
+mod global_user_state;
+pub use global_user_state::GlobalUserState;
 
 mod host_target;
 pub use host_target::HostTarget;
