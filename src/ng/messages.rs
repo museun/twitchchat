@@ -91,8 +91,8 @@ pub use reconnect::Reconnect;
 mod room_state;
 pub use room_state::RoomState;
 
-// mod user_notice;
-// pub use user_notice::UserNotice;
+mod user_notice;
+pub use user_notice::UserNotice;
 
 mod user_state;
 pub use user_state::UserState;

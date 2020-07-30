@@ -8,7 +8,14 @@ pub struct Tags<'a> {
 }
 
 impl<'a> Tags<'a> {
-    // TODO return a Str or a str?
+    pub fn len(&self) -> usize {
+        self.indices.map.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn get<K>(&self, key: &K) -> Option<&'a str>
     where
         K: ?Sized + Borrow<str>,
