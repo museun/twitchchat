@@ -1,5 +1,7 @@
-use crate::ng::{
-    FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
+use crate::{
+    color::Color,
+    ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator},
+    parse_badges, parse_emotes, Badge, BadgeInfo, BadgeKind, Emotes,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -17,8 +19,6 @@ pub struct Privmsg<'t> {
     name: StrIndex,
     channel: StrIndex,
     data: StrIndex,
-
-    // hmm
     ctcp: Option<StrIndex>,
 }
 
@@ -37,6 +37,104 @@ impl<'t> Privmsg<'t> {
         } else {
             Some(Ctcp::Unknown { command })
         }
+    }
+
+    pub fn is_action(&self) -> bool {
+        match self.ctcp() {
+            Some(Ctcp::Action) => true,
+            _ => false,
+        }
+    }
+
+    pub fn badge_info(&'t self) -> Vec<BadgeInfo<'t>> {
+        self.tags()
+            .get("badge-info")
+            .map(parse_badges)
+            .unwrap_or_default()
+    }
+
+    pub fn badges(&'t self) -> Vec<Badge<'t>> {
+        self.tags()
+            .get("badges")
+            .map(parse_badges)
+            .unwrap_or_default()
+    }
+
+    pub fn bits(&self) -> Option<u64> {
+        self.tags().get_parsed("bits")
+    }
+
+    pub fn color(&self) -> Option<Color> {
+        self.tags().get_parsed("color")
+    }
+
+    pub fn display_name(&'t self) -> Option<&str> {
+        self.tags().get("display-name")
+    }
+
+    pub fn emotes(&self) -> Vec<Emotes> {
+        self.tags()
+            .get("emotes")
+            .map(parse_emotes)
+            .unwrap_or_default()
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_broadcaster(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == BadgeKind::Broadcaster)
+    }
+
+    pub fn is_moderator(&self) -> bool {
+        self.tags().get_as_bool("mod")
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_vip(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == BadgeKind::Broadcaster)
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_subscriber(&self) -> bool {
+        self.badges()
+            .iter()
+            .any(|x| x.kind == BadgeKind::Subscriber)
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_staff(&self) -> bool {
+        self.badges().iter().any(|x| x.kind == BadgeKind::Staff)
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_turbo(&self) -> bool {
+        self.badges().iter().any(|x| x.kind == BadgeKind::Turbo)
+    }
+
+    // TODO this can be done without the Vec allocation
+    // just return the iterator over the inner &str
+    pub fn is_global_moderator(&self) -> bool {
+        self.badges().iter().any(|x| x.kind == BadgeKind::GlobalMod)
+    }
+
+    pub fn room_id(&self) -> Option<u64> {
+        self.tags().get_parsed("room-id")
+    }
+
+    pub fn tmi_sent_ts(&self) -> Option<u64> {
+        self.tags().get_parsed("tmi-sent-ts")
+    }
+
+    pub fn user_id(&self) -> Option<u64> {
+        self.tags().get_parsed("user-id")
     }
 }
 
