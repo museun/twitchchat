@@ -25,7 +25,7 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
         msg.expect_command(IrcMessage::CAP)?;
 
         let this = Self {
-            capability: msg.expect_data()?,
+            capability: msg.expect_data_index()?,
             acknowledged: msg.expect_arg(1)? == ACK,
             raw: msg.raw,
         };
@@ -34,34 +34,22 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
     }
 }
 
-impl<'t> serde::Serialize for Cap<'t> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct as _;
-        let mut s = serializer.serialize_struct("Cap", 3)?;
-        s.serialize_field("raw", &self.raw)?;
-        s.serialize_field("capability", &self.raw[self.capability])?;
-        s.serialize_field("acknowledged", &self.acknowledged)?;
-        s.end()
-    }
-}
-
-impl<'t, 'de: 't> serde::Deserialize<'de> for Cap<'t> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_map(crate::ng::RawVisitor::new())
-    }
-}
+serde_struct!(Cap {
+    raw,
+    capability,
+    acknowledged,
+});
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ng::irc;
-    use irc::parse;
+
+    #[test]
+    fn cap_serde() {
+        let input = ":tmi.twitch.tv CAP * ACK :twitch.tv/membership\r\n";
+        crate::ng::serde::round_trip_json::<Cap>(input);
+    }
 
     #[test]
     fn cap_acknowledged() {
@@ -73,7 +61,7 @@ mod tests {
             "twitch.tv/tags",
             "twitch.tv/commands",
         ];
-        for (msg, expected) in parse(&input).map(|s| s.unwrap()).zip(expected) {
+        for (msg, expected) in irc::parse(&input).map(|s| s.unwrap()).zip(expected) {
             let msg = Cap::from_irc(msg).unwrap();
             assert!(msg.acknowledged());
             assert_eq!(msg.capability(), *expected);
@@ -83,7 +71,7 @@ mod tests {
     #[test]
     fn cap_failed() {
         let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
-        for msg in parse(input).map(|s| s.unwrap()) {
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
             let cap = Cap::from_irc(msg).unwrap();
             assert!(!cap.acknowledged());
             assert_eq!(cap.capability(), "foobar");

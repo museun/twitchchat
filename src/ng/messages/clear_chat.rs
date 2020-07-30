@@ -1,41 +1,77 @@
-use super::{AsOwned, FromIrcMessage, InvalidMessage, IrcMessage, Reborrow, Str, Validator};
-use crate::ng::Tags;
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
+use crate::ng::{TagIndices, Tags};
 
-/// When a user's message(s) have been purged.
-///
-/// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClearChat<'a> {
-    /// Tags attached to the message
-    pub tags: Tags<'a>,
-    /// The channel this event happened on
-    pub channel: Str<'a>,
-    /// The user, if any, that was being purged
-    pub name: Option<Str<'a>>,
+pub struct ClearChat<'t> {
+    raw: Str<'t>,
+    tags: TagIndices,
+    channel: StrIndex,
+    name: Option<StrIndex>,
 }
 
-impl<'a> ClearChat<'a> {
-    /// (Optional) Duration of the timeout, in seconds. If omitted, the ban is permanent.
+impl<'t> ClearChat<'t> {
+    raw!();
+    str_field!(channel);
+    opt_str_field!(name);
+    tags!();
+
     pub fn ban_duration(&self) -> Option<u64> {
-        self.tags.get_parsed("ban-duration")
+        self.tags().get_parsed("ban-duration")
     }
 }
 
-impl<'a> FromIrcMessage<'a> for ClearChat<'a> {
+impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error> {
-        msg.expect_command("CLEARCHAT")?;
-        Ok(Self {
+    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+        msg.expect_command(IrcMessage::CLEARCHAT)?;
+
+        let this = Self {
             tags: msg.parse_tags(),
-            channel: msg.expect_arg(0)?,
-            name: msg.expect_data().ok(),
-        })
+            channel: msg.expect_arg_index(0)?,
+            name: msg.data,
+            raw: msg.raw,
+        };
+
+        Ok(this)
     }
 }
 
-reborrow_and_asowned!(ClearChat {
+serde_struct!(ClearChat {
+    raw,
     tags,
     channel,
-    name,
+    name
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ng::irc;
+
+    #[test]
+    fn clear_chat_serde() {
+        let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
+        crate::ng::serde::round_trip_json::<ClearChat>(input);
+    }
+
+    #[test]
+    fn clear_chat() {
+        let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let cc = ClearChat::from_irc(msg).unwrap();
+            assert_eq!(cc.channel(), "#museun");
+            assert_eq!(cc.name().unwrap(), "shaken_bot");
+        }
+    }
+
+    #[test]
+    fn clear_chat_empty() {
+        let input = ":tmi.twitch.tv CLEARCHAT #museun\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let cc = ClearChat::from_irc(msg).unwrap();
+            assert_eq!(cc.channel(), "#museun");
+            assert!(cc.name().is_none());
+        }
+    }
+}

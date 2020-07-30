@@ -4,6 +4,7 @@ use std::convert::Infallible;
 #[allow(unused_macros)]
 macro_rules! raw {
     () => {
+        /// Get the raw message
         pub fn raw(&self) -> &str {
             &*self.raw
         }
@@ -20,10 +21,23 @@ macro_rules! str_field {
 }
 
 #[allow(unused_macros)]
+macro_rules! opt_str_field {
+    ($name:ident) => {
+        pub fn $name(&self) -> Option<&str> {
+            self.$name.map(|index| &self.raw[index])
+        }
+    };
+}
+
+#[allow(unused_macros)]
 macro_rules! tags {
     () => {
-        pub fn tags(&self) -> &Tags<'_> {
-            &self.tags
+        /// Get a view of parsable tags
+        pub fn tags(&self) -> Tags<'_> {
+            Tags {
+                data: &self.raw,
+                indices: &self.tags,
+            }
         }
     };
 }
@@ -57,7 +71,7 @@ pub trait FromIrcMessage<'a> {
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>
     where
-        Self: Sized + 'a;
+        Self: Sized;
 }
 
 impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
@@ -74,7 +88,8 @@ trait Validator {
     fn expect_nick(&self) -> Result<StrIndex, InvalidMessage>;
     fn expect_arg(&self, nth: usize) -> Result<&str, InvalidMessage>;
     fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, InvalidMessage>;
-    fn expect_data(&self) -> Result<StrIndex, InvalidMessage>;
+    fn expect_data(&self) -> Result<&str, InvalidMessage>;
+    fn expect_data_index(&self) -> Result<StrIndex, InvalidMessage>;
 }
 
 impl<'a> Validator for IrcMessage<'a> {
@@ -110,7 +125,11 @@ impl<'a> Validator for IrcMessage<'a> {
             .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
     }
 
-    fn expect_data(&self) -> Result<StrIndex, InvalidMessage> {
+    fn expect_data(&self) -> Result<&str, InvalidMessage> {
+        self.expect_data_index().map(|index| &self.raw[index])
+    }
+
+    fn expect_data_index(&self) -> Result<StrIndex, InvalidMessage> {
         self.data.ok_or_else(|| InvalidMessage::ExpectedData)
     }
 }
@@ -127,32 +146,32 @@ pub use ready::Ready;
 mod cap;
 pub use cap::Cap;
 
-// mod clear_chat;
-// pub use clear_chat::ClearChat;
+mod clear_chat;
+pub use clear_chat::ClearChat;
 
-// mod clear_msg;
-// pub use clear_msg::ClearMsg;
+mod clear_msg;
+pub use clear_msg::ClearMsg;
 
 // mod global_user_state;
 // pub use global_user_state::GlobalUserState;
 
-// mod host_target;
-// pub use host_target::HostTarget;
+mod host_target;
+pub use host_target::HostTarget;
 
-// mod join;
-// pub use join::Join;
+mod join;
+pub use join::Join;
 
-// mod notice;
-// pub use notice::Notice;
+mod notice;
+pub use notice::Notice;
 
-// mod part;
-// pub use part::Part;
+mod part;
+pub use part::Part;
 
-// mod ping;
-// pub use ping::Ping;
+mod ping;
+pub use ping::Ping;
 
-// mod pong;
-// pub use pong::Pong;
+mod pong;
+pub use pong::Pong;
 
 // mod privmsg;
 // pub use privmsg::Privmsg;

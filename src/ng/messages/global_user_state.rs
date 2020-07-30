@@ -1,5 +1,4 @@
-use super::{AsOwned, FromIrcMessage, InvalidMessage, IrcMessage, Reborrow, Str, Validator};
-use crate::ng::Tags;
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
 
 /// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, Clone, PartialEq)]

@@ -1,5 +1,7 @@
 #![cfg_attr(debug_assertions, allow(missing_docs, dead_code, unused_imports))]
 // this has to be first for the macro
+#[macro_use]
+mod serde;
 
 // mod dispatcher;
 // pub use dispatcher::{DispatchError, Dispatcher};
@@ -23,11 +25,12 @@ pub mod irc;
 pub use irc::{IrcMessage, Prefix, PrefixIndex, TagIndices, Tags};
 
 use messages::FromIrcMessage;
-use serde::de::{Error, IntoDeserializer, Visitor};
-use serde::Deserialize;
-use std::ops::{Deref, Index, Range};
+use std::{
+    fmt::Debug,
+    ops::{Deref, Index, Range},
+};
 
-#[derive(serde::Serialize)]
+#[derive(::serde::Serialize)]
 #[serde(untagged)]
 pub enum Str<'a> {
     Owned(Box<str>), // TODO make this an Arc
@@ -43,40 +46,7 @@ impl<'a> Str<'a> {
     }
 }
 
-impl<'a, 'de: 'a> Deserialize<'de> for Str<'a> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Default)]
-        struct V<'a>(std::marker::PhantomData<&'a ()>);
-
-        impl<'a, 'de: 'a> Visitor<'de> for V<'a> {
-            type Value = Str<'a>;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("a str")
-            }
-
-            fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
-                // have to move it because this isn't borrowed
-                Ok(v.to_string().into())
-            }
-
-            fn visit_borrowed_str<E: Error>(self, v: &'de str) -> Result<Self::Value, E> {
-                Ok(v.into())
-            }
-
-            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
-                Ok(v.into())
-            }
-        }
-
-        deserializer.deserialize_str(V::default())
-    }
-}
-
-impl<'a> std::fmt::Debug for Str<'a> {
+impl<'a> Debug for Str<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.as_ref().fmt(f)
     }
@@ -183,6 +153,22 @@ impl StrIndex {
         }
     }
 
+    pub fn offset_by(mut self, pos: usize) -> Self {
+        self.start += pos;
+        self.end += pos;
+        self
+    }
+
+    pub fn resize(mut self, len: usize) -> Self {
+        self.end = self.start + len;
+        self
+    }
+
+    pub fn truncate(mut self, len: usize) -> Self {
+        self.end -= len;
+        self
+    }
+
     pub fn replace(&mut self, pos: usize) -> StrIndex {
         std::mem::replace(self, Self::new(pos))
     }
@@ -199,64 +185,5 @@ impl StrIndex {
 
     pub fn as_range(self) -> Range<usize> {
         self.start..self.end
-    }
-}
-
-pub struct RawVisitor<'a, T: 'a + FromIrcMessage<'a>>(std::marker::PhantomData<&'a T>);
-
-impl<'a, T> RawVisitor<'a, T>
-where
-    T: 'a + FromIrcMessage<'a>,
-{
-    fn new() -> Self {
-        Self(std::marker::PhantomData)
-    }
-}
-
-impl<'a, 'de: 'a, T> Visitor<'de> for RawVisitor<'a, T>
-where
-    T: 'a + FromIrcMessage<'a>,
-    T::Error: std::error::Error,
-{
-    type Value = T;
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            formatter,
-            "expected to parse '{}'",
-            std::any::type_name::<T>()
-        )
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::MapAccess<'de>,
-    {
-        use serde::de::Error as _;
-        const RAW: &str = "raw";
-
-        let mut raw = None;
-        loop {
-            match map.next_entry::<&str, Str<'a>>() {
-                Ok(Some((k, v))) if k == RAW => {
-                    if raw.replace(v).is_some() {
-                        return Err(A::Error::duplicate_field(RAW));
-                    }
-                }
-                Ok(None) => break,
-                // TODO maybe log the ignored error to make debugging easier
-                _ => continue,
-            };
-        }
-
-        let raw = raw.ok_or_else(|| A::Error::missing_field(RAW))?;
-        let irc = IrcMessage::parse(raw);
-
-        T::from_irc(irc).map_err(|err| {
-            A::Error::custom(format!(
-                "cannot parse '{}' because: {}",
-                std::any::type_name::<T>(),
-                err
-            ))
-        })
     }
 }

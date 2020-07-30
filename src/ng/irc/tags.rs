@@ -2,14 +2,14 @@ use super::super::{Str, StrIndex};
 use std::{borrow::Borrow, str::FromStr};
 
 #[derive(Clone)]
-pub struct Tags<'a, 'b> {
-    data: &'a Str<'a>,
-    indices: &'b TagIndices,
+pub struct Tags<'a> {
+    pub(crate) data: &'a Str<'a>,
+    pub(crate) indices: &'a TagIndices,
 }
 
-impl<'a, 'b> Tags<'a, 'b> {
+impl<'a> Tags<'a> {
     // TODO return a Str or a str?
-    pub fn get<K>(&self, key: &K) -> Option<&'_ str>
+    pub fn get<K>(&self, key: &K) -> Option<&'a str>
     where
         K: ?Sized + Borrow<str>,
     {
@@ -39,7 +39,7 @@ impl<'a, 'b> Tags<'a, 'b> {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ str)> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
         self.indices.iter(&self.data)
     }
 
@@ -48,7 +48,21 @@ impl<'a, 'b> Tags<'a, 'b> {
     }
 }
 
-#[derive(Default, Clone)]
+impl<'a> serde::Serialize for Tags<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap as _;
+        let mut map = serializer.serialize_map(Some(self.indices.map.len()))?;
+        for (k, v) in self.iter() {
+            map.serialize_entry(k, v)?;
+        }
+        map.end()
+    }
+}
+
+#[derive(Default, Clone, PartialEq)]
 pub struct TagIndices {
     map: Vec<(StrIndex, StrIndex)>,
 }
