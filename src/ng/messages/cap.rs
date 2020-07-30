@@ -1,4 +1,5 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
+use super::{IrcMessage, Str, StrIndex};
+use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cap<'t> {

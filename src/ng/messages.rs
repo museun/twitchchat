@@ -1,7 +1,5 @@
-use super::{IrcMessage, Str, StrIndex, TagIndices};
-use std::convert::Infallible;
+use super::{IrcMessage, Str, StrIndex};
 
-#[allow(unused_macros)]
 macro_rules! raw {
     () => {
         /// Get the raw message
@@ -16,7 +14,6 @@ macro_rules! raw {
     };
 }
 
-#[allow(unused_macros)]
 macro_rules! str_field {
     ($name:ident) => {
         pub fn $name(&self) -> &str {
@@ -25,7 +22,6 @@ macro_rules! str_field {
     };
 }
 
-#[allow(unused_macros)]
 macro_rules! opt_str_field {
     ($name:ident) => {
         pub fn $name(&self) -> Option<&str> {
@@ -34,7 +30,6 @@ macro_rules! opt_str_field {
     };
 }
 
-#[allow(unused_macros)]
 macro_rules! tags {
     () => {
         /// Get a view of parsable tags
@@ -45,94 +40,6 @@ macro_rules! tags {
             }
         }
     };
-}
-
-#[derive(Debug)]
-pub enum InvalidMessage {
-    InvalidCommand { expected: String, got: String },
-    ExpectedNick,
-
-    ExpectedArg { pos: usize },
-    ExpectedData,
-}
-
-impl std::fmt::Display for InvalidMessage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidCommand { expected, got } => {
-                write!(f, "invalid command. expected '{}' got '{}'", expected, got)
-            }
-            Self::ExpectedNick => write!(f, "expected a nickname attached to that message"),
-            Self::ExpectedArg { pos } => write!(f, "expected arg at position: {}", pos),
-            Self::ExpectedData => write!(f, "expected a data segment in the message"),
-        }
-    }
-}
-
-impl std::error::Error for InvalidMessage {}
-
-pub trait FromIrcMessage<'a>: Sized {
-    type Error;
-    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>;
-}
-
-impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
-    type Error = Infallible;
-    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
-        Ok(msg)
-    }
-}
-
-trait Validator {
-    fn parse_tags(&self) -> TagIndices;
-    fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage>;
-    fn expect_nick(&self) -> Result<StrIndex, InvalidMessage>;
-    fn expect_arg(&self, nth: usize) -> Result<&str, InvalidMessage>;
-    fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, InvalidMessage>;
-    fn expect_data(&self) -> Result<&str, InvalidMessage>;
-    fn expect_data_index(&self) -> Result<StrIndex, InvalidMessage>;
-}
-
-impl<'a> Validator for IrcMessage<'a> {
-    fn parse_tags(&self) -> TagIndices {
-        self.tags
-            .map(|index| TagIndices::parse(&self.raw[index]))
-            .unwrap_or_default()
-    }
-
-    fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage> {
-        if self.get_command() != cmd {
-            return Err(InvalidMessage::InvalidCommand {
-                expected: cmd.to_string(),
-                got: self.get_command().to_string(),
-            });
-        }
-        Ok(())
-    }
-
-    fn expect_nick(&self) -> Result<StrIndex, InvalidMessage> {
-        self.prefix
-            .and_then(|p| p.nick_index())
-            .ok_or_else(|| InvalidMessage::ExpectedNick)
-    }
-
-    fn expect_arg(&self, nth: usize) -> Result<&str, InvalidMessage> {
-        self.nth_arg(nth)
-            .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
-    }
-
-    fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, InvalidMessage> {
-        self.nth_arg_index(nth)
-            .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
-    }
-
-    fn expect_data(&self) -> Result<&str, InvalidMessage> {
-        self.expect_data_index().map(|index| &self.raw[index])
-    }
-
-    fn expect_data_index(&self) -> Result<StrIndex, InvalidMessage> {
-        self.data.ok_or_else(|| InvalidMessage::ExpectedData)
-    }
 }
 
 mod all_commands;

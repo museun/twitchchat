@@ -1,5 +1,5 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
-use crate::ng::{TagIndices, Tags};
+use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
+use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClearChat<'t> {
