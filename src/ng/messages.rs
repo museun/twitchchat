@@ -66,17 +66,13 @@ impl std::fmt::Display for InvalidMessage {
 
 impl std::error::Error for InvalidMessage {}
 
-pub trait FromIrcMessage<'a> {
+pub trait FromIrcMessage<'a>: Sized {
     type Error;
-
-    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>
-    where
-        Self: Sized;
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>;
 }
 
 impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
     type Error = Infallible;
-
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         Ok(msg)
     }
@@ -176,8 +172,8 @@ pub use pong::Pong;
 // mod privmsg;
 // pub use privmsg::Privmsg;
 
-// mod reconnect;
-// pub use reconnect::Reconnect;
+mod reconnect;
+pub use reconnect::Reconnect;
 
 // mod room_state;
 // pub use room_state::RoomState;
@@ -185,8 +181,8 @@ pub use pong::Pong;
 // mod user_notice;
 // pub use user_notice::UserNotice;
 
-// mod user_state;
-// pub use user_state::UserState;
+mod user_state;
+pub use user_state::UserState;
 
 // mod whisper;
 // pub use whisper::Whisper;

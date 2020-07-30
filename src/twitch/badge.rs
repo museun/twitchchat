@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 /// The kind of the [badges] that are associated with messages.
 ///
 /// Any unknonw (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.
@@ -8,7 +6,8 @@ use std::borrow::Cow;
 /// [Unknown]: ./enum.BadgeKind.html#variant.Unknown
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+//
+#[derive(::serde::Serialize, ::serde::Deserialize)]
 pub enum BadgeKind<'t> {
     /// Admin badge
     Admin,
@@ -33,12 +32,13 @@ pub enum BadgeKind<'t> {
     /// Partner badge
     Partner,
     /// Unknown badge. Likely a custom badge
-    Unknown(Cow<'t, str>),
+    Unknown(&'t str),
 }
 
 /// Badges attached to a message
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+//
+#[derive(::serde::Serialize, ::serde::Deserialize)]
 pub struct Badge<'t> {
     /// The kind of the Badge
     pub kind: BadgeKind<'t>,
@@ -49,7 +49,7 @@ pub struct Badge<'t> {
     /// - number of bits
     /// - number of months needed for sub badge
     /// - etc
-    pub data: Cow<'t, str>,
+    pub data: &'t str,
 }
 
 impl<'t> Badge<'t> {
@@ -69,12 +69,10 @@ impl<'t> Badge<'t> {
             "premium" => Premium,
             "vip" => VIP,
             "partner" => Partner,
-            badge => Unknown(Cow::Borrowed(badge)),
+            badge => Unknown(badge),
         };
-        iter.next().map(|data| Badge {
-            kind,
-            data: Cow::Borrowed(data),
-        })
+
+        iter.next().map(|data| Badge { kind, data })
     }
 }
 
