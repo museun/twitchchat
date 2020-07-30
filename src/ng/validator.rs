@@ -1,6 +1,7 @@
 use crate::ng::{InvalidMessage, IrcMessage, StrIndex, TagIndices};
 
 pub trait Validator {
+    // TODO this is a bad name
     fn parse_tags(&self) -> TagIndices;
     fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage>;
     fn expect_nick(&self) -> Result<StrIndex, InvalidMessage>;

@@ -1,5 +1,6 @@
 use super::{IrcMessage, Str, StrIndex};
 
+// TODO get rid of these macros
 macro_rules! raw {
     () => {
         /// Get the raw message
@@ -87,8 +88,8 @@ pub use pong::Pong;
 mod reconnect;
 pub use reconnect::Reconnect;
 
-// mod room_state;
-// pub use room_state::RoomState;
+mod room_state;
+pub use room_state::RoomState;
 
 // mod user_notice;
 // pub use user_notice::UserNotice;
