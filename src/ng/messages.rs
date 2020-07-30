@@ -97,5 +97,5 @@ pub use room_state::RoomState;
 mod user_state;
 pub use user_state::UserState;
 
-// mod whisper;
-// pub use whisper::Whisper;
+mod whisper;
+pub use whisper::Whisper;
