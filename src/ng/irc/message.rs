@@ -109,7 +109,7 @@ impl<'a> IrcMessage<'a> {
     pub const CLEARCHAT: &'static str = "CLEARCHAT";
     pub const CLEARMSG: &'static str = "CLEARMSG";
     pub const GLOBALUSERSTATE: &'static str = "GLOBALUSERSTATE";
-    pub const HOSTTARGET: &'static str = "HOSTARGET";
+    pub const HOSTTARGET: &'static str = "HOSTTARGET";
     pub const JOIN: &'static str = "JOIN";
     pub const NOTICE: &'static str = "NOTICE";
     pub const PART: &'static str = "PART";

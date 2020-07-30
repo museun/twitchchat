@@ -26,32 +26,18 @@ impl<'t> FromIrcMessage<'t> for IrcReady<'t> {
     }
 }
 
-impl<'t> serde::Serialize for IrcReady<'t> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct as _;
-        let mut s = serializer.serialize_struct("IrcReady", 3)?;
-        s.serialize_field("raw", &self.raw)?;
-        s.serialize_field("nickname", &self.raw[self.nickname])?;
-        s.end()
-    }
-}
-
-impl<'t, 'de: 't> serde::Deserialize<'de> for IrcReady<'t> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_map(crate::ng::RawVisitor::new())
-    }
-}
+serde_struct!(IrcReady { raw, nickname });
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ng::irc;
+
+    #[test]
+    fn irc_ready_serde() {
+        let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
+        crate::ng::serde::round_trip_json::<IrcReady>(input);
+    }
 
     #[test]
     fn irc_ready() {

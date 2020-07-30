@@ -1,46 +1,81 @@
-use super::{AsOwned, FromIrcMessage, InvalidMessage, IrcMessage, Reborrow, Str, Validator};
-use crate::ng::Tags;
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
+use crate::ng::{TagIndices, Tags};
 
-/// When a single message has been removed from a channel.
-///
-/// This is triggered via /delete on IRC.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClearMsg<'a> {
-    /// Tags attached to the message
-    pub tags: Tags<'a>,
-    /// The channel this event happened on
-    pub channel: Str<'a>,
-    /// The message that was deleted
-    pub message: Option<Str<'a>>,
+pub struct ClearMsg<'t> {
+    raw: Str<'t>,
+    tags: TagIndices,
+    channel: StrIndex,
+    message: Option<StrIndex>,
 }
 
-impl<'a> ClearMsg<'a> {
-    /// Name of the user who sent the message
-    pub fn login(&'a self) -> Option<Str<'a>> {
-        self.tags.get("login")
+impl<'t> ClearMsg<'t> {
+    raw!();
+    tags!();
+    str_field!(channel);
+    opt_str_field!(message);
+
+    pub fn login(&self) -> Option<&str> {
+        self.tags().get("login")
     }
 
-    /// UUID of the message
-    pub fn target_msg_id(&'a self) -> Option<Str<'a>> {
-        self.tags.get("target-msg-id")
+    pub fn target_msg_id(&self) -> Option<&str> {
+        self.tags().get("target-msg-id")
     }
 }
 
-impl<'a> FromIrcMessage<'a> for ClearMsg<'a> {
+impl<'t> FromIrcMessage<'t> for ClearMsg<'t> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: &'a IrcMessage<'a>) -> Result<Self, Self::Error> {
-        msg.expect_command("CLEARMSG")?;
-        Ok(Self {
+    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+        msg.expect_command(IrcMessage::CLEARMSG)?;
+
+        let this = Self {
             tags: msg.parse_tags(),
-            channel: msg.expect_arg(0)?,
-            message: msg.expect_data().ok(),
-        })
+            channel: msg.expect_arg_index(0)?,
+            message: msg.data,
+            raw: msg.raw,
+        };
+
+        Ok(this)
     }
 }
 
-reborrow_and_asowned!(ClearMsg {
+serde_struct!(ClearMsg {
+    raw,
     tags,
     channel,
     message,
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ng::irc;
+
+    #[test]
+    fn clear_msg_serde() {
+        let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
+        crate::ng::serde::round_trip_json::<ClearMsg>(input);
+    }
+
+    #[test]
+    fn clear_msg() {
+        let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let cm = ClearMsg::from_irc(msg).unwrap();
+            assert_eq!(cm.channel(), "#museun");
+            assert_eq!(cm.message().unwrap(), "HeyGuys");
+        }
+    }
+
+    #[test]
+    fn clear_msg_empty() {
+        let input = ":tmi.twitch.tv CLEARMSG #museun\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let cm = ClearMsg::from_irc(msg).unwrap();
+            assert_eq!(cm.channel(), "#museun");
+            assert!(cm.message().is_none());
+        }
+    }
+}
