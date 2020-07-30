@@ -11,13 +11,8 @@ pub struct Cap<'t> {
 }
 
 impl<'t> Cap<'t> {
-    pub fn raw(&self) -> &str {
-        &*self.raw
-    }
-
-    pub fn capability(&self) -> &str {
-        &self.raw[self.capability]
-    }
+    raw!();
+    str_field!(capability);
 
     pub fn acknowledged(&self) -> bool {
         self.acknowledged

@@ -2,6 +2,24 @@ use super::{IrcMessage, Prefix, PrefixIndex, Str, StrIndex, TagIndices, Tags};
 use std::convert::Infallible;
 
 #[allow(unused_macros)]
+macro_rules! raw {
+    () => {
+        pub fn raw(&self) -> &str {
+            &*self.raw
+        }
+    };
+}
+
+#[allow(unused_macros)]
+macro_rules! str_field {
+    ($name:ident) => {
+        pub fn $name(&self) -> &str {
+            &self.raw[self.$name]
+        }
+    };
+}
+
+#[allow(unused_macros)]
 macro_rules! tags {
     () => {
         pub fn tags(&self) -> &Tags<'_> {
@@ -55,6 +73,7 @@ trait Validator {
     fn expect_command(&self, cmd: &str) -> Result<(), InvalidMessage>;
     fn expect_nick(&self) -> Result<StrIndex, InvalidMessage>;
     fn expect_arg(&self, nth: usize) -> Result<&str, InvalidMessage>;
+    fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, InvalidMessage>;
     fn expect_data(&self) -> Result<StrIndex, InvalidMessage>;
 }
 
@@ -83,6 +102,11 @@ impl<'a> Validator for IrcMessage<'a> {
 
     fn expect_arg(&self, nth: usize) -> Result<&str, InvalidMessage> {
         self.nth_arg(nth)
+            .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
+    }
+
+    fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, InvalidMessage> {
+        self.nth_arg_index(nth)
             .ok_or_else(|| InvalidMessage::ExpectedArg { pos: nth })
     }
 
