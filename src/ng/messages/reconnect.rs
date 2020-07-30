@@ -1,4 +1,4 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
+use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, Validator};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reconnect<'t> {
