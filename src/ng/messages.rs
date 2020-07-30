@@ -82,8 +82,8 @@ pub use ping::Ping;
 mod pong;
 pub use pong::Pong;
 
-// mod privmsg;
-// pub use privmsg::Privmsg;
+mod privmsg;
+pub use privmsg::Privmsg;
 
 mod reconnect;
 pub use reconnect::Reconnect;
