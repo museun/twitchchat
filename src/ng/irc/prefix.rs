@@ -21,7 +21,7 @@ impl<'a> Prefix<'a> {
         matches!(self.index, PrefixIndex::User{ .. })
     }
 
-    pub fn get_prefix(&self) -> &'a str {
+    pub fn get_raw_prefix(&self) -> &'a str {
         &self.data[self.index.as_index()]
     }
 
