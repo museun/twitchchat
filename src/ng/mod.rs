@@ -24,11 +24,11 @@ mod from_irc_message;
 pub use from_irc_message::{FromIrcMessage, InvalidMessage};
 
 pub mod irc;
-pub use irc::{IrcMessage, Prefix, PrefixIndex, TagIndices, Tags};
+use irc::{IrcMessage, TagIndices, Tags};
 
 mod maybe_owned;
 pub use maybe_owned::{MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
 
 pub mod validator;
 // TODO hide this ?
-pub use validator::Validator;
+use validator::Validator;
