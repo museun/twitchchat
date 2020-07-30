@@ -1,4 +1,5 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, Validator};
+use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
+use crate::ng::{IrcMessage, Str};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reconnect<'t> {

@@ -1,9 +1,7 @@
-use super::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, Validator};
-use crate::{
-    color::Color,
-    ng::{TagIndices, Tags},
-    parse_badges, parse_emotes, Badge, BadgeInfo, Emotes,
-};
+use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
+use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
+
+use crate::{color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserState<'t> {

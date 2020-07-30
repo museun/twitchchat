@@ -1,4 +1,5 @@
 use super::*;
+use crate::ng::{FromIrcMessage, InvalidMessage};
 
 pub enum AllCommands<'a> {
     Raw(IrcMessage<'a>),
