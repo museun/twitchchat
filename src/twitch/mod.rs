@@ -3,11 +3,11 @@
 mod capability;
 pub use capability::Capability;
 
-mod userconfig;
-pub use userconfig::{UserConfig, UserConfigBuilder, UserConfigError};
+// mod userconfig;
+// pub use userconfig::{UserConfig, UserConfigBuilder, UserConfigError};
 
-mod tags;
-pub use tags::Tags;
+// mod tags;
+// pub use tags::Tags;
 
 mod emotes;
 pub use emotes::Emotes;

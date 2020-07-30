@@ -53,10 +53,9 @@
 
 // pub use encode::{AsyncMpscWriter, AsyncWriter as Writer};
 
-// pub mod twitch;
-
+pub mod twitch;
 // #[doc(inline)]
-// pub use twitch::*;
+pub use twitch::*;
 
 // pub mod events;
 
@@ -134,4 +133,4 @@
 // pub mod native_tls;
 
 // TODO WIP
-mod ng;
+pub mod ng;
