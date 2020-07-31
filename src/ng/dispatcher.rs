@@ -57,8 +57,7 @@ impl Dispatcher {
     }
 
     pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
-        let inner = self.map.register();
-        EventStream { inner }
+        self.map.register()
     }
 
     pub fn dispatch<'a>(&mut self, message: IrcMessage<'a>) -> Result<(), DispatchError> {
@@ -105,7 +104,7 @@ impl Dispatcher {
     }
 
     pub fn reset(&mut self) {
-        std::mem::take(&mut self.map);
+        self.map.reset()
     }
 
     fn dispatch_static<T>(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError>

@@ -26,6 +26,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 log = "0.4.11"
 serde = { version = "1.0.114", optional = true, features = ["derive"] }
 
+simple_event_map = "0.1.0"
+
 # internal stuff
 async-channel    = "1.4.0"
 async-mutex      = "1.1.5"

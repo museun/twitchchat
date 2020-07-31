@@ -40,11 +40,8 @@ macro_rules! serde_struct {
 mod dispatcher;
 pub use dispatcher::{DispatchError, Dispatcher};
 
-mod event_map;
-pub use event_map::{EventMap, Senders};
-
-mod event_stream;
-pub use event_stream::EventStream;
+// a public dep
+pub use simple_event_map::{EventMap, EventStream};
 
 mod encoder;
 pub use encoder::{AsyncEncoder, Encodable, Encoder};
