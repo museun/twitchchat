@@ -20,6 +20,8 @@ pub mod color;
 mod channel;
 pub use channel::{Channel, Error as ChannelError, IntoChannel};
 
+// TODO provide an iterator as well as the Vec
+
 pub(crate) fn parse_emotes(input: &str) -> Vec<Emotes> {
     Emotes::parse(input).collect()
 }
