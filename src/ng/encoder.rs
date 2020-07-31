@@ -9,6 +9,40 @@ pub trait Encodable {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()>;
 }
 
+impl<T> Encodable for &T
+where
+    T: Encodable + ?Sized,
+{
+    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+        <_ as Encodable>::encode(*self, buf)
+    }
+}
+
+// TODO should these check for an \r\n and add it?
+impl Encodable for str {
+    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+        buf.write_all(self.as_bytes())
+    }
+}
+
+impl Encodable for String {
+    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+        buf.write_all(self.as_bytes())
+    }
+}
+
+impl Encodable for [u8] {
+    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+        buf.write_all(self)
+    }
+}
+
+impl Encodable for Vec<u8> {
+    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+        buf.write_all(self)
+    }
+}
+
 pub struct Encoder<W> {
     writer: W,
 }
@@ -157,5 +191,21 @@ mod tests {
 
         let s = std::str::from_utf8(&output).unwrap();
         assert_eq!(s, "JOIN #museun\r\nJOIN #shaken_bot\r\n");
+    }
+
+    #[test]
+    fn encodable_builtin() {
+        fn check<T: Encodable + AsRef<[u8]> + ?Sized>(input: &T) {
+            let mut output = vec![];
+            let mut encoder = Encoder::new(&mut output);
+            encoder.encode(input).unwrap();
+            assert_eq!(output, input.as_ref());
+        }
+
+        let input = "hello world\r\n";
+        check(&input);
+        check(&input.to_string());
+        check(&input.as_bytes());
+        check(&input.as_bytes().to_vec());
     }
 }
