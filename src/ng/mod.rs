@@ -11,8 +11,8 @@ mod serde;
 // mod event_stream;
 // pub use event_stream::EventStream;
 
-// mod encoder;
-// pub use encoder::{AsyncEncoder, Encodable, Encoder};
+mod encoder;
+pub use encoder::{AsyncEncoder, Encodable, Encoder};
 
 // pub mod commands;
 pub mod messages;
