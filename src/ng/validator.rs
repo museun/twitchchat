@@ -14,7 +14,7 @@ pub trait Validator {
 impl<'a> Validator for IrcMessage<'a> {
     fn parse_tags(&self) -> TagIndices {
         self.tags
-            .map(|index| TagIndices::parse(&self.raw[index]))
+            .map(|index| TagIndices::build_indices(&self.raw[index]))
             .unwrap_or_default()
     }
 
