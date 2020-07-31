@@ -86,7 +86,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn user_state_serde() {
         let input = "@badges=bits/1000;badge-info=moderator :tmi.twitch.tv USERSTATE #museun\r\n";
-        crate::ng::round_trip_json::<UserState>(input);
+        crate::ng::serde::round_trip_json::<UserState>(input);
     }
 
     #[test]

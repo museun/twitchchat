@@ -193,6 +193,6 @@ mod tests {
     #[cfg(feature = "serde")]
     fn irc_message_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        crate::ng::round_trip_json::<super::IrcMessage>(input);
+        crate::ng::serde::round_trip_json::<super::IrcMessage>(input);
     }
 }

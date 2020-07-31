@@ -41,7 +41,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn join_serde() {
         let input = ":test!test@test JOIN #foo\r\n";
-        crate::ng::round_trip_json::<Join>(input);
+        crate::ng::serde::round_trip_json::<Join>(input);
     }
 
     #[test]

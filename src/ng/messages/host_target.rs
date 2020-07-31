@@ -83,7 +83,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn host_target_serde() {
         let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :museun 1024\r\n";
-        crate::ng::round_trip_json::<HostTarget>(input);
+        crate::ng::serde::round_trip_json::<HostTarget>(input);
     }
 
     #[test]

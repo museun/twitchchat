@@ -70,7 +70,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn all_commands_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        crate::ng::round_trip_json::<AllCommands>(input);
+        crate::ng::serde::round_trip_json::<AllCommands>(input);
     }
 
     #[test]

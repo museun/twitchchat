@@ -560,7 +560,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn notice_serde() {
         let input = "@msg-id=tos_ban :tmi.twitch.tv NOTICE #museun :TOS ban.\r\n";
-        crate::ng::round_trip_json::<Notice>(input);
+        crate::ng::serde::round_trip_json::<Notice>(input);
     }
 
     #[test]

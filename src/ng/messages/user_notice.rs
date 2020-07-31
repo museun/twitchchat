@@ -252,7 +252,7 @@ mod tests {
         ];
 
         for input in input {
-            crate::ng::round_trip_json::<UserNotice>(input);
+            crate::ng::serde::round_trip_json::<UserNotice>(input);
         }
     }
 

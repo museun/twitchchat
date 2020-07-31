@@ -38,7 +38,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn ready_serde() {
         let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
-        crate::ng::round_trip_json::<Ready>(input);
+        crate::ng::serde::round_trip_json::<Ready>(input);
     }
 
     #[test]

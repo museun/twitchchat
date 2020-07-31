@@ -50,8 +50,8 @@ pin-project-lite = "0.1.7"
 # crossbeam-channel = { version = "0.4.3", optional = true }
 
 [dev-dependencies]
-tokio       = { version = "0.2.22", features = ["test-util", "macros"] }
-tokio-test  = "0.2.1"
+tokio       = { version = "0.2.22", features = ["test-util", "macros"] } # replace this
+tokio-test  = "0.2.1"                                                    # replace this
 doc-comment = "0.3.3"
 serde_json  = "1.0.57"
 serde       = { version = "1.0", features = ["derive"] }

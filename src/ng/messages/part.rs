@@ -41,7 +41,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn part_serde() {
         let input = ":test!test@test PART #museun\r\n";
-        crate::ng::round_trip_json::<Part>(input);
+        crate::ng::serde::round_trip_json::<Part>(input);
     }
 
     #[test]

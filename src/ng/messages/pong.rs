@@ -38,7 +38,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn pong_serde() {
         let input = "PONG :1234567890\r\n";
-        crate::ng::round_trip_json::<Pong>(input);
+        crate::ng::serde::round_trip_json::<Pong>(input);
     }
 
     #[test]
