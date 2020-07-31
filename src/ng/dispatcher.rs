@@ -52,6 +52,10 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
         let inner = self.map.register();
         EventStream { inner }
