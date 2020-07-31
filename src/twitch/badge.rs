@@ -6,8 +6,7 @@
 /// [Unknown]: ./enum.BadgeKind.html#variant.Unknown
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum BadgeKind<'t> {
     /// Admin badge
     Admin,
@@ -37,8 +36,7 @@ pub enum BadgeKind<'t> {
 
 /// Badges attached to a message
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Badge<'t> {
     /// The kind of the Badge
     pub kind: BadgeKind<'t>,

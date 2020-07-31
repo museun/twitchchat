@@ -54,9 +54,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn clear_msg_serde() {
         let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
-        crate::ng::serde::round_trip_json::<ClearMsg>(input);
+        crate::ng::round_trip_json::<ClearMsg>(input);
     }
 
     #[test]

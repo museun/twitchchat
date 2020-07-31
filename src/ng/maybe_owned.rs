@@ -3,8 +3,7 @@ use std::{
     ops::{Deref, Index, Range},
 };
 
-#[derive(::serde::Serialize)]
-#[serde(untagged)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize), serde(untagged))]
 pub enum MaybeOwned<'a> {
     Owned(Box<str>), // TODO make this an Arc
     Borrowed(&'a str),

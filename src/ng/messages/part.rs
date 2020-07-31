@@ -38,9 +38,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn part_serde() {
         let input = ":test!test@test PART #museun\r\n";
-        crate::ng::serde::round_trip_json::<Part>(input);
+        crate::ng::round_trip_json::<Part>(input);
     }
 
     #[test]

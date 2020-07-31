@@ -134,6 +134,7 @@ impl RGB {
     }
 }
 
+#[cfg(feature = "serde")]
 impl serde::Serialize for RGB {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -149,6 +150,7 @@ impl serde::Serialize for RGB {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for RGB {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -197,8 +199,7 @@ These can be [parsed] from their **name** in
 [parsed]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 */
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
-//
-#[derive(serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Color {
     /// The name of the Twitch color
     pub kind: TwitchColor,
@@ -292,8 +293,7 @@ impl std::fmt::Display for Color {
 /// Named Twitch colors
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
-//
-#[derive(serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum TwitchColor {
     /// RGB (hex): `#0000FF`
     Blue,
