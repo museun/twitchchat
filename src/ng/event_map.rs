@@ -4,6 +4,7 @@ use async_channel::TrySendError;
 use std::{
     any::{Any, TypeId},
     collections::{BTreeSet, HashMap},
+    marker::PhantomData,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -30,7 +31,7 @@ impl EventMap {
 
     pub fn send<T: Clone + 'static>(&mut self, msg: T) {
         let mut bad = BTreeSet::new();
-        if let Some(handlers) = self.get::<T>() {
+        if let Some(handlers) = self.get_senders::<T>() {
             for (id, handler) in handlers {
                 match handler.send(msg.clone()) {
                     Err(TrySendError::Closed(_)) => {
@@ -53,16 +54,11 @@ impl EventMap {
     }
 
     // TODO should this be public?
-    pub fn get<T: 'static>(&self) -> Option<impl Iterator<Item = (Id, Sender<T>)> + '_> {
-        let list = self.inner.get(&TypeId::of::<T>())?;
-
-        let iter = list.iter().flat_map(|(id, d)| {
-            // TODO this should assert that it still exists
-            let sender = d.downcast_ref().cloned()?;
-            Some((*id, sender))
-        });
-
-        Some(iter)
+    pub fn get_senders<T: 'static>(&self) -> Option<Senders<'_, T>> {
+        self.inner.get(&TypeId::of::<T>()).map(|list| Senders {
+            inner: list.iter(),
+            marker: PhantomData,
+        })
     }
 
     // BTreeSet because it doesn't allocate if its empty, a HashSet will allocate like 4 pointers no matter what
@@ -80,5 +76,21 @@ impl EventMap {
             // inverted so we remove them
             inner.retain(|(id, _)| !values.remove(&id))
         }
+    }
+}
+
+pub struct Senders<'a, T: 'static> {
+    inner: std::slice::Iter<'a, (Id, Box<dyn Any>)>,
+    marker: PhantomData<T>,
+}
+
+impl<'a, T: 'static> Iterator for Senders<'a, T> {
+    type Item = (Id, Sender<T>);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().and_then(|(id, d)| {
+            // TODO this should assert that it still exists
+            let sender = d.downcast_ref::<Sender<T>>().cloned()?;
+            Some((*id, sender))
+        })
     }
 }

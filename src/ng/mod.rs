@@ -41,7 +41,7 @@ mod dispatcher;
 pub use dispatcher::{DispatchError, Dispatcher};
 
 mod event_map;
-pub use event_map::EventMap;
+pub use event_map::{EventMap, Senders};
 
 mod event_stream;
 pub use event_stream::EventStream;
