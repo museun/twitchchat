@@ -40,7 +40,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn user_state_serde() {
         let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
-        crate::ng::round_trip_json::<RoomState>(input);
+        crate::ng::serde::round_trip_json::<RoomState>(input);
     }
 
     #[test]

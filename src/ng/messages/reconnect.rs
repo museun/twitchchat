@@ -30,7 +30,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn reconnect_serde() {
         let input = ":tmi.twitch.tv RECONNECT\r\n";
-        crate::ng::round_trip_json::<Reconnect>(input);
+        crate::ng::serde::round_trip_json::<Reconnect>(input);
     }
 
     #[test]
