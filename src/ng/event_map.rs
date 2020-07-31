@@ -3,7 +3,7 @@ use super::{channel, Receiver, Sender};
 use async_channel::TrySendError;
 use std::{
     any::{Any, TypeId},
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -29,7 +29,7 @@ impl EventMap {
     }
 
     pub fn send<T: Clone + 'static>(&mut self, msg: T) {
-        let mut bad = HashSet::new();
+        let mut bad = BTreeSet::new();
         if let Some(handlers) = self.get::<T>() {
             for (id, handler) in handlers {
                 match handler.send(msg.clone()) {
@@ -52,15 +52,25 @@ impl EventMap {
             .unwrap_or_default()
     }
 
+    // TODO should this be public?
     pub fn get<T: 'static>(&self) -> Option<impl Iterator<Item = (Id, Sender<T>)> + '_> {
-        // TODO debug assert our lengths are the same
-        self.inner.get(&TypeId::of::<T>()).map(|list| {
-            list.iter()
-                .flat_map(|(id, d)| d.downcast_ref::<Sender<T>>().cloned().map(|t| (*id, t)))
-        })
+        let list = self.inner.get(&TypeId::of::<T>())?;
+
+        let iter = list.iter().flat_map(|(id, d)| {
+            // TODO this should assert that it still exists
+            let sender = d.downcast_ref().cloned()?;
+            Some((*id, sender))
+        });
+
+        Some(iter)
     }
 
-    pub(crate) fn remove<T: 'static>(&mut self, mut values: HashSet<Id>) {
+    // BTreeSet because it doesn't allocate if its empty, a HashSet will allocate like 4 pointers no matter what
+    // a Vec with dedup might be more efficient, but that'd require some benchmarking
+    //
+    // but we use Set::remove(item) rather than Set::remove(index).
+    // the Id isn't always the index into the vec
+    pub(crate) fn remove<T: 'static>(&mut self, mut values: BTreeSet<Id>) {
         if values.is_empty() {
             // quick path because remove is called every dispatch
             return;
