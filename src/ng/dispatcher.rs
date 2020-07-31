@@ -7,6 +7,31 @@ use std::convert::Infallible;
 #[non_exhaustive]
 pub enum DispatchError {
     InvalidMessage(InvalidMessage),
+    Custom(Box<dyn std::error::Error>),
+}
+
+impl DispatchError {
+    pub fn custom(err: impl std::error::Error + 'static) -> Self {
+        Self::Custom(Box::new(err))
+    }
+}
+
+impl std::fmt::Display for DispatchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidMessage(err) => write!(f, "invalid message: {}", err),
+            Self::Custom(err) => write!(f, "unknown error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for DispatchError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidMessage(err) => Some(err),
+            Self::Custom(err) => Some(&**err),
+        }
+    }
 }
 
 impl From<InvalidMessage> for DispatchError {
