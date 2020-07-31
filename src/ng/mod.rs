@@ -46,11 +46,11 @@ pub use simple_event_map::{EventMap, EventStream};
 mod encoder;
 pub use encoder::{AsyncEncoder, Encodable, Encoder};
 
-// pub mod commands;
+pub mod commands;
 pub mod messages;
 
-pub mod channel;
-pub use channel::{Receiver, Sender};
+// do we want to expose this?
+mod channel;
 
 mod from_irc_message;
 pub use from_irc_message::{FromIrcMessage, InvalidMessage};
