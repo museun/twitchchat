@@ -1,9 +1,7 @@
-use super::{
-    messages::{AllCommands, Cap, FromIrcMessage, InvalidMessage},
-    AsOwned, EventMap, EventStream, IrcMessage,
-};
+use super::messages::*;
+use super::{EventMap, EventStream, FromIrcMessage, InvalidMessage, IrcMessage};
 
-use std::{convert::Infallible, sync::Arc};
+use std::convert::Infallible;
 
 #[derive(Debug)]
 #[non_exhaustive]
@@ -29,37 +27,48 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
-    pub fn subscribe<T: 'static>(&mut self) -> EventStream<T> {
-        let rx = self.map.register();
-        EventStream { inner: rx }
+    pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
+        let inner = self.map.register();
+        EventStream { inner }
     }
 
-    pub fn dispatch<'a>(&mut self, message: &'a IrcMessage<'a>) -> Result<(), DispatchError> {
-        match &*message.command {
-            // "001" => self.dispatch_inner::<IrcReady>(message)?,
-            // "376" => self.dispatch_inner::<Ready>(message)?,
-            "CAP" => self.dispatch_inner::<Cap>(message)?,
-            // "CLEARCHAT" => self.dispatch_inner::<ClearChat>(message)?,
-            // "CLEARMSG" => self.dispatch_inner::<ClearMsg>(message)?,
-            // "GLOBALUSERSTATE" => self.dispatch_inner::<GlobalUserState>(message)?,
-            // "HOSTARGET" => self.dispatch_inner::<HostTarget>(message)?,
-            // "JOIN" => self.dispatch_inner::<Join>(message)?,
-            // "NOTICE" => self.dispatch_inner::<Notice>(message)?,
-            // "PART" => self.dispatch_inner::<Part>(message)?,
-            // "PING" => self.dispatch_inner::<Ping>(message)?,
-            // "PONG" => self.dispatch_inner::<Pong>(message)?,
-            // "PRIVMSG" => self.dispatch_inner::<Privmsg>(message)?,
-            // "RECONNECT" => self.dispatch_inner::<Reconnect>(message)?,
-            // "ROOMSTATE" => self.dispatch_inner::<RoomState>(message)?,
-            // "USERNOTICE" => self.dispatch_inner::<UserNotice>(message)?,
-            // "USERSTATE" => self.dispatch_inner::<UserState>(message)?,
-            // "WHISPER" => self.dispatch_inner::<Whisper>(message)?,
-            // TODO allow for user defined mappings
+    pub fn dispatch<'a>(&mut self, message: IrcMessage<'a>) -> Result<(), DispatchError> {
+        use IrcMessage as M;
+
+        let msg = message.as_owned();
+        macro_rules! dispatch {
+            ($ty:ty) => {
+                self.dispatch_static::<$ty>(msg)?
+            };
+        }
+
+        match message.get_command() {
+            M::IRCREADY => dispatch!(IrcReady),
+            M::READY => dispatch!(Ready),
+            M::CAP => dispatch!(Cap),
+            M::CLEARCHAT => dispatch!(ClearChat),
+            M::CLEARMSG => dispatch!(ClearMsg),
+            M::GLOBALUSERSTATE => dispatch!(GlobalUserState),
+            M::HOSTTARGET => dispatch!(HostTarget),
+            M::JOIN => dispatch!(Join),
+            M::NOTICE => dispatch!(Notice),
+            M::PART => dispatch!(Part),
+            M::PING => dispatch!(Ping),
+            M::PONG => dispatch!(Pong),
+            M::PRIVMSG => dispatch!(Privmsg),
+            M::RECONNECT => dispatch!(Reconnect),
+            M::ROOMSTATE => dispatch!(RoomState),
+            M::USERNOTICE => dispatch!(UserNotice),
+            M::USERSTATE => dispatch!(UserState),
+            M::WHISPER => dispatch!(Whisper),
             _ => {
-                // self.dispatch_inner::<IrcMessage>(message)
-                //     .expect("identity conversion should be upheld");
-                // self.dispatch_inner::<AllCommands>(message)
-                //     .expect("identity conversion should be upheld");
+                // TODO user-defined messages
+
+                self.dispatch_static::<IrcMessage>(msg.as_owned())
+                    .expect("identity conversion should be upheld");
+
+                self.dispatch_static::<AllCommands>(msg.as_owned())
+                    .expect("identity conversion should be upheld");
             }
         };
 
@@ -70,17 +79,13 @@ impl Dispatcher {
         std::mem::take(&mut self.map);
     }
 
-    fn dispatch_inner<'a, T>(&mut self, message: &'a IrcMessage<'a>) -> Result<(), DispatchError>
+    fn dispatch_static<T>(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError>
     where
-        T: FromIrcMessage<'a>,
-        T: AsOwned + 'a,
+        T: FromIrcMessage<'static>,
+        T: Clone + 'static,
         DispatchError: From<T::Error>,
     {
-        let msg = T::from_irc(message)
-            .map(|s| AsOwned::as_owned(&s))
-            .map(Arc::new)?;
-
-        self.map.send(msg);
+        self.map.send(T::from_irc(message)?);
         Ok(())
     }
 }

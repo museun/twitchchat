@@ -52,8 +52,8 @@ macro_rules! serde_struct {
     };
 }
 
-// mod dispatcher;
-// pub use dispatcher::{DispatchError, Dispatcher};
+mod dispatcher;
+pub use dispatcher::{DispatchError, Dispatcher};
 
 mod event_map;
 pub use event_map::EventMap;

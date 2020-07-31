@@ -37,6 +37,27 @@ impl<'a> IrcMessage<'a> {
         }
     }
 
+    pub fn as_owned(&self) -> IrcMessage<'static> {
+        let Self {
+            ref raw,
+            tags,
+            prefix,
+            command,
+            args,
+            data,
+        } = *self;
+
+        IrcMessage {
+            // this clone is unfortunate
+            raw: raw.clone().into_owned(),
+            tags,
+            prefix,
+            command,
+            args,
+            data,
+        }
+    }
+
     pub fn get_raw(&self) -> &str {
         &*self.raw
     }
