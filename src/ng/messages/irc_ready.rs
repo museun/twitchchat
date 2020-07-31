@@ -35,9 +35,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn irc_ready_serde() {
         let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
-        crate::ng::serde::round_trip_json::<IrcReady>(input);
+        crate::ng::round_trip_json::<IrcReady>(input);
     }
 
     #[test]

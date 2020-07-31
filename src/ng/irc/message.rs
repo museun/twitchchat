@@ -137,6 +137,7 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'t> ::serde::Serialize for IrcMessage<'t> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -155,6 +156,7 @@ impl<'t> ::serde::Serialize for IrcMessage<'t> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de, 't> ::serde::Deserialize<'de> for IrcMessage<'t> {
     fn deserialize<D>(deserializer: D) -> Result<IrcMessage<'t>, D::Error>
     where
@@ -166,10 +168,10 @@ impl<'de, 't> ::serde::Deserialize<'de> for IrcMessage<'t> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     #[test]
+    #[cfg(feature = "serde")]
     fn irc_message_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        crate::ng::serde::round_trip_json::<IrcMessage>(input);
+        crate::ng::round_trip_json::<super::IrcMessage>(input);
     }
 }

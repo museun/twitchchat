@@ -2,8 +2,7 @@ use super::*;
 use crate::ng::{FromIrcMessage, InvalidMessage};
 
 #[derive(Debug, Clone, PartialEq)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum AllCommands<'a> {
     Raw(IrcMessage<'a>),
     IrcReady(IrcReady<'a>),
@@ -68,9 +67,10 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn all_commands_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        crate::ng::serde::round_trip_json::<AllCommands>(input);
+        crate::ng::round_trip_json::<AllCommands>(input);
     }
 
     #[test]

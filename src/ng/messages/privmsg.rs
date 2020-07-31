@@ -5,8 +5,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum Ctcp<'a> {
     Action,
     Unknown { command: &'a str },
@@ -192,6 +191,7 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn privmsg_serde() {
         let input = &[
             ":test!user@host PRIVMSG #museun :this is a test\r\n",
@@ -201,7 +201,7 @@ mod tests {
         ];
 
         for input in input {
-            crate::ng::serde::round_trip_json::<Privmsg>(input);
+            crate::ng::round_trip_json::<Privmsg>(input);
         }
     }
 

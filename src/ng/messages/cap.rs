@@ -47,9 +47,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn cap_serde() {
         let input = ":tmi.twitch.tv CAP * ACK :twitch.tv/membership\r\n";
-        crate::ng::serde::round_trip_json::<Cap>(input);
+        crate::ng::round_trip_json::<Cap>(input);
     }
 
     #[test]

@@ -45,32 +45,9 @@ serde_struct!(Notice {
     msg_id
 });
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ng::irc;
-
-    #[test]
-    fn notice_serde() {
-        let input = "@msg-id=tos_ban :tmi.twitch.tv NOTICE #museun :TOS ban.\r\n";
-        crate::ng::serde::round_trip_json::<Notice>(input);
-    }
-
-    #[test]
-    fn notice() {
-        let input = ":tmi.twitch.tv NOTICE #museun :This room is no longer in slow mode.\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
-            let msg = Notice::from_irc(msg).unwrap();
-            assert_eq!(msg.channel(), "#museun");
-            assert_eq!(msg.message(), "This room is no longer in slow mode.");
-        }
-    }
-}
-
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum MessageId<'t> {
     /// <user> is already banned in this channel.
     AlreadyBanned,
@@ -570,6 +547,29 @@ impl<'t> MessageId<'t> {
             "whisper_restricted" => WhisperRestricted,
             "whisper_restricted_recipient" => WhisperRestrictedRecipient,
             _ => Unknown(input),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ng::irc;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn notice_serde() {
+        let input = "@msg-id=tos_ban :tmi.twitch.tv NOTICE #museun :TOS ban.\r\n";
+        crate::ng::round_trip_json::<Notice>(input);
+    }
+
+    #[test]
+    fn notice() {
+        let input = ":tmi.twitch.tv NOTICE #museun :This room is no longer in slow mode.\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let msg = Notice::from_irc(msg).unwrap();
+            assert_eq!(msg.channel(), "#museun");
+            assert_eq!(msg.message(), "This room is no longer in slow mode.");
         }
     }
 }

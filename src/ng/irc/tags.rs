@@ -65,6 +65,7 @@ impl<'a> Tags<'a> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'a> serde::Serialize for Tags<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

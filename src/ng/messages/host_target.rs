@@ -2,8 +2,7 @@ use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
 #[derive(Debug, Clone, PartialEq)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum HostTargetKind<'a> {
     Start { target: &'a str },
     End,
@@ -81,9 +80,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn host_target_serde() {
         let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :museun 1024\r\n";
-        crate::ng::serde::round_trip_json::<HostTarget>(input);
+        crate::ng::round_trip_json::<HostTarget>(input);
     }
 
     #[test]

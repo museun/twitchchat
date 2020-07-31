@@ -50,9 +50,10 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn clear_chat_serde() {
         let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
-        crate::ng::serde::round_trip_json::<ClearChat>(input);
+        crate::ng::round_trip_json::<ClearChat>(input);
     }
 
     #[test]

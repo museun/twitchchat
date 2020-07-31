@@ -6,8 +6,7 @@ use crate::{
 
 #[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq, Hash)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum SubPlan {
     Prime,
     Tier1,
@@ -17,8 +16,7 @@ pub enum SubPlan {
 
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
-//
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum NoticeType<'t> {
     Sub,
     Resub,
@@ -245,6 +243,7 @@ mod tests {
     use crate::ng::irc;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn user_notice_serde() {
         let input = &[
             ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n",
@@ -253,7 +252,7 @@ mod tests {
         ];
 
         for input in input {
-            crate::ng::serde::round_trip_json::<UserNotice>(input);
+            crate::ng::round_trip_json::<UserNotice>(input);
         }
     }
 
