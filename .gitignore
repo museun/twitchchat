@@ -7,3 +7,4 @@ TODO.txt
 *.log
 .vscode/*
 /t_examples
+*.html
