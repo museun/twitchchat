@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct JtvCommand<'a> {
-    pub data: &'a str,
+    pub(crate) data: &'a str,
+}
+
+impl<'a> JtvCommand<'a> {
+    pub const fn new(data: &'a str) -> Self {
+        Self { data }
+    }
 }
 
 pub fn jtv_command(data: &str) -> JtvCommand<'_> {
-    JtvCommand { data }
+    JtvCommand::new(data)
 }
 
 impl<'a> Encodable for JtvCommand<'a> {

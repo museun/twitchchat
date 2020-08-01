@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Command<'a> {
-    pub channel: &'a str,
-    pub data: &'a str,
+    pub(crate) channel: &'a str,
+    pub(crate) data: &'a str,
+}
+
+impl<'a> Command<'a> {
+    pub const fn new(channel: &'a str, data: &'a str) -> Self {
+        Self { channel, data }
+    }
 }
 
 pub fn command<'a>(channel: &'a str, data: &'a str) -> Command<'a> {
-    Command { data, channel }
+    Command::new(channel, data)
 }
 
 impl<'a> Encodable for Command<'a> {

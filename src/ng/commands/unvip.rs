@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unvip<'a> {
-    pub channel: &'a str,
-    pub username: &'a str,
+    pub(crate) channel: &'a str,
+    pub(crate) username: &'a str,
+}
+
+impl<'a> Unvip<'a> {
+    pub const fn new(channel: &'a str, username: &'a str) -> Self {
+        Self { channel, username }
+    }
 }
 
 pub fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
-    Unvip { channel, username }
+    Unvip::new(channel, username)
 }
 
 impl<'a> Encodable for Unvip<'a> {

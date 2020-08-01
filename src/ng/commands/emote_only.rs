@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct EmoteOnly<'a> {
-    pub channel: &'a str,
+    pub(crate) channel: &'a str,
+}
+
+impl<'a> EmoteOnly<'a> {
+    pub const fn new(channel: &'a str) -> Self {
+        Self { channel }
+    }
 }
 
 pub fn emote_only(channel: &str) -> EmoteOnly<'_> {
-    EmoteOnly { channel }
+    EmoteOnly::new(channel)
 }
 
 impl<'a> Encodable for EmoteOnly<'a> {

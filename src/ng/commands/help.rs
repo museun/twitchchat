@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Help<'a> {
-    pub channel: &'a str,
+    pub(crate) channel: &'a str,
+}
+
+impl<'a> Help<'a> {
+    pub const fn new(channel: &'a str) -> Self {
+        Self { channel }
+    }
 }
 
 pub fn help(channel: &str) -> Help<'_> {
-    Help { channel }
+    Help::new(channel)
 }
 
 impl<'a> Encodable for Help<'a> {

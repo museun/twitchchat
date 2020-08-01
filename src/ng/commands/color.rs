@@ -8,19 +8,28 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Color<'a> {
-    pub color: crate::color::Color,
+    pub(crate) color: crate::color::Color,
     #[cfg_attr(feature = "serde", serde(skip))]
     marker: std::marker::PhantomData<&'a ()>,
+}
+
+impl<'a> Color<'a> {
+    pub fn new<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
+    where
+        T: TryInto<crate::color::Color>,
+    {
+        color.try_into().map(|color| Color {
+            color,
+            marker: std::marker::PhantomData,
+        })
+    }
 }
 
 pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
 where
     T: TryInto<crate::color::Color>,
 {
-    color.try_into().map(|color| Color {
-        color,
-        marker: std::marker::PhantomData,
-    })
+    Color::new(color)
 }
 
 impl<'a> Encodable for Color<'a> {

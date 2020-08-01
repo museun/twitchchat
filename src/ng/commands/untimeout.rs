@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Untimeout<'a> {
-    pub channel: &'a str,
-    pub username: &'a str,
+    pub(crate) channel: &'a str,
+    pub(crate) username: &'a str,
+}
+
+impl<'a> Untimeout<'a> {
+    pub const fn new(channel: &'a str, username: &'a str) -> Self {
+        Self { channel, username }
+    }
 }
 
 pub fn untimeout<'a>(channel: &'a str, username: &'a str) -> Untimeout<'a> {
-    Untimeout { channel, username }
+    Untimeout::new(channel, username)
 }
 
 impl<'a> Encodable for Untimeout<'a> {

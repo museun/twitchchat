@@ -11,10 +11,16 @@ pub struct Disconnect<'a> {
     marker: std::marker::PhantomData<&'a Disconnect<'a>>,
 }
 
-pub fn disconnect() -> Disconnect<'static> {
-    Disconnect {
-        marker: std::marker::PhantomData,
+impl<'a> Disconnect<'a> {
+    pub const fn new() -> Self {
+        Self {
+            marker: std::marker::PhantomData,
+        }
     }
+}
+
+pub fn disconnect() -> Disconnect<'static> {
+    Disconnect::new()
 }
 
 impl<'a> Encodable for Disconnect<'a> {

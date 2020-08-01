@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unmod<'a> {
-    pub channel: &'a str,
-    pub username: &'a str,
+    pub(crate) channel: &'a str,
+    pub(crate) username: &'a str,
+}
+
+impl<'a> Unmod<'a> {
+    pub const fn new(channel: &'a str, username: &'a str) -> Self {
+        Self { channel, username }
+    }
 }
 
 pub fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
-    Unmod { channel, username }
+    Unmod::new(channel, username)
 }
 
 impl<'a> Encodable for Unmod<'a> {

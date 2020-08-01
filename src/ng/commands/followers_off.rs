@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct FollowersOff<'a> {
-    pub channel: &'a str,
+    pub(crate) channel: &'a str,
+}
+
+impl<'a> FollowersOff<'a> {
+    pub const fn new(channel: &'a str) -> Self {
+        Self { channel }
+    }
 }
 
 pub fn followers_off(channel: &str) -> FollowersOff<'_> {
-    FollowersOff { channel }
+    FollowersOff::new(channel)
 }
 
 impl<'a> Encodable for FollowersOff<'a> {
