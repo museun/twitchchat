@@ -19,3 +19,26 @@ impl<'a> Encodable for Raw<'a> {
         ByteWriter::new(buf).write_bytes(self.data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn raw_encode() {
+        test_encode(
+            raw("PRIVMSG #test :this is a test"),
+            "PRIVMSG #test :this is a test\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn raw_serde() {
+        test_serde(
+            raw("PRIVMSG #test :this is a test"),
+            "PRIVMSG #test :this is a test\r\n",
+        );
+    }
+}

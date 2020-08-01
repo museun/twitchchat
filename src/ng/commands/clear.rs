@@ -19,3 +19,20 @@ impl<'a> Encodable for Clear<'a> {
         ByteWriter::new(buf).command(&self.channel, &[&"/clear"])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn clear_encode() {
+        test_encode(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn clear_serde() {
+        test_serde(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
+    }
+}

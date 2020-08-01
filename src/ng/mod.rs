@@ -27,6 +27,3 @@ pub use simple_event_map::{EventMap, EventStream};
 
 #[cfg(feature = "serde")]
 mod serde;
-
-#[cfg(test)]
-mod commands_test;

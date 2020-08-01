@@ -20,3 +20,26 @@ impl<'a> Encodable for Host<'a> {
         ByteWriter::new(buf).command(self.source, &[&"/host", &self.target])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn host_encode() {
+        test_encode(
+            host("#museun", "#shaken_bot"),
+            "PRIVMSG #museun :/host #shaken_bot\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn host_serde() {
+        test_serde(
+            host("#museun", "#shaken_bot"),
+            "PRIVMSG #museun :/host #shaken_bot\r\n",
+        )
+    }
+}

@@ -20,3 +20,26 @@ impl<'a> Encodable for Unban<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/unban", &self.username])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn unban_encode() {
+        test_encode(
+            unban("#museun", "museun"),
+            "PRIVMSG #museun :/unban museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unban_serde() {
+        test_serde(
+            unban("#museun", "museun"),
+            "PRIVMSG #museun :/unban museun\r\n",
+        )
+    }
+}

@@ -7,10 +7,8 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {
-    pub 
-    channel: &'a str,
-    pub 
-    comment: Option<&'a str>,
+    pub channel: &'a str,
+    pub comment: Option<&'a str>,
 }
 
 pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
@@ -41,5 +39,46 @@ impl<'a> Encodable for Marker<'a> {
             self.channel,
             &[&"/marker", &self.comment.map(truncate).unwrap_or_default()],
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn marker_encode() {
+        test_encode(
+            marker("#museun", Some("this is an example")),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_encode(
+            marker("#museun", "this is an example"),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_encode(
+            marker("#museun", "a".repeat(200).as_str()),
+            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
+        );
+        test_encode(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn marker_serde() {
+        test_serde(
+            marker("#museun", Some("this is an example")),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serde(
+            marker("#museun", "this is an example"),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serde(
+            marker("#museun", "a".repeat(200).as_str()),
+            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
+        );
+        test_serde(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
     }
 }

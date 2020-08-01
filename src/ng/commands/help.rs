@@ -19,3 +19,20 @@ impl<'a> Encodable for Help<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/help"])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn help_encode() {
+        test_encode(help("#museun"), "PRIVMSG #museun :/help\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn help_serde() {
+        test_serde(help("#museun"), "PRIVMSG #museun :/help\r\n")
+    }
+}

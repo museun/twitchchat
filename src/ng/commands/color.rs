@@ -28,3 +28,28 @@ impl<'a> Encodable for Color<'a> {
         ByteWriter::new(buf).jtv_command(&[&"/color", &self.color.to_string()])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn color_encode() {
+        let blue: crate::color::Color = "blue".parse().unwrap();
+        test_encode(
+            color(blue).unwrap(),
+            format!("PRIVMSG jtv :/color {}\r\n", blue),
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn color_serde() {
+        let blue: crate::color::Color = "blue".parse().unwrap();
+        test_serde(
+            color(blue).unwrap(),
+            format!("PRIVMSG jtv :/color {}\r\n", blue),
+        )
+    }
+}

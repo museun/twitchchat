@@ -20,3 +20,26 @@ impl<'a> Encodable for Followers<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/followers", &self.duration])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn followers_encode() {
+        test_encode(
+            followers("#museun", "1 week"),
+            "PRIVMSG #museun :/followers 1 week\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn followers_serde() {
+        test_serde(
+            followers("#museun", "1 week"),
+            "PRIVMSG #museun :/followers 1 week\r\n",
+        )
+    }
+}

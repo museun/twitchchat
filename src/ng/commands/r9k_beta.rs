@@ -19,3 +19,20 @@ impl<'a> Encodable for R9kBeta<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/r9kbeta"])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn r9k_beta_encode() {
+        test_encode(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn r9k_beta_serde() {
+        test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
+    }
+}
