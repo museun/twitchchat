@@ -7,11 +7,12 @@ use crate::{
 #[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum SubPlan {
+pub enum SubPlan<'t> {
     Prime,
     Tier1,
     Tier2,
     Tier3,
+    Unknown(&'t str),
 }
 
 #[non_exhaustive]
@@ -183,14 +184,14 @@ impl<'t> UserNotice<'t> {
         self.tags().get_parsed("msg-param-streak-months")
     }
 
-    pub fn msg_param_sub_plan(&self) -> Option<SubPlan> {
+    pub fn msg_param_sub_plan(&'t self) -> Option<SubPlan<'t>> {
         self.tags().get("msg-param-sub-plan").and_then(|s| {
             match s {
                 "Prime" => SubPlan::Prime,
                 "Tier1" => SubPlan::Tier1,
                 "Tier2" => SubPlan::Tier2,
                 "Tier3" => SubPlan::Tier3,
-                _ => return None, // TODO warn on this?
+                s => SubPlan::Unknown(s),
             }
             .into()
         })

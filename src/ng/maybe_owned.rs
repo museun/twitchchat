@@ -5,7 +5,7 @@ use std::{
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize), serde(untagged))]
 pub enum MaybeOwned<'a> {
-    Owned(Box<str>), // TODO make this an Arc
+    Owned(Box<str>),
     Borrowed(&'a str),
 }
 

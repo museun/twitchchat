@@ -65,17 +65,7 @@ impl<'t> FromIrcMessage<'t> for UserState<'t> {
     }
 }
 
-serde_struct!(UserState {
-    raw,
-    tags,
-    channel,
-    // TODO determine if we want to serialize these
-    display_name,
-    color,
-    emotes,
-    badges,
-    badge_info
-});
+serde_struct!(UserState { raw, tags, channel });
 
 #[cfg(test)]
 mod tests {
