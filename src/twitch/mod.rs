@@ -20,12 +20,19 @@ pub mod color;
 mod channel;
 pub use channel::{Channel, Error as ChannelError, IntoChannel};
 
-// TODO provide an iterator as well as the Vec
-
 pub(crate) fn parse_emotes(input: &str) -> Vec<Emotes> {
     Emotes::parse(input).collect()
 }
 
 pub(crate) fn parse_badges(input: &str) -> Vec<Badge<'_>> {
     input.split(',').filter_map(Badge::parse).collect()
+}
+
+#[allow(dead_code)]
+pub(crate) fn parse_emotes_iter(input: &str) -> impl Iterator<Item = Emotes> + '_ {
+    Emotes::parse(input)
+}
+
+pub(crate) fn parse_badges_iter(input: &str) -> impl Iterator<Item = Badge<'_>> + '_ {
+    input.split(',').filter_map(Badge::parse)
 }
