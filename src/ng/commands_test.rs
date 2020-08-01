@@ -8,52 +8,6 @@ fn test_encode(enc: impl Encodable, expected: impl for<'a> PartialEq<&'a str> + 
 }
 
 #[test]
-fn encode_raw() {
-    test_encode(
-        raw("PRIVMSG #test :this is a test"),
-        "PRIVMSG #test :this is a test\r\n",
-    );
-}
-
-#[test]
-fn encode_pong() {
-    test_encode(pong("123456789"), "PONG :123456789\r\n");
-}
-
-#[test]
-fn encode_ping() {
-    test_encode(ping("123456789"), "PING 123456789\r\n");
-}
-
-#[test]
-fn encode_join() {
-    test_encode(join("#museun"), "JOIN #museun\r\n");
-}
-
-#[test]
-fn encode_jtv_command() {
-    test_encode(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
-}
-
-#[test]
-fn encode_part() {
-    test_encode(part("#museun"), "PART #museun\r\n");
-}
-
-#[test]
-fn encode_privmsg() {
-    test_encode(
-        privmsg("#museun", "this is a test of a line"),
-        "PRIVMSG #museun :this is a test of a line\r\n",
-    );
-
-    test_encode(
-        privmsg("#museun", &"foo ".repeat(500)),
-        format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
-    );
-}
-
-#[test]
 fn encode_ban() {
     test_encode(
         ban("#museun", "museun", None),
@@ -105,12 +59,12 @@ fn encode_disconnect() {
 }
 
 #[test]
-fn encode_emoteonly() {
+fn encode_emote_only() {
     test_encode(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
 }
 
 #[test]
-fn encode_emoteonlyoff() {
+fn encode_emote_only_off() {
     test_encode(
         emote_only_off("#museun"),
         "PRIVMSG #museun :/emoteonlyoff\r\n",
@@ -126,10 +80,18 @@ fn encode_followers() {
 }
 
 #[test]
-fn encode_followersoff() {
+fn encode_followers_off() {
     test_encode(
         followers_off("#museun"),
         "PRIVMSG #museun :/followersoff\r\n",
+    )
+}
+
+#[test]
+fn encode_give_mod() {
+    test_encode(
+        give_mod("#museun", "shaken_bot"),
+        "PRIVMSG #museun :/mod shaken_bot\r\n",
     )
 }
 
@@ -144,6 +106,16 @@ fn encode_host() {
         host("#museun", "#shaken_bot"),
         "PRIVMSG #museun :/host #shaken_bot\r\n",
     )
+}
+
+#[test]
+fn encode_join() {
+    test_encode(join("#museun"), "JOIN #museun\r\n");
+}
+
+#[test]
+fn encode_jtv_command() {
+    test_encode(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
 }
 
 #[test]
@@ -172,25 +144,45 @@ fn encode_me() {
 }
 
 #[test]
-fn encode_give_mod() {
-    test_encode(
-        give_mod("#museun", "shaken_bot"),
-        "PRIVMSG #museun :/mod shaken_bot\r\n",
-    )
-}
-
-#[test]
 fn encode_mods() {
     test_encode(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
 }
 
 #[test]
-fn encode_r9kbeta() {
+fn encode_part() {
+    test_encode(part("#museun"), "PART #museun\r\n");
+}
+
+#[test]
+fn encode_ping() {
+    test_encode(ping("123456789"), "PING 123456789\r\n");
+}
+
+#[test]
+fn encode_pong() {
+    test_encode(pong("123456789"), "PONG :123456789\r\n");
+}
+
+#[test]
+fn encode_privmsg() {
+    test_encode(
+        privmsg("#museun", "this is a test of a line"),
+        "PRIVMSG #museun :this is a test of a line\r\n",
+    );
+
+    test_encode(
+        privmsg("#museun", &"foo ".repeat(500)),
+        format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
+    );
+}
+
+#[test]
+fn encode_r9k_beta() {
     test_encode(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
 }
 
 #[test]
-fn encode_r9kbetaoff() {
+fn encode_r9k_beta_off() {
     test_encode(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
 }
 
@@ -203,6 +195,14 @@ fn encode_raid() {
 }
 
 #[test]
+fn encode_raw() {
+    test_encode(
+        raw("PRIVMSG #test :this is a test"),
+        "PRIVMSG #test :this is a test\r\n",
+    );
+}
+
+#[test]
 fn encode_slow() {
     test_encode(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
     test_encode(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
@@ -210,7 +210,7 @@ fn encode_slow() {
 }
 
 #[test]
-fn encode_slowoff() {
+fn encode_slow_off() {
     test_encode(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
 }
 
@@ -220,7 +220,7 @@ fn encode_subscribers() {
 }
 
 #[test]
-fn encode_subscribersoff() {
+fn encode_subscribers_off() {
     test_encode(
         subscribers_off("#museun"),
         "PRIVMSG #museun :/subscribersoff\r\n",
@@ -307,6 +307,8 @@ fn encode_whisper() {
     )
 }
 
+// serialization tests
+
 #[cfg(feature = "serde")]
 fn test_serde<'de: 't, 't, T>(enc: T, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug)
 where
@@ -330,53 +332,6 @@ where
 
     let out = serde_json::from_str::<T>(&whatever).unwrap();
     assert_eq!(out, enc);
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn raw_serde() {
-    test_serde(
-        raw("PRIVMSG #test :this is a test"),
-        "PRIVMSG #test :this is a test\r\n",
-    );
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn pong_serde() {
-    test_serde(pong("123456789"), "PONG :123456789\r\n");
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn ping_serde() {
-    test_serde(ping("123456789"), "PING 123456789\r\n");
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn join_serde() {
-    test_serde(join("#museun"), "JOIN #museun\r\n");
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn part_serde() {
-    test_serde(part("#museun"), "PART #museun\r\n");
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn privmsg_serde() {
-    test_serde(
-        privmsg("#museun", "this is a test of a line"),
-        "PRIVMSG #museun :this is a test of a line\r\n",
-    );
-
-    test_serde(
-        privmsg("#museun", &"foo ".repeat(500)),
-        format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
-    );
 }
 
 #[test]
@@ -438,13 +393,13 @@ fn disconnect_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn emoteonly_serde() {
+fn emote_only_serde() {
     test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn emoteonlyoff_serde() {
+fn emote_only_off_serde() {
     test_serde(
         emote_only_off("#museun"),
         "PRIVMSG #museun :/emoteonlyoff\r\n",
@@ -462,10 +417,19 @@ fn followers_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn followersoff_serde() {
+fn followers_off_serde() {
     test_serde(
         followers_off("#museun"),
         "PRIVMSG #museun :/followersoff\r\n",
+    )
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn give_mod_serde() {
+    test_serde(
+        give_mod("#museun", "shaken_bot"),
+        "PRIVMSG #museun :/mod shaken_bot\r\n",
     )
 }
 
@@ -488,6 +452,12 @@ fn host_serde() {
 #[cfg(feature = "serde")]
 fn jtv_command_serde() {
     test_serde(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn join_serde() {
+    test_serde(join("#museun"), "JOIN #museun\r\n");
 }
 
 #[test]
@@ -519,28 +489,51 @@ fn me_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn give_mod_serde() {
-    test_serde(
-        give_mod("#museun", "shaken_bot"),
-        "PRIVMSG #museun :/mod shaken_bot\r\n",
-    )
-}
-
-#[test]
-#[cfg(feature = "serde")]
 fn mods_serde() {
     test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn r9kbeta_serde() {
+fn part_serde() {
+    test_serde(part("#museun"), "PART #museun\r\n");
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn ping_serde() {
+    test_serde(ping("123456789"), "PING 123456789\r\n");
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn pong_serde() {
+    test_serde(pong("123456789"), "PONG :123456789\r\n");
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn privmsg_serde() {
+    test_serde(
+        privmsg("#museun", "this is a test of a line"),
+        "PRIVMSG #museun :this is a test of a line\r\n",
+    );
+
+    test_serde(
+        privmsg("#museun", &"foo ".repeat(500)),
+        format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
+    );
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn r9k_beta_serde() {
     test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn r9kbetaoff_serde() {
+fn r9k_beta_off_serde() {
     test_serde(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
 }
 
@@ -555,6 +548,15 @@ fn raid_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
+fn raw_serde() {
+    test_serde(
+        raw("PRIVMSG #test :this is a test"),
+        "PRIVMSG #test :this is a test\r\n",
+    );
+}
+
+#[test]
+#[cfg(feature = "serde")]
 fn slow_serde() {
     test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
     test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
@@ -563,7 +565,7 @@ fn slow_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn slowoff_serde() {
+fn slow_off_serde() {
     test_serde(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
 }
 
@@ -575,7 +577,7 @@ fn subscribers_serde() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn subscribersoff_serde() {
+fn subscribers_off_serde() {
     test_serde(
         subscribers_off("#museun"),
         "PRIVMSG #museun :/subscribersoff\r\n",
