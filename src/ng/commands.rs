@@ -1,5 +1,168 @@
 use std::io::{Result, Write};
 
+pub mod types {
+    pub use super::ban::Ban;
+    pub use super::clear::Clear;
+    pub use super::color::Color;
+    pub use super::command::Command;
+    pub use super::commercial::Commercial;
+    pub use super::disconnect::Disconnect;
+    pub use super::emote_only::EmoteOnly;
+    pub use super::emote_only_off::EmoteOnlyOff;
+    pub use super::followers::Followers;
+    pub use super::followers_off::FollowersOff;
+    pub use super::give_mod::GiveMod;
+    pub use super::help::Help;
+    pub use super::host::Host;
+    pub use super::join::Join;
+    pub use super::jtv_command::JtvCommand;
+    pub use super::marker::Marker;
+    pub use super::me::Me;
+    pub use super::mods::Mods;
+    pub use super::part::Part;
+    pub use super::ping::Ping;
+    pub use super::pong::Pong;
+    pub use super::privmsg::Privmsg;
+    pub use super::r9k_beta::R9kBeta;
+    pub use super::r9k_beta_off::R9kBetaOff;
+    pub use super::raid::Raid;
+    pub use super::raw::Raw;
+    pub use super::slow::Slow;
+    pub use super::slow_off::SlowOff;
+    pub use super::subscribers::Subscribers;
+    pub use super::subscribers_off::SubscribersOff;
+    pub use super::timeout::Timeout;
+    pub use super::unban::Unban;
+    pub use super::unhost::Unhost;
+    pub use super::unmod::Unmod;
+    pub use super::unraid::Unraid;
+    pub use super::untimeout::Untimeout;
+    pub use super::unvip::Unvip;
+    pub use super::vip::Vip;
+    pub use super::vips::Vips;
+    pub use super::whisper::Whisper;
+}
+
+mod ban;
+pub use ban::ban;
+
+mod clear;
+pub use clear::clear;
+
+mod color;
+pub use color::color;
+
+mod command;
+pub use command::command;
+
+mod commercial;
+pub use commercial::commercial;
+
+mod disconnect;
+pub use disconnect::disconnect;
+
+mod emote_only;
+pub use emote_only::emote_only;
+
+mod emote_only_off;
+pub use emote_only_off::emote_only_off;
+
+mod followers;
+pub use followers::followers;
+
+mod followers_off;
+pub use followers_off::followers_off;
+
+mod give_mod;
+pub use give_mod::give_mod;
+
+mod help;
+pub use help::help;
+
+mod host;
+pub use host::host;
+
+mod join;
+pub use join::join;
+
+mod jtv_command;
+pub use jtv_command::jtv_command;
+
+mod marker;
+pub use marker::marker;
+
+mod me;
+pub use me::me;
+
+mod mods;
+pub use mods::mods;
+
+mod part;
+pub use part::part;
+
+mod ping;
+pub use ping::ping;
+
+mod pong;
+pub use pong::pong;
+
+mod privmsg;
+pub use privmsg::privmsg;
+
+mod r9k_beta;
+pub use r9k_beta::r9k_beta;
+
+mod r9k_beta_off;
+pub use r9k_beta_off::r9k_beta_off;
+
+mod raid;
+pub use raid::raid;
+
+mod raw;
+pub use raw::raw;
+
+mod slow;
+pub use slow::slow;
+
+mod slow_off;
+pub use slow_off::slow_off;
+
+mod subscribers;
+pub use subscribers::subscribers;
+
+mod subscribers_off;
+pub use subscribers_off::subscribers_off;
+
+mod timeout;
+pub use timeout::timeout;
+
+mod unban;
+pub use unban::unban;
+
+mod unhost;
+pub use unhost::unhost;
+
+mod unmod;
+pub use unmod::unmod;
+
+mod unraid;
+pub use unraid::unraid;
+
+mod untimeout;
+pub use untimeout::untimeout;
+
+mod unvip;
+pub use unvip::unvip;
+
+mod vip;
+pub use vip::vip;
+
+mod vips;
+pub use vips::vips;
+
+mod whisper;
+pub use whisper::whisper;
+
 struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
 impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
     fn new(writer: &'a mut W) -> Self {
@@ -73,7 +236,7 @@ macro_rules! serde_stuff {
     ($($ty:ident { $($field:ident),* $(,)?});* $(;)?) => {
         $(
             #[cfg(feature = "serde")]
-            impl<'a> ::serde::Serialize for $ty<'a> {
+            impl<'a> ::serde::Serialize for $crate::ng::commands::types::$ty<'a> {
                 fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
                 where
                     S: ::serde::Serializer,
@@ -176,123 +339,3 @@ where
     let out = serde_json::from_str::<T>(&whatever).unwrap();
     assert_eq!(out, enc);
 }
-
-mod ban;
-pub use ban::{ban, Ban};
-
-mod clear;
-pub use clear::{clear, Clear};
-
-mod color;
-pub use color::{color, Color};
-
-mod command;
-pub use command::{command, Command};
-
-mod commercial;
-pub use commercial::{commercial, Commercial};
-
-mod disconnect;
-pub use disconnect::{disconnect, Disconnect};
-
-mod emote_only;
-pub use emote_only::{emote_only, EmoteOnly};
-
-mod emote_only_off;
-pub use emote_only_off::{emote_only_off, EmoteOnlyOff};
-
-mod followers;
-pub use followers::{followers, Followers};
-
-mod followers_off;
-pub use followers_off::{followers_off, FollowersOff};
-
-mod give_mod;
-pub use give_mod::{give_mod, GiveMod};
-
-mod help;
-pub use help::{help, Help};
-
-mod host;
-pub use host::{host, Host};
-
-mod join;
-pub use join::{join, Join};
-
-mod jtv_command;
-pub use jtv_command::{jtv_command, JtvCommand};
-
-mod marker;
-pub use marker::{marker, Marker};
-
-mod me;
-pub use me::{me, Me};
-
-mod mods;
-pub use mods::{mods, Mods};
-
-mod part;
-pub use part::{part, Part};
-
-mod ping;
-pub use ping::{ping, Ping};
-
-mod pong;
-pub use pong::{pong, Pong};
-
-mod privmsg;
-pub use privmsg::{privmsg, Privmsg};
-
-mod r9k_beta;
-pub use r9k_beta::{r9k_beta, R9kBeta};
-
-mod r9k_beta_off;
-pub use r9k_beta_off::{r9k_beta_off, R9kBetaOff};
-
-mod raid;
-pub use raid::{raid, Raid};
-
-mod raw;
-pub use raw::{raw, Raw};
-
-mod slow;
-pub use slow::{slow, Slow};
-
-mod slow_off;
-pub use slow_off::{slow_off, SlowOff};
-
-mod subscribers;
-pub use subscribers::{subscribers, Subscribers};
-
-mod subscribers_off;
-pub use subscribers_off::{subscribers_off, SubscribersOff};
-
-mod timeout;
-pub use timeout::{timeout, Timeout};
-
-mod unban;
-pub use unban::{unban, Unban};
-
-mod unhost;
-pub use unhost::{unhost, Unhost};
-
-mod unmod;
-pub use unmod::{unmod, Unmod};
-
-mod unraid;
-pub use unraid::{unraid, Unraid};
-
-mod untimeout;
-pub use untimeout::{untimeout, Untimeout};
-
-mod unvip;
-pub use unvip::{unvip, Unvip};
-
-mod vip;
-pub use vip::{vip, Vip};
-
-mod vips;
-pub use vips::{vips, Vips};
-
-mod whisper;
-pub use whisper::{whisper, Whisper};
