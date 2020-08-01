@@ -37,6 +37,8 @@ macro_rules! serde_struct {
     };
 }
 
+mod decoder;
+
 mod dispatcher;
 pub use dispatcher::{DispatchError, Dispatcher};
 
