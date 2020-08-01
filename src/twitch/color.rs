@@ -57,6 +57,8 @@ let rgb: RGB = twitch_color.into();
 ```
 */
 
+use std::{convert::TryFrom, str::FromStr};
+
 /// An error returned when trying to parse a string as an RGB triplet
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
@@ -327,6 +329,13 @@ pub enum TwitchColor {
     YellowGreen,
     /// Turbo colors are custom user-selected colors
     Turbo,
+}
+
+impl<'a> TryFrom<&'a str> for Color {
+    type Error = <Color as FromStr>::Err;
+    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+        value.parse()
+    }
 }
 
 impl From<Color> for RGB {

@@ -372,10 +372,7 @@ impl<W: Write> Encoder<W> {
             }
             (None, Some(reason)) => writer.command(&channel, &[&"/timeout", &username, &reason]),
             (Some(dur), None) => writer.command(&channel, &[&"/timeout", &username, &dur]),
-            (None, None) => {
-                writer //
-                    .command(&channel, &[&"/timeout", &username])
-            }
+            (None, None) => writer.command(&channel, &[&"/timeout", &username]),
         }
     }
 
