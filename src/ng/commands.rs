@@ -1,167 +1,59 @@
 use std::io::{Result, Write};
 
-pub mod types {
-    pub use super::ban::Ban;
-    pub use super::clear::Clear;
-    pub use super::color::Color;
-    pub use super::command::Command;
-    pub use super::commercial::Commercial;
-    pub use super::disconnect::Disconnect;
-    pub use super::emote_only::EmoteOnly;
-    pub use super::emote_only_off::EmoteOnlyOff;
-    pub use super::followers::Followers;
-    pub use super::followers_off::FollowersOff;
-    pub use super::give_mod::GiveMod;
-    pub use super::help::Help;
-    pub use super::host::Host;
-    pub use super::join::Join;
-    pub use super::jtv_command::JtvCommand;
-    pub use super::marker::Marker;
-    pub use super::me::Me;
-    pub use super::mods::Mods;
-    pub use super::part::Part;
-    pub use super::ping::Ping;
-    pub use super::pong::Pong;
-    pub use super::privmsg::Privmsg;
-    pub use super::r9k_beta::R9kBeta;
-    pub use super::r9k_beta_off::R9kBetaOff;
-    pub use super::raid::Raid;
-    pub use super::raw::Raw;
-    pub use super::slow::Slow;
-    pub use super::slow_off::SlowOff;
-    pub use super::subscribers::Subscribers;
-    pub use super::subscribers_off::SubscribersOff;
-    pub use super::timeout::Timeout;
-    pub use super::unban::Unban;
-    pub use super::unhost::Unhost;
-    pub use super::unmod::Unmod;
-    pub use super::unraid::Unraid;
-    pub use super::untimeout::Untimeout;
-    pub use super::unvip::Unvip;
-    pub use super::vip::Vip;
-    pub use super::vips::Vips;
-    pub use super::whisper::Whisper;
+macro_rules! export_commands {
+    ($($ident:ident => $ty:ident)*) => {
+        pub mod types {
+            $( pub use super::$ident::$ty; )*
+        }
+        $(
+            mod $ident;
+            pub use $ident::$ident;
+        )*
+    };
 }
 
-mod ban;
-pub use ban::ban;
-
-mod clear;
-pub use clear::clear;
-
-mod color;
-pub use color::color;
-
-mod command;
-pub use command::command;
-
-mod commercial;
-pub use commercial::commercial;
-
-mod disconnect;
-pub use disconnect::disconnect;
-
-mod emote_only;
-pub use emote_only::emote_only;
-
-mod emote_only_off;
-pub use emote_only_off::emote_only_off;
-
-mod followers;
-pub use followers::followers;
-
-mod followers_off;
-pub use followers_off::followers_off;
-
-mod give_mod;
-pub use give_mod::give_mod;
-
-mod help;
-pub use help::help;
-
-mod host;
-pub use host::host;
-
-mod join;
-pub use join::join;
-
-mod jtv_command;
-pub use jtv_command::jtv_command;
-
-mod marker;
-pub use marker::marker;
-
-mod me;
-pub use me::me;
-
-mod mods;
-pub use mods::mods;
-
-mod part;
-pub use part::part;
-
-mod ping;
-pub use ping::ping;
-
-mod pong;
-pub use pong::pong;
-
-mod privmsg;
-pub use privmsg::privmsg;
-
-mod r9k_beta;
-pub use r9k_beta::r9k_beta;
-
-mod r9k_beta_off;
-pub use r9k_beta_off::r9k_beta_off;
-
-mod raid;
-pub use raid::raid;
-
-mod raw;
-pub use raw::raw;
-
-mod slow;
-pub use slow::slow;
-
-mod slow_off;
-pub use slow_off::slow_off;
-
-mod subscribers;
-pub use subscribers::subscribers;
-
-mod subscribers_off;
-pub use subscribers_off::subscribers_off;
-
-mod timeout;
-pub use timeout::timeout;
-
-mod unban;
-pub use unban::unban;
-
-mod unhost;
-pub use unhost::unhost;
-
-mod unmod;
-pub use unmod::unmod;
-
-mod unraid;
-pub use unraid::unraid;
-
-mod untimeout;
-pub use untimeout::untimeout;
-
-mod unvip;
-pub use unvip::unvip;
-
-mod vip;
-pub use vip::vip;
-
-mod vips;
-pub use vips::vips;
-
-mod whisper;
-pub use whisper::whisper;
+export_commands! {
+    ban             => Ban
+    clear           => Clear
+    color           => Color
+    command         => Command
+    commercial      => Commercial
+    disconnect      => Disconnect
+    emote_only      => EmoteOnly
+    emote_only_off  => EmoteOnlyOff
+    followers       => Followers
+    followers_off   => FollowersOff
+    give_mod        => GiveMod
+    help            => Help
+    host            => Host
+    join            => Join
+    jtv_command     => JtvCommand
+    marker          => Marker
+    me              => Me
+    mods            => Mods
+    part            => Part
+    ping            => Ping
+    pong            => Pong
+    privmsg         => Privmsg
+    r9k_beta        => R9kBeta
+    r9k_beta_off    => R9kBetaOff
+    raid            => Raid
+    raw             => Raw
+    slow            => Slow
+    slow_off        => SlowOff
+    subscribers     => Subscribers
+    subscribers_off => SubscribersOff
+    timeout         => Timeout
+    unban           => Unban
+    unhost          => Unhost
+    unmod           => Unmod
+    unraid          => Unraid
+    untimeout       => Untimeout
+    unvip           => Unvip
+    vip             => Vip
+    vips            => Vips
+    whisper         => Whisper
+}
 
 struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
 impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
