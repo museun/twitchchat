@@ -140,9 +140,9 @@ impl RGB {
 impl serde::Serialize for RGB {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: ::serde::Serializer,
     {
-        use serde::ser::SerializeStruct;
+        use ::serde::ser::SerializeStruct;
         let RGB(r, g, b) = *self;
         let mut rgb = serializer.serialize_struct("rgb", 3)?;
         rgb.serialize_field("r", &r)?;
@@ -153,12 +153,12 @@ impl serde::Serialize for RGB {
 }
 
 #[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for RGB {
+impl<'de> ::serde::Deserialize<'de> for RGB {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: ::serde::Deserializer<'de>,
     {
-        #[derive(serde::Deserialize)]
+        #[derive(::serde::Deserialize)]
         struct Inner {
             r: u8,
             g: u8,
