@@ -226,7 +226,6 @@ where
     // said json doesn't live for long enough
     // okay.
     let whatever: &'static str = Box::leak(json.into_boxed_str());
-
-    let out = serde_json::from_str::<T>(&*whatever).unwrap();
+    let out = serde_json::from_str::<T>(&whatever).unwrap();
     assert_eq!(out, enc);
 }

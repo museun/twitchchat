@@ -142,12 +142,14 @@ impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
             let len = data.chars().map(char::len_utf8).sum::<usize>();
             match data[1..len - 1].find(' ') {
                 Some(pos) => {
+                    // TODO refactor this so the casting is done in 1 canonical place
+                    //
                     // skip the first byte
                     let head = index.start + 1;
-                    let ctcp_index = StrIndex::raw(head, head + pos);
+                    let ctcp_index = StrIndex::raw(head as usize, (head as usize) + pos);
 
                     // for the byte + space
-                    index.start += pos + 2;
+                    index.start += (pos as u16) + 2;
                     index.end -= 1;
                     ctcp.replace(ctcp_index);
                 }
