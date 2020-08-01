@@ -89,8 +89,11 @@ where
     }
 }
 
-macro_rules! serialize {
-    ($($ty:ident)*) => {
+macro_rules! serde_stuff {
+    (@one $($x:tt)*) => { () };
+    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_stuff!(@one $e)),*]); };
+
+    ($($ty:ident { $($field:ident),* $(,)?});* $(;)?) => {
         $(
             #[cfg(feature = "serde")]
             impl<'a> ::serde::Serialize for $ty<'a> {
@@ -98,61 +101,78 @@ macro_rules! serialize {
                 where
                     S: ::serde::Serializer,
                 {
-                    SerdeWrapper(self, stringify!($ty), std::marker::PhantomData).serialize(serializer)
+
+                    use ::serde::ser::{SerializeStruct as _, Error};
+                    let mut data = vec![];
+                    self.encode(&mut data).map_err(Error::custom)?;
+                    let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
+
+                    let len = serde_stuff!(@len $($field),*);
+
+                    let mut s = serializer.serialize_struct(stringify!($ty), std::cmp::max(len, 1))?;
+                    s.serialize_field("raw", raw)?;
+                    $(
+                        s.serialize_field(stringify!($field), &self.$field)?;
+                    )*
+                    s.end()
                 }
             }
         )*
     };
 }
 
-serialize! {
-    Ban
-    Clear
-    Color
-    Command
-    JtvCommand
-    Commercial
-    Disconnect
-    EmoteOnly
-    EmoteOnlyOff
-    Followers
-    FollowersOff
-    GiveMod
-    Help
-    Host
-    Join
-    Marker
-    Me
-    Mods
-    Part
-    Ping
-    Pong
-    Privmsg
-    R9kBeta
-    R9kBetaOff
-    Raid
-    Raw
-    Slow
-    SlowOff
-    Subscribers
-    SubscribersOff
-    Timeout
-    Unban
-    Unhost
-    Unmod
-    Unraid
-    Untimeout
-    Unvip
-    Vip
-    Vips
-    Whisper
+serde_stuff! {
+    Ban { channel, username, reason };
+    Clear { channel };
+    Color { color };
+    Command { channel, data };
+    JtvCommand { data };
+    Commercial { channel, length };
+    Disconnect { };
+    EmoteOnly { channel };
+    EmoteOnlyOff { channel };
+    Followers { channel, duration };
+    FollowersOff { channel };
+    GiveMod { channel, username };
+    Help { channel };
+    Host { source, target };
+    Join { channel };
+    Marker { channel, comment };
+    Me { channel, msg };
+    Mods { channel };
+    Ping { token };
+    Part { channel };
+    Pong { token };
+    Privmsg { channel, data };
+    R9kBeta { channel };
+    R9kBetaOff { channel };
+    Raid { source, target };
+    Raw { data };
+    Slow { channel, duration };
+    SlowOff { channel };
+    Subscribers { channel };
+    SubscribersOff { channel };
+    Timeout { channel, username, duration, reason };
+    Unban { channel, username };
+    Unhost { channel };
+    Unmod { channel, username };
+    Unraid { channel };
+    Untimeout { channel, username };
+    Unvip { channel, username };
+    Vip { channel, username };
+    Vips { channel };
+    Whisper { username, message };
 }
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Ban<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     reason: Option<&'a str>,
 }
 
@@ -175,7 +195,9 @@ pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Clear<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -191,8 +213,10 @@ impl<'a> Encodable for Clear<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Color<'a> {
     color: crate::color::Color,
+    #[cfg_attr(feature = "serde", serde(skip))]
     marker: std::marker::PhantomData<&'a ()>,
 }
 
@@ -214,8 +238,11 @@ impl<'a> Encodable for Color<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Command<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     data: &'a str,
 }
 
@@ -231,7 +258,9 @@ impl<'a> Encodable for Command<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct JtvCommand<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     data: &'a str,
 }
 
@@ -247,7 +276,9 @@ impl<'a> Encodable for JtvCommand<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Commercial<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
     length: Option<usize>,
 }
@@ -277,10 +308,16 @@ impl<'a> Encodable for Commercial<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-pub struct Disconnect<'a>(std::marker::PhantomData<&'a ()>);
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub struct Disconnect<'a> {
+    #[cfg_attr(feature = "serde", serde(skip))]
+    marker: std::marker::PhantomData<&'a Disconnect<'a>>,
+}
 
 pub fn disconnect() -> Disconnect<'static> {
-    Disconnect(std::marker::PhantomData)
+    Disconnect {
+        marker: std::marker::PhantomData,
+    }
 }
 
 impl<'a> Encodable for Disconnect<'a> {
@@ -291,7 +328,9 @@ impl<'a> Encodable for Disconnect<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct EmoteOnly<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -307,7 +346,9 @@ impl<'a> Encodable for EmoteOnly<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct EmoteOnlyOff<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -323,8 +364,11 @@ impl<'a> Encodable for EmoteOnlyOff<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Followers<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     duration: &'a str,
 }
 
@@ -340,7 +384,9 @@ impl<'a> Encodable for Followers<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct FollowersOff<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -356,8 +402,11 @@ impl<'a> Encodable for FollowersOff<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct GiveMod<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -373,7 +422,9 @@ impl<'a> Encodable for GiveMod<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Help<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -389,8 +440,11 @@ impl<'a> Encodable for Help<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Host<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     source: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     target: &'a str,
 }
 
@@ -406,7 +460,9 @@ impl<'a> Encodable for Host<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Join<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -422,8 +478,11 @@ impl<'a> Encodable for Join<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     comment: Option<&'a str>,
 }
 
@@ -460,8 +519,11 @@ impl<'a> Encodable for Marker<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Me<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     msg: &'a str,
 }
 
@@ -477,7 +539,9 @@ impl<'a> Encodable for Me<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Mods<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -493,7 +557,9 @@ impl<'a> Encodable for Mods<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Part<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -509,7 +575,9 @@ impl<'a> Encodable for Part<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Ping<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     token: &'a str,
 }
 
@@ -525,7 +593,9 @@ impl<'a> Encodable for Ping<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Pong<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     token: &'a str,
 }
 
@@ -541,8 +611,11 @@ impl<'a> Encodable for Pong<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Privmsg<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     data: &'a str,
 }
 
@@ -558,7 +631,9 @@ impl<'a> Encodable for Privmsg<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct R9kBeta<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -574,7 +649,9 @@ impl<'a> Encodable for R9kBeta<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct R9kBetaOff<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -590,8 +667,11 @@ impl<'a> Encodable for R9kBetaOff<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Raid<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     source: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     target: &'a str,
 }
 
@@ -607,7 +687,9 @@ impl<'a> Encodable for Raid<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Raw<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     data: &'a str,
 }
 
@@ -623,7 +705,9 @@ impl<'a> Encodable for Raw<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Slow<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
     duration: usize,
 }
@@ -643,7 +727,9 @@ impl<'a> Encodable for Slow<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct SlowOff<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -659,7 +745,9 @@ impl<'a> Encodable for SlowOff<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Subscribers<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -675,7 +763,9 @@ impl<'a> Encodable for Subscribers<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct SubscribersOff<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -691,10 +781,15 @@ impl<'a> Encodable for SubscribersOff<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Timeout<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     duration: Option<&'a str>,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     reason: Option<&'a str>,
 }
 
@@ -728,8 +823,11 @@ impl<'a> Encodable for Timeout<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unban<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -745,7 +843,9 @@ impl<'a> Encodable for Unban<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unhost<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -761,8 +861,11 @@ impl<'a> Encodable for Unhost<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unmod<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -778,7 +881,9 @@ impl<'a> Encodable for Unmod<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unraid<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -794,8 +899,11 @@ impl<'a> Encodable for Unraid<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Untimeout<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -811,8 +919,11 @@ impl<'a> Encodable for Untimeout<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unvip<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -828,8 +939,11 @@ impl<'a> Encodable for Unvip<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Vip<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
 }
 
@@ -845,7 +959,9 @@ impl<'a> Encodable for Vip<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Vips<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     channel: &'a str,
 }
 
@@ -861,8 +977,11 @@ impl<'a> Encodable for Vips<'a> {
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Whisper<'a> {
+    #[cfg_attr(feature = "serde", serde(borrow))]
     username: &'a str,
+    #[cfg_attr(feature = "serde", serde(borrow))]
     message: &'a str,
 }
 
@@ -1185,10 +1304,14 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
-    fn test_serialize(
-        enc: impl Encodable + ::serde::Serialize,
+    fn test_serde<'de: 't, 't, T>(
+        enc: T,
         expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
-    ) {
+    ) where
+        T: ::serde::Serialize + Encodable,
+        T: PartialEq + std::fmt::Debug,
+        T: ::serde::Deserialize<'de> + 't,
+    {
         let json = serde_json::to_string_pretty(&enc).unwrap();
 
         #[derive(Debug, PartialEq, ::serde::Deserialize)]
@@ -1198,12 +1321,19 @@ mod tests {
 
         let wrapper: Wrapper = serde_json::from_str(&json).unwrap();
         assert_eq!(expected, &*wrapper.raw);
+
+        // said json doesn't live for long enough
+        // okay.
+        let whatever: &'static str = Box::leak(json.into_boxed_str());
+
+        let out = serde_json::from_str::<T>(&whatever).unwrap();
+        assert_eq!(out, enc);
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_raw() {
-        test_serialize(
+        test_serde(
             raw("PRIVMSG #test :this is a test"),
             "PRIVMSG #test :this is a test\r\n",
         );
@@ -1212,36 +1342,36 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_pong() {
-        test_serialize(pong("123456789"), "PONG :123456789\r\n");
+        test_serde(pong("123456789"), "PONG :123456789\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_ping() {
-        test_serialize(ping("123456789"), "PING 123456789\r\n");
+        test_serde(ping("123456789"), "PING 123456789\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_join() {
-        test_serialize(join("#museun"), "JOIN #museun\r\n");
+        test_serde(join("#museun"), "JOIN #museun\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_part() {
-        test_serialize(part("#museun"), "PART #museun\r\n");
+        test_serde(part("#museun"), "PART #museun\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_privmsg() {
-        test_serialize(
+        test_serde(
             privmsg("#museun", "this is a test of a line"),
             "PRIVMSG #museun :this is a test of a line\r\n",
         );
 
-        test_serialize(
+        test_serde(
             privmsg("#museun", &"foo ".repeat(500)),
             format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
         );
@@ -1250,7 +1380,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_ban() {
-        test_serialize(
+        test_serde(
             ban("#museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
         )
@@ -1259,14 +1389,14 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_clear() {
-        test_serialize(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
+        test_serde(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_color() {
         let blue: crate::color::Color = "blue".parse().unwrap();
-        test_serialize(
+        test_serde(
             color(blue).unwrap(),
             format!("PRIVMSG jtv :/color {}\r\n", blue),
         )
@@ -1275,7 +1405,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_command() {
-        test_serialize(
+        test_serde(
             command("#museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",
         )
@@ -1284,15 +1414,15 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_commercial() {
-        test_serialize(
+        test_serde(
             commercial("#museun", None),
             "PRIVMSG #museun :/commercial\r\n",
         );
-        test_serialize(
+        test_serde(
             commercial("#museun", 10),
             "PRIVMSG #museun :/commercial 10\r\n",
         );
-        test_serialize(
+        test_serde(
             commercial("#museun", Some(10)),
             "PRIVMSG #museun :/commercial 10\r\n",
         );
@@ -1301,19 +1431,19 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_disconnect() {
-        test_serialize(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
+        test_serde(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_emoteonly() {
-        test_serialize(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
+        test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_emoteonlyoff() {
-        test_serialize(
+        test_serde(
             emote_only_off("#museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
         )
@@ -1322,7 +1452,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_followers() {
-        test_serialize(
+        test_serde(
             followers("#museun", "1 week"),
             "PRIVMSG #museun :/followers 1 week\r\n",
         )
@@ -1331,7 +1461,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_followersoff() {
-        test_serialize(
+        test_serde(
             followers_off("#museun"),
             "PRIVMSG #museun :/followersoff\r\n",
         )
@@ -1340,13 +1470,13 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_help() {
-        test_serialize(help("#museun"), "PRIVMSG #museun :/help\r\n")
+        test_serde(help("#museun"), "PRIVMSG #museun :/help\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_host() {
-        test_serialize(
+        test_serde(
             host("#museun", "#shaken_bot"),
             "PRIVMSG #museun :/host #shaken_bot\r\n",
         )
@@ -1355,25 +1485,25 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_marker() {
-        test_serialize(
+        test_serde(
             marker("#museun", Some("this is an example")),
             "PRIVMSG #museun :/marker this is an example\r\n",
         );
-        test_serialize(
+        test_serde(
             marker("#museun", "this is an example"),
             "PRIVMSG #museun :/marker this is an example\r\n",
         );
-        test_serialize(
+        test_serde(
             marker("#museun", "a".repeat(200).as_str()),
             format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
         );
-        test_serialize(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+        test_serde(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_me() {
-        test_serialize(
+        test_serde(
             me("#museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
         );
@@ -1382,7 +1512,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_give_mod() {
-        test_serialize(
+        test_serde(
             give_mod("#museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
         )
@@ -1391,25 +1521,25 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_mods() {
-        test_serialize(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
+        test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_r9kbeta() {
-        test_serialize(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
+        test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_r9kbetaoff() {
-        test_serialize(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
+        test_serde(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_raid() {
-        test_serialize(
+        test_serde(
             raid("#museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
         )
@@ -1418,27 +1548,27 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_slow() {
-        test_serialize(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
-        test_serialize(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
-        test_serialize(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+        test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
+        test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
+        test_serde(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_slowoff() {
-        test_serialize(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
+        test_serde(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_subscribers() {
-        test_serialize(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
+        test_serde(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_subscribersoff() {
-        test_serialize(
+        test_serde(
             subscribers_off("#museun"),
             "PRIVMSG #museun :/subscribersoff\r\n",
         )
@@ -1447,19 +1577,19 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_timeout() {
-        test_serialize(
+        test_serde(
             timeout("#museun", "museun", None, None),
             "PRIVMSG #museun :/timeout museun\r\n",
         );
-        test_serialize(
+        test_serde(
             timeout("#museun", "museun", Some("1d2h"), None),
             "PRIVMSG #museun :/timeout museun 1d2h\r\n",
         );
-        test_serialize(
+        test_serde(
             timeout("#museun", "museun", None, Some("spamming")),
             "PRIVMSG #museun :/timeout museun spamming\r\n",
         );
-        test_serialize(
+        test_serde(
             timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
             "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
         );
@@ -1468,7 +1598,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_unban() {
-        test_serialize(
+        test_serde(
             unban("#museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
         )
@@ -1477,13 +1607,13 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_unhost() {
-        test_serialize(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
+        test_serde(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_unmod() {
-        test_serialize(
+        test_serde(
             unmod("#museun", "museun"),
             "PRIVMSG #museun :/unmod museun\r\n",
         )
@@ -1492,13 +1622,13 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_unraid() {
-        test_serialize(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
+        test_serde(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_untimeout() {
-        test_serialize(
+        test_serde(
             untimeout("#museun", "museun"),
             "PRIVMSG #museun :/untimeout museun\r\n",
         )
@@ -1507,7 +1637,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_unvip() {
-        test_serialize(
+        test_serde(
             unvip("#museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
         )
@@ -1516,19 +1646,19 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_vip() {
-        test_serialize(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
+        test_serde(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_vips() {
-        test_serialize(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
+        test_serde(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serialize_whisper() {
-        test_serialize(
+        test_serde(
             whisper("museun", "hello world"),
             "PRIVMSG jtv :/w museun hello world\r\n",
         )
