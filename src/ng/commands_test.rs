@@ -31,6 +31,11 @@ fn encode_join() {
 }
 
 #[test]
+fn encode_jtv_command() {
+    test_encode(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
+}
+
+#[test]
 fn encode_part() {
     test_encode(part("#museun"), "PART #museun\r\n");
 }
@@ -477,6 +482,12 @@ fn host_serde() {
         host("#museun", "#shaken_bot"),
         "PRIVMSG #museun :/host #shaken_bot\r\n",
     )
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn jtv_command_serde() {
+    test_serde(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
 }
 
 #[test]
