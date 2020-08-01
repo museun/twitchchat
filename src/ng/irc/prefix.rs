@@ -1,6 +1,5 @@
 use super::super::{Str, StrIndex};
 
-// TODO is this borrow going to be a problem?
 pub struct Prefix<'a> {
     pub(crate) data: &'a Str<'a>,
     pub(crate) index: PrefixIndex,
