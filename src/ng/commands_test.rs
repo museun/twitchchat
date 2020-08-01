@@ -329,7 +329,7 @@ where
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_raw() {
+fn raw_serde() {
     test_serde(
         raw("PRIVMSG #test :this is a test"),
         "PRIVMSG #test :this is a test\r\n",
@@ -338,31 +338,31 @@ fn serialize_raw() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_pong() {
+fn pong_serde() {
     test_serde(pong("123456789"), "PONG :123456789\r\n");
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_ping() {
+fn ping_serde() {
     test_serde(ping("123456789"), "PING 123456789\r\n");
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_join() {
+fn join_serde() {
     test_serde(join("#museun"), "JOIN #museun\r\n");
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_part() {
+fn part_serde() {
     test_serde(part("#museun"), "PART #museun\r\n");
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_privmsg() {
+fn privmsg_serde() {
     test_serde(
         privmsg("#museun", "this is a test of a line"),
         "PRIVMSG #museun :this is a test of a line\r\n",
@@ -376,7 +376,7 @@ fn serialize_privmsg() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_ban() {
+fn ban_serde() {
     test_serde(
         ban("#museun", "museun", None),
         "PRIVMSG #museun :/ban museun\r\n",
@@ -385,13 +385,13 @@ fn serialize_ban() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_clear() {
+fn clear_serde() {
     test_serde(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_color() {
+fn color_serde() {
     let blue: crate::color::Color = "blue".parse().unwrap();
     test_serde(
         color(blue).unwrap(),
@@ -401,7 +401,7 @@ fn serialize_color() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_command() {
+fn command_serde() {
     test_serde(
         command("#museun", "/testing"),
         "PRIVMSG #museun :/testing\r\n",
@@ -410,7 +410,7 @@ fn serialize_command() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_commercial() {
+fn commercial_serde() {
     test_serde(
         commercial("#museun", None),
         "PRIVMSG #museun :/commercial\r\n",
@@ -427,19 +427,19 @@ fn serialize_commercial() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_disconnect() {
+fn disconnect_serde() {
     test_serde(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_emoteonly() {
+fn emoteonly_serde() {
     test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_emoteonlyoff() {
+fn emoteonlyoff_serde() {
     test_serde(
         emote_only_off("#museun"),
         "PRIVMSG #museun :/emoteonlyoff\r\n",
@@ -448,7 +448,7 @@ fn serialize_emoteonlyoff() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_followers() {
+fn followers_serde() {
     test_serde(
         followers("#museun", "1 week"),
         "PRIVMSG #museun :/followers 1 week\r\n",
@@ -457,7 +457,7 @@ fn serialize_followers() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_followersoff() {
+fn followersoff_serde() {
     test_serde(
         followers_off("#museun"),
         "PRIVMSG #museun :/followersoff\r\n",
@@ -466,13 +466,13 @@ fn serialize_followersoff() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_help() {
+fn help_serde() {
     test_serde(help("#museun"), "PRIVMSG #museun :/help\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_host() {
+fn host_serde() {
     test_serde(
         host("#museun", "#shaken_bot"),
         "PRIVMSG #museun :/host #shaken_bot\r\n",
@@ -481,7 +481,7 @@ fn serialize_host() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_marker() {
+fn marker_serde() {
     test_serde(
         marker("#museun", Some("this is an example")),
         "PRIVMSG #museun :/marker this is an example\r\n",
@@ -499,7 +499,7 @@ fn serialize_marker() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_me() {
+fn me_serde() {
     test_serde(
         me("#museun", "some emote"),
         "PRIVMSG #museun :/me some emote\r\n",
@@ -508,7 +508,7 @@ fn serialize_me() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_give_mod() {
+fn give_mod_serde() {
     test_serde(
         give_mod("#museun", "shaken_bot"),
         "PRIVMSG #museun :/mod shaken_bot\r\n",
@@ -517,25 +517,25 @@ fn serialize_give_mod() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_mods() {
+fn mods_serde() {
     test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_r9kbeta() {
+fn r9kbeta_serde() {
     test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_r9kbetaoff() {
+fn r9kbetaoff_serde() {
     test_serde(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_raid() {
+fn raid_serde() {
     test_serde(
         raid("#museun", "#museun"),
         "PRIVMSG #museun :/raid #museun\r\n",
@@ -544,7 +544,7 @@ fn serialize_raid() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_slow() {
+fn slow_serde() {
     test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
     test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
     test_serde(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
@@ -552,19 +552,19 @@ fn serialize_slow() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_slowoff() {
+fn slowoff_serde() {
     test_serde(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_subscribers() {
+fn subscribers_serde() {
     test_serde(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_subscribersoff() {
+fn subscribersoff_serde() {
     test_serde(
         subscribers_off("#museun"),
         "PRIVMSG #museun :/subscribersoff\r\n",
@@ -573,7 +573,7 @@ fn serialize_subscribersoff() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_timeout() {
+fn timeout_serde() {
     test_serde(
         timeout("#museun", "museun", None, None),
         "PRIVMSG #museun :/timeout museun\r\n",
@@ -594,7 +594,7 @@ fn serialize_timeout() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_unban() {
+fn unban_serde() {
     test_serde(
         unban("#museun", "museun"),
         "PRIVMSG #museun :/unban museun\r\n",
@@ -603,13 +603,13 @@ fn serialize_unban() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_unhost() {
+fn unhost_serde() {
     test_serde(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_unmod() {
+fn unmod_serde() {
     test_serde(
         unmod("#museun", "museun"),
         "PRIVMSG #museun :/unmod museun\r\n",
@@ -618,13 +618,13 @@ fn serialize_unmod() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_unraid() {
+fn unraid_serde() {
     test_serde(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_untimeout() {
+fn untimeout_serde() {
     test_serde(
         untimeout("#museun", "museun"),
         "PRIVMSG #museun :/untimeout museun\r\n",
@@ -633,7 +633,7 @@ fn serialize_untimeout() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_unvip() {
+fn unvip_serde() {
     test_serde(
         unvip("#museun", "museun"),
         "PRIVMSG #museun :/unvip museun\r\n",
@@ -642,19 +642,19 @@ fn serialize_unvip() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_vip() {
+fn vip_serde() {
     test_serde(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_vips() {
+fn vips_serde() {
     test_serde(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serialize_whisper() {
+fn whisper_serde() {
     test_serde(
         whisper("museun", "hello world"),
         "PRIVMSG jtv :/w museun hello world\r\n",
