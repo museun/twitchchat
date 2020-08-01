@@ -67,3 +67,6 @@ pub use maybe_owned::{MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
 pub mod validator;
 // TODO hide this ?
 use validator::Validator;
+
+#[cfg(test)]
+mod commands_test;
