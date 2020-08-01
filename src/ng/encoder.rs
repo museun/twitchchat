@@ -18,7 +18,6 @@ where
     }
 }
 
-// TODO should these check for an \r\n and add it?
 impl Encodable for str {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
         buf.write_all(self.as_bytes())
