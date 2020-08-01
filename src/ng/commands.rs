@@ -63,6 +63,91 @@ impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
     }
 }
 
+#[cfg(feature = "serde")]
+struct SerdeWrapper<'a, T: 'a>(T, &'static str, std::marker::PhantomData<&'a T>);
+
+#[cfg(feature = "serde")]
+impl<'a, T: 'a> ::serde::Serialize for SerdeWrapper<'a, T>
+where
+    T: Encodable,
+{
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        use ::serde::ser::{Error, SerializeStruct as _};
+
+        let Self(item, name, ..) = self;
+
+        let mut data = vec![];
+        item.encode(&mut data).map_err(Error::custom)?;
+        let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
+
+        let mut s = serializer.serialize_struct(name, 1)?;
+        s.serialize_field("raw", raw)?;
+        s.end()
+    }
+}
+
+macro_rules! serialize {
+    ($($ty:ident)*) => {
+        $(
+            #[cfg(feature = "serde")]
+            impl<'a> ::serde::Serialize for $ty<'a> {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    SerdeWrapper(self, stringify!($ty), std::marker::PhantomData).serialize(serializer)
+                }
+            }
+        )*
+    };
+}
+
+serialize! {
+    Ban
+    Clear
+    Color
+    Command
+    JtvCommand
+    Commercial
+    Disconnect
+    EmoteOnly
+    EmoteOnlyOff
+    Followers
+    FollowersOff
+    GiveMod
+    Help
+    Host
+    Join
+    Marker
+    Me
+    Mods
+    Part
+    Ping
+    Pong
+    Privmsg
+    R9kBeta
+    R9kBetaOff
+    Raid
+    Raw
+    Slow
+    SlowOff
+    Subscribers
+    SubscribersOff
+    Timeout
+    Unban
+    Unhost
+    Unmod
+    Unraid
+    Untimeout
+    Unvip
+    Vip
+    Vips
+    Whisper
+}
+
 pub struct Ban<'a> {
     channel: &'a str,
     username: &'a str,
@@ -100,18 +185,22 @@ impl<'a> Encodable for Clear<'a> {
     }
 }
 
-pub struct Color {
+pub struct Color<'a> {
     color: crate::color::Color,
+    marker: std::marker::PhantomData<&'a ()>,
 }
 
-pub fn color<T>(color: T) -> std::result::Result<Color, T::Error>
+pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
 where
     T: TryInto<crate::color::Color>,
 {
-    color.try_into().map(|color| Color { color })
+    color.try_into().map(|color| Color {
+        color,
+        marker: std::marker::PhantomData,
+    })
 }
 
-impl Encodable for Color {
+impl<'a> Encodable for Color<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
         ByteWriter::new(buf).jtv_command(&[&"/color", &self.color.to_string()])
     }
@@ -174,13 +263,13 @@ impl<'a> Encodable for Commercial<'a> {
     }
 }
 
-pub struct Disconnect;
+pub struct Disconnect<'a>(std::marker::PhantomData<&'a ()>);
 
-pub fn disconnect() -> Disconnect {
-    Disconnect
+pub fn disconnect() -> Disconnect<'static> {
+    Disconnect(std::marker::PhantomData)
 }
 
-impl<'a> Encodable for Disconnect {
+impl<'a> Encodable for Disconnect<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
         ByteWriter::new(buf).jtv_command(&[&"/disconnect"])
     }
@@ -1010,6 +1099,356 @@ mod tests {
     #[test]
     fn encode_whisper() {
         test_encode(
+            whisper("museun", "hello world"),
+            "PRIVMSG jtv :/w museun hello world\r\n",
+        )
+    }
+
+    #[cfg(feature = "serde")]
+    fn test_serialize(
+        enc: impl Encodable + ::serde::Serialize,
+        expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
+    ) {
+        let json = serde_json::to_string_pretty(&enc).unwrap();
+
+        #[derive(Debug, PartialEq, ::serde::Deserialize)]
+        struct Wrapper {
+            raw: String,
+        }
+
+        let wrapper: Wrapper = serde_json::from_str(&json).unwrap();
+        assert_eq!(expected, &*wrapper.raw);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_raw() {
+        test_serialize(
+            raw("PRIVMSG #test :this is a test"),
+            "PRIVMSG #test :this is a test\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_pong() {
+        test_serialize(pong("123456789"), "PONG :123456789\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_ping() {
+        test_serialize(ping("123456789"), "PING 123456789\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_join() {
+        test_serialize(join("#museun"), "JOIN #museun\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_part() {
+        test_serialize(part("#museun"), "PART #museun\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_privmsg() {
+        test_serialize(
+            privmsg("#museun", "this is a test of a line"),
+            "PRIVMSG #museun :this is a test of a line\r\n",
+        );
+
+        test_serialize(
+            privmsg("#museun", &"foo ".repeat(500)),
+            format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_ban() {
+        test_serialize(
+            ban("#museun", "museun", None),
+            "PRIVMSG #museun :/ban museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_clear() {
+        test_serialize(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_color() {
+        let blue: crate::color::Color = "blue".parse().unwrap();
+        test_serialize(
+            color(blue).unwrap(),
+            format!("PRIVMSG jtv :/color {}\r\n", blue),
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_command() {
+        test_serialize(
+            command("#museun", "/testing"),
+            "PRIVMSG #museun :/testing\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_commercial() {
+        test_serialize(
+            commercial("#museun", None),
+            "PRIVMSG #museun :/commercial\r\n",
+        );
+        test_serialize(
+            commercial("#museun", 10),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+        test_serialize(
+            commercial("#museun", Some(10)),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_disconnect() {
+        test_serialize(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_emoteonly() {
+        test_serialize(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_emoteonlyoff() {
+        test_serialize(
+            emote_only_off("#museun"),
+            "PRIVMSG #museun :/emoteonlyoff\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_followers() {
+        test_serialize(
+            followers("#museun", "1 week"),
+            "PRIVMSG #museun :/followers 1 week\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_followersoff() {
+        test_serialize(
+            followers_off("#museun"),
+            "PRIVMSG #museun :/followersoff\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_help() {
+        test_serialize(help("#museun"), "PRIVMSG #museun :/help\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_host() {
+        test_serialize(
+            host("#museun", "#shaken_bot"),
+            "PRIVMSG #museun :/host #shaken_bot\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_marker() {
+        test_serialize(
+            marker("#museun", Some("this is an example")),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serialize(
+            marker("#museun", "this is an example"),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serialize(
+            marker("#museun", "a".repeat(200).as_str()),
+            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
+        );
+        test_serialize(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_me() {
+        test_serialize(
+            me("#museun", "some emote"),
+            "PRIVMSG #museun :/me some emote\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_give_mod() {
+        test_serialize(
+            give_mod("#museun", "shaken_bot"),
+            "PRIVMSG #museun :/mod shaken_bot\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_mods() {
+        test_serialize(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_r9kbeta() {
+        test_serialize(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_r9kbetaoff() {
+        test_serialize(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_raid() {
+        test_serialize(
+            raid("#museun", "#museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_slow() {
+        test_serialize(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
+        test_serialize(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
+        test_serialize(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_slowoff() {
+        test_serialize(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_subscribers() {
+        test_serialize(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_subscribersoff() {
+        test_serialize(
+            subscribers_off("#museun"),
+            "PRIVMSG #museun :/subscribersoff\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_timeout() {
+        test_serialize(
+            timeout("#museun", "museun", None, None),
+            "PRIVMSG #museun :/timeout museun\r\n",
+        );
+        test_serialize(
+            timeout("#museun", "museun", Some("1d2h"), None),
+            "PRIVMSG #museun :/timeout museun 1d2h\r\n",
+        );
+        test_serialize(
+            timeout("#museun", "museun", None, Some("spamming")),
+            "PRIVMSG #museun :/timeout museun spamming\r\n",
+        );
+        test_serialize(
+            timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
+            "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_unban() {
+        test_serialize(
+            unban("#museun", "museun"),
+            "PRIVMSG #museun :/unban museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_unhost() {
+        test_serialize(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_unmod() {
+        test_serialize(
+            unmod("#museun", "museun"),
+            "PRIVMSG #museun :/unmod museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_unraid() {
+        test_serialize(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_untimeout() {
+        test_serialize(
+            untimeout("#museun", "museun"),
+            "PRIVMSG #museun :/untimeout museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_unvip() {
+        test_serialize(
+            unvip("#museun", "museun"),
+            "PRIVMSG #museun :/unvip museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_vip() {
+        test_serialize(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_vips() {
+        test_serialize(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_whisper() {
+        test_serialize(
             whisper("museun", "hello world"),
             "PRIVMSG jtv :/w museun hello world\r\n",
         )
