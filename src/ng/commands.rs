@@ -208,11 +208,10 @@ fn test_encode(
 }
 
 #[cfg(all(test, feature = "serde"))]
-fn test_serde<'de: 't, 't, T>(enc: T, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug)
+fn test_serde<'de, T>(enc: T, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug)
 where
-    T: ::serde::Serialize + super::Encodable,
-    T: PartialEq + std::fmt::Debug,
-    T: ::serde::Deserialize<'de> + 't,
+    T: super::Encodable + PartialEq + std::fmt::Debug,
+    T: ::serde::Serialize + ::serde::Deserialize<'de>,
 {
     let json = serde_json::to_string_pretty(&enc).unwrap();
 
@@ -228,6 +227,6 @@ where
     // okay.
     let whatever: &'static str = Box::leak(json.into_boxed_str());
 
-    let out = serde_json::from_str::<T>(&whatever).unwrap();
+    let out = serde_json::from_str::<T>(&*whatever).unwrap();
     assert_eq!(out, enc);
 }
