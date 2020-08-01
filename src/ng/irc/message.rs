@@ -99,7 +99,7 @@ impl<'a> IrcMessage<'a> {
         for ch in args.chars() {
             if ch.is_ascii_whitespace() {
                 if seen == nth {
-                    return Some(StrIndex::raw(head, tail));
+                    return Some(StrIndex::raw(head as _, tail as _));
                 }
 
                 // skip the space
@@ -111,7 +111,7 @@ impl<'a> IrcMessage<'a> {
         }
 
         if seen == nth {
-            return Some(StrIndex::raw(head, tail));
+            return Some(StrIndex::raw(head as _, tail as _));
         }
 
         None

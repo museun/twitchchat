@@ -93,38 +93,43 @@ impl From<Box<str>> for MaybeOwned<'static> {
     }
 }
 
+type IndexWidth = u16;
+
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct MaybeOwnedIndex {
-    pub start: usize,
-    pub end: usize,
+    pub start: IndexWidth,
+    pub end: IndexWidth,
 }
 
 // TODO document this
 impl MaybeOwnedIndex {
     pub const fn raw(start: usize, end: usize) -> Self {
-        Self { start, end }
+        Self {
+            start: start as IndexWidth,
+            end: end as IndexWidth,
+        }
     }
 
     pub const fn new(pos: usize) -> Self {
         Self {
-            start: pos,
-            end: pos,
+            start: pos as IndexWidth,
+            end: pos as IndexWidth,
         }
     }
 
     pub const fn offset_by(mut self, pos: usize) -> Self {
-        self.start += pos;
-        self.end += pos;
+        self.start += pos as IndexWidth;
+        self.end += pos as IndexWidth;
         self
     }
 
     pub const fn resize(mut self, len: usize) -> Self {
-        self.end = self.start + len;
+        self.end = self.start + len as IndexWidth;
         self
     }
 
     pub const fn truncate(mut self, len: usize) -> Self {
-        self.end -= len;
+        self.end -= len as IndexWidth;
         self
     }
 
@@ -143,7 +148,7 @@ impl MaybeOwnedIndex {
     }
 
     pub const fn as_range(self) -> Range<usize> {
-        self.start..self.end
+        (self.start as usize)..(self.end as usize)
     }
 }
 
