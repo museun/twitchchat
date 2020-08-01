@@ -1,7 +1,7 @@
 use crate::{
     color::Color,
     ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator},
-    parse_badges, parse_emotes, Badge, BadgeInfo, BadgeKind, Emotes,
+    parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeInfo, BadgeKind, Emotes,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -78,50 +78,32 @@ impl<'t> Privmsg<'t> {
             .unwrap_or_default()
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_broadcaster(&self) -> bool {
-        self.badges()
-            .iter()
-            .any(|x| x.kind == BadgeKind::Broadcaster)
+        self.contains_badge(BadgeKind::Broadcaster)
     }
 
     pub fn is_moderator(&self) -> bool {
         self.tags().get_as_bool("mod")
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_vip(&self) -> bool {
-        self.badges()
-            .iter()
-            .any(|x| x.kind == BadgeKind::Broadcaster)
+        self.contains_badge(BadgeKind::Broadcaster)
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_subscriber(&self) -> bool {
-        self.badges()
-            .iter()
-            .any(|x| x.kind == BadgeKind::Subscriber)
+        self.contains_badge(BadgeKind::Subscriber)
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_staff(&self) -> bool {
-        self.badges().iter().any(|x| x.kind == BadgeKind::Staff)
+        self.contains_badge(BadgeKind::Staff)
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_turbo(&self) -> bool {
-        self.badges().iter().any(|x| x.kind == BadgeKind::Turbo)
+        self.contains_badge(BadgeKind::Turbo)
     }
 
-    // TODO this can be done without the Vec allocation
-    // just return the iterator over the inner &str
     pub fn is_global_moderator(&self) -> bool {
-        self.badges().iter().any(|x| x.kind == BadgeKind::GlobalMod)
+        self.contains_badge(BadgeKind::GlobalMod)
     }
 
     pub fn room_id(&self) -> Option<u64> {
@@ -134,6 +116,14 @@ impl<'t> Privmsg<'t> {
 
     pub fn user_id(&self) -> Option<u64> {
         self.tags().get_parsed("user-id")
+    }
+
+    fn contains_badge(&self, badge: BadgeKind) -> bool {
+        self.tags()
+            .get("badges")
+            .into_iter()
+            .flat_map(parse_badges_iter)
+            .any(|x| x.kind == badge)
     }
 }
 
