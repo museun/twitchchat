@@ -28,3 +28,26 @@ pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a
         reason: reason.into(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn ban_encode() {
+        test_encode(
+            ban("#museun", "museun", None),
+            "PRIVMSG #museun :/ban museun\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn ban_serde() {
+        test_serde(
+            ban("#museun", "museun", None),
+            "PRIVMSG #museun :/ban museun\r\n",
+        )
+    }
+}

@@ -33,3 +33,42 @@ impl<'a> Encodable for Commercial<'a> {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn commercial_encode() {
+        test_encode(
+            commercial("#museun", None),
+            "PRIVMSG #museun :/commercial\r\n",
+        );
+        test_encode(
+            commercial("#museun", 10),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+        test_encode(
+            commercial("#museun", Some(10)),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn commercial_serde() {
+        test_serde(
+            commercial("#museun", None),
+            "PRIVMSG #museun :/commercial\r\n",
+        );
+        test_serde(
+            commercial("#museun", 10),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+        test_serde(
+            commercial("#museun", Some(10)),
+            "PRIVMSG #museun :/commercial 10\r\n",
+        );
+    }
+}

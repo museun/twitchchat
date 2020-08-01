@@ -20,3 +20,26 @@ impl<'a> Encodable for Command<'a> {
         ByteWriter::new(buf).command(self.channel, &[&self.data])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn command_encode() {
+        test_encode(
+            command("#museun", "/testing"),
+            "PRIVMSG #museun :/testing\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn command_serde() {
+        test_serde(
+            command("#museun", "/testing"),
+            "PRIVMSG #museun :/testing\r\n",
+        )
+    }
+}

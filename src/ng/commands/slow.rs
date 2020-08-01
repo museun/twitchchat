@@ -23,3 +23,24 @@ impl<'a> Encodable for Slow<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/slow", &self.duration.to_string()])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn slow_encode() {
+        test_encode(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
+        test_encode(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
+        test_encode(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn slow_serde() {
+        test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
+        test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
+        test_serde(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+    }
+}

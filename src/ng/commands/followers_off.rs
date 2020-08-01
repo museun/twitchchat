@@ -19,3 +19,26 @@ impl<'a> Encodable for FollowersOff<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/followersoff"])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn followers_off_encode() {
+        test_encode(
+            followers_off("#museun"),
+            "PRIVMSG #museun :/followersoff\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn followers_off_serde() {
+        test_serde(
+            followers_off("#museun"),
+            "PRIVMSG #museun :/followersoff\r\n",
+        )
+    }
+}

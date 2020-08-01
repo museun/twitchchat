@@ -19,3 +19,20 @@ impl<'a> Encodable for JtvCommand<'a> {
         ByteWriter::new(buf).jtv_command(&[&self.data])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn jtv_command_encode() {
+        test_encode(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn jtv_command_serde() {
+        test_serde(jtv_command("/help"), "PRIVMSG jtv :/help\r\n");
+    }
+}

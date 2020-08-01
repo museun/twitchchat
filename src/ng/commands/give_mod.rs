@@ -20,3 +20,26 @@ impl<'a> Encodable for GiveMod<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/mod", &self.username])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn give_mod_encode() {
+        test_encode(
+            give_mod("#museun", "shaken_bot"),
+            "PRIVMSG #museun :/mod shaken_bot\r\n",
+        )
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn give_mod_serde() {
+        test_serde(
+            give_mod("#museun", "shaken_bot"),
+            "PRIVMSG #museun :/mod shaken_bot\r\n",
+        )
+    }
+}

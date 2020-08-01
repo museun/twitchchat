@@ -59,33 +59,6 @@ impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
     }
 }
 
-// #[cfg(feature = "serde")]
-// struct SerdeWrapper<'a, T: 'a>(T, &'static str, std::marker::PhantomData<&'a T>);
-
-// #[cfg(feature = "serde")]
-// impl<'a, T: 'a> ::serde::Serialize for SerdeWrapper<'a, T>
-// where
-//     T: crate::ng::Encodable,
-// {
-//     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-//     where
-//         S: ::serde::Serializer,
-//     {
-//         use ::serde::ser::{Error, SerializeStruct as _};
-
-//         let Self(item, name, ..) = self;
-
-//         use crate::Enco
-//         let mut data = vec![];
-//         item.encode(&mut data).map_err(Error::custom)?;
-//         let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
-
-//         let mut s = serializer.serialize_struct(name, 1)?;
-//         s.serialize_field("raw", raw)?;
-//         s.end()
-//     }
-// }
-
 macro_rules! serde_stuff {
     (@one $($x:tt)*) => { () };
     (@len $($e:expr),*) => { <[()]>::len(&[$(serde_stuff!(@one $e)),*]); };
@@ -160,6 +133,41 @@ serde_stuff! {
     Vip { channel, username };
     Vips { channel };
     Whisper { username, message };
+}
+
+#[cfg(test)]
+fn test_encode(
+    enc: impl super::Encodable,
+    expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
+) {
+    let mut data = vec![];
+    enc.encode(&mut data).unwrap();
+    assert_eq!(expected, std::str::from_utf8(&data).unwrap());
+}
+
+#[cfg(all(test, feature = "serde"))]
+fn test_serde<'de: 't, 't, T>(enc: T, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug)
+where
+    T: ::serde::Serialize + super::Encodable,
+    T: PartialEq + std::fmt::Debug,
+    T: ::serde::Deserialize<'de> + 't,
+{
+    let json = serde_json::to_string_pretty(&enc).unwrap();
+
+    #[derive(Debug, PartialEq, ::serde::Deserialize)]
+    struct Wrapper {
+        raw: String,
+    }
+
+    let wrapper: Wrapper = serde_json::from_str(&json).unwrap();
+    assert_eq!(expected, &*wrapper.raw);
+
+    // said json doesn't live for long enough
+    // okay.
+    let whatever: &'static str = Box::leak(json.into_boxed_str());
+
+    let out = serde_json::from_str::<T>(&whatever).unwrap();
+    assert_eq!(out, enc);
 }
 
 mod ban;

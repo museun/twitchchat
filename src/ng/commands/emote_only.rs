@@ -19,3 +19,20 @@ impl<'a> Encodable for EmoteOnly<'a> {
         ByteWriter::new(buf).command(self.channel, &[&"/emoteonly"])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn emote_only_encode() {
+        test_encode(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn emote_only_serde() {
+        test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
+    }
+}
