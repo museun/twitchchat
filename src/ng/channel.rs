@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use async_channel::{TryRecvError, TrySendError};
 use futures_lite::Stream;
 use std::{
