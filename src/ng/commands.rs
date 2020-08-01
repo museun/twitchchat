@@ -1,9 +1,5 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
-use crate::ng::Encodable;
-use std::{
-    convert::TryInto,
-    io::{Result, Write},
-};
+use std::io::{Result, Write};
 
 struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
 impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
@@ -63,31 +59,32 @@ impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
     }
 }
 
-#[cfg(feature = "serde")]
-struct SerdeWrapper<'a, T: 'a>(T, &'static str, std::marker::PhantomData<&'a T>);
+// #[cfg(feature = "serde")]
+// struct SerdeWrapper<'a, T: 'a>(T, &'static str, std::marker::PhantomData<&'a T>);
 
-#[cfg(feature = "serde")]
-impl<'a, T: 'a> ::serde::Serialize for SerdeWrapper<'a, T>
-where
-    T: Encodable,
-{
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: ::serde::Serializer,
-    {
-        use ::serde::ser::{Error, SerializeStruct as _};
+// #[cfg(feature = "serde")]
+// impl<'a, T: 'a> ::serde::Serialize for SerdeWrapper<'a, T>
+// where
+//     T: crate::ng::Encodable,
+// {
+//     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+//     where
+//         S: ::serde::Serializer,
+//     {
+//         use ::serde::ser::{Error, SerializeStruct as _};
 
-        let Self(item, name, ..) = self;
+//         let Self(item, name, ..) = self;
 
-        let mut data = vec![];
-        item.encode(&mut data).map_err(Error::custom)?;
-        let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
+//         use crate::Enco
+//         let mut data = vec![];
+//         item.encode(&mut data).map_err(Error::custom)?;
+//         let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
 
-        let mut s = serializer.serialize_struct(name, 1)?;
-        s.serialize_field("raw", raw)?;
-        s.end()
-    }
-}
+//         let mut s = serializer.serialize_struct(name, 1)?;
+//         s.serialize_field("raw", raw)?;
+//         s.end()
+//     }
+// }
 
 macro_rules! serde_stuff {
     (@one $($x:tt)*) => { () };
@@ -101,8 +98,9 @@ macro_rules! serde_stuff {
                 where
                     S: ::serde::Serializer,
                 {
-
+                    use $crate::ng::Encodable as _;
                     use ::serde::ser::{SerializeStruct as _, Error};
+
                     let mut data = vec![];
                     self.encode(&mut data).map_err(Error::custom)?;
                     let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
@@ -164,1503 +162,122 @@ serde_stuff! {
     Whisper { username, message };
 }
 
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Ban<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    reason: Option<&'a str>,
-}
-
-impl<'a> Encodable for Ban<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(
-            self.channel,
-            &[&"/ban", &self.username, &self.reason.unwrap_or_default()],
-        )
-    }
-}
-
-pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a str>>) -> Ban<'a> {
-    Ban {
-        channel,
-        username,
-        reason: reason.into(),
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Clear<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn clear(channel: &str) -> Clear<'_> {
-    Clear { channel }
-}
-
-impl<'a> Encodable for Clear<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&self.channel, &[&"/clear"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Color<'a> {
-    color: crate::color::Color,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    marker: std::marker::PhantomData<&'a ()>,
-}
-
-pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
-where
-    T: TryInto<crate::color::Color>,
-{
-    color.try_into().map(|color| Color {
-        color,
-        marker: std::marker::PhantomData,
-    })
-}
-
-impl<'a> Encodable for Color<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/color", &self.color.to_string()])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Command<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    data: &'a str,
-}
-
-pub fn command<'a>(channel: &'a str, data: &'a str) -> Command<'a> {
-    Command { data, channel }
-}
-
-impl<'a> Encodable for Command<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&self.data])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct JtvCommand<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    data: &'a str,
-}
-
-pub fn jtv_command(data: &str) -> JtvCommand<'_> {
-    JtvCommand { data }
-}
-
-impl<'a> Encodable for JtvCommand<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&self.data])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Commercial<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    length: Option<usize>,
-}
-
-pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial<'_> {
-    Commercial {
-        channel,
-        length: length.into(),
-    }
-}
-
-impl<'a> Encodable for Commercial<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(
-            &self.channel,
-            &[
-                &"/commercial",
-                &self
-                    .length
-                    .map(|s| s.to_string())
-                    .as_deref()
-                    .unwrap_or_default(),
-            ],
-        )
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Disconnect<'a> {
-    #[cfg_attr(feature = "serde", serde(skip))]
-    marker: std::marker::PhantomData<&'a Disconnect<'a>>,
-}
-
-pub fn disconnect() -> Disconnect<'static> {
-    Disconnect {
-        marker: std::marker::PhantomData,
-    }
-}
-
-impl<'a> Encodable for Disconnect<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/disconnect"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct EmoteOnly<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn emote_only(channel: &str) -> EmoteOnly<'_> {
-    EmoteOnly { channel }
-}
-
-impl<'a> Encodable for EmoteOnly<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/emoteonly"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct EmoteOnlyOff<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn emote_only_off(channel: &str) -> EmoteOnlyOff<'_> {
-    EmoteOnlyOff { channel }
-}
-
-impl<'a> Encodable for EmoteOnlyOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/emoteonlyoff"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Followers<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    duration: &'a str,
-}
-
-pub fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
-    Followers { channel, duration }
-}
-
-impl<'a> Encodable for Followers<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/followers", &self.duration])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct FollowersOff<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn followers_off(channel: &str) -> FollowersOff<'_> {
-    FollowersOff { channel }
-}
-
-impl<'a> Encodable for FollowersOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/followersoff"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct GiveMod<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
-    GiveMod { channel, username }
-}
-
-impl<'a> Encodable for GiveMod<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/mod", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Help<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn help(channel: &str) -> Help<'_> {
-    Help { channel }
-}
-
-impl<'a> Encodable for Help<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/help"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Host<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    source: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    target: &'a str,
-}
-
-pub fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
-    Host { source, target }
-}
-
-impl<'a> Encodable for Host<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.source, &[&"/host", &self.target])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Join<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn join(channel: &str) -> Join<'_> {
-    Join { channel }
-}
-
-impl<'a> Encodable for Join<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts(&[&"JOIN", &self.channel])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Marker<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    comment: Option<&'a str>,
-}
-
-pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
-    Marker {
-        channel,
-        comment: comment.into(),
-    }
-}
-
-impl<'a> Encodable for Marker<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        fn truncate(s: &str) -> &str {
-            const MAX: usize = 140;
-            if s.len() <= MAX {
-                return s;
-            }
-
-            for n in (0..=MAX).rev() {
-                if s.is_char_boundary(n) {
-                    return &s[..n];
-                }
-            }
-
-            ""
-        }
-
-        ByteWriter::new(buf).command(
-            self.channel,
-            &[&"/marker", &self.comment.map(truncate).unwrap_or_default()],
-        )
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Me<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    msg: &'a str,
-}
-
-pub fn me<'a>(channel: &'a str, msg: &'a str) -> Me<'a> {
-    Me { channel, msg }
-}
-
-impl<'a> Encodable for Me<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/me", &self.msg])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Mods<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn mods(channel: &str) -> Mods<'_> {
-    Mods { channel }
-}
-
-impl<'a> Encodable for Mods<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/mods"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Part<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn part(channel: &str) -> Part<'_> {
-    Part { channel }
-}
-
-impl<'a> Encodable for Part<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts(&[&"PART", &self.channel])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Ping<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    token: &'a str,
-}
-
-pub fn ping(token: &str) -> Ping<'_> {
-    Ping { token }
-}
-
-impl<'a> Encodable for Ping<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts(&[&"PING", &self.token])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Pong<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    token: &'a str,
-}
-
-pub fn pong(token: &str) -> Pong<'_> {
-    Pong { token }
-}
-
-impl<'a> Encodable for Pong<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts_term(&[&"PONG", &" :", &self.token])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Privmsg<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    data: &'a str,
-}
-
-pub fn privmsg<'a>(channel: &'a str, data: &'a str) -> Privmsg<'a> {
-    Privmsg { channel, data }
-}
-
-impl<'a> Encodable for Privmsg<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts_term(&[&"PRIVMSG ", &self.channel, &" :", &self.data])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct R9kBeta<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn r9k_beta(channel: &str) -> R9kBeta<'_> {
-    R9kBeta { channel }
-}
-
-impl<'a> Encodable for R9kBeta<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/r9kbeta"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct R9kBetaOff<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn r9k_beta_off(channel: &str) -> R9kBetaOff<'_> {
-    R9kBetaOff { channel }
-}
-
-impl<'a> Encodable for R9kBetaOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/r9kbetaoff"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Raid<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    source: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    target: &'a str,
-}
-
-pub fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
-    Raid { source, target }
-}
-
-impl<'a> Encodable for Raid<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.source, &[&"/raid", &self.target])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Raw<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    data: &'a str,
-}
-
-pub fn raw(data: &str) -> Raw<'_> {
-    Raw { data }
-}
-
-impl<'a> Encodable for Raw<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).write_bytes(self.data)
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Slow<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    duration: usize,
-}
-
-pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
-    Slow {
-        channel,
-        duration: duration.into().unwrap_or(120),
-    }
-}
-
-impl<'a> Encodable for Slow<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/slow", &self.duration.to_string()])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct SlowOff<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn slow_off(channel: &str) -> SlowOff<'_> {
-    SlowOff { channel }
-}
-
-impl<'a> Encodable for SlowOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/slowoff"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Subscribers<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn subscribers(channel: &str) -> Subscribers<'_> {
-    Subscribers { channel }
-}
-
-impl<'a> Encodable for Subscribers<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/subscribers"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct SubscribersOff<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn subscribers_off(channel: &str) -> SubscribersOff<'_> {
-    SubscribersOff { channel }
-}
-
-impl<'a> Encodable for SubscribersOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/subscribersoff"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Timeout<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    duration: Option<&'a str>,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    reason: Option<&'a str>,
-}
-
-pub fn timeout<'a>(
-    channel: &'a str,
-    username: &'a str,
-    duration: impl Into<Option<&'a str>>,
-    reason: impl Into<Option<&'a str>>,
-) -> Timeout<'a> {
-    Timeout {
-        channel,
-        username,
-        duration: duration.into(),
-        reason: reason.into(),
-    }
-}
-
-impl<'a> Encodable for Timeout<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(
-            self.channel,
-            &[
-                &"/timeout",
-                &self.username,
-                &self.duration.unwrap_or_default(),
-                &self.reason.unwrap_or_default(),
-            ],
-        )
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Unban<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
-    Unban { channel, username }
-}
-
-impl<'a> Encodable for Unban<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unban", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Unhost<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn unhost(channel: &str) -> Unhost<'_> {
-    Unhost { channel }
-}
-
-impl<'a> Encodable for Unhost<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unhost"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Unmod<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
-    Unmod { channel, username }
-}
-
-impl<'a> Encodable for Unmod<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unmod", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Unraid<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn unraid(channel: &str) -> Unraid<'_> {
-    Unraid { channel }
-}
-
-impl<'a> Encodable for Unraid<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unraid"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Untimeout<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn untimeout<'a>(channel: &'a str, username: &'a str) -> Untimeout<'a> {
-    Untimeout { channel, username }
-}
-
-impl<'a> Encodable for Untimeout<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&self.channel, &[&"/untimeout", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Unvip<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
-    Unvip { channel, username }
-}
-
-impl<'a> Encodable for Unvip<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unvip", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Vip<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-}
-
-pub fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
-    Vip { channel, username }
-}
-
-impl<'a> Encodable for Vip<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/vip", &self.username])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Vips<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    channel: &'a str,
-}
-
-pub fn vips(channel: &str) -> Vips<'_> {
-    Vips { channel }
-}
-
-impl<'a> Encodable for Vips<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/vips"])
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub struct Whisper<'a> {
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    username: &'a str,
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    message: &'a str,
-}
-
-pub fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
-    Whisper { username, message }
-}
-
-impl<'a> Encodable for Whisper<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/w", &self.username, &self.message])
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_encode(
-        enc: impl Encodable,
-        expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
-    ) {
-        let mut data = vec![];
-        enc.encode(&mut data).unwrap();
-        assert_eq!(expected, std::str::from_utf8(&data).unwrap());
-    }
-
-    #[test]
-    fn encode_raw() {
-        test_encode(
-            raw("PRIVMSG #test :this is a test"),
-            "PRIVMSG #test :this is a test\r\n",
-        );
-    }
-
-    #[test]
-    fn encode_pong() {
-        test_encode(pong("123456789"), "PONG :123456789\r\n");
-    }
-
-    #[test]
-    fn encode_ping() {
-        test_encode(ping("123456789"), "PING 123456789\r\n");
-    }
-
-    #[test]
-    fn encode_join() {
-        test_encode(join("#museun"), "JOIN #museun\r\n");
-    }
-
-    #[test]
-    fn encode_part() {
-        test_encode(part("#museun"), "PART #museun\r\n");
-    }
-
-    #[test]
-    fn encode_privmsg() {
-        test_encode(
-            privmsg("#museun", "this is a test of a line"),
-            "PRIVMSG #museun :this is a test of a line\r\n",
-        );
-
-        test_encode(
-            privmsg("#museun", &"foo ".repeat(500)),
-            format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
-        );
-    }
-
-    #[test]
-    fn encode_ban() {
-        test_encode(
-            ban("#museun", "museun", None),
-            "PRIVMSG #museun :/ban museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_clear() {
-        test_encode(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
-    }
-
-    #[test]
-    fn encode_color() {
-        let blue: crate::color::Color = "blue".parse().unwrap();
-        test_encode(
-            color(blue).unwrap(),
-            format!("PRIVMSG jtv :/color {}\r\n", blue),
-        )
-    }
-
-    #[test]
-    fn encode_command() {
-        test_encode(
-            command("#museun", "/testing"),
-            "PRIVMSG #museun :/testing\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_commercial() {
-        test_encode(
-            commercial("#museun", None),
-            "PRIVMSG #museun :/commercial\r\n",
-        );
-        test_encode(
-            commercial("#museun", 10),
-            "PRIVMSG #museun :/commercial 10\r\n",
-        );
-        test_encode(
-            commercial("#museun", Some(10)),
-            "PRIVMSG #museun :/commercial 10\r\n",
-        );
-    }
-
-    #[test]
-    fn encode_disconnect() {
-        test_encode(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
-    }
-
-    #[test]
-    fn encode_emoteonly() {
-        test_encode(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
-    }
-
-    #[test]
-    fn encode_emoteonlyoff() {
-        test_encode(
-            emote_only_off("#museun"),
-            "PRIVMSG #museun :/emoteonlyoff\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_followers() {
-        test_encode(
-            followers("#museun", "1 week"),
-            "PRIVMSG #museun :/followers 1 week\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_followersoff() {
-        test_encode(
-            followers_off("#museun"),
-            "PRIVMSG #museun :/followersoff\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_help() {
-        test_encode(help("#museun"), "PRIVMSG #museun :/help\r\n")
-    }
-
-    #[test]
-    fn encode_host() {
-        test_encode(
-            host("#museun", "#shaken_bot"),
-            "PRIVMSG #museun :/host #shaken_bot\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_marker() {
-        test_encode(
-            marker("#museun", Some("this is an example")),
-            "PRIVMSG #museun :/marker this is an example\r\n",
-        );
-        test_encode(
-            marker("#museun", "this is an example"),
-            "PRIVMSG #museun :/marker this is an example\r\n",
-        );
-        test_encode(
-            marker("#museun", "a".repeat(200).as_str()),
-            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
-        );
-        test_encode(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
-    }
-
-    #[test]
-    fn encode_me() {
-        test_encode(
-            me("#museun", "some emote"),
-            "PRIVMSG #museun :/me some emote\r\n",
-        );
-    }
-
-    #[test]
-    fn encode_give_mod() {
-        test_encode(
-            give_mod("#museun", "shaken_bot"),
-            "PRIVMSG #museun :/mod shaken_bot\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_mods() {
-        test_encode(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
-    }
-
-    #[test]
-    fn encode_r9kbeta() {
-        test_encode(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
-    }
-
-    #[test]
-    fn encode_r9kbetaoff() {
-        test_encode(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
-    }
-
-    #[test]
-    fn encode_raid() {
-        test_encode(
-            raid("#museun", "#museun"),
-            "PRIVMSG #museun :/raid #museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_slow() {
-        test_encode(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
-        test_encode(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
-        test_encode(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
-    }
-
-    #[test]
-    fn encode_slowoff() {
-        test_encode(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
-    }
-
-    #[test]
-    fn encode_subscribers() {
-        test_encode(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
-    }
-
-    #[test]
-    fn encode_subscribersoff() {
-        test_encode(
-            subscribers_off("#museun"),
-            "PRIVMSG #museun :/subscribersoff\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_timeout() {
-        test_encode(
-            timeout("#museun", "museun", None, None),
-            "PRIVMSG #museun :/timeout museun\r\n",
-        );
-        test_encode(
-            timeout("#museun", "museun", Some("1d2h"), None),
-            "PRIVMSG #museun :/timeout museun 1d2h\r\n",
-        );
-        test_encode(
-            timeout("#museun", "museun", None, Some("spamming")),
-            "PRIVMSG #museun :/timeout museun spamming\r\n",
-        );
-        test_encode(
-            timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
-            "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
-        );
-    }
-
-    #[test]
-    fn encode_unban() {
-        test_encode(
-            unban("#museun", "museun"),
-            "PRIVMSG #museun :/unban museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_unhost() {
-        test_encode(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
-    }
-
-    #[test]
-    fn encode_unmod() {
-        test_encode(
-            unmod("#museun", "museun"),
-            "PRIVMSG #museun :/unmod museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_unraid() {
-        test_encode(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
-    }
-
-    #[test]
-    fn encode_untimeout() {
-        test_encode(
-            untimeout("#museun", "museun"),
-            "PRIVMSG #museun :/untimeout museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_unvip() {
-        test_encode(
-            unvip("#museun", "museun"),
-            "PRIVMSG #museun :/unvip museun\r\n",
-        )
-    }
-
-    #[test]
-    fn encode_vip() {
-        test_encode(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
-    }
-
-    #[test]
-    fn encode_vips() {
-        test_encode(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
-    }
-
-    #[test]
-    fn encode_whisper() {
-        test_encode(
-            whisper("museun", "hello world"),
-            "PRIVMSG jtv :/w museun hello world\r\n",
-        )
-    }
-
-    #[cfg(feature = "serde")]
-    fn test_serde<'de: 't, 't, T>(
-        enc: T,
-        expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
-    ) where
-        T: ::serde::Serialize + Encodable,
-        T: PartialEq + std::fmt::Debug,
-        T: ::serde::Deserialize<'de> + 't,
-    {
-        let json = serde_json::to_string_pretty(&enc).unwrap();
-
-        #[derive(Debug, PartialEq, ::serde::Deserialize)]
-        struct Wrapper {
-            raw: String,
-        }
-
-        let wrapper: Wrapper = serde_json::from_str(&json).unwrap();
-        assert_eq!(expected, &*wrapper.raw);
-
-        // said json doesn't live for long enough
-        // okay.
-        let whatever: &'static str = Box::leak(json.into_boxed_str());
-
-        let out = serde_json::from_str::<T>(&whatever).unwrap();
-        assert_eq!(out, enc);
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_raw() {
-        test_serde(
-            raw("PRIVMSG #test :this is a test"),
-            "PRIVMSG #test :this is a test\r\n",
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_pong() {
-        test_serde(pong("123456789"), "PONG :123456789\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_ping() {
-        test_serde(ping("123456789"), "PING 123456789\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_join() {
-        test_serde(join("#museun"), "JOIN #museun\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_part() {
-        test_serde(part("#museun"), "PART #museun\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_privmsg() {
-        test_serde(
-            privmsg("#museun", "this is a test of a line"),
-            "PRIVMSG #museun :this is a test of a line\r\n",
-        );
-
-        test_serde(
-            privmsg("#museun", &"foo ".repeat(500)),
-            format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_ban() {
-        test_serde(
-            ban("#museun", "museun", None),
-            "PRIVMSG #museun :/ban museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_clear() {
-        test_serde(clear("#museun"), "PRIVMSG #museun :/clear\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_color() {
-        let blue: crate::color::Color = "blue".parse().unwrap();
-        test_serde(
-            color(blue).unwrap(),
-            format!("PRIVMSG jtv :/color {}\r\n", blue),
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_command() {
-        test_serde(
-            command("#museun", "/testing"),
-            "PRIVMSG #museun :/testing\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_commercial() {
-        test_serde(
-            commercial("#museun", None),
-            "PRIVMSG #museun :/commercial\r\n",
-        );
-        test_serde(
-            commercial("#museun", 10),
-            "PRIVMSG #museun :/commercial 10\r\n",
-        );
-        test_serde(
-            commercial("#museun", Some(10)),
-            "PRIVMSG #museun :/commercial 10\r\n",
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_disconnect() {
-        test_serde(disconnect(), "PRIVMSG jtv :/disconnect\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_emoteonly() {
-        test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_emoteonlyoff() {
-        test_serde(
-            emote_only_off("#museun"),
-            "PRIVMSG #museun :/emoteonlyoff\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_followers() {
-        test_serde(
-            followers("#museun", "1 week"),
-            "PRIVMSG #museun :/followers 1 week\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_followersoff() {
-        test_serde(
-            followers_off("#museun"),
-            "PRIVMSG #museun :/followersoff\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_help() {
-        test_serde(help("#museun"), "PRIVMSG #museun :/help\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_host() {
-        test_serde(
-            host("#museun", "#shaken_bot"),
-            "PRIVMSG #museun :/host #shaken_bot\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_marker() {
-        test_serde(
-            marker("#museun", Some("this is an example")),
-            "PRIVMSG #museun :/marker this is an example\r\n",
-        );
-        test_serde(
-            marker("#museun", "this is an example"),
-            "PRIVMSG #museun :/marker this is an example\r\n",
-        );
-        test_serde(
-            marker("#museun", "a".repeat(200).as_str()),
-            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
-        );
-        test_serde(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_me() {
-        test_serde(
-            me("#museun", "some emote"),
-            "PRIVMSG #museun :/me some emote\r\n",
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_give_mod() {
-        test_serde(
-            give_mod("#museun", "shaken_bot"),
-            "PRIVMSG #museun :/mod shaken_bot\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_mods() {
-        test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_r9kbeta() {
-        test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_r9kbetaoff() {
-        test_serde(r9k_beta_off("#museun"), "PRIVMSG #museun :/r9kbetaoff\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_raid() {
-        test_serde(
-            raid("#museun", "#museun"),
-            "PRIVMSG #museun :/raid #museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_slow() {
-        test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
-        test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
-        test_serde(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_slowoff() {
-        test_serde(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_subscribers() {
-        test_serde(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_subscribersoff() {
-        test_serde(
-            subscribers_off("#museun"),
-            "PRIVMSG #museun :/subscribersoff\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_timeout() {
-        test_serde(
-            timeout("#museun", "museun", None, None),
-            "PRIVMSG #museun :/timeout museun\r\n",
-        );
-        test_serde(
-            timeout("#museun", "museun", Some("1d2h"), None),
-            "PRIVMSG #museun :/timeout museun 1d2h\r\n",
-        );
-        test_serde(
-            timeout("#museun", "museun", None, Some("spamming")),
-            "PRIVMSG #museun :/timeout museun spamming\r\n",
-        );
-        test_serde(
-            timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
-            "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_unban() {
-        test_serde(
-            unban("#museun", "museun"),
-            "PRIVMSG #museun :/unban museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_unhost() {
-        test_serde(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_unmod() {
-        test_serde(
-            unmod("#museun", "museun"),
-            "PRIVMSG #museun :/unmod museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_unraid() {
-        test_serde(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_untimeout() {
-        test_serde(
-            untimeout("#museun", "museun"),
-            "PRIVMSG #museun :/untimeout museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_unvip() {
-        test_serde(
-            unvip("#museun", "museun"),
-            "PRIVMSG #museun :/unvip museun\r\n",
-        )
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_vip() {
-        test_serde(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_vips() {
-        test_serde(vips("#museun"), "PRIVMSG #museun :/vips\r\n")
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serialize_whisper() {
-        test_serde(
-            whisper("museun", "hello world"),
-            "PRIVMSG jtv :/w museun hello world\r\n",
-        )
-    }
-}
+mod ban;
+pub use ban::{ban, Ban};
+
+mod clear;
+pub use clear::{clear, Clear};
+
+mod color;
+pub use color::{color, Color};
+
+mod command;
+pub use command::{command, Command};
+
+mod commercial;
+pub use commercial::{commercial, Commercial};
+
+mod disconnect;
+pub use disconnect::{disconnect, Disconnect};
+
+mod emote_only;
+pub use emote_only::{emote_only, EmoteOnly};
+
+mod emote_only_off;
+pub use emote_only_off::{emote_only_off, EmoteOnlyOff};
+
+mod followers;
+pub use followers::{followers, Followers};
+
+mod followers_off;
+pub use followers_off::{followers_off, FollowersOff};
+
+mod give_mod;
+pub use give_mod::{give_mod, GiveMod};
+
+mod help;
+pub use help::{help, Help};
+
+mod host;
+pub use host::{host, Host};
+
+mod join;
+pub use join::{join, Join};
+
+mod jtv_command;
+pub use jtv_command::{jtv_command, JtvCommand};
+
+mod marker;
+pub use marker::{marker, Marker};
+
+mod me;
+pub use me::{me, Me};
+
+mod mods;
+pub use mods::{mods, Mods};
+
+mod part;
+pub use part::{part, Part};
+
+mod ping;
+pub use ping::{ping, Ping};
+
+mod pong;
+pub use pong::{pong, Pong};
+
+mod privmsg;
+pub use privmsg::{privmsg, Privmsg};
+
+mod r9k_beta;
+pub use r9k_beta::{r9k_beta, R9kBeta};
+
+mod r9k_beta_off;
+pub use r9k_beta_off::{r9k_beta_off, R9kBetaOff};
+
+mod raid;
+pub use raid::{raid, Raid};
+
+mod raw;
+pub use raw::{raw, Raw};
+
+mod slow;
+pub use slow::{slow, Slow};
+
+mod slow_off;
+pub use slow_off::{slow_off, SlowOff};
+
+mod subscribers;
+pub use subscribers::{subscribers, Subscribers};
+
+mod subscribers_off;
+pub use subscribers_off::{subscribers_off, SubscribersOff};
+
+mod timeout;
+pub use timeout::{timeout, Timeout};
+
+mod unban;
+pub use unban::{unban, Unban};
+
+mod unhost;
+pub use unhost::{unhost, Unhost};
+
+mod unmod;
+pub use unmod::{unmod, Unmod};
+
+mod unraid;
+pub use unraid::{unraid, Unraid};
+
+mod untimeout;
+pub use untimeout::{untimeout, Untimeout};
+
+mod unvip;
+pub use unvip::{unvip, Unvip};
+
+mod vip;
+pub use vip::{vip, Vip};
+
+mod vips;
+pub use vips::{vips, Vips};
+
+mod whisper;
+pub use whisper::{whisper, Whisper};
