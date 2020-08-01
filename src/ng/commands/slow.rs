@@ -7,15 +7,21 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Slow<'a> {
-    pub channel: &'a str,
-    pub duration: usize,
+    pub(crate) channel: &'a str,
+    pub(crate) duration: usize,
+}
+
+impl<'a> Slow<'a> {
+    pub fn new(channel: &'a str, duration: impl Into<Option<usize>>) -> Self {
+        Self {
+            channel,
+            duration: duration.into().unwrap_or(120),
+        }
+    }
 }
 
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
-    Slow {
-        channel,
-        duration: duration.into().unwrap_or(120),
-    }
+    Slow::new(channel, duration)
 }
 
 impl<'a> Encodable for Slow<'a> {

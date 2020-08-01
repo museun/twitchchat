@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Join<'a> {
-    pub channel: &'a str,
+    pub(crate) channel: &'a str,
+}
+
+impl<'a> Join<'a> {
+    pub const fn new(channel: &'a str) -> Self {
+        Self { channel }
+    }
 }
 
 pub fn join(channel: &str) -> Join<'_> {
-    Join { channel }
+    Join::new(channel)
 }
 
 impl<'a> Encodable for Join<'a> {

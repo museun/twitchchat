@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Pong<'a> {
-    pub token: &'a str,
+    pub(crate) token: &'a str,
+}
+
+impl<'a> Pong<'a> {
+    pub const fn new(token: &'a str) -> Self {
+        Self { token }
+    }
 }
 
 pub fn pong(token: &str) -> Pong<'_> {
-    Pong { token }
+    Pong::new(token)
 }
 
 impl<'a> Encodable for Pong<'a> {

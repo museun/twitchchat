@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Ping<'a> {
-    pub token: &'a str,
+    pub(crate) token: &'a str,
+}
+
+impl<'a> Ping<'a> {
+    pub const fn new(token: &'a str) -> Self {
+        Self { token }
+    }
 }
 
 pub fn ping(token: &str) -> Ping<'_> {
-    Ping { token }
+    Ping::new(token)
 }
 
 impl<'a> Encodable for Ping<'a> {

@@ -7,11 +7,17 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Raw<'a> {
-    pub data: &'a str,
+    pub(crate) data: &'a str,
+}
+
+impl<'a> Raw<'a> {
+    pub const fn new(data: &'a str) -> Self {
+        Self { data }
+    }
 }
 
 pub fn raw(data: &str) -> Raw<'_> {
-    Raw { data }
+    Raw::new(data)
 }
 
 impl<'a> Encodable for Raw<'a> {

@@ -7,15 +7,21 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {
-    pub channel: &'a str,
-    pub comment: Option<&'a str>,
+    pub(crate) channel: &'a str,
+    pub(crate) comment: Option<&'a str>,
+}
+
+impl<'a> Marker<'a> {
+    pub fn new(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Self {
+        Self {
+            channel,
+            comment: comment.into(),
+        }
+    }
 }
 
 pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
-    Marker {
-        channel,
-        comment: comment.into(),
-    }
+    Marker::new(channel, comment)
 }
 
 impl<'a> Encodable for Marker<'a> {

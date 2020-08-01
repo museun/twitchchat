@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Host<'a> {
-    pub source: &'a str,
-    pub target: &'a str,
+    pub(crate) source: &'a str,
+    pub(crate) target: &'a str,
+}
+
+impl<'a> Host<'a> {
+    pub const fn new(source: &'a str, target: &'a str) -> Self {
+        Self { source, target }
+    }
 }
 
 pub fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
-    Host { source, target }
+    Host::new(source, target)
 }
 
 impl<'a> Encodable for Host<'a> {

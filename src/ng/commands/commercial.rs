@@ -7,15 +7,21 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Commercial<'a> {
-    pub channel: &'a str,
-    pub length: Option<usize>,
+    pub(crate) channel: &'a str,
+    pub(crate) length: Option<usize>,
+}
+
+impl<'a> Commercial<'a> {
+    pub fn new(channel: &'a str, length: impl Into<Option<usize>>) -> Self {
+        Self {
+            channel,
+            length: length.into(),
+        }
+    }
 }
 
 pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial<'_> {
-    Commercial {
-        channel,
-        length: length.into(),
-    }
+    Commercial::new(channel, length)
 }
 
 impl<'a> Encodable for Commercial<'a> {

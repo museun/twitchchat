@@ -7,12 +7,18 @@ use super::ByteWriter;
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Whisper<'a> {
-    pub username: &'a str,
-    pub message: &'a str,
+    pub(crate) username: &'a str,
+    pub(crate) message: &'a str,
+}
+
+impl<'a> Whisper<'a> {
+    pub const fn new(username: &'a str, message: &'a str) -> Self {
+        Self { username, message }
+    }
 }
 
 pub fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
-    Whisper { username, message }
+    Whisper::new(username, message)
 }
 
 impl<'a> Encodable for Whisper<'a> {
