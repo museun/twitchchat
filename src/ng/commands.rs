@@ -148,6 +148,8 @@ serialize! {
     Whisper
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Ban<'a> {
     channel: &'a str,
     username: &'a str,
@@ -171,6 +173,8 @@ pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Clear<'a> {
     channel: &'a str,
 }
@@ -185,6 +189,8 @@ impl<'a> Encodable for Clear<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Color<'a> {
     color: crate::color::Color,
     marker: std::marker::PhantomData<&'a ()>,
@@ -206,6 +212,8 @@ impl<'a> Encodable for Color<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Command<'a> {
     channel: &'a str,
     data: &'a str,
@@ -221,6 +229,8 @@ impl<'a> Encodable for Command<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct JtvCommand<'a> {
     data: &'a str,
 }
@@ -235,6 +245,8 @@ impl<'a> Encodable for JtvCommand<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Commercial<'a> {
     channel: &'a str,
     length: Option<usize>,
@@ -263,6 +275,8 @@ impl<'a> Encodable for Commercial<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Disconnect<'a>(std::marker::PhantomData<&'a ()>);
 
 pub fn disconnect() -> Disconnect<'static> {
@@ -275,6 +289,8 @@ impl<'a> Encodable for Disconnect<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct EmoteOnly<'a> {
     channel: &'a str,
 }
@@ -289,6 +305,8 @@ impl<'a> Encodable for EmoteOnly<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct EmoteOnlyOff<'a> {
     channel: &'a str,
 }
@@ -303,6 +321,8 @@ impl<'a> Encodable for EmoteOnlyOff<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Followers<'a> {
     channel: &'a str,
     duration: &'a str,
@@ -318,6 +338,8 @@ impl<'a> Encodable for Followers<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct FollowersOff<'a> {
     channel: &'a str,
 }
@@ -332,6 +354,8 @@ impl<'a> Encodable for FollowersOff<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct GiveMod<'a> {
     channel: &'a str,
     username: &'a str,
@@ -347,6 +371,8 @@ impl<'a> Encodable for GiveMod<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Help<'a> {
     channel: &'a str,
 }
@@ -361,6 +387,8 @@ impl<'a> Encodable for Help<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Host<'a> {
     source: &'a str,
     target: &'a str,
@@ -376,6 +404,8 @@ impl<'a> Encodable for Host<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Join<'a> {
     channel: &'a str,
 }
@@ -390,6 +420,8 @@ impl<'a> Encodable for Join<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Marker<'a> {
     channel: &'a str,
     comment: Option<&'a str>,
@@ -426,6 +458,8 @@ impl<'a> Encodable for Marker<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Me<'a> {
     channel: &'a str,
     msg: &'a str,
@@ -441,6 +475,8 @@ impl<'a> Encodable for Me<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Mods<'a> {
     channel: &'a str,
 }
@@ -455,6 +491,8 @@ impl<'a> Encodable for Mods<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Part<'a> {
     channel: &'a str,
 }
@@ -469,6 +507,8 @@ impl<'a> Encodable for Part<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Ping<'a> {
     token: &'a str,
 }
@@ -483,6 +523,8 @@ impl<'a> Encodable for Ping<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Pong<'a> {
     token: &'a str,
 }
@@ -497,6 +539,8 @@ impl<'a> Encodable for Pong<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Privmsg<'a> {
     channel: &'a str,
     data: &'a str,
@@ -512,6 +556,8 @@ impl<'a> Encodable for Privmsg<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct R9kBeta<'a> {
     channel: &'a str,
 }
@@ -526,6 +572,8 @@ impl<'a> Encodable for R9kBeta<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct R9kBetaOff<'a> {
     channel: &'a str,
 }
@@ -540,6 +588,8 @@ impl<'a> Encodable for R9kBetaOff<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Raid<'a> {
     source: &'a str,
     target: &'a str,
@@ -555,6 +605,8 @@ impl<'a> Encodable for Raid<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Raw<'a> {
     data: &'a str,
 }
@@ -569,6 +621,8 @@ impl<'a> Encodable for Raw<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Slow<'a> {
     channel: &'a str,
     duration: usize,
@@ -587,6 +641,8 @@ impl<'a> Encodable for Slow<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct SlowOff<'a> {
     channel: &'a str,
 }
@@ -601,6 +657,8 @@ impl<'a> Encodable for SlowOff<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Subscribers<'a> {
     channel: &'a str,
 }
@@ -615,6 +673,8 @@ impl<'a> Encodable for Subscribers<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct SubscribersOff<'a> {
     channel: &'a str,
 }
@@ -629,6 +689,8 @@ impl<'a> Encodable for SubscribersOff<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Timeout<'a> {
     channel: &'a str,
     username: &'a str,
@@ -664,6 +726,8 @@ impl<'a> Encodable for Timeout<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Unban<'a> {
     channel: &'a str,
     username: &'a str,
@@ -679,6 +743,8 @@ impl<'a> Encodable for Unban<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Unhost<'a> {
     channel: &'a str,
 }
@@ -693,6 +759,8 @@ impl<'a> Encodable for Unhost<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Unmod<'a> {
     channel: &'a str,
     username: &'a str,
@@ -708,6 +776,8 @@ impl<'a> Encodable for Unmod<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Unraid<'a> {
     channel: &'a str,
 }
@@ -722,6 +792,8 @@ impl<'a> Encodable for Unraid<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Untimeout<'a> {
     channel: &'a str,
     username: &'a str,
@@ -737,6 +809,8 @@ impl<'a> Encodable for Untimeout<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Unvip<'a> {
     channel: &'a str,
     username: &'a str,
@@ -752,6 +826,8 @@ impl<'a> Encodable for Unvip<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Vip<'a> {
     channel: &'a str,
     username: &'a str,
@@ -767,6 +843,8 @@ impl<'a> Encodable for Vip<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Vips<'a> {
     channel: &'a str,
 }
@@ -781,6 +859,8 @@ impl<'a> Encodable for Vips<'a> {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 pub struct Whisper<'a> {
     username: &'a str,
     message: &'a str,
