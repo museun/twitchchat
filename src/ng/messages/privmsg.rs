@@ -83,7 +83,7 @@ impl<'t> Privmsg<'t> {
     }
 
     pub fn is_moderator(&self) -> bool {
-        self.tags().get_as_bool("mod")
+        self.contains_badge(BadgeKind::Moderator)
     }
 
     pub fn is_vip(&self) -> bool {
