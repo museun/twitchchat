@@ -96,15 +96,13 @@ impl<'t> Privmsg<'t> {
 
     /// Returns the display name of the user, if set.
     ///
-    /// Users can changed the casing and encoding of their names, if they choose to.
+    /// Users can changed the casing and encoding of their names, if they choose
+    /// to.
     ///
     /// By default, their display name is not set. If the user **foo** changes
     /// their display name to **FOO** then this'll return that **FOO**.
-    /// Otherwise it'll return `None`. This also applies to users who have
-    /// decided to user a localized version of their name.
     ///
-    /// You can get their username with the field [`name`](#structfield.name).
-    ///
+    /// Otherwise it'll return `None`.
     pub fn display_name(&'t self) -> Option<&str> {
         self.tags().get("display-name")
     }
