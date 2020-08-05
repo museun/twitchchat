@@ -1,7 +1,10 @@
-use crate::ng::{
-    FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
+use crate::{
+    color::Color,
+    ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator},
+    parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeKind, Emotes,
 };
 
+/// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
 pub struct Whisper<'t> {
     raw: Str<'t>,
@@ -13,8 +16,83 @@ pub struct Whisper<'t> {
 impl<'t> Whisper<'t> {
     raw!();
     tags!();
-    str_field!(name);
-    str_field!(data);
+    str_field!(
+        /// User who sent this messages
+        name
+    );
+    str_field!(
+        /// Data that the user provided
+        data
+    );
+
+    /// The color of the user who sent this message, if set
+    pub fn color(&self) -> Option<Color> {
+        self.tags().get_parsed("color")
+    }
+
+    /// Returns the display name of the user, if set.
+    ///
+    /// Users can changed the casing and encoding of their names, if they choose
+    /// to.
+    ///
+    /// By default, their display name is not set. If the user **foo** changes
+    /// their display name to **FOO** then this'll return that **FOO**.
+    /// Otherwise it'll return `None`. This also applies to users who have
+    /// decided to user a localized version of their name.
+    ///
+    /// You can get their username with the field [`name`](#structfield.name).
+    pub fn display_name(&'t self) -> Option<&'t str> {
+        self.tags().get("display-name")
+    }
+
+    /// Badges attached to this message
+    pub fn badges(&'t self) -> Vec<Badge<'t>> {
+        self.tags()
+            .get("badges")
+            .map(parse_badges)
+            .unwrap_or_default()
+    }
+
+    /// Emotes attached to this message
+    pub fn emotes(&self) -> Vec<Emotes> {
+        self.tags()
+            .get("emotes")
+            .map(parse_emotes)
+            .unwrap_or_default()
+    }
+
+    /// Whether the user sending this message was a staff member
+    pub fn is_staff(&self) -> bool {
+        self.contains_badge(BadgeKind::Staff)
+    }
+
+    /// Whether the user sending this message had turbo
+    pub fn is_turbo(&self) -> bool {
+        self.contains_badge(BadgeKind::Turbo)
+    }
+
+    /// Whether the user sending this message was a global moderator
+    pub fn is_global_moderator(&self) -> bool {
+        self.contains_badge(BadgeKind::GlobalMod)
+    }
+
+    /// The timestamp of when this message was received by Twitch
+    pub fn tmi_sent_ts(&self) -> Option<u64> {
+        self.tags().get_parsed("tmi-sent-ts")
+    }
+
+    /// The id of the user who sent this message
+    pub fn user_id(&self) -> Option<u64> {
+        self.tags().get_parsed("user-id")
+    }
+
+    fn contains_badge(&self, badge: BadgeKind) -> bool {
+        self.tags()
+            .get("badges")
+            .into_iter()
+            .flat_map(parse_badges_iter)
+            .any(|x| x.kind == badge)
+    }
 }
 
 impl<'t> FromIrcMessage<'t> for Whisper<'t> {

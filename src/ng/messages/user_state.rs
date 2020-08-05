@@ -1,8 +1,8 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
-
 use crate::{color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes};
 
+/// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserState<'t> {
     raw: Str<'t>,
@@ -13,8 +13,15 @@ pub struct UserState<'t> {
 impl<'t> UserState<'t> {
     raw!();
     tags!();
-    str_field!(channel);
+    str_field!(
+        /// Channel this event happened on
+        channel
+    );
 
+    /// Metadata related to the chat badges
+    ///
+    /// Currently used only for `subscriber`, to indicate the exact number of
+    /// months the user has been a subscriber
     pub fn badge_info(&self) -> Vec<BadgeInfo<'_>> {
         self.tags()
             .get("badge-info")
@@ -22,6 +29,7 @@ impl<'t> UserState<'t> {
             .unwrap_or_default()
     }
 
+    /// Badges attached to this message
     pub fn badges(&self) -> Vec<Badge<'_>> {
         self.tags()
             .get("badges")
@@ -29,14 +37,17 @@ impl<'t> UserState<'t> {
             .unwrap_or_default()
     }
 
+    /// The user's color, if set
     pub fn color(&self) -> Option<Color> {
         self.tags().get_parsed("color")
     }
 
+    /// The user's display name, if set
     pub fn display_name(&self) -> Option<&str> {
         self.tags().get("display-name")
     }
 
+    /// Emotes attached to this message
     pub fn emotes(&self) -> Vec<Emotes> {
         self.tags()
             .get("emotes")
@@ -44,6 +55,7 @@ impl<'t> UserState<'t> {
             .unwrap_or_default()
     }
 
+    /// Whether this user is a moderator
     pub fn is_moderator(&self) -> bool {
         self.tags().get_as_bool("mod")
     }
