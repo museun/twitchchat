@@ -1,3 +1,7 @@
+#[macro_use]
+mod maybe_owned;
+pub use maybe_owned::{IntoOwned, MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
+
 pub mod decoder;
 pub use decoder::{Decoder, DecoderAsync, Error as DecodeError};
 
@@ -15,9 +19,6 @@ pub use from_irc_message::{FromIrcMessage, InvalidMessage};
 
 pub mod irc;
 use irc::{IrcMessage, TagIndices, Tags};
-
-mod maybe_owned;
-pub use maybe_owned::{MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
 
 pub mod validator;
 use validator::Validator;

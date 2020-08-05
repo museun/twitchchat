@@ -39,6 +39,8 @@ impl<'t> FromIrcMessage<'t> for Part<'t> {
     }
 }
 
+into_owned!(Part { raw, name, channel });
+
 serde_struct!(Part { raw, name, channel });
 
 #[cfg(test)]

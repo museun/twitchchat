@@ -26,6 +26,8 @@ impl<'t> FromIrcMessage<'t> for Reconnect<'t> {
     }
 }
 
+into_owned!(Reconnect { raw });
+
 serde_struct!(Reconnect { raw });
 
 #[cfg(test)]

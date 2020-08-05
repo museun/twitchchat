@@ -1,6 +1,5 @@
-use crate::ng::{Str, StrIndex};
-
 use super::{parser::Parser, Prefix, PrefixIndex};
+use crate::ng::{Str, StrIndex};
 
 #[derive(Clone, PartialEq)]
 pub struct IrcMessage<'a> {
@@ -34,27 +33,6 @@ impl<'a> IrcMessage<'a> {
             args: p.args(),
             data: p.data(),
             raw: input,
-        }
-    }
-
-    pub fn as_owned(&self) -> IrcMessage<'static> {
-        let Self {
-            ref raw,
-            tags,
-            prefix,
-            command,
-            args,
-            data,
-        } = *self;
-
-        IrcMessage {
-            // this clone is unfortunate
-            raw: raw.clone().into_owned(),
-            tags,
-            prefix,
-            command,
-            args,
-            data,
         }
     }
 
@@ -115,6 +93,17 @@ impl<'a> IrcMessage<'a> {
         }
 
         None
+    }
+}
+
+into_owned! {
+    IrcMessage {
+        raw,
+        tags,
+        prefix,
+        command,
+        args,
+        data,
     }
 }
 

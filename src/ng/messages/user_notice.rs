@@ -328,6 +328,13 @@ impl<'t> FromIrcMessage<'t> for UserNotice<'t> {
     }
 }
 
+into_owned!(UserNotice {
+    raw,
+    tags,
+    channel,
+    message,
+});
+
 serde_struct!(UserNotice {
     raw,
     tags,

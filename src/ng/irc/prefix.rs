@@ -1,4 +1,5 @@
 use super::super::{Str, StrIndex};
+use crate::ng::IntoOwned;
 
 pub struct Prefix<'a> {
     pub(crate) data: &'a Str<'a>,
@@ -56,5 +57,12 @@ impl PrefixIndex {
             PrefixIndex::User { nick } => nick,
             PrefixIndex::Server { host } => host,
         }
+    }
+}
+
+impl IntoOwned<'static> for PrefixIndex {
+    type Output = Self;
+    fn into_owned(self) -> Self::Output {
+        self
     }
 }

@@ -33,6 +33,8 @@ impl<'t> FromIrcMessage<'t> for Pong<'t> {
     }
 }
 
+into_owned!(Pong { raw, token });
+
 serde_struct!(Pong { raw, token });
 
 #[cfg(test)]
