@@ -1,13 +1,20 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// Event kind for determine when a Host event beings or end
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum HostTargetKind<'a> {
-    Start { target: &'a str },
+    /// The host event started
+    Start {
+        /// Target channel that is being hosted
+        target: &'a str,
+    },
+    /// The host event ended
     End,
 }
 
+/// When a channel starts to host another channel
 #[derive(Debug, Clone, PartialEq)]
 pub struct HostTarget<'t> {
     raw: Str<'t>,
@@ -18,12 +25,17 @@ pub struct HostTarget<'t> {
 
 impl<'t> HostTarget<'t> {
     raw!();
-    str_field!(source);
+    str_field!(
+        /// Source channel (the one doing the hosting).
+        source
+    );
 
+    /// How many viewers are going along
     pub fn viewers(&self) -> Option<usize> {
         self.viewers
     }
 
+    /// What kind of event this was. e.g. `Start` or `End`
     pub fn host_target_kind(&self) -> HostTargetKind<'_> {
         match self.target {
             Some(index) => HostTargetKind::Start {

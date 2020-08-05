@@ -1,6 +1,7 @@
 use super::{IrcMessage, Str, StrIndex};
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 
+/// Acknowledgement (or not) on a CAPS request
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cap<'t> {
     raw: Str<'t>,
@@ -10,8 +11,13 @@ pub struct Cap<'t> {
 
 impl<'t> Cap<'t> {
     raw!();
-    str_field!(capability);
 
+    str_field!(
+        /// The capability name
+        capability
+    );
+
+    /// Whether it was acknowledged
     pub fn acknowledged(&self) -> bool {
         self.acknowledged
     }

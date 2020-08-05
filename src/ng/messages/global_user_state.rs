@@ -1,13 +1,53 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, TagIndices, Tags, Validator};
 use crate::{color::Color, Badge};
 
+/// Sent on successful login, if TAGs caps have been sent beforehand
 #[derive(Debug, Clone, PartialEq)]
 pub struct GlobalUserState<'t> {
     raw: Str<'t>,
     tags: TagIndices,
+    /// Your user-id
     pub user_id: Str<'t>,
+    /// Your display name, if set   
     pub display_name: Option<Str<'t>>,
+    /// Your color, if set. Defaults to `white`
     pub color: Color,
+}
+
+impl<'t> GlobalUserState<'t> {
+    raw!();
+    tags!();
+
+    /// Your available emote sets, always contains atleast '0'
+    pub fn emote_sets(&self) -> Vec<&str> {
+        self.tags()
+            .get("emote-sets")
+            .map(|s| s.split(',').collect())
+            .unwrap_or_else(|| vec!["0"])
+    }
+
+    /// Any badges you have
+    pub fn badges(&self) -> Vec<Badge<'_>> {
+        self.tags()
+            .get("badges")
+            .map(|s| s.split(',').filter_map(Badge::parse).collect())
+            .unwrap_or_default()
+    }
+
+    /// Your user-id
+    pub fn user_id(&self) -> &str {
+        &*self.user_id
+    }
+
+    /// Your display name, if set   
+    pub fn display_name(&self) -> Option<&str> {
+        self.display_name.as_deref()
+    }
+
+    /// Your color, if set. Defaults to `white`
+    pub fn color(&self) -> Color {
+        self.color
+    }
 }
 
 impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
@@ -51,37 +91,6 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
         };
 
         Ok(this)
-    }
-}
-
-impl<'t> GlobalUserState<'t> {
-    raw!();
-    tags!();
-
-    pub fn emote_sets(&self) -> Vec<&str> {
-        self.tags()
-            .get("emote-sets")
-            .map(|s| s.split(',').collect())
-            .unwrap_or_else(|| vec!["0"])
-    }
-
-    pub fn badges(&self) -> Vec<Badge<'_>> {
-        self.tags()
-            .get("badges")
-            .map(|s| s.split(',').filter_map(Badge::parse).collect())
-            .unwrap_or_default()
-    }
-
-    pub fn user_id(&self) -> &str {
-        &*self.user_id
-    }
-
-    pub fn display_name(&self) -> Option<&str> {
-        self.display_name.as_deref()
-    }
-
-    pub fn color(&self) -> Color {
-        self.color
     }
 }
 

@@ -4,24 +4,43 @@ use crate::ng::{FromIrcMessage, InvalidMessage};
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum AllCommands<'a> {
+    /// An raw event occured
     Raw(IrcMessage<'a>),
+    /// A capabilities event occured
     IrcReady(IrcReady<'a>),
+    /// A ClearChat event occured
     Ready(Ready<'a>),
+    /// A ClearMsg event occured
     Cap(Cap<'a>),
+    /// A GlobalUserState event occured
     ClearChat(ClearChat<'a>),
+    /// A HostTarget event occured
     ClearMsg(ClearMsg<'a>),
+    /// A IrcReady event occured
     GlobalUserState(GlobalUserState<'a>),
+    /// A Join event occured
     HostTarget(HostTarget<'a>),
+    /// A Notice event occured
     Join(Join<'a>),
+    /// A Part event occured
     Notice(Notice<'a>),
+    /// A Ping event occured
     Part(Part<'a>),
+    /// A Pong event occured
     Ping(Ping<'a>),
+    /// A Privmsg event occured
     Pong(Pong<'a>),
+    /// A Ready event occured
     Privmsg(Privmsg<'a>),
+    /// A Reconnect event occured
     Reconnect(Reconnect<'a>),
+    /// A RoomState event occured
     RoomState(RoomState<'a>),
+    /// A UserNotice event occured
     UserNotice(UserNotice<'a>),
+    /// A UserState event occured
     UserState(UserState<'a>),
+    /// A Whisper event occured
     Whisper(Whisper<'a>),
 }
 
@@ -60,6 +79,42 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
 
         Ok(this)
     }
+}
+
+macro_rules! from_other {
+    ($($ident:tt)*) => {
+        $(
+            impl<'t> From<$ident<'t>> for AllCommands<'t> {
+                fn from(msg: $ident<'t>) -> Self {
+                    Self::$ident(msg)
+                }
+            }
+        )*
+    };
+}
+
+type Raw<'t> = IrcMessage<'t>;
+
+from_other! {
+    Raw
+    IrcReady
+    Ready
+    Cap
+    ClearChat
+    ClearMsg
+    GlobalUserState
+    HostTarget
+    Join
+    Notice
+    Part
+    Ping
+    Pong
+    Privmsg
+    Reconnect
+    RoomState
+    UserNotice
+    UserState
+    Whisper
 }
 
 #[cfg(test)]

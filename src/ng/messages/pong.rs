@@ -1,6 +1,9 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// A pong response sent from the server
+///
+/// This should be a response to sending a PING to the server
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pong<'t> {
     raw: Str<'t>,
@@ -9,7 +12,10 @@ pub struct Pong<'t> {
 
 impl<'t> Pong<'t> {
     raw!();
-    str_field!(token);
+    str_field!(
+        /// Token associated with the PONG event
+        token
+    );
 }
 
 impl<'t> FromIrcMessage<'t> for Pong<'t> {

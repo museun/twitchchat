@@ -1,6 +1,9 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
+/// When a user's message(s) have been purged.
+///
+/// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClearChat<'t> {
     raw: Str<'t>,
@@ -11,10 +14,18 @@ pub struct ClearChat<'t> {
 
 impl<'t> ClearChat<'t> {
     raw!();
-    str_field!(channel);
-    opt_str_field!(name);
     tags!();
 
+    str_field!(
+        /// The channel this event happened on
+        channel
+    );
+    opt_str_field!(
+        /// The user, if any, that was being purged
+        name
+    );
+
+    /// (Optional) Duration of the timeout, in seconds. If omitted, the ban is permanent.
     pub fn ban_duration(&self) -> Option<u64> {
         self.tags().get_parsed("ban-duration")
     }

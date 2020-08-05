@@ -1,6 +1,7 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// Happens when the IRC connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]
 pub struct IrcReady<'t> {
     raw: Str<'t>,
@@ -9,7 +10,10 @@ pub struct IrcReady<'t> {
 
 impl<'t> IrcReady<'t> {
     raw!();
-    str_field!(nickname);
+    str_field!(
+        /// The name the server will refer to you as
+        nickname
+    );
 }
 
 impl<'t> FromIrcMessage<'t> for IrcReady<'t> {

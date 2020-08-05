@@ -51,6 +51,12 @@ macro_rules! raw {
 }
 
 macro_rules! str_field {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
+        pub fn $name(&self) -> &str {
+            &self.raw[self.$name]
+        }
+    };
     ($name:ident) => {
         pub fn $name(&self) -> &str {
             &self.raw[self.$name]
@@ -59,6 +65,13 @@ macro_rules! str_field {
 }
 
 macro_rules! opt_str_field {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
+        pub fn $name(&self) -> Option<&str> {
+            self.$name.map(|index| &self.raw[index])
+        }
+    };
+
     ($name:ident) => {
         pub fn $name(&self) -> Option<&str> {
             self.$name.map(|index| &self.raw[index])

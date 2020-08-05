@@ -1,6 +1,9 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// User leave message
+///
+/// The happens when a user (yourself included) leaves a channel
 #[derive(Debug, Clone, PartialEq)]
 pub struct Part<'t> {
     raw: Str<'t>,
@@ -10,8 +13,14 @@ pub struct Part<'t> {
 
 impl<'t> Part<'t> {
     raw!();
-    str_field!(name);
-    str_field!(channel);
+    str_field!(
+        /// Name of the user that left the channel
+        name
+    );
+    str_field!(
+        /// Channel which they left
+        channel
+    );
 }
 
 impl<'t> FromIrcMessage<'t> for Part<'t> {
