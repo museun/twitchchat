@@ -29,6 +29,12 @@ impl<'t> ClearChat<'t> {
     pub fn ban_duration(&self) -> Option<u64> {
         self.tags().get_parsed("ban-duration")
     }
+
+    // TODO https://github.com/museun/twitchchat/pull/163#discussion_r465344127
+    // /// The room id this event happened on
+    // pub fn room_id(&self) -> Option<&str> {
+    //     self.tags().get("room-id")
+    // }
 }
 
 impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
