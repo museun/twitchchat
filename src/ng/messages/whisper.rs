@@ -37,10 +37,8 @@ impl<'t> Whisper<'t> {
     ///
     /// By default, their display name is not set. If the user **foo** changes
     /// their display name to **FOO** then this'll return that **FOO**.
-    /// Otherwise it'll return `None`. This also applies to users who have
-    /// decided to user a localized version of their name.
     ///
-    /// You can get their username with the field [`name`](#structfield.name).
+    /// Otherwise it'll return `None`.
     pub fn display_name(&'t self) -> Option<&'t str> {
         self.tags().get("display-name")
     }
