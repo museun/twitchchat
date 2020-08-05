@@ -2,10 +2,6 @@ use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
 /// A ping request from the server
-///
-/// This is sent periodically, and handled by the `Client` internally
-///
-/// But you can use them however you want
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ping<'t> {
     raw: Str<'t>,
