@@ -22,7 +22,7 @@ impl<'t> Notice<'t> {
         message
     );
 
-    /// A message ID string. Can be used for ***i18ln***.
+    /// A message ID string. Can be used for ***i18n***.
     ///
     /// Valid values: see [Twitch IRC: msg-id Tags](https://dev.twitch.tv/docs/irc/msg-id/).
     ///

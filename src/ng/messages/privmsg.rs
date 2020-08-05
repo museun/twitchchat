@@ -46,7 +46,7 @@ impl<'t> Privmsg<'t> {
         data
     );
 
-    /// Gets the 'CTCP' kind associated with this message, if any;
+    /// Gets the 'CTCP' kind associated with this message, if any
     pub fn ctcp(&self) -> Option<Ctcp<'_>> {
         const ACTION: &str = "ACTION";
         let command = &self.raw[self.ctcp?];
@@ -176,8 +176,9 @@ impl<'t> Privmsg<'t> {
         self.tags().get("custom-reward-id")
     }
 
-    /// `msg-id` is returned on, for example, highlighted message where `msg-id`
-    /// would be `highlighted-message`
+    /// The name of the custom channel reward.
+    ///
+    /// For example, a highlighted message would be `highlighted-message`
     ///
     /// **NOTE** From the new community points rewards.
     pub fn msg_id(&self) -> Option<&str> {

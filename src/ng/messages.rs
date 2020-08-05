@@ -43,7 +43,7 @@ macro_rules! raw {
             &*self.raw
         }
 
-        /// Get the raw `Str<'a>` out
+        /// Consumes the message, returning the raw [`Str<'_>`](./enum.Str.html)
         pub fn into_inner(self) -> Str<'t> {
             self.raw
         }
@@ -101,7 +101,7 @@ mod ready;
 pub use ready::Ready;
 
 mod cap;
-pub use cap::Cap;
+pub use cap::{Cap, Capability};
 
 mod clear_chat;
 pub use clear_chat::ClearChat;
@@ -113,13 +113,13 @@ mod global_user_state;
 pub use global_user_state::GlobalUserState;
 
 mod host_target;
-pub use host_target::HostTarget;
+pub use host_target::{HostTarget, HostTargetKind};
 
 mod join;
 pub use join::Join;
 
 mod notice;
-pub use notice::Notice;
+pub use notice::{MessageId, Notice};
 
 mod part;
 pub use part::Part;
@@ -137,10 +137,10 @@ mod reconnect;
 pub use reconnect::Reconnect;
 
 mod room_state;
-pub use room_state::RoomState;
+pub use room_state::{FollowersOnly, RoomState};
 
 mod user_notice;
-pub use user_notice::UserNotice;
+pub use user_notice::{NoticeType, SubPlan, UserNotice};
 
 mod user_state;
 pub use user_state::UserState;

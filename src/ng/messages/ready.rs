@@ -1,6 +1,8 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// An event that is produced when the Twitch connection has been succesfully
+/// established
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ready<'t> {
     raw: Str<'t>,
@@ -9,7 +11,10 @@ pub struct Ready<'t> {
 
 impl<'t> Ready<'t> {
     raw!();
-    str_field!(username);
+    str_field!(
+        /// The name Twitch will refer to you as
+        username
+    );
 }
 
 impl<'t> FromIrcMessage<'t> for Ready<'t> {
