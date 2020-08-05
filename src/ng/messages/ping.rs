@@ -31,6 +31,8 @@ impl<'t> FromIrcMessage<'t> for Ping<'t> {
     }
 }
 
+into_owned!(Ping { raw, token });
+
 serde_struct!(Ping { raw, token });
 
 #[cfg(test)]

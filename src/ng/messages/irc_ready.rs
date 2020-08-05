@@ -31,6 +31,8 @@ impl<'t> FromIrcMessage<'t> for IrcReady<'t> {
     }
 }
 
+into_owned!(IrcReady { raw, nickname });
+
 serde_struct!(IrcReady { raw, nickname });
 
 #[cfg(test)]

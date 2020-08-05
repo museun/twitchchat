@@ -1,5 +1,5 @@
 use super::*;
-use crate::ng::{FromIrcMessage, InvalidMessage};
+use crate::ng::{FromIrcMessage, IntoOwned, InvalidMessage};
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -42,6 +42,33 @@ pub enum AllCommands<'a> {
     UserState(UserState<'a>),
     /// A Whisper event occured
     Whisper(Whisper<'a>),
+}
+
+impl<'a> IntoOwned<'a> for AllCommands<'a> {
+    type Output = AllCommands<'static>;
+    fn into_owned(self) -> Self::Output {
+        match self {
+            Self::Raw(s) => AllCommands::Raw(s.into_owned()),
+            Self::IrcReady(s) => AllCommands::IrcReady(s.into_owned()),
+            Self::Ready(s) => AllCommands::Ready(s.into_owned()),
+            Self::Cap(s) => AllCommands::Cap(s.into_owned()),
+            Self::ClearChat(s) => AllCommands::ClearChat(s.into_owned()),
+            Self::ClearMsg(s) => AllCommands::ClearMsg(s.into_owned()),
+            Self::GlobalUserState(s) => AllCommands::GlobalUserState(s.into_owned()),
+            Self::HostTarget(s) => AllCommands::HostTarget(s.into_owned()),
+            Self::Join(s) => AllCommands::Join(s.into_owned()),
+            Self::Notice(s) => AllCommands::Notice(s.into_owned()),
+            Self::Part(s) => AllCommands::Part(s.into_owned()),
+            Self::Ping(s) => AllCommands::Ping(s.into_owned()),
+            Self::Pong(s) => AllCommands::Pong(s.into_owned()),
+            Self::Privmsg(s) => AllCommands::Privmsg(s.into_owned()),
+            Self::Reconnect(s) => AllCommands::Reconnect(s.into_owned()),
+            Self::RoomState(s) => AllCommands::RoomState(s.into_owned()),
+            Self::UserNotice(s) => AllCommands::UserNotice(s.into_owned()),
+            Self::UserState(s) => AllCommands::UserState(s.into_owned()),
+            Self::Whisper(s) => AllCommands::Whisper(s.into_owned()),
+        }
+    }
 }
 
 impl<'a> FromIrcMessage<'a> for AllCommands<'a> {

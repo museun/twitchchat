@@ -54,6 +54,13 @@ impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
     }
 }
 
+into_owned!(ClearChat {
+    raw,
+    tags,
+    channel,
+    name
+});
+
 serde_struct!(ClearChat {
     raw,
     tags,

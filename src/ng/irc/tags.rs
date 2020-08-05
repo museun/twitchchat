@@ -1,4 +1,5 @@
 use super::super::{Str, StrIndex};
+use crate::ng::IntoOwned;
 use std::{borrow::Borrow, str::FromStr};
 
 #[derive(Clone, PartialEq)]
@@ -161,6 +162,13 @@ impl TagIndices {
 
     fn iter<'t>(&'t self, data: &'t str) -> impl Iterator<Item = (&'t str, &'t str)> + 't {
         self.map.iter().map(move |(k, v)| (&data[k], &data[v]))
+    }
+}
+
+impl IntoOwned<'static> for TagIndices {
+    type Output = Self;
+    fn into_owned(self) -> Self::Output {
+        self
     }
 }
 

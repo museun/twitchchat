@@ -57,6 +57,12 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
     }
 }
 
+into_owned!(Cap {
+    raw,
+    capability,
+    acknowledged
+});
+
 serde_struct!(Cap { raw, capability });
 
 #[cfg(test)]

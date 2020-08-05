@@ -79,6 +79,13 @@ impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
     }
 }
 
+into_owned!(HostTarget {
+    raw,
+    source,
+    viewers,
+    target,
+});
+
 serde_struct!(HostTarget {
     raw,
     source,

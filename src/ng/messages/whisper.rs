@@ -113,6 +113,13 @@ impl<'t> FromIrcMessage<'t> for Whisper<'t> {
     }
 }
 
+into_owned!(Whisper {
+    raw,
+    tags,
+    name,
+    data,
+});
+
 serde_struct!(Whisper {
     raw,
     tags,

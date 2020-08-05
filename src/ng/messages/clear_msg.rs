@@ -52,6 +52,13 @@ impl<'t> FromIrcMessage<'t> for ClearMsg<'t> {
     }
 }
 
+into_owned!(ClearMsg {
+    raw,
+    tags,
+    channel,
+    message,
+});
+
 serde_struct!(ClearMsg {
     raw,
     tags,

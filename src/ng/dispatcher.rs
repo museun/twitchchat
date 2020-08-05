@@ -1,5 +1,5 @@
 use super::messages::*;
-use super::{EventMap, EventStream, FromIrcMessage, InvalidMessage, IrcMessage};
+use super::{EventMap, EventStream, FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage};
 
 use std::convert::Infallible;
 
@@ -63,14 +63,14 @@ impl Dispatcher {
     pub fn dispatch<'a>(&mut self, message: IrcMessage<'a>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
-        let msg = message.as_owned();
+        let msg = message.into_owned();
         macro_rules! dispatch {
             ($ty:ty) => {
                 self.dispatch_static::<$ty>(msg)?
             };
         }
 
-        match message.get_command() {
+        match msg.get_command() {
             M::IRCREADY => dispatch!(IrcReady),
             M::READY => dispatch!(Ready),
             M::CAP => dispatch!(Cap),
@@ -92,10 +92,10 @@ impl Dispatcher {
             _ => {
                 // TODO user-defined messages
 
-                self.dispatch_static::<IrcMessage>(msg.as_owned())
+                self.dispatch_static::<IrcMessage>(msg.clone())
                     .expect("identity conversion should be upheld");
 
-                self.dispatch_static::<AllCommands>(msg.as_owned())
+                self.dispatch_static::<AllCommands>(msg)
                     .expect("identity conversion should be upheld");
             }
         };

@@ -1,4 +1,6 @@
-use crate::ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, TagIndices, Tags, Validator};
+use crate::ng::{
+    FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage, Str, TagIndices, Tags, Validator,
+};
 use crate::{color::Color, Badge};
 
 /// Sent on successful login, if `TAGS` capability have been sent beforehand.
@@ -93,6 +95,14 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
         Ok(this)
     }
 }
+
+into_owned!(GlobalUserState {
+    raw,
+    tags,
+    user_id,
+    display_name,
+    color,
+});
 
 serde_struct!(GlobalUserState {
     raw,

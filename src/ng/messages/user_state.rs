@@ -77,6 +77,8 @@ impl<'t> FromIrcMessage<'t> for UserState<'t> {
     }
 }
 
+into_owned!(UserState { raw, tags, channel });
+
 serde_struct!(UserState { raw, tags, channel });
 
 #[cfg(test)]

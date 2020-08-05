@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use super::irc::IrcMessage;
+use super::{irc::IrcMessage, IntoOwned};
 
 use std::{
     future::Future,
@@ -80,7 +80,7 @@ impl<R: Read> Decoder<R> {
 impl<R: Read> Iterator for Decoder<R> {
     type Item = IrcMessage<'static>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.read_message().ok().as_ref().map(IrcMessage::as_owned)
+        self.read_message().ok().map(IrcMessage::into_owned)
     }
 }
 
@@ -124,7 +124,7 @@ impl<R: AsyncRead + Unpin> Stream for DecoderAsync<R> {
         let mut this = self.as_mut();
         let fut = this.read_message();
         futures_lite::pin!(fut);
-        fut.poll(cx).map(|s| s.ok().map(|s| s.as_owned()))
+        fut.poll(cx).map(|s| s.ok().map(IntoOwned::into_owned))
     }
 }
 

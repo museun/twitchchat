@@ -83,6 +83,8 @@ impl<'t> RoomState<'t> {
     }
 }
 
+into_owned!(RoomState { raw, tags, channel });
+
 serde_struct!(RoomState { raw, tags, channel });
 
 #[cfg(test)]

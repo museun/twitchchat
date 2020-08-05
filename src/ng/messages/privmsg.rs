@@ -234,6 +234,15 @@ impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
     }
 }
 
+into_owned!(Privmsg {
+    raw,
+    tags,
+    name,
+    channel,
+    data,
+    ctcp,
+});
+
 serde_struct!(Privmsg {
     raw,
     tags,

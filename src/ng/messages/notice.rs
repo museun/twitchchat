@@ -49,6 +49,13 @@ impl<'t> FromIrcMessage<'t> for Notice<'t> {
     }
 }
 
+into_owned!(Notice {
+    raw,
+    tags,
+    channel,
+    message,
+});
+
 serde_struct!(Notice {
     raw,
     tags,
