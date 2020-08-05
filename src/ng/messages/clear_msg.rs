@@ -1,6 +1,9 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
+/// When a single message has been removed from a channel.
+///
+/// This is triggered via /delete on IRC.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClearMsg<'t> {
     raw: Str<'t>,
@@ -12,13 +15,21 @@ pub struct ClearMsg<'t> {
 impl<'t> ClearMsg<'t> {
     raw!();
     tags!();
-    str_field!(channel);
-    opt_str_field!(message);
+    str_field!(
+        /// The channel this event happened on
+        channel
+    );
+    opt_str_field!(
+        /// The message that was deleted
+        message
+    );
 
+    /// Name of the user who sent the message
     pub fn login(&self) -> Option<&str> {
         self.tags().get("login")
     }
 
+    /// UUID of the message
     pub fn target_msg_id(&self) -> Option<&str> {
         self.tags().get("target-msg-id")
     }

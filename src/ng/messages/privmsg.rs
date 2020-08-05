@@ -4,13 +4,22 @@ use crate::{
     parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeInfo, BadgeKind, Emotes,
 };
 
+/// Some PRIVMSGs are considered 'CTCP' (client-to-client protocol)
+///
+/// This is a tag-type for determining what kind of CTCP it was
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum Ctcp<'a> {
+    /// An action CTCP, sent by the user when they do `/me` or `/action`
     Action,
-    Unknown { command: &'a str },
+    /// An unknown CTCP
+    Unknown {
+        /// The unknown CTCP command
+        command: &'a str,
+    },
 }
 
+/// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
 pub struct Privmsg<'t> {
     raw: Str<'t>,

@@ -1,6 +1,9 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex};
 
+/// User join message
+///
+/// The happens when a user (yourself included) joins a channel
 #[derive(Debug, Clone, PartialEq)]
 pub struct Join<'t> {
     raw: Str<'t>,
@@ -10,8 +13,14 @@ pub struct Join<'t> {
 
 impl<'t> Join<'t> {
     raw!();
-    str_field!(name);
-    str_field!(channel);
+    str_field!(
+        /// Name of the user that joined the channel
+        name
+    );
+    str_field!(
+        /// Channel which they joined
+        channel
+    );
 }
 
 impl<'t> FromIrcMessage<'t> for Join<'t> {

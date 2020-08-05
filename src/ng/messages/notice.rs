@@ -1,6 +1,7 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
+/// General notices from the server.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Notice<'t> {
     raw: Str<'t>,
@@ -12,9 +13,20 @@ pub struct Notice<'t> {
 impl<'t> Notice<'t> {
     raw!();
     tags!();
-    str_field!(channel);
-    str_field!(message);
+    str_field!(
+        /// The channel this event happened on
+        channel
+    );
+    str_field!(
+        /// The message from the server
+        message
+    );
 
+    /// A message ID string. Can be used for ***i18ln***.
+    ///
+    /// Valid values: see [Twitch IRC: msg-id Tags](https://dev.twitch.tv/docs/irc/msg-id/).
+    ///
+    /// Returns None if this tag wasn't found on the message
     pub fn msg_id(&self) -> Option<MessageId<'_>> {
         self.tags().get("msg-id").map(MessageId::parse)
     }
@@ -45,6 +57,7 @@ serde_struct!(Notice {
     msg_id
 });
 
+/// These tags apply to both the NOTICE (Twitch Commands) and NOTICE (Twitch Chat Rooms) commands.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
