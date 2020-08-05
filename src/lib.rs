@@ -59,8 +59,6 @@ pub use twitch::*;
 
 // pub mod events;
 
-// pub mod messages;
-
 // pub mod sync;
 
 // mod parse;
