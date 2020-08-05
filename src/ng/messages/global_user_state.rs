@@ -1,7 +1,7 @@
 use crate::ng::{FromIrcMessage, InvalidMessage, IrcMessage, Str, TagIndices, Tags, Validator};
 use crate::{color::Color, Badge};
 
-/// Sent on successful login, if TAGs caps have been sent beforehand
+/// Sent on successful login, if `TAGS` capability have been sent beforehand.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GlobalUserState<'t> {
     raw: Str<'t>,
