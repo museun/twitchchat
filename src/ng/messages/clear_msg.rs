@@ -3,7 +3,7 @@ use crate::ng::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// When a single message has been removed from a channel.
 ///
-/// This is triggered via /delete on IRC.
+/// This is triggered via `/delete` on IRC.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClearMsg<'t> {
     raw: Str<'t>,
@@ -57,6 +57,8 @@ serde_struct!(ClearMsg {
     tags,
     channel,
     message,
+    login,
+    target_msg_id
 });
 
 #[cfg(test)]
@@ -88,6 +90,18 @@ mod tests {
             let cm = ClearMsg::from_irc(msg).unwrap();
             assert_eq!(cm.channel(), "#museun");
             assert!(cm.message().is_none());
+        }
+    }
+
+    #[test]
+    fn clear_msg_uuid() {
+        let input =
+            "@login=ronni;target-msg-id=abc-123-def :tmi.twitch.tv CLEARMSG #dallas :HeyGuys\r\n";
+        for msg in irc::parse(input).map(|s| s.unwrap()) {
+            let cm = ClearMsg::from_irc(msg).unwrap();
+            assert_eq!(cm.channel(), "#dallas");
+            assert_eq!(cm.message().unwrap(), "HeyGuys");
+            assert_eq!(cm.target_msg_id().unwrap(), "abc-123-def");
         }
     }
 }
