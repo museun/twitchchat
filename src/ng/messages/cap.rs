@@ -1,7 +1,23 @@
 use super::{IrcMessage, Str, StrIndex};
 use crate::ng::{FromIrcMessage, InvalidMessage, Validator};
 
-/// Acknowledgement (or not) on a CAPS request
+/// A parsed Capability
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub enum Capability<'t> {
+    // This Capability was Acknowledged
+    Acknowledged(
+        /// The name of the requested capability
+        &'t str,
+    ),
+    // This Capability was not acknowledged
+    NotAcknowledged(
+        /// The name of the requested capability
+        &'t str,
+    ),
+}
+
+/// Acknowledgement (or not) on a **CAPS** request
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cap<'t> {
     raw: Str<'t>,
@@ -12,14 +28,14 @@ pub struct Cap<'t> {
 impl<'t> Cap<'t> {
     raw!();
 
-    str_field!(
-        /// The capability name
-        capability
-    );
-
-    /// Whether it was acknowledged
-    pub fn acknowledged(&self) -> bool {
-        self.acknowledged
+    /// The parsed capability
+    pub fn capability(&self) -> Capability<'_> {
+        let cap = &self.raw[self.capability];
+        if self.acknowledged {
+            Capability::Acknowledged(cap)
+        } else {
+            Capability::NotAcknowledged(cap)
+        }
     }
 }
 
@@ -41,11 +57,7 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
     }
 }
 
-serde_struct!(Cap {
-    raw,
-    capability,
-    acknowledged,
-});
+serde_struct!(Cap { raw, capability });
 
 #[cfg(test)]
 mod tests {
@@ -71,8 +83,7 @@ mod tests {
         ];
         for (msg, expected) in irc::parse(&input).map(|s| s.unwrap()).zip(expected) {
             let msg = Cap::from_irc(msg).unwrap();
-            assert!(msg.acknowledged());
-            assert_eq!(msg.capability(), *expected);
+            assert_eq!(msg.capability(), Capability::Acknowledged(*expected));
         }
     }
 
@@ -81,8 +92,7 @@ mod tests {
         let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
         for msg in irc::parse(input).map(|s| s.unwrap()) {
             let cap = Cap::from_irc(msg).unwrap();
-            assert!(!cap.acknowledged());
-            assert_eq!(cap.capability(), "foobar");
+            assert_eq!(cap.capability(), Capability::NotAcknowledged("foobar"));
         }
     }
 }
