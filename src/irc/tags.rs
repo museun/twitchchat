@@ -1,6 +1,11 @@
 use crate::{Str, TagIndices};
 use std::{borrow::Borrow, str::FromStr};
 
+/// Tags are IRCv3 message tags. Twitch uses them extensively.
+///
+/// This type is usually obstained temporarily from `::tags()` call on a message type.
+///
+/// This type is intentionall very cheap and just borrows a pre-computed set of indices and a wrapped string
 #[derive(Clone, PartialEq)]
 pub struct Tags<'a> {
     pub(crate) data: &'a Str<'a>,
@@ -14,22 +19,27 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 }
 
 impl<'a> Tags<'a> {
+    /// Build the tags view from this borrowed `Str` and an associated `TagIndices`
     pub fn from_data_indices(data: &'a Str<'a>, indices: &'a TagIndices) -> Self {
         Self { data, indices }
     }
 
+    /// Gets the raw string that represents the tags
     pub fn raw_tags(&self) -> &'a str {
         &*self.data
     }
 
+    /// Returns how many tags were parsed
     pub fn len(&self) -> usize {
         self.indices.len()
     }
 
+    /// Returns whether there are any tags
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// Tries to get this `key`
     pub fn get<K>(&self, key: &K) -> Option<&'a str>
     where
         K: ?Sized + Borrow<str>,
@@ -37,6 +47,37 @@ impl<'a> Tags<'a> {
         self.indices.get(key.borrow(), &*self.data)
     }
 
+    /** Tries to get the tag as a parsable [`FromStr`] type.
+
+    This returns None if it cannot parse, or cannot find the tag
+
+    [FromStr]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+
+    ```rust
+    # use twitchchat::{TagIndices, Tags, Str};
+    let input: Str<'_> = "@foo=42;color=#1E90FF".into();
+    let indices = TagIndices::build_indices(&*input);
+    let tags = Tags::from_data_indices(&input, &indices);
+
+    // 'foo' can be parsed as a usize
+    let answer: usize = tags.get_parsed("foo").unwrap();
+    assert_eq!(answer, 42);
+
+    // 'foo' can be parsed a String (this shows how to use this with a 'turbofish')
+    assert_eq!(
+        tags.get_parsed::<_, String>("foo").unwrap(),
+        "42".to_string()
+    );
+
+    // 'foo' cannot be parsed as a bool
+    assert!(tags.get_parsed::<_, bool>("foo").is_none());
+
+    // a non-std type with a FromStr impl
+    # use twitchchat::color::*;
+    let color: Color = tags.get_parsed("color").unwrap();
+    assert_eq!(color.rgb, RGB(0x1E, 0x90, 0xFF));
+    ```
+    */
     pub fn get_parsed<K, E>(&self, key: &K) -> Option<E>
     where
         K: ?Sized + Borrow<str>,
@@ -49,6 +90,35 @@ impl<'a> Tags<'a> {
             .flatten()
     }
 
+    /** Tries to get the tag as a bool.
+
+    If it wasn't found it'll return false
+
+    ```rust
+    # use twitchchat::{TagIndices, Tags, Str};
+    let input: Str<'_> = "@foo=42;ok=true;nope=false;test=1;not_test=0".into();
+    let indices = TagIndices::build_indices(&*input);
+    let tags = Tags::from_data_indices(&input, &indices);
+
+    // key 'foo' is not a bool
+    assert!(!tags.get_as_bool("foo"));
+
+    // key 'ok' is a bool and is true
+    assert!(tags.get_as_bool("ok"));
+
+    // key 'nope' is a bool but its false
+    assert!(!tags.get_as_bool("nope"));
+
+    // key 'test' is 1, which is true
+    assert!(tags.get_as_bool("test"));
+
+    // key 'not_test' is 0, which is false
+    assert!(!tags.get_as_bool("not_test"));
+
+    // missing key 'foobar' is missing, which is false
+    assert!(!tags.get_as_bool("this-key-is-missing"));
+    ```
+    */
     pub fn get_as_bool<K>(&self, key: &K) -> bool
     where
         K: ?Sized + Borrow<str>,
@@ -60,6 +130,7 @@ impl<'a> Tags<'a> {
         }
     }
 
+    /// Get an iterator over all of the `key, value` pairs of tags
     pub fn iter(&self) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
         self.indices.iter(&self.data)
     }
