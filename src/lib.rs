@@ -58,6 +58,8 @@ pub use twitch::*;
 use twitch::color::Color;
 
 pub mod rate_limit;
+#[doc(inline)]
+pub use rate_limit::RateLimit;
 
 #[cfg(feature = "serde")]
 mod serde;
