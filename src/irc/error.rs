@@ -1,34 +1,50 @@
+/// An invalid message was either provided, or could not be parsed
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum InvalidMessage {
+    /// Invalid command
     InvalidCommand {
+        /// Expedted this command
         expected: String,
+        /// But got this command
         got: String,
     },
 
+    /// Expected a nickname attached to that message
     ExpectedNick,
 
-    ExpectedArg {
-        pos: usize,
-    },
+    /// Expected an argument at position `pos`
+    ExpectedArg { pos: usize },
 
+    /// expected data attached to that message
     ExpectedData,
 
+    /// Expected a specific tag
     ExpectedTag {
+        /// The tag name
         name: String,
     },
 
+    /// Cannot parse a specific tag
     CannotParseTag {
+        /// The tag name
         name: String,
+        /// The parse error
         error: Box<dyn std::error::Error>,
     },
 
+    /// An incomplete message was provided
     IncompleteMessage {
+        /// At index `pos`
         pos: usize,
     },
+
+    /// An empty message was provided
     EmptyMessage,
 
+    /// A custom error message
     Custom {
+        /// The inner error
         error: Box<dyn std::error::Error>,
     },
 }
