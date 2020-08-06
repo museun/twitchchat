@@ -44,24 +44,29 @@ impl Encodable for Vec<u8> {
     }
 }
 
+/// A synchronous encoder
 pub struct Encoder<W> {
     writer: W,
 }
 
 impl<W: Write> Encoder<W> {
+    /// Create a new Encoder over this `std::io::Write` instance
     pub fn new(writer: W) -> Self {
         Self { writer }
     }
 
+    /// Get the inner `std::io::Write` instance out
     pub fn into_inner(self) -> W {
         self.writer
     }
 
+    /// Encode this `Encodable` message to the writer and flushes it.
     pub fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
         M: Encodable,
     {
-        msg.encode(&mut self.writer)
+        msg.encode(&mut self.writer)?;
+        self.writer.flush()
     }
 }
 
@@ -76,6 +81,7 @@ impl<W: Write> Write for Encoder<W> {
 }
 
 pin_project_lite::pin_project! {
+    /// An asynchronous encoder.
     pub struct AsyncEncoder<W> {
         #[pin]
         writer: W,
@@ -85,6 +91,7 @@ pin_project_lite::pin_project! {
 }
 
 impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
+    /// Create a new Encoder over this `futures::io::AsyncWrite` instance
     pub fn new(writer: W) -> Self {
         Self {
             writer,
@@ -93,27 +100,28 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
         }
     }
 
+    /// Get the inner `futures::io::AsyncWrite` instance out
+    ///
+    /// This writes and flushes any buffered data before it consumes self.
     pub async fn into_inner(mut self) -> IoResult<W> {
         if self.data.is_empty() {
             return Ok(self.writer);
         }
 
         let data = std::mem::take(&mut self.data);
-        self.write_all(&data).await?;
+        self.writer.write_all(&data).await?;
+        self.writer.flush().await?;
         Ok(self.writer)
     }
 
+    /// Encode this `Encodable` message to the writer.
+    ///
+    /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
         M: Encodable,
     {
         msg.encode(&mut self.data)?;
-        self.writer.write_all(&self.data[self.pos..]).await?;
-        self.pos = self.data.len();
-        Ok(())
-    }
-
-    pub async fn flush(&mut self) -> IoResult<()> {
         self.writer.write_all(&self.data[self.pos..]).await?;
         self.writer.flush().await?;
         self.pos = {
