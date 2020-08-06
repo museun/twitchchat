@@ -1,7 +1,15 @@
+//! Provides `Encodable` commands.
+//!
+//! These can be used with an encoder, or with the `Encodable` trait directly to write typed messages.
+//!
+//! The functions in this module produce borrowed types in the `types` module. You can store the `types` for multiple-encodings.
 use std::io::{Result, Write};
 
 macro_rules! export_commands {
     ($($ident:ident => $ty:ident)*) => {
+        /// Concrete types produced by the functions in the `commands` module.
+        ///
+        /// e.g. join("#museun") -> Join<'_> (where its borrowed from the input `&str`)
         pub mod types {
             $( pub use super::$ident::$ty; )*
         }
