@@ -42,11 +42,8 @@ pub use encoder::{AsyncEncoder, Encodable, Encoder};
 pub mod commands;
 pub mod messages;
 
-mod from_irc_message;
-pub use from_irc_message::{FromIrcMessage, InvalidMessage};
-
 pub mod irc;
-use irc::{IrcMessage, TagIndices, Tags};
+use irc::{FromIrcMessage, InvalidMessage, IrcMessage, TagIndices, Tags};
 
 pub mod validator;
 use validator::Validator;
