@@ -31,7 +31,7 @@ mod maybe_owned;
 pub use maybe_owned::{IntoOwned, MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
 
 mod decoder;
-pub use decoder::{Decoder, DecoderAsync, Error as DecodeError};
+pub use decoder::{AsyncDecoder, Decoder, Error as DecodeError};
 
 mod dispatcher;
 pub use dispatcher::{DispatchError, Dispatcher};

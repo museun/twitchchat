@@ -113,13 +113,13 @@ impl<R: Read> Iterator for Decoder<R> {
 /// This will return an `Error::Eof` when its done reading manually.
 ///
 /// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
-pub struct DecoderAsync<R> {
+pub struct AsyncDecoder<R> {
     reader: AsyncBufReader<R>,
     buf: Vec<u8>,
 }
 
-impl<R: AsyncRead + Unpin> DecoderAsync<R> {
-    /// Create a new DecoderAsync from this `futures::io::Read` instance
+impl<R: AsyncRead + Unpin> AsyncDecoder<R> {
+    /// Create a new AsyncDecoder from this `futures::io::Read` instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
@@ -129,9 +129,9 @@ impl<R: AsyncRead + Unpin> DecoderAsync<R> {
 
     /// Read the next message.
     ///
-    /// This returns a borrowed IrcMessage which is valid until the next DecoderAsync call is made.
+    /// This returns a borrowed IrcMessage which is valid until the next AsyncDecoder call is made.
     ///
-    /// If you just want an owned one, use the DecoderAsync as an stream. e.g. dec.next().
+    /// If you just want an owned one, use the AsyncDecoder as an stream. e.g. dec.next().
     pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, Error> {
         self.buf.clear();
         let n = self
@@ -153,7 +153,7 @@ impl<R: AsyncRead + Unpin> DecoderAsync<R> {
 }
 
 /// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
-impl<R: AsyncRead + Unpin> Stream for DecoderAsync<R> {
+impl<R: AsyncRead + Unpin> Stream for AsyncDecoder<R> {
     type Item = Result<IrcMessage<'static>, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -203,7 +203,7 @@ mod tests {
             let mut reader = futures_lite::io::Cursor::new(data);
 
             // reading from the stream won't produce the EOF
-            let out = DecoderAsync::new(&mut reader).collect::<Vec<_>>().await;
+            let out = AsyncDecoder::new(&mut reader).collect::<Vec<_>>().await;
             // you cannot collect a Stream into aa result. so lets just do it manually
             let out = out.into_iter().collect::<Result<Vec<_>, Error>>().unwrap();
             assert_eq!(out.len(), 4);
@@ -211,7 +211,7 @@ mod tests {
             reader.set_position(0);
 
             // manually reading should produce an EOF
-            let mut dec = DecoderAsync::new(reader);
+            let mut dec = AsyncDecoder::new(reader);
             for _ in 0..4 {
                 dec.read_message().await.unwrap();
             }
