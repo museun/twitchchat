@@ -1,5 +1,3 @@
-use super::{IrcMessage, Str, StrIndex};
-
 macro_rules! serde_struct {
     (@one $($x:tt)*) => { () };
     (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]); };

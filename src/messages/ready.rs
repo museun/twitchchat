@@ -1,5 +1,4 @@
-use crate::{FromIrcMessage, IrcError, Validator};
-use crate::{IrcMessage, Str, StrIndex};
+use crate::*;
 
 /// An event that is produced when the Twitch connection has been succesfully
 /// established

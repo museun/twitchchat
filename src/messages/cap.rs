@@ -1,5 +1,4 @@
-use super::{IrcMessage, Str, StrIndex};
-use crate::{FromIrcMessage, IrcError, Validator};
+use crate::*;
 
 /// A parsed Capability
 #[derive(Debug, Copy, Clone, PartialEq)]

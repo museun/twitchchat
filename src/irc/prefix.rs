@@ -1,5 +1,4 @@
-use super::super::{Str, StrIndex};
-use crate::IntoOwned;
+use crate::{IntoOwned, Str, StrIndex};
 
 /// Prefix is the sender of a message
 pub struct Prefix<'a> {

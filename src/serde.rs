@@ -1,4 +1,4 @@
-use super::{FromIrcMessage, IrcMessage, Str};
+use crate::{FromIrcMessage, IrcMessage, Str};
 
 use serde::{
     de::{Error, MapAccess, Visitor},

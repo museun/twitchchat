@@ -51,6 +51,8 @@ use validator::Validator;
 pub mod twitch;
 pub use twitch::*;
 
+pub use twitch::color::{Color, TwitchColor, RGB};
+
 pub mod rate_limit;
 
 #[cfg(feature = "serde")]

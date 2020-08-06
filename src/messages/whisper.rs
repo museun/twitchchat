@@ -1,7 +1,4 @@
-use crate::{
-    color::Color, parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeKind, Emotes,
-    FromIrcMessage, IrcError, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
-};
+use crate::*;
 
 /// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]

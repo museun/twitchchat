@@ -1,5 +1,4 @@
-use super::messages::*;
-use crate::{EventMap, EventStream, FromIrcMessage, IntoOwned, IrcError, IrcMessage};
+use crate::{messages::*, EventMap, EventStream, FromIrcMessage, IntoOwned, IrcError, IrcMessage};
 
 use std::convert::Infallible;
 

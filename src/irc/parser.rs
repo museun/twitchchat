@@ -1,4 +1,4 @@
-use crate::irc::{Error, IrcMessage, PrefixIndex};
+use super::{Error, IrcMessage, PrefixIndex};
 use crate::{Str, StrIndex};
 
 pub(super) struct Parser<'a> {

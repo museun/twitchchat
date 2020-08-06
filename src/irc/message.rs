@@ -1,4 +1,4 @@
-use crate::irc::{parser::Parser, Error, Prefix, PrefixIndex};
+use super::{parser::Parser, Error, Prefix, PrefixIndex};
 use crate::{Str, StrIndex};
 
 /// A raw irc message `@tags :prefix COMMAND args :data\r\n`
