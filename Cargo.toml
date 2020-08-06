@@ -18,23 +18,30 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 
 [dependencies]
-log              = "0.4.11"
+# logging support
+log = "0.4.11"
+
+# event dispatching
 simple_event_map = "0.1.0"
 
+# serializion/deserializion support
 serde = { version = "1.0.114", optional = true, features = ["derive"] }
 
-# internal stuff
-async-channel    = "1.4.0"
-async-mutex      = "1.1.5"
-event-listener   = "2.3.0"
-futures-lite     = "0.1.10"
-parking          = "1.0.6"
+# just the futures traits
+futures-lite = "0.1.10"
+
+# field pin projection
 pin-project-lite = "0.1.7"
+
+# internal stuff
+# async-channel    = "1.4.0"
+# async-mutex      = "1.1.5"
+# event-listener   = "2.3.0"
+# parking          = "1.0.6"
 
 [dev-dependencies]
 doc-comment = "0.3.3"
 serde_json = "1.0.57"
-
 async-executor = { version = "0.1.2", default-features = false }
 
 # [[example]]
