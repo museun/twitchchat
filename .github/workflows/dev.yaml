@@ -35,23 +35,11 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Build all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Build no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
@@ -83,23 +71,11 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Build all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Build no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
@@ -129,23 +105,11 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Build all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Build no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --target ${{ matrix.target }} --no-default-features
 
       - name: Test no default features
         uses: actions-rs/cargo@v1
