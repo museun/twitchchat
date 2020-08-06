@@ -12,7 +12,7 @@ macro_rules! into_owned {
     };
 }
 
-/// Converts a 'borrowed' type into an owned type. e.g. 'a to 'static
+/// Converts a 'borrowed' type into an owned type. e.g. `'a` to `'static`
 pub trait IntoOwned<'a> {
     /// The output type
     type Output: 'static;
