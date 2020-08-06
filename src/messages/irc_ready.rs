@@ -16,7 +16,7 @@ impl<'t> IrcReady<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for IrcReady<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::IRC_READY)?;

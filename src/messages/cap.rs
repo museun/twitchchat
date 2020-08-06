@@ -39,7 +39,7 @@ impl<'t> Cap<'t> {
 }
 
 impl<'a> FromIrcMessage<'a> for Cap<'a> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         const ACK: &str = "ACK";

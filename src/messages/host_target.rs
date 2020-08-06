@@ -46,7 +46,7 @@ impl<'t> HostTarget<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::HOST_TARGET)?;
@@ -60,7 +60,7 @@ impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
                 let kind = msg.expect_data_index()?.resize(t.len());
                 Some(kind)
             }
-            None => return Err(IrcError::ExpectedData),
+            None => return Err(InvalidMessage::ExpectedData),
         };
 
         let viewers = data.next().and_then(|s| s.parse().ok());
