@@ -56,7 +56,7 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::GLOBALUSERSTATE)?;
+        msg.expect_command(IrcMessage::GLOBAL_USER_STATE)?;
 
         let tag_index = msg.parse_tags();
         let tags = Tags {

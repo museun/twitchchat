@@ -41,7 +41,7 @@ impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::CLEARCHAT)?;
+        msg.expect_command(IrcMessage::CLEAR_CHAT)?;
 
         let this = Self {
             tags: msg.parse_tags(),

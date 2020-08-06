@@ -20,7 +20,7 @@ impl<'t> FromIrcMessage<'t> for IrcReady<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::IRCREADY)?;
+        msg.expect_command(IrcMessage::IRC_READY)?;
 
         let this = Self {
             nickname: msg.expect_arg_index(0)?,

@@ -65,7 +65,7 @@ impl<'t> FromIrcMessage<'t> for UserState<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::USERSTATE)?;
+        msg.expect_command(IrcMessage::USER_STATE)?;
 
         let this = Self {
             tags: msg.parse_tags(),

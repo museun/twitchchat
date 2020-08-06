@@ -314,7 +314,7 @@ impl<'t> FromIrcMessage<'t> for UserNotice<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::USERNOTICE)?;
+        msg.expect_command(IrcMessage::USER_NOTICE)?;
 
         let this = Self {
             channel: msg.expect_arg_index(0)?,
