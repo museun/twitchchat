@@ -52,6 +52,7 @@ mod validator;
 pub use validator::Validator;
 
 pub mod twitch;
+#[doc(hidden)]
 pub use twitch::*;
 
 use twitch::color::Color;
