@@ -9,11 +9,16 @@ use std::{
 
 use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, Stream};
 
+/// An error produced by a Decoder.
 #[derive(Debug)]
 pub enum Error {
+    /// An I/O error occurred
     Io(std::io::Error),
+    /// Invalid UTf-8 was read.
     InvalidUtf8(std::str::Utf8Error),
+    /// Could not parse the IRC message
     ParseError(InvalidMessage),
+    /// EOF was reached
     Eof,
 }
 
@@ -27,6 +32,7 @@ impl std::fmt::Display for Error {
         }
     }
 }
+
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -38,12 +44,18 @@ impl std::error::Error for Error {
     }
 }
 
+/// A decoder which'll let you read `IrcMessage`s from an `std::io::Read` instance
+///
+/// This will return an `Error::Eof` when reading manually.
+///
+/// When reading it as a iterator, `Eof` will signal the end of the iterator (e.g. `None`)
 pub struct Decoder<R> {
     reader: std::io::BufReader<R>,
     buf: Vec<u8>,
 }
 
 impl<R: Read> Decoder<R> {
+    /// Create a new Decoder from this `std::io::Read` instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: std::io::BufReader::new(reader),
@@ -51,6 +63,11 @@ impl<R: Read> Decoder<R> {
         }
     }
 
+    /// Read the next message.
+    ///
+    /// This returns a borrowed IrcMessage which is valid until the next Decoder call is made.
+    ///
+    /// If you just want an owned one, use the Decoder as an iterator. e.g. dec.next().
     pub fn read_message(&mut self) -> Result<IrcMessage<'_>, Error> {
         use std::io::BufRead;
 
@@ -71,24 +88,38 @@ impl<R: Read> Decoder<R> {
             .map(|(_, msg)| msg)
     }
 
+    /// Returns an iterator over messages.
+    ///
+    /// This will produce Results of Messages until an EOF is received
     pub fn iter(&mut self) -> &mut Self {
         self
     }
 }
 
+/// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
 impl<R: Read> Iterator for Decoder<R> {
-    type Item = IrcMessage<'static>;
+    type Item = Result<IrcMessage<'static>, Error>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.read_message().ok().map(IrcMessage::into_owned)
+        match self.read_message() {
+            Err(Error::Eof) => None,
+            Ok(msg) => Some(Ok(msg.into_owned())),
+            Err(err) => Some(Err(err)),
+        }
     }
 }
 
+/// A decoder which'll let you read `IrcMessage`s from an `futures::io::Read` instance
+///
+/// This will return an `Error::Eof` when its done reading manually.
+///
+/// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
 pub struct DecoderAsync<R> {
     reader: AsyncBufReader<R>,
     buf: Vec<u8>,
 }
 
 impl<R: AsyncRead + Unpin> DecoderAsync<R> {
+    /// Create a new DecoderAsync from this `futures::io::Read` instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
@@ -96,6 +127,11 @@ impl<R: AsyncRead + Unpin> DecoderAsync<R> {
         }
     }
 
+    /// Read the next message.
+    ///
+    /// This returns a borrowed IrcMessage which is valid until the next DecoderAsync call is made.
+    ///
+    /// If you just want an owned one, use the DecoderAsync as an stream. e.g. dec.next().
     pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, Error> {
         self.buf.clear();
         let n = self
@@ -116,14 +152,21 @@ impl<R: AsyncRead + Unpin> DecoderAsync<R> {
     }
 }
 
+/// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
 impl<R: AsyncRead + Unpin> Stream for DecoderAsync<R> {
-    type Item = IrcMessage<'static>;
+    type Item = Result<IrcMessage<'static>, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.as_mut();
+
         let fut = this.read_message();
         futures_lite::pin!(fut);
-        fut.poll(cx).map(|s| s.ok().map(IntoOwned::into_owned))
+
+        match futures_lite::ready!(fut.poll(cx)) {
+            Err(Error::Eof) => Poll::Ready(None),
+            Ok(msg) => Poll::Ready(Some(Ok(msg.into_owned()))),
+            Err(err) => Poll::Ready(Some(Err(err))),
+        }
     }
 }
 
@@ -133,10 +176,23 @@ mod tests {
     #[test]
     fn read_sync() {
         let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
-        let reader = std::io::Cursor::new(data);
+        let mut reader = std::io::Cursor::new(data);
 
-        let v = Decoder::new(reader).iter().collect::<Vec<_>>();
+        // reading from the iterator won't produce the EOF
+        let v = Decoder::new(&mut reader)
+            .iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        // no EOF
         assert_eq!(v.len(), 4);
+
+        reader.set_position(0);
+        // manually reading should produce an EOF
+        let mut dec = Decoder::new(reader);
+        for _ in 0..4 {
+            dec.read_message().unwrap();
+        }
+        assert!(matches!(dec.read_message().unwrap_err(), Error::Eof))
     }
 
     #[test]
@@ -144,10 +200,22 @@ mod tests {
         use futures_lite::stream::StreamExt as _;
         let fut = async move {
             let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
-            let reader = futures_lite::io::Cursor::new(data);
+            let mut reader = futures_lite::io::Cursor::new(data);
 
-            let out = DecoderAsync::new(reader).collect::<Vec<_>>().await;
+            // reading from the stream won't produce the EOF
+            let out = DecoderAsync::new(&mut reader).collect::<Vec<_>>().await;
+            // you cannot collect a Stream into aa result. so lets just do it manually
+            let out = out.into_iter().collect::<Result<Vec<_>, Error>>().unwrap();
             assert_eq!(out.len(), 4);
+
+            reader.set_position(0);
+
+            // manually reading should produce an EOF
+            let mut dec = DecoderAsync::new(reader);
+            for _ in 0..4 {
+                dec.read_message().await.unwrap();
+            }
+            assert!(matches!(dec.read_message().await.unwrap_err(), Error::Eof))
         };
 
         async_executor::LocalExecutor::new().run(fut);
