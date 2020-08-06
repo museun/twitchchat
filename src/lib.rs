@@ -45,8 +45,8 @@ pub mod messages;
 pub mod irc;
 pub use irc::{Error as IrcError, FromIrcMessage, IrcMessage, TagIndices, Tags};
 
-pub mod validator;
-use validator::Validator;
+mod validator;
+pub use validator::Validator;
 
 pub mod twitch;
 pub use twitch::*;
