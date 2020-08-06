@@ -54,6 +54,7 @@ impl From<Infallible> for DispatchError {
 #[derive(Default)]
 pub struct Dispatcher {
     map: EventMap,
+    system: EventMap,
 }
 
 impl Dispatcher {
@@ -65,6 +66,10 @@ impl Dispatcher {
     /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
     pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
         self.map.register()
+    }
+
+    pub(crate) fn subscribe_internal<T: Clone + 'static>(&mut self) -> EventStream<T> {
+        self.system.register()
     }
 
     /// Dispatch this `IrcMessage`
@@ -126,7 +131,14 @@ impl Dispatcher {
         T: Clone + 'static,
         DispatchError: From<T::Error>,
     {
-        self.map.send(T::from_irc(message)?);
+        let msg = T::from_irc(message)?;
+
+        // only clone if we're actually listening for it
+        if !self.system.is_empty::<T>() {
+            self.system.send(msg.clone());
+        }
+
+        self.map.send(msg);
         Ok(())
     }
 }

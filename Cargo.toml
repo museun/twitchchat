@@ -33,16 +33,24 @@ futures-lite = "0.1.10"
 # field pin projection
 pin-project-lite = "0.1.7"
 
-# internal stuff
-# async-channel    = "1.4.0"
-# async-mutex      = "1.1.5"
-# event-listener   = "2.3.0"
-# parking          = "1.0.6"
+# cloneable async writes
+async-dup = "1.2.1"
+
+# message passing
+async-channel = "1.4.0"
+
+# for timing out futures
+futures-timer = "3.0.2"
+
+# async mutex
+async-mutex = "1.1.5"
 
 [dev-dependencies]
 doc-comment = "0.3.3"
 serde_json = "1.0.57"
-async-executor = { version = "0.1.2", default-features = false }
+async-io = "0.1.9"
+alto_logger = "0.3.6"
+async-executor = "0.1.2"
 
 # [[example]]
 # name = "demo"

@@ -90,6 +90,16 @@ pin_project_lite::pin_project! {
     }
 }
 
+impl<W: AsyncWrite + Unpin + Clone> Clone for AsyncEncoder<W> {
+    fn clone(&self) -> Self {
+        Self {
+            writer: self.writer.clone(),
+            pos: 0,
+            data: vec![],
+        }
+    }
+}
+
 impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     /// Create a new Encoder over this `futures::io::AsyncWrite` instance
     pub fn new(writer: W) -> Self {
@@ -202,7 +212,7 @@ mod tests {
             let s = std::str::from_utf8(&output).unwrap();
             assert_eq!(s, "JOIN #museun\r\nJOIN #shaken_bot\r\n");
         };
-        async_executor::LocalExecutor::new().run(fut);
+        futures_lite::future::block_on(fut);
     }
 
     #[test]
