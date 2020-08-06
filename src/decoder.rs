@@ -135,10 +135,8 @@ mod tests {
         let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
         let reader = std::io::Cursor::new(data);
 
-        let mut decoder = Decoder::new(reader);
-        while let Ok(msg) = decoder.read_message() {
-            eprintln!("{:#?}", msg);
-        }
+        let v = Decoder::new(reader).iter().collect::<Vec<_>>();
+        assert_eq!(v.len(), 4);
     }
 
     #[test]
@@ -146,19 +144,10 @@ mod tests {
         use futures_lite::stream::StreamExt as _;
         let fut = async move {
             let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
-            {
-                let reader = futures_lite::io::Cursor::new(&data);
-                let mut decoder = DecoderAsync::new(reader);
-                while let Ok(msg) = decoder.read_message().await {
-                    eprintln!("{:#?}", msg);
-                }
-            }
-
             let reader = futures_lite::io::Cursor::new(data);
-            let mut decoder = DecoderAsync::new(reader);
-            while let Some(msg) = decoder.next().await {
-                eprintln!("{:#?}", msg);
-            }
+
+            let out = DecoderAsync::new(reader).collect::<Vec<_>>().await;
+            assert_eq!(out.len(), 4);
         };
 
         async_executor::LocalExecutor::new().run(fut);
