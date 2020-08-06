@@ -1,13 +1,20 @@
 use crate::{IrcError, IrcMessage, StrIndex, TagIndices};
 
+/// This trait is provided as an easy way of defining your own custom events.
 pub trait Validator {
-    // TODO this is a bad name
+    /// Pre-compute the tag indices
     fn parse_tags(&self) -> TagIndices;
+    /// You expect a command matching 'cmd'. See the constants in `IrcMessage`
     fn expect_command(&self, cmd: &str) -> Result<(), IrcError>;
+    /// You expect a user nickname to be attached. This returns the `StrIndex` of it
     fn expect_nick(&self) -> Result<StrIndex, IrcError>;
+    /// You expect an argumnet at position 'nth' (0-based). This returns the `&str` of it.
     fn expect_arg(&self, nth: usize) -> Result<&str, IrcError>;
+    /// You expect an argumnet at position 'nth' (0-based). This returns the `StrIndex` of it.
     fn expect_arg_index(&self, nth: usize) -> Result<StrIndex, IrcError>;
+    /// You expect data to be attached to the message. This returns the `&str` of it.
     fn expect_data(&self) -> Result<&str, IrcError>;
+    /// You expect data to be attached to the message. This returns the `StrIndex` of it.
     fn expect_data_index(&self) -> Result<StrIndex, IrcError>;
 }
 
