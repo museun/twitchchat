@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Disables subscribers-only mode.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct SubscribersOff<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> SubscribersOff<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn subscribers_off(channel: &str) -> SubscribersOff<'_> {
-    SubscribersOff::new(channel)
+/// Disables subscribers-only mode.
+pub const fn subscribers_off(channel: &str) -> SubscribersOff<'_> {
+    SubscribersOff { channel }
 }
 
 impl<'a> Encodable for SubscribersOff<'a> {

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Send a raw IRC-style message
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Raw<'a> {
     pub(crate) data: &'a str,
 }
 
-impl<'a> Raw<'a> {
-    pub const fn new(data: &'a str) -> Self {
-        Self { data }
-    }
-}
-
-pub fn raw(data: &str) -> Raw<'_> {
-    Raw::new(data)
+/// Send a raw IRC-style message
+pub const fn raw(data: &str) -> Raw<'_> {
+    Raw { data }
 }
 
 impl<'a> Encodable for Raw<'a> {

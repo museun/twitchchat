@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Triggers a commercial.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,17 +12,14 @@ pub struct Commercial<'a> {
     pub(crate) length: Option<usize>,
 }
 
-impl<'a> Commercial<'a> {
-    pub fn new(channel: &'a str, length: impl Into<Option<usize>>) -> Self {
-        Self {
-            channel,
-            length: length.into(),
-        }
-    }
-}
-
+/// Triggers a commercial.
+///
+/// Length (optional) must be a positive number of seconds.
 pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial<'_> {
-    Commercial::new(channel, length)
+    Commercial {
+        channel,
+        length: length.into(),
+    }
 }
 
 impl<'a> Encodable for Commercial<'a> {

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Removes a ban on a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,9 @@ pub struct Unban<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> Unban<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
-    Unban::new(channel, username)
+/// Removes a ban on a user.
+pub const fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
+    Unban { channel, username }
 }
 
 impl<'a> Encodable for Unban<'a> {

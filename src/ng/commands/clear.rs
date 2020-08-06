@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Clear chat history for all users in this room.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Clear<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> Clear<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn clear(channel: &str) -> Clear<'_> {
-    Clear::new(channel)
+/// Clear chat history for all users in this room.
+pub const fn clear(channel: &str) -> Clear<'_> {
+    Clear { channel }
 }
 
 impl<'a> Encodable for Clear<'a> {

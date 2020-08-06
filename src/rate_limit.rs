@@ -1,27 +1,6 @@
 #![allow(missing_docs)]
 /*!
 A simple leaky-bucket style token-based rate limiter
-
-This'll block the calling task if tokens aren't available
-
-## Example
-```rust
-# use twitchchat::rate_limit::*;
-# use std::time::Duration;
-# use futures::future::FutureExt as _;
-# use tokio::time::delay_for;
-# tokio::runtime::Runtime::new().unwrap().block_on(async move {
-let mut rate = RateLimit::empty(3, Duration::from_millis(10));
-assert_eq!(rate.take().await, 2);
-assert_eq!(rate.take().await, 1);
-assert_eq!(rate.take().await, 0);
-assert!(rate.take().now_or_never().is_none()); // we're blocking
-
-// give it some time to refill
-delay_for(Duration::from_millis(15)).await;
-assert_eq!(rate.take().await, 2); // we're unblocked
-# });
-```
 */
 use futures_lite::future::Boxed;
 use std::{

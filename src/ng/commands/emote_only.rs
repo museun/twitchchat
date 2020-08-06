@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Enables emote-only mode (only emoticons may be used in chat).
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,13 @@ pub struct EmoteOnly<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> EmoteOnly<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn emote_only(channel: &str) -> EmoteOnly<'_> {
-    EmoteOnly::new(channel)
+/// Enables emote-only mode (only emoticons may be used in chat).
+///
+/// Use [emote_only_off] to disable.
+///
+/// [emote_only_off]: ./struct.Encoder.html#method.emote_only_off
+pub const fn emote_only(channel: &str) -> EmoteOnly<'_> {
+    EmoteOnly { channel }
 }
 
 impl<'a> Encodable for EmoteOnly<'a> {

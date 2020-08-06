@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Respond to a server request (normally a PING) with the provided token
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Pong<'a> {
     pub(crate) token: &'a str,
 }
 
-impl<'a> Pong<'a> {
-    pub const fn new(token: &'a str) -> Self {
-        Self { token }
-    }
-}
-
-pub fn pong(token: &str) -> Pong<'_> {
-    Pong::new(token)
+/// Respond to a server request (normally a PING) with the provided token
+pub const fn pong(token: &str) -> Pong<'_> {
+    Pong { token }
 }
 
 impl<'a> Encodable for Pong<'a> {

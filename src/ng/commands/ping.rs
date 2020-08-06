@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Request a servver response  with the provided token
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Ping<'a> {
     pub(crate) token: &'a str,
 }
 
-impl<'a> Ping<'a> {
-    pub const fn new(token: &'a str) -> Self {
-        Self { token }
-    }
-}
-
-pub fn ping(token: &str) -> Ping<'_> {
-    Ping::new(token)
+/// Request a servver response  with the provided token
+pub const fn ping(token: &str) -> Ping<'_> {
+    Ping { token }
 }
 
 impl<'a> Encodable for Ping<'a> {

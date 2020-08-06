@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Disables r9k mode.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct R9kBetaOff<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> R9kBetaOff<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn r9k_beta_off(channel: &str) -> R9kBetaOff<'_> {
-    R9kBetaOff::new(channel)
+/// Disables r9k mode.
+pub const fn r9k_beta_off(channel: &str) -> R9kBetaOff<'_> {
+    R9kBetaOff { channel }
 }
 
 impl<'a> Encodable for R9kBetaOff<'a> {

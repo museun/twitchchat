@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Enables followers-only mode (only users who have followed for `duration` may chat).
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct Followers<'a> {
     pub(crate) duration: &'a str,
 }
 
-impl<'a> Followers<'a> {
-    pub const fn new(channel: &'a str, duration: &'a str) -> Self {
-        Self { channel, duration }
-    }
-}
-
-pub fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
-    Followers::new(channel, duration)
+/// Enables followers-only mode (only users who have followed for `duration` may chat).
+///
+/// Examples: `"30m"`, `"1 week"`, `"5 days 12 hours"`.
+///
+/// Must be less than 3 months.
+pub const fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
+    Followers { channel, duration }
 }
 
 impl<'a> Encodable for Followers<'a> {

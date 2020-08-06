@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Grant moderator status to a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct GiveMod<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> GiveMod<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
-    GiveMod::new(channel, username)
+/// Grant moderator status to a user.
+///
+/// Use [mods] to list the moderators of this channel.
+///
+/// [mods]: ./struct.Encoder.html#method.mods
+pub const fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
+    GiveMod { channel, username }
 }
 
 impl<'a> Encodable for GiveMod<'a> {

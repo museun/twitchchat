@@ -4,6 +4,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Change your username color.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -13,23 +14,15 @@ pub struct Color<'a> {
     marker: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> Color<'a> {
-    pub fn new<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
-    where
-        T: TryInto<crate::color::Color>,
-    {
-        color.try_into().map(|color| Color {
-            color,
-            marker: std::marker::PhantomData,
-        })
-    }
-}
-
+/// Change your username color.
 pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
 where
     T: TryInto<crate::color::Color>,
 {
-    Color::new(color)
+    color.try_into().map(|color| Color {
+        color,
+        marker: std::marker::PhantomData,
+    })
 }
 
 impl<'a> Encodable for Color<'a> {

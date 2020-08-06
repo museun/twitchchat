@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Host another channel.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct Host<'a> {
     pub(crate) target: &'a str,
 }
 
-impl<'a> Host<'a> {
-    pub const fn new(source: &'a str, target: &'a str) -> Self {
-        Self { source, target }
-    }
-}
-
-pub fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
-    Host::new(source, target)
+/// Host another channel.
+///
+/// Use [unhost] to unset host mode.
+///
+/// [unhost]: ./struct.Encoder.html#method.unhost
+pub const fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
+    Host { source, target }
 }
 
 impl<'a> Encodable for Host<'a> {

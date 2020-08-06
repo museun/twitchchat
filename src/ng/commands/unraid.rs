@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Cancel the raid.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Unraid<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> Unraid<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn unraid(channel: &str) -> Unraid<'_> {
-    Unraid::new(channel)
+/// Cancel the raid.
+pub const fn unraid(channel: &str) -> Unraid<'_> {
+    Unraid { channel }
 }
 
 impl<'a> Encodable for Unraid<'a> {

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Enables subscribers-only mode (only subscribers may chat in this channel).
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,13 @@ pub struct Subscribers<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> Subscribers<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn subscribers(channel: &str) -> Subscribers<'_> {
-    Subscribers::new(channel)
+/// Enables subscribers-only mode (only subscribers may chat in this channel).
+///
+/// Use [subscribers_off] to disable.
+///
+/// [subscribers_off]: ./struct.Encoder.html#methodruct.html#method.subscribers_off
+pub const fn subscribers(channel: &str) -> Subscribers<'_> {
+    Subscribers { channel }
 }
 
 impl<'a> Encodable for Subscribers<'a> {

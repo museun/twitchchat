@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Lists the VIPs of this channel.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Vips<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> Vips<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn vips(channel: &str) -> Vips<'_> {
-    Vips::new(channel)
+/// Lists the VIPs of this channel.
+pub const fn vips(channel: &str) -> Vips<'_> {
+    Vips { channel }
 }
 
 impl<'a> Encodable for Vips<'a> {

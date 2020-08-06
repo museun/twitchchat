@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Temporarily prevent a user from chatting.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -13,29 +14,36 @@ pub struct Timeout<'a> {
     pub(crate) reason: Option<&'a str>,
 }
 
-impl<'a> Timeout<'a> {
-    pub fn new(
-        channel: &'a str,
-        username: &'a str,
-        duration: impl Into<Option<&'a str>>,
-        reason: impl Into<Option<&'a str>>,
-    ) -> Self {
-        Self {
-            channel,
-            username,
-            duration: duration.into(),
-            reason: reason.into(),
-        }
-    }
-}
-
+/// Temporarily prevent a user from chatting.
+///
+/// * duration (*optional*, default=`10 minutes`) must be a positive integer.
+/// * time unit (*optional*, default=`s`) must be one of
+///   * s
+///   * m
+///   * h
+///   * d
+///   * w
+/// * maximum duration is `2 weeks`.
+///
+/// Combinations like `1d2h` are also allowed.
+///
+/// Reason is optional and will be shown to the target user and other moderators.
+///
+/// Use [untimeout] to remove a timeout.
+///
+/// [untimeout]: ./struct.Encoder.html#methodruct.html#method.untimeout
 pub fn timeout<'a>(
     channel: &'a str,
     username: &'a str,
     duration: impl Into<Option<&'a str>>,
     reason: impl Into<Option<&'a str>>,
 ) -> Timeout<'a> {
-    Timeout::new(channel, username, duration, reason)
+    Timeout {
+        channel,
+        username,
+        duration: duration.into(),
+        reason: reason.into(),
+    }
 }
 
 impl<'a> Encodable for Timeout<'a> {

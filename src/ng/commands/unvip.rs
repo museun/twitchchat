@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Revoke VIP status from a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct Unvip<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> Unvip<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
-    Unvip::new(channel, username)
+/// Revoke VIP status from a user.
+///
+/// Use [vips] to list the VIPs of this channel.
+///
+/// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
+pub const fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
+    Unvip { channel, username }
 }
 
 impl<'a> Encodable for Unvip<'a> {
