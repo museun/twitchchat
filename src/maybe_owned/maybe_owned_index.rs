@@ -3,14 +3,17 @@ use std::ops::{Index, Range};
 
 type IndexWidth = u16;
 
+/// An index into a `MaybeOwned` (type-aliased to `Str` for this crate)
+///
+/// This also is type-aliased to `StrIndex`
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct MaybeOwnedIndex {
     pub start: IndexWidth,
     pub end: IndexWidth,
 }
 
-// TODO document this
 impl MaybeOwnedIndex {
+    /// Create a new index from this start and end point
     pub const fn raw(start: usize, end: usize) -> Self {
         Self {
             start: start as IndexWidth,
@@ -18,6 +21,9 @@ impl MaybeOwnedIndex {
         }
     }
 
+    /// Create a new index with the same starting/ending point.
+    ///
+    /// This has the end point to start -- so you can resize/bump/etc the end.
     pub const fn new(pos: usize) -> Self {
         Self {
             start: pos as IndexWidth,
@@ -25,36 +31,43 @@ impl MaybeOwnedIndex {
         }
     }
 
+    /// Shift the whole start/end pairs by `pos` amount
     pub const fn offset_by(mut self, pos: usize) -> Self {
         self.start += pos as IndexWidth;
         self.end += pos as IndexWidth;
         self
     }
 
+    /// Grow the end by `len` amount
     pub const fn resize(mut self, len: usize) -> Self {
         self.end = self.start + len as IndexWidth;
         self
     }
 
+    /// Shrink the end by `len` amount
     pub const fn truncate(mut self, len: usize) -> Self {
         self.end -= len as IndexWidth;
         self
     }
 
+    /// Replace this index with a new one start/ending at `pos`, returning the old index
     pub fn replace(&mut self, pos: usize) -> MaybeOwnedIndex {
         std::mem::replace(self, Self::new(pos))
     }
 
+    /// Checks whether this index is empty (e.g. start points to the dn)
     pub const fn is_empty(&self) -> bool {
         // end can never be behind start
         // so if we're past start then we're not empty
         self.start == self.end
     }
 
+    /// Bump the 'end' by 1 unit
     pub fn bump_tail(&mut self) {
         self.end += 1;
     }
 
+    /// Get this type as a range
     pub const fn as_range(self) -> Range<usize> {
         (self.start as usize)..(self.end as usize)
     }
