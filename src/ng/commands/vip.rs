@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Grant VIP status to a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct Vip<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> Vip<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
-    Vip::new(channel, username)
+/// Grant VIP status to a user.
+///
+/// Use [vips] to list the VIPs of this channel.
+///
+/// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
+pub const fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
+    Vip { channel, username }
 }
 
 impl<'a> Encodable for Vip<'a> {

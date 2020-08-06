@@ -121,9 +121,9 @@ impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
     }
 }
 
-macro_rules! serde_stuff {
+macro_rules! serde_for_commands {
     (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_stuff!(@one $e)),*]); };
+    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_for_commands!(@one $e)),*]); };
 
     ($($ty:ident { $($field:ident),* $(,)?});* $(;)?) => {
         $(
@@ -140,7 +140,7 @@ macro_rules! serde_stuff {
                     self.encode(&mut data).map_err(Error::custom)?;
                     let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
 
-                    let len = serde_stuff!(@len $($field),*);
+                    let len = serde_for_commands!(@len $($field),*);
 
                     let mut s = serializer.serialize_struct(stringify!($ty), std::cmp::max(len, 1))?;
                     s.serialize_field("raw", raw)?;
@@ -154,7 +154,7 @@ macro_rules! serde_stuff {
     };
 }
 
-serde_stuff! {
+serde_for_commands! {
     Ban { channel, username, reason };
     Clear { channel };
     Color { color };
@@ -176,7 +176,7 @@ serde_stuff! {
     Ping { token };
     Part { channel };
     Pong { token };
-    Privmsg { channel, data };
+    Privmsg { channel, msg };
     R9kBeta { channel };
     R9kBetaOff { channel };
     Raid { source, target };

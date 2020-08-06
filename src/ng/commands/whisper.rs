@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Whispers a message to the username.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,9 @@ pub struct Whisper<'a> {
     pub(crate) message: &'a str,
 }
 
-impl<'a> Whisper<'a> {
-    pub const fn new(username: &'a str, message: &'a str) -> Self {
-        Self { username, message }
-    }
-}
-
-pub fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
-    Whisper::new(username, message)
+/// Whispers a message to the username.
+pub const fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
+    Whisper { username, message }
 }
 
 impl<'a> Encodable for Whisper<'a> {

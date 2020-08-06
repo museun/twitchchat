@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Revoke moderator status from a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,13 @@ pub struct Unmod<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> Unmod<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
-    Unmod::new(channel, username)
+/// Revoke moderator status from a user.
+///
+/// Use [mods] to list the moderators of this channel.
+///
+/// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
+pub const fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
+    Unmod { channel, username }
 }
 
 impl<'a> Encodable for Unmod<'a> {

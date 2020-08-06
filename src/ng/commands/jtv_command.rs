@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Sends the command: data to the 'jtv' channel (e.g. /color #FFFFFF)
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,8 @@ pub struct JtvCommand<'a> {
     pub(crate) data: &'a str,
 }
 
-impl<'a> JtvCommand<'a> {
-    pub const fn new(data: &'a str) -> Self {
-        Self { data }
-    }
-}
-
-pub fn jtv_command(data: &str) -> JtvCommand<'_> {
-    JtvCommand::new(data)
+pub const fn jtv_command(data: &str) -> JtvCommand<'_> {
+    JtvCommand { data }
 }
 
 impl<'a> Encodable for JtvCommand<'a> {

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Sends an "emote" message in the third person to the channel
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,9 @@ pub struct Me<'a> {
     pub(crate) msg: &'a str,
 }
 
-impl<'a> Me<'a> {
-    pub const fn new(channel: &'a str, msg: &'a str) -> Self {
-        Self { channel, msg }
-    }
-}
-
-pub fn me<'a>(channel: &'a str, msg: &'a str) -> Me<'a> {
-    Me::new(channel, msg)
+/// Sends an "emote" message in the third person to the channel
+pub const fn me<'a>(channel: &'a str, msg: &'a str) -> Me<'a> {
+    Me { channel, msg }
 }
 
 impl<'a> Encodable for Me<'a> {

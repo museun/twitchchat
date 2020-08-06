@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Reconnects to chat.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,16 +12,11 @@ pub struct Disconnect<'a> {
     marker: std::marker::PhantomData<&'a Disconnect<'a>>,
 }
 
-impl<'a> Disconnect<'a> {
-    pub const fn new() -> Self {
-        Self {
-            marker: std::marker::PhantomData,
-        }
+/// Reconnects to chat.
+pub const fn disconnect() -> Disconnect<'static> {
+    Disconnect {
+        marker: std::marker::PhantomData,
     }
-}
-
-pub fn disconnect() -> Disconnect<'static> {
-    Disconnect::new()
 }
 
 impl<'a> Encodable for Disconnect<'a> {

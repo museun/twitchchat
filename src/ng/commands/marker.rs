@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,17 +12,16 @@ pub struct Marker<'a> {
     pub(crate) comment: Option<&'a str>,
 }
 
-impl<'a> Marker<'a> {
-    pub fn new(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Self {
-        Self {
-            channel,
-            comment: comment.into(),
-        }
-    }
-}
-
+/// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
+///
+/// You can use markers in the Highlighter for easier editing.
+///
+/// If the string exceeds 140 characters then it will be truncated
 pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
-    Marker::new(channel, comment)
+    Marker {
+        channel,
+        comment: comment.into(),
+    }
 }
 
 impl<'a> Encodable for Marker<'a> {

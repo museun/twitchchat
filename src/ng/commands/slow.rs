@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Enables slow mode (limit how often users may send messages).
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,17 +12,18 @@ pub struct Slow<'a> {
     pub(crate) duration: usize,
 }
 
-impl<'a> Slow<'a> {
-    pub fn new(channel: &'a str, duration: impl Into<Option<usize>>) -> Self {
-        Self {
-            channel,
-            duration: duration.into().unwrap_or(120),
-        }
-    }
-}
-
+/// Enables slow mode (limit how often users may send messages).
+///
+/// Duration (optional, **default=120**) must be a positive number of seconds.
+///
+/// Use [slow_off] to disable.
+///
+/// [slow_off]: ./struct.Encoder.html#method.slow_off
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
-    Slow::new(channel, duration)
+    Slow {
+        channel,
+        duration: duration.into().unwrap_or(120),
+    }
 }
 
 impl<'a> Encodable for Slow<'a> {

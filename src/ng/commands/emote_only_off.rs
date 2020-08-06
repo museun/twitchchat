@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Disables emote-only mode.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct EmoteOnlyOff<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> EmoteOnlyOff<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn emote_only_off(channel: &str) -> EmoteOnlyOff<'_> {
-    EmoteOnlyOff::new(channel)
+/// Disables emote-only mode.
+pub const fn emote_only_off(channel: &str) -> EmoteOnlyOff<'_> {
+    EmoteOnlyOff { channel }
 }
 
 impl<'a> Encodable for EmoteOnlyOff<'a> {

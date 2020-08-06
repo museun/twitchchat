@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Removes a timeout on a user.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,14 +12,9 @@ pub struct Untimeout<'a> {
     pub(crate) username: &'a str,
 }
 
-impl<'a> Untimeout<'a> {
-    pub const fn new(channel: &'a str, username: &'a str) -> Self {
-        Self { channel, username }
-    }
-}
-
-pub fn untimeout<'a>(channel: &'a str, username: &'a str) -> Untimeout<'a> {
-    Untimeout::new(channel, username)
+/// Removes a timeout on a user.
+pub const fn untimeout<'a>(channel: &'a str, username: &'a str) -> Untimeout<'a> {
+    Untimeout { channel, username }
 }
 
 impl<'a> Encodable for Untimeout<'a> {

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Disables slow mode.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct SlowOff<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> SlowOff<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn slow_off(channel: &str) -> SlowOff<'_> {
-    SlowOff::new(channel)
+/// Disables slow mode.
+pub const fn slow_off(channel: &str) -> SlowOff<'_> {
+    SlowOff { channel }
 }
 
 impl<'a> Encodable for SlowOff<'a> {

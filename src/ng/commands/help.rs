@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
+/// Lists the commands available to you in this room.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -10,14 +11,9 @@ pub struct Help<'a> {
     pub(crate) channel: &'a str,
 }
 
-impl<'a> Help<'a> {
-    pub const fn new(channel: &'a str) -> Self {
-        Self { channel }
-    }
-}
-
-pub fn help(channel: &str) -> Help<'_> {
-    Help::new(channel)
+/// Lists the commands available to you in this room.
+pub const fn help(channel: &str) -> Help<'_> {
+    Help { channel }
 }
 
 impl<'a> Encodable for Help<'a> {
