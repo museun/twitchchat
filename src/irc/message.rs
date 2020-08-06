@@ -117,13 +117,13 @@ impl<'a> IrcMessage<'a> {
 }
 
 impl<'a> IrcMessage<'a> {
-    pub const IRCREADY: &'static str = "001";
+    pub const IRC_READY: &'static str = "001";
     pub const READY: &'static str = "376";
     pub const CAP: &'static str = "CAP";
-    pub const CLEARCHAT: &'static str = "CLEARCHAT";
-    pub const CLEARMSG: &'static str = "CLEARMSG";
-    pub const GLOBALUSERSTATE: &'static str = "GLOBALUSERSTATE";
-    pub const HOSTTARGET: &'static str = "HOSTTARGET";
+    pub const CLEAR_CHAT: &'static str = "CLEARCHAT";
+    pub const CLEAR_MSG: &'static str = "CLEARMSG";
+    pub const GLOBAL_USER_STATE: &'static str = "GLOBALUSERSTATE";
+    pub const HOST_TARGET: &'static str = "HOSTTARGET";
     pub const JOIN: &'static str = "JOIN";
     pub const NOTICE: &'static str = "NOTICE";
     pub const PART: &'static str = "PART";
@@ -131,9 +131,9 @@ impl<'a> IrcMessage<'a> {
     pub const PONG: &'static str = "PONG";
     pub const PRIVMSG: &'static str = "PRIVMSG";
     pub const RECONNECT: &'static str = "RECONNECT";
-    pub const ROOMSTATE: &'static str = "ROOMSTATE";
-    pub const USERNOTICE: &'static str = "USERNOTICE";
-    pub const USERSTATE: &'static str = "USERSTATE";
+    pub const ROOM_STATE: &'static str = "ROOMSTATE";
+    pub const USER_NOTICE: &'static str = "USERNOTICE";
+    pub const USER_STATE: &'static str = "USERSTATE";
     pub const WHISPER: &'static str = "WHISPER";
 }
 

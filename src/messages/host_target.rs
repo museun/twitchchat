@@ -50,7 +50,7 @@ impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::HOSTTARGET)?;
+        msg.expect_command(IrcMessage::HOST_TARGET)?;
 
         // [- | <target>] number?
 

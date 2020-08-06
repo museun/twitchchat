@@ -71,13 +71,13 @@ impl Dispatcher {
         }
 
         match msg.get_command() {
-            M::IRCREADY => dispatch!(IrcReady),
+            M::IRC_READY => dispatch!(IrcReady),
             M::READY => dispatch!(Ready),
             M::CAP => dispatch!(Cap),
-            M::CLEARCHAT => dispatch!(ClearChat),
-            M::CLEARMSG => dispatch!(ClearMsg),
-            M::GLOBALUSERSTATE => dispatch!(GlobalUserState),
-            M::HOSTTARGET => dispatch!(HostTarget),
+            M::CLEAR_CHAT => dispatch!(ClearChat),
+            M::CLEAR_MSG => dispatch!(ClearMsg),
+            M::GLOBAL_USER_STATE => dispatch!(GlobalUserState),
+            M::HOST_TARGET => dispatch!(HostTarget),
             M::JOIN => dispatch!(Join),
             M::NOTICE => dispatch!(Notice),
             M::PART => dispatch!(Part),
@@ -85,9 +85,9 @@ impl Dispatcher {
             M::PONG => dispatch!(Pong),
             M::PRIVMSG => dispatch!(Privmsg),
             M::RECONNECT => dispatch!(Reconnect),
-            M::ROOMSTATE => dispatch!(RoomState),
-            M::USERNOTICE => dispatch!(UserNotice),
-            M::USERSTATE => dispatch!(UserState),
+            M::ROOM_STATE => dispatch!(RoomState),
+            M::USER_NOTICE => dispatch!(UserNotice),
+            M::USER_STATE => dispatch!(UserState),
             M::WHISPER => dispatch!(Whisper),
             _ => {
                 // TODO user-defined messages

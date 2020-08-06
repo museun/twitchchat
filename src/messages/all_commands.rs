@@ -83,13 +83,13 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
 
         use IrcMessage as M;
         let this = match msg.get_command() {
-            M::IRCREADY => map!(IrcReady),
+            M::IRC_READY => map!(IrcReady),
             M::READY => map!(Ready),
             M::CAP => map!(Cap),
-            M::CLEARCHAT => map!(ClearChat),
-            M::CLEARMSG => map!(ClearMsg),
-            M::GLOBALUSERSTATE => map!(GlobalUserState),
-            M::HOSTTARGET => map!(HostTarget),
+            M::CLEAR_CHAT => map!(ClearChat),
+            M::CLEAR_MSG => map!(ClearMsg),
+            M::GLOBAL_USER_STATE => map!(GlobalUserState),
+            M::HOST_TARGET => map!(HostTarget),
             M::JOIN => map!(Join),
             M::NOTICE => map!(Notice),
             M::PART => map!(Part),
@@ -97,9 +97,9 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
             M::PONG => map!(Pong),
             M::PRIVMSG => map!(Privmsg),
             M::RECONNECT => map!(Reconnect),
-            M::ROOMSTATE => map!(RoomState),
-            M::USERNOTICE => map!(UserNotice),
-            M::USERSTATE => map!(UserState),
+            M::ROOM_STATE => map!(RoomState),
+            M::USER_NOTICE => map!(UserNotice),
+            M::USER_STATE => map!(UserState),
             M::WHISPER => map!(Whisper),
             _ => Self::Raw(IrcMessage::from_irc(msg).expect("infallible conversion")),
         };

@@ -39,7 +39,7 @@ impl<'t> FromIrcMessage<'t> for ClearMsg<'t> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
-        msg.expect_command(IrcMessage::CLEARMSG)?;
+        msg.expect_command(IrcMessage::CLEAR_MSG)?;
 
         let this = Self {
             tags: msg.parse_tags(),
