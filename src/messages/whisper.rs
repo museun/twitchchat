@@ -1,6 +1,6 @@
 use crate::{
     color::Color, parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeKind, Emotes,
-    FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
+    FromIrcMessage, IrcError, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
 };
 
 /// Message sent by a user
@@ -93,7 +93,7 @@ impl<'t> Whisper<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Whisper<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::WHISPER)?;

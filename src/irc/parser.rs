@@ -1,5 +1,5 @@
-use super::super::{Str, StrIndex};
-use super::{IrcMessage, PrefixIndex};
+use crate::irc::{Error, IrcMessage, PrefixIndex};
+use crate::{Str, StrIndex};
 
 pub(super) struct Parser<'a> {
     pub(super) input: &'a str,
@@ -80,7 +80,7 @@ impl<'a> IrcParserIter<'a> {
 }
 
 impl<'a> Iterator for IrcParserIter<'a> {
-    type Item = Result<IrcMessage<'a>, super::Error>;
+    type Item = Result<IrcMessage<'a>, Error>;
     fn next(&mut self) -> Option<Self::Item> {
         const CRLF: &str = "\r\n";
         if self.pos == self.data.len() {
@@ -90,7 +90,7 @@ impl<'a> Iterator for IrcParserIter<'a> {
         let index = match self.data.get(self.pos..)?.find(CRLF) {
             Some(index) => index + CRLF.len() + self.pos,
             None => {
-                let err = Err(super::Error::IncompleteMessage { pos: self.pos });
+                let err = Err(Error::IncompleteMessage { pos: self.pos });
                 self.pos = self.data.len();
                 return err.into();
             }

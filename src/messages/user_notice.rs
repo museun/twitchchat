@@ -1,6 +1,6 @@
 use crate::{
-    color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes, FromIrcMessage,
-    InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
+    color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes, FromIrcMessage, IrcError,
+    IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
 };
 
 /// A paid subscription ot the channel
@@ -311,7 +311,7 @@ impl<'t> UserNotice<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for UserNotice<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_NOTICE)?;

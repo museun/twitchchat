@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// An event that is produced when the Twitch connection has been succesfully
@@ -18,7 +18,7 @@ impl<'t> Ready<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Ready<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::READY)?;

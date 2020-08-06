@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// General notices from the server.
@@ -33,7 +33,7 @@ impl<'t> Notice<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Notice<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::NOTICE)?;

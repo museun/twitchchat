@@ -1,12 +1,12 @@
 use super::messages::*;
-use super::{EventMap, EventStream, FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage};
+use crate::{EventMap, EventStream, FromIrcMessage, IntoOwned, IrcError, IrcMessage};
 
 use std::convert::Infallible;
 
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum DispatchError {
-    InvalidMessage(InvalidMessage),
+    InvalidMessage(IrcError),
     Custom(Box<dyn std::error::Error>),
 }
 
@@ -34,8 +34,8 @@ impl std::error::Error for DispatchError {
     }
 }
 
-impl From<InvalidMessage> for DispatchError {
-    fn from(msg: InvalidMessage) -> Self {
+impl From<IrcError> for DispatchError {
+    fn from(msg: IrcError) -> Self {
         Self::InvalidMessage(msg)
     }
 }

@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// User join message
@@ -24,7 +24,7 @@ impl<'t> Join<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Join<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::JOIN)?;
@@ -60,7 +60,7 @@ mod tests {
         let input = ":tmi.twitch.tv NOT_JOIN #foo\r\n";
         for msg in irc::parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err,InvalidMessage::InvalidCommand { .. }))
+            assert!(matches!(err,IrcError::InvalidCommand { .. }))
         }
     }
 
@@ -69,7 +69,7 @@ mod tests {
         let input = ":tmi.twitch.tv JOIN #foo\r\n";
         for msg in irc::parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err, InvalidMessage::ExpectedNick))
+            assert!(matches!(err, IrcError::ExpectedNick))
         }
     }
 
@@ -78,7 +78,7 @@ mod tests {
         let input = ":tmi.twitch.tv JOIN\r\n";
         for msg in irc::parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(dbg!(err), InvalidMessage::ExpectedArg { pos: 0 }))
+            assert!(matches!(dbg!(err), IrcError::ExpectedArg { pos: 0 }))
         }
     }
 

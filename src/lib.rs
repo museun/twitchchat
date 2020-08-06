@@ -43,21 +43,18 @@ pub mod commands;
 pub mod messages;
 
 pub mod irc;
-use irc::{FromIrcMessage, InvalidMessage, IrcMessage, TagIndices, Tags};
+pub use irc::{Error as IrcError, FromIrcMessage, IrcMessage, TagIndices, Tags};
 
 pub mod validator;
 use validator::Validator;
-
-// a public dep
-pub use simple_event_map::{EventMap, EventStream};
-
-#[cfg(feature = "serde")]
-mod serde;
 
 pub mod twitch;
 pub use twitch::*;
 
 pub mod rate_limit;
+
+#[cfg(feature = "serde")]
+mod serde;
 
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
@@ -74,3 +71,6 @@ pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
 /// An anonymous login.
 pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
+
+// a public dep
+pub use simple_event_map::{EventMap, EventStream};
