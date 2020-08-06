@@ -1,3 +1,5 @@
+//! Twitch messages that can be parsed from `IrcMessage`, or subscribed to from the `Dispatcher`
+//!
 macro_rules! serde_struct {
     (@one $($x:tt)*) => { () };
     (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]); };

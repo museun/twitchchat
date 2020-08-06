@@ -1,5 +1,9 @@
 use {super::*, crate::*};
 
+/// An enum of all possible Twitch messages.
+///
+/// This is useful if you just want to subscribe to ***all** messages.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum AllCommands<'a> {
