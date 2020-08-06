@@ -73,3 +73,7 @@ pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
 
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
+
+/// An anonymous login.
+pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
+pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
