@@ -1,4 +1,4 @@
-use super::{parser::Parser, Prefix, PrefixIndex};
+use crate::irc::{parser::Parser, Error, Prefix, PrefixIndex};
 use crate::{Str, StrIndex};
 
 /// A raw irc message `@tags :prefix COMMAND args :data\r\n`
@@ -19,7 +19,7 @@ pub struct IrcMessage<'a> {
 }
 
 impl<'a> IrcMessage<'a> {
-    pub(crate) fn parse(input: Str<'a>) -> Result<Self, super::Error> {
+    pub(crate) fn parse(input: Str<'a>) -> Result<Self, Error> {
         // trim any \r\n off incase this was directly called
         let data = if input.ends_with("\r\n") {
             &input.as_ref()[..input.len() - 2]
@@ -116,17 +116,6 @@ impl<'a> IrcMessage<'a> {
     }
 }
 
-into_owned! {
-    IrcMessage {
-        raw,
-        tags,
-        prefix,
-        command,
-        args,
-        data,
-    }
-}
-
 impl<'a> IrcMessage<'a> {
     pub const IRCREADY: &'static str = "001";
     pub const READY: &'static str = "376";
@@ -148,11 +137,22 @@ impl<'a> IrcMessage<'a> {
     pub const WHISPER: &'static str = "WHISPER";
 }
 
+into_owned! {
+    IrcMessage {
+        raw,
+        tags,
+        prefix,
+        command,
+        args,
+        data,
+    }
+}
+
 impl<'a> std::fmt::Debug for IrcMessage<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IrcMessage")
             .field("raw", &&*self.raw)
-            .field("tags", &self.tags.map(|index| &self.raw[index]))
+            .field("tags", &self.get_tags())
             .field(
                 "prefix",
                 &self.prefix.map(|index| Prefix {
@@ -160,9 +160,9 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
                     index,
                 }),
             )
-            .field("command", &&self.raw[self.command])
-            .field("args", &self.args.map(|index| &self.raw[index]))
-            .field("data", &self.data.map(|index| &self.raw[index]))
+            .field("command", &self.get_command())
+            .field("args", &self.get_args())
+            .field("data", &self.get_data())
             .finish()
     }
 }
@@ -177,11 +177,11 @@ impl<'t> ::serde::Serialize for IrcMessage<'t> {
 
         let mut s = serializer.serialize_struct("IrcMessage", 6)?;
         s.serialize_field("raw", &&*self.raw)?;
-        s.serialize_field("tags", &self.tags.map(|index| &self.raw[index]))?;
+        s.serialize_field("tags", &self.get_tags())?;
         s.serialize_field("prefix", &self.get_prefix())?;
-        s.serialize_field("command", &self.raw[self.command])?;
-        s.serialize_field("args", &self.args.map(|index| &self.raw[index]))?;
-        s.serialize_field("data", &self.data.map(|index| &self.raw[index]))?;
+        s.serialize_field("command", &self.get_command())?;
+        s.serialize_field("args", &self.get_args())?;
+        s.serialize_field("data", &self.get_data())?;
         s.end()
     }
 }
@@ -212,7 +212,7 @@ mod tests {
         for i in 0..10 {
             let s: Str<'_> = format!("{}\r\n", " ".repeat(i)).into();
             let err = IrcMessage::parse(s).unwrap_err();
-            assert!(matches!(err, super::super::Error::EmptyMessage))
+            assert!(matches!(err, Error::EmptyMessage))
         }
     }
 }
