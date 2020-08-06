@@ -141,23 +141,26 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn read_async() {
-        let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
-        {
-            let reader = futures_lite::io::Cursor::new(&data);
+    #[test]
+    fn read_async() {
+        use futures_lite::stream::StreamExt as _;
+        let fut = async move {
+            let data = b"hello\r\nworld\r\ntesting this\r\nand another thing\r\n".to_vec();
+            {
+                let reader = futures_lite::io::Cursor::new(&data);
+                let mut decoder = DecoderAsync::new(reader);
+                while let Ok(msg) = decoder.read_message().await {
+                    eprintln!("{:#?}", msg);
+                }
+            }
+
+            let reader = futures_lite::io::Cursor::new(data);
             let mut decoder = DecoderAsync::new(reader);
-            while let Ok(msg) = decoder.read_message().await {
+            while let Some(msg) = decoder.next().await {
                 eprintln!("{:#?}", msg);
             }
-        }
+        };
 
-        use futures_lite::stream::StreamExt as _;
-
-        let reader = futures_lite::io::Cursor::new(data);
-        let mut decoder = DecoderAsync::new(reader);
-        while let Some(msg) = decoder.next().await {
-            eprintln!("{:#?}", msg);
-        }
+        async_executor::LocalExecutor::new().run(fut);
     }
 }

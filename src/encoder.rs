@@ -176,20 +176,23 @@ mod tests {
         assert_eq!(s, "JOIN #museun\r\nJOIN #shaken_bot\r\n");
     }
 
-    #[tokio::test]
-    async fn encoder_async() {
-        let mut output = vec![];
-        {
-            let mut encoder = AsyncEncoder::new(&mut output);
+    #[test]
+    fn encoder_async() {
+        let fut = async move {
+            let mut output = vec![];
+            {
+                let mut encoder = AsyncEncoder::new(&mut output);
 
-            encoder.encode(join("#museun")).await.unwrap();
-            encoder.encode(join("#shaken_bot")).await.unwrap();
+                encoder.encode(join("#museun")).await.unwrap();
+                encoder.encode(join("#shaken_bot")).await.unwrap();
 
-            encoder.flush().await.unwrap();
-        }
+                encoder.flush().await.unwrap();
+            }
 
-        let s = std::str::from_utf8(&output).unwrap();
-        assert_eq!(s, "JOIN #museun\r\nJOIN #shaken_bot\r\n");
+            let s = std::str::from_utf8(&output).unwrap();
+            assert_eq!(s, "JOIN #museun\r\nJOIN #shaken_bot\r\n");
+        };
+        async_executor::LocalExecutor::new().run(fut);
     }
 
     #[test]
