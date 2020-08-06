@@ -7,17 +7,28 @@ pub use into_owned::IntoOwned;
 mod maybe_owned_index;
 pub use maybe_owned_index::MaybeOwnedIndex;
 
+/// A `str` type that can either be in a borrowed state, or an owned state.
+///
+/// This is conceptually the same as a `Cow` but specialized for `str` and for this crate.
+///
+/// This crate uses indices into this type to reduce the number of allocations of each type
+///
+/// This is type-aliased to `Str` in this crate and only exposed for people to extend messages themselves.
 #[cfg_attr(feature = "serde", derive(::serde::Serialize), serde(untagged))]
 pub enum MaybeOwned<'a> {
+    /// Owned variant, a `Box<str>`. This usually means it has a `'static` lifetime
     Owned(Box<str>),
+    /// Borrowed variant, a `&'a str`. This means it has a `'a' lifetime
     Borrowed(&'a str),
 }
 
 impl<'a> MaybeOwned<'a> {
+    /// Checks whether this type is in the `Owned` state
     pub fn is_owned(&self) -> bool {
         !self.is_borrowed()
     }
 
+    /// Checks whether this type is in the `Borrowed` state
     pub fn is_borrowed(&self) -> bool {
         matches!(self, Self::Borrowed{..})
     }
