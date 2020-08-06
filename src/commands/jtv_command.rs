@@ -11,6 +11,7 @@ pub struct JtvCommand<'a> {
     pub(crate) data: &'a str,
 }
 
+/// Sends the command: data to the 'jtv' channel (e.g. /color #FFFFFF)
 pub const fn jtv_command(data: &str) -> JtvCommand<'_> {
     JtvCommand { data }
 }
