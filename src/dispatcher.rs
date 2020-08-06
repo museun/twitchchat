@@ -1,15 +1,18 @@
 use crate::{messages::*, EventMap, EventStream, FromIrcMessage, IntoOwned, IrcError, IrcMessage};
-
 use std::convert::Infallible;
 
+/// An error produced by the Dispatcher
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum DispatchError {
+    /// The message type was wrong -- this will only happen on user-defined events.
     InvalidMessage(IrcError),
+    /// A custom error message -- this will only happen on user-defined events.
     Custom(Box<dyn std::error::Error>),
 }
 
 impl DispatchError {
+    /// Create a new custom error message type
     pub fn custom(err: impl std::error::Error + 'static) -> Self {
         Self::Custom(Box::new(err))
     }
@@ -45,20 +48,24 @@ impl From<Infallible> for DispatchError {
     }
 }
 
+/// A message dispatcher
 #[derive(Default)]
 pub struct Dispatcher {
     map: EventMap,
 }
 
 impl Dispatcher {
+    // Create a new message dispatcher
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
     pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
         self.map.register()
     }
 
+    /// Dispatch this `IrcMessage`
     pub fn dispatch<'a>(&mut self, message: IrcMessage<'a>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
@@ -102,6 +109,11 @@ impl Dispatcher {
         Ok(())
     }
 
+    /// Reset the dispatcher, this will cause all `EventStreams` previously produce via subscription to eventually return None.
+    ///
+    /// You'll have to re-subscribe to events after this.
+    ///
+    /// This is a way to stop any polling event handlers
     pub fn reset(&mut self) {
         self.map.reset()
     }
