@@ -101,7 +101,6 @@ impl<'a> Iterator for IrcParserIter<'a> {
             .get(pos..index)
             .map(Str::from)
             .map(IrcMessage::parse)
-            .map(Ok)
     }
 }
 

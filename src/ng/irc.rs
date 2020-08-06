@@ -20,7 +20,7 @@ pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), Error> {
         .find("\r\n")
         .ok_or_else(|| Error::IncompleteMessage { pos: 0 })?;
 
-    Ok((pos, IrcMessage::parse(Str::Borrowed(&input[..pos]))))
+    Ok((pos, IrcMessage::parse(Str::Borrowed(&input[..pos]))?))
 }
 
 #[non_exhaustive]
@@ -28,6 +28,7 @@ pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), Error> {
 pub enum Error {
     // TODO make this less bad
     IncompleteMessage { pos: usize },
+    EmptyMessage,
 }
 
 impl std::fmt::Display for Error {
@@ -36,6 +37,7 @@ impl std::fmt::Display for Error {
             Error::IncompleteMessage { pos } => {
                 write!(f, "incomplete message starting at: {}", pos)
             }
+            Error::EmptyMessage => write!(f, "no message could be parsed"),
         }
     }
 }
