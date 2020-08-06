@@ -57,8 +57,13 @@ where
         }
 
         let raw = raw.ok_or_else(|| A::Error::missing_field(RAW))?;
-        let irc = IrcMessage::parse(raw)
-            .map_err(|err| A::Error::custom(format!("cannot parse irc message: {}", err)))?;
+        let irc = IrcMessage::parse(raw).map_err(|err| {
+            A::Error::custom(format!(
+                "cannot parse '{}' from the irc message: {}",
+                std::any::type_name::<T>(),
+                err
+            ))
+        })?;
 
         T::from_irc(irc).map_err(|err| {
             A::Error::custom(format!(
