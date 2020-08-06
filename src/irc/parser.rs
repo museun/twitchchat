@@ -103,24 +103,3 @@ impl<'a> Iterator for IrcParserIter<'a> {
             .map(IrcMessage::parse)
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     #[test]
-//     fn parse_components() {
-//         let inputs = &[
-//             "@tag1=val;tag2=bar :foo!bar@baz COMMAND arg1 arg2 arg3 :data\r\n",
-//             ":foo!bar@baz COMMAND arg1 arg2 arg3 :data\r\n",
-//             ":foo COMMAND arg1 arg2 arg3 :data\r\n",
-//             ":foo COMMAND arg1 arg2\r\n",
-//             ":foo COMMAND arg1\r\n",
-//             ":foo COMMAND :data\r\n",
-//             ":foo COMMAND arg1 :data with spaces\r\n",
-//         ];
-
-//         for input in inputs.iter().copied().map(Str::from) {
-//             eprintln!("{:#?}\n\n", IrcMessage::parse(input));
-//         }
-//     }
-// }
