@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// A ping request from the server
@@ -17,7 +17,7 @@ impl<'t> Ping<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Ping<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PING)?;

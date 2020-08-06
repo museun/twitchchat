@@ -1,6 +1,6 @@
 use crate::{
     color::Color, parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeInfo, BadgeKind,
-    Emotes, FromIrcMessage, InvalidMessage, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
+    Emotes, FromIrcMessage, IrcError, IrcMessage, Str, StrIndex, TagIndices, Tags, Validator,
 };
 
 /// Some PRIVMSGs are considered 'CTCP' (client-to-client protocol)
@@ -192,7 +192,7 @@ impl<'t> Privmsg<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         const CTCP_MARKER: char = '\x01';
@@ -217,7 +217,7 @@ impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
                     index.end -= 1;
                     ctcp.replace(ctcp_index);
                 }
-                None => return Err(InvalidMessage::ExpectedData),
+                None => return Err(IrcError::ExpectedData),
             }
         }
 

@@ -1,7 +1,5 @@
 use crate::{color::Color, Badge};
-use crate::{
-    FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage, Str, TagIndices, Tags, Validator,
-};
+use crate::{FromIrcMessage, IntoOwned, IrcError, IrcMessage, Str, TagIndices, Tags, Validator};
 
 /// Sent on successful login, if `TAGS` capability have been sent beforehand.
 #[derive(Debug, Clone, PartialEq)]
@@ -53,7 +51,7 @@ impl<'t> GlobalUserState<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::GLOBAL_USER_STATE)?;
@@ -66,7 +64,7 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
 
         let user_id = tags
             .get("user-id")
-            .ok_or_else(|| InvalidMessage::ExpectedTag {
+            .ok_or_else(|| IrcError::ExpectedTag {
                 name: "user-id".to_string(),
             })
             .map(Str::from)
@@ -78,7 +76,7 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
             .get("color")
             .map(std::str::FromStr::from_str)
             .transpose()
-            .map_err(|err| InvalidMessage::CannotParseTag {
+            .map_err(|err| IrcError::CannotParseTag {
                 name: "color".into(),
                 error: Box::new(err),
             })?

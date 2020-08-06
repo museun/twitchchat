@@ -1,5 +1,5 @@
 use super::*;
-use crate::{FromIrcMessage, IntoOwned, InvalidMessage};
+use crate::{FromIrcMessage, IntoOwned, IrcError};
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -72,7 +72,7 @@ impl<'a> IntoOwned<'a> for AllCommands<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         macro_rules! map {

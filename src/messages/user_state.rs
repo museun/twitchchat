@@ -1,5 +1,5 @@
 use crate::{color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes};
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
@@ -62,7 +62,7 @@ impl<'t> UserState<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for UserState<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_STATE)?;

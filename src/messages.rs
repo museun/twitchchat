@@ -50,6 +50,18 @@ macro_rules! raw {
     };
 }
 
+macro_rules! tags {
+    () => {
+        /// Get a view of parsable tags
+        pub fn tags(&self) -> Tags<'_> {
+            Tags {
+                data: &self.raw,
+                indices: &self.tags,
+            }
+        }
+    };
+}
+
 macro_rules! str_field {
     ($(#[$meta:meta])* $name:ident) => {
         $(#[$meta])*
@@ -75,18 +87,6 @@ macro_rules! opt_str_field {
     ($name:ident) => {
         pub fn $name(&self) -> Option<&str> {
             self.$name.map(|index| &self.raw[index])
-        }
-    };
-}
-
-macro_rules! tags {
-    () => {
-        /// Get a view of parsable tags
-        pub fn tags(&self) -> Tags<'_> {
-            Tags {
-                data: &self.raw,
-                indices: &self.tags,
-            }
         }
     };
 }

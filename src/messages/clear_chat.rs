@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// When a user's message(s) have been purged.
@@ -38,7 +38,7 @@ impl<'t> ClearChat<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_CHAT)?;

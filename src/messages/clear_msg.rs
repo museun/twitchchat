@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// When a single message has been removed from a channel.
@@ -36,7 +36,7 @@ impl<'t> ClearMsg<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for ClearMsg<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_MSG)?;

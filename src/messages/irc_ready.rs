@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// Happens when the IRC connection has been succesfully established
@@ -17,7 +17,7 @@ impl<'t> IrcReady<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for IrcReady<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::IRC_READY)?;

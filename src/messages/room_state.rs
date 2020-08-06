@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
 
 /// The parameters for a room being in follower-only mode
@@ -22,7 +22,7 @@ pub struct RoomState<'t> {
 }
 
 impl<'a> FromIrcMessage<'a> for RoomState<'a> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::ROOM_STATE)?;
 

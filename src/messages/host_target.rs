@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// Event kind for determine when a Host event beings or end
@@ -47,7 +47,7 @@ impl<'t> HostTarget<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::HOST_TARGET)?;
@@ -61,7 +61,7 @@ impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
                 let kind = msg.expect_data_index()?.resize(t.len());
                 Some(kind)
             }
-            None => return Err(InvalidMessage::ExpectedData),
+            None => return Err(IrcError::ExpectedData),
         };
 
         let viewers = data.next().and_then(|s| s.parse().ok());

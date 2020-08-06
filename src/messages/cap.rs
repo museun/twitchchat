@@ -1,5 +1,5 @@
 use super::{IrcMessage, Str, StrIndex};
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 
 /// A parsed Capability
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -40,7 +40,7 @@ impl<'t> Cap<'t> {
 }
 
 impl<'a> FromIrcMessage<'a> for Cap<'a> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         const ACK: &str = "ACK";

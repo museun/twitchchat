@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str, StrIndex};
 
 /// A pong response sent from the server
@@ -19,7 +19,7 @@ impl<'t> Pong<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Pong<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PONG)?;

@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-use super::{irc::IrcMessage, IntoOwned};
+use crate::{irc::IrcMessage, IntoOwned, IrcError};
 
 use std::{
     future::Future,
@@ -14,7 +13,7 @@ use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, 
 pub enum Error {
     Io(std::io::Error),
     InvalidUtf8(std::str::Utf8Error),
-    ParseError(crate::irc::Error),
+    ParseError(IrcError),
     Eof,
 }
 

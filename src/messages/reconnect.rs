@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, InvalidMessage, Validator};
+use crate::{FromIrcMessage, IrcError, Validator};
 use crate::{IrcMessage, Str};
 
 /// Signals that you should reconnect and rejoin channels after a restart.
@@ -18,7 +18,7 @@ impl<'t> Reconnect<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Reconnect<'t> {
-    type Error = InvalidMessage;
+    type Error = IrcError;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::RECONNECT)?;
