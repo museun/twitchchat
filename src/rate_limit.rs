@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub trait AsyncBlocker: Send + 'static {
+pub trait AsyncBlocker: Send + Sync + 'static {
     fn block(&self, duration: Duration) -> Boxed<()>;
 }
 

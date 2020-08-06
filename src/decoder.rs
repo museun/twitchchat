@@ -218,6 +218,6 @@ mod tests {
             assert!(matches!(dec.read_message().await.unwrap_err(), Error::Eof))
         };
 
-        async_executor::LocalExecutor::new().run(fut);
+        futures_lite::future::block_on(fut);
     }
 }
