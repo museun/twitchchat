@@ -30,7 +30,7 @@
 mod maybe_owned;
 pub use maybe_owned::{IntoOwned, MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
 
-pub mod decoder;
+mod decoder;
 pub use decoder::{Decoder, DecoderAsync, Error as DecodeError};
 
 mod dispatcher;
@@ -43,7 +43,10 @@ pub mod commands;
 pub mod messages;
 
 pub mod irc;
-pub use irc::{FromIrcMessage, InvalidMessage, IrcMessage, TagIndices, Tags};
+pub use irc::{InvalidMessage, IrcMessage, TagIndices, Tags};
+
+#[doc(inline)]
+pub use irc::FromIrcMessage;
 
 mod validator;
 pub use validator::Validator;
@@ -51,7 +54,7 @@ pub use validator::Validator;
 pub mod twitch;
 pub use twitch::*;
 
-pub use twitch::color::{Color, TwitchColor, RGB};
+use twitch::color::Color;
 
 pub mod rate_limit;
 
