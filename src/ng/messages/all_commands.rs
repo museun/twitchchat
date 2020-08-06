@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn ensure_const_match() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        let msg = IrcMessage::parse(Str::Borrowed(input));
+        let msg = IrcMessage::parse(Str::Borrowed(input)).unwrap();
         let all = AllCommands::from_irc(msg).unwrap();
         assert!(matches!(all, AllCommands::Privmsg{..}));
     }
