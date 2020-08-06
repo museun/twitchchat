@@ -21,7 +21,7 @@ pub struct RoomState<'t> {
 }
 
 impl<'a> FromIrcMessage<'a> for RoomState<'a> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::ROOM_STATE)?;
 

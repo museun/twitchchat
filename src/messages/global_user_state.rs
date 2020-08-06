@@ -50,7 +50,7 @@ impl<'t> GlobalUserState<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::GLOBAL_USER_STATE)?;
@@ -63,7 +63,7 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
 
         let user_id = tags
             .get("user-id")
-            .ok_or_else(|| IrcError::ExpectedTag {
+            .ok_or_else(|| InvalidMessage::ExpectedTag {
                 name: "user-id".to_string(),
             })
             .map(Str::from)
@@ -75,7 +75,7 @@ impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
             .get("color")
             .map(std::str::FromStr::from_str)
             .transpose()
-            .map_err(|err| IrcError::CannotParseTag {
+            .map_err(|err| InvalidMessage::CannotParseTag {
                 name: "color".into(),
                 error: Box::new(err),
             })?

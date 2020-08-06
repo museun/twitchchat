@@ -308,7 +308,7 @@ impl<'t> UserNotice<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for UserNotice<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_NOTICE)?;

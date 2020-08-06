@@ -16,7 +16,7 @@ impl<'t> Ping<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Ping<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PING)?;

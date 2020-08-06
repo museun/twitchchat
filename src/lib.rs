@@ -43,7 +43,7 @@ pub mod commands;
 pub mod messages;
 
 pub mod irc;
-pub use irc::{Error as IrcError, FromIrcMessage, IrcMessage, TagIndices, Tags};
+pub use irc::{FromIrcMessage, InvalidMessage, IrcMessage, TagIndices, Tags};
 
 mod validator;
 pub use validator::Validator;

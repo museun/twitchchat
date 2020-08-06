@@ -1,4 +1,4 @@
-use super::{parser::Parser, Error, Prefix, PrefixIndex};
+use super::{parser::Parser, InvalidMessage, Prefix, PrefixIndex};
 use crate::{Str, StrIndex};
 
 /// A raw irc message `@tags :prefix COMMAND args :data\r\n`
@@ -19,7 +19,7 @@ pub struct IrcMessage<'a> {
 }
 
 impl<'a> IrcMessage<'a> {
-    pub(crate) fn parse(input: Str<'a>) -> Result<Self, Error> {
+    pub(crate) fn parse(input: Str<'a>) -> Result<Self, InvalidMessage> {
         // trim any \r\n off incase this was directly called
         let data = if input.ends_with("\r\n") {
             &input.as_ref()[..input.len() - 2]
@@ -29,7 +29,7 @@ impl<'a> IrcMessage<'a> {
 
         let data = data.trim();
         if data.is_empty() {
-            return Err(super::Error::EmptyMessage);
+            return Err(super::InvalidMessage::EmptyMessage);
         }
 
         let mut p = Parser {
@@ -212,7 +212,7 @@ mod tests {
         for i in 0..10 {
             let s: Str<'_> = format!("{}\r\n", " ".repeat(i)).into();
             let err = IrcMessage::parse(s).unwrap_err();
-            assert!(matches!(err, Error::EmptyMessage))
+            assert!(matches!(err, InvalidMessage::EmptyMessage))
         }
     }
 }

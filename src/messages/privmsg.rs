@@ -189,7 +189,7 @@ impl<'t> Privmsg<'t> {
 }
 
 impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
-    type Error = IrcError;
+    type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
         const CTCP_MARKER: char = '\x01';
@@ -214,7 +214,7 @@ impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
                     index.end -= 1;
                     ctcp.replace(ctcp_index);
                 }
-                None => return Err(IrcError::ExpectedData),
+                None => return Err(InvalidMessage::ExpectedData),
             }
         }
 

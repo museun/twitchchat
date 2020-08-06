@@ -25,18 +25,18 @@ mod tag_indices;
 pub use tag_indices::TagIndices;
 
 mod error;
-pub use error::Error;
+pub use error::InvalidMessage;
 
 mod parser;
 
-pub fn parse(input: &str) -> impl Iterator<Item = Result<IrcMessage<'_>, Error>> + '_ {
+pub fn parse(input: &str) -> impl Iterator<Item = Result<IrcMessage<'_>, InvalidMessage>> + '_ {
     parser::IrcParserIter::new(input)
 }
 
-pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), Error> {
+pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), InvalidMessage> {
     let pos = input
         .find("\r\n")
-        .ok_or_else(|| Error::IncompleteMessage { pos: 0 })?;
+        .ok_or_else(|| InvalidMessage::IncompleteMessage { pos: 0 })?;
     let msg = IrcMessage::parse(crate::Str::Borrowed(&input[..pos]))?;
     Ok((pos, msg))
 }

@@ -1,4 +1,6 @@
-use crate::{messages::*, EventMap, EventStream, FromIrcMessage, IntoOwned, IrcError, IrcMessage};
+use crate::{
+    messages::*, EventMap, EventStream, FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage,
+};
 use std::convert::Infallible;
 
 /// An error produced by the Dispatcher
@@ -6,7 +8,7 @@ use std::convert::Infallible;
 #[non_exhaustive]
 pub enum DispatchError {
     /// The message type was wrong -- this will only happen on user-defined events.
-    InvalidMessage(IrcError),
+    InvalidMessage(InvalidMessage),
     /// A custom error message -- this will only happen on user-defined events.
     Custom(Box<dyn std::error::Error>),
 }
@@ -36,8 +38,8 @@ impl std::error::Error for DispatchError {
     }
 }
 
-impl From<IrcError> for DispatchError {
-    fn from(msg: IrcError) -> Self {
+impl From<InvalidMessage> for DispatchError {
+    fn from(msg: InvalidMessage) -> Self {
         Self::InvalidMessage(msg)
     }
 }
