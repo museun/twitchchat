@@ -1,6 +1,4 @@
-use crate::{color::Color, parse_badges, parse_emotes, Badge, BadgeInfo, Emotes};
-use crate::{FromIrcMessage, IrcError, Validator};
-use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
+use crate::*;
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]

@@ -1,5 +1,4 @@
-use crate::{color::Color, Badge};
-use crate::{FromIrcMessage, IntoOwned, IrcError, IrcMessage, Str, TagIndices, Tags, Validator};
+use crate::*;
 
 /// Sent on successful login, if `TAGS` capability have been sent beforehand.
 #[derive(Debug, Clone, PartialEq)]

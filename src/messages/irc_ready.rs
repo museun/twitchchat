@@ -1,5 +1,4 @@
-use crate::{FromIrcMessage, IrcError, Validator};
-use crate::{IrcMessage, Str, StrIndex};
+use crate::*;
 
 /// Happens when the IRC connection has been succesfully established
 #[derive(Debug, Clone, PartialEq)]

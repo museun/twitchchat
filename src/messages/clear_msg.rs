@@ -1,5 +1,4 @@
-use crate::{FromIrcMessage, IrcError, Validator};
-use crate::{IrcMessage, Str, StrIndex, TagIndices, Tags};
+use crate::*;
 
 /// When a single message has been removed from a channel.
 ///
