@@ -5,7 +5,10 @@ mod prefix;
 pub use prefix::{Prefix, PrefixIndex};
 
 mod tags;
-pub use tags::{TagIndices, Tags};
+pub use tags::Tags;
+
+mod tag_indices;
+pub use tag_indices::TagIndices;
 
 use crate::Str;
 
