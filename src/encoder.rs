@@ -5,7 +5,9 @@ use std::{
     task::{Context, Poll},
 };
 
+/// A trait to allow writing messags to any `std::io::Write` implementation
 pub trait Encodable {
+    /// Encode this message to the provided `std::io::Write` implementation
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()>;
 }
 
