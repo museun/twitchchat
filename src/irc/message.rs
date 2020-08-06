@@ -117,23 +117,52 @@ impl<'a> IrcMessage<'a> {
 }
 
 impl<'a> IrcMessage<'a> {
+    /// An IRC Ready event -- `001`.
+    ///
+    /// This is sent when you've connected.
     pub const IRC_READY: &'static str = "001";
+    /// A Twitch Ready event -- `376`.
+    ///
+    /// This is sent by Twitch with your user information.
     pub const READY: &'static str = "376";
+    /// A capability response -- `CAP`.
+    ///
+    /// This is sent to acknowledge whether the capability requested is valid and applied to your connections.
     pub const CAP: &'static str = "CAP";
+    /// An event when a user was 'purged' from a channel -- `CLEARCHAT`.
     pub const CLEAR_CHAT: &'static str = "CLEARCHAT";
+    /// An event when a users' message was removed. -- `CLEARMSG`.
     pub const CLEAR_MSG: &'static str = "CLEARMSG";
+    /// An event about your user state -- `GLOBALUSERSTATE`.
+    ///
+    /// This is sent when you've connected with `TAGS` capability enabled.
     pub const GLOBAL_USER_STATE: &'static str = "GLOBALUSERSTATE";
+    /// An event when a channel host event happens -- `HOSTTARGET`.
     pub const HOST_TARGET: &'static str = "HOSTTARGET";
+    /// A Twitch event when a user joins a channel -- `JOIN`.    
     pub const JOIN: &'static str = "JOIN";
+    /// A message from Twitch -- `NOTICE`
     pub const NOTICE: &'static str = "NOTICE";
+    /// A Twitch event when a user leaves a channel -- `PART`
     pub const PART: &'static str = "PART";
+    /// An event from Twitch which you must reply to -- `PING`.
+    ///
+    /// If you do not reply to this within a reasonable time, Twitch will
+    /// disconnect you.
     pub const PING: &'static str = "PING";
+    /// A response from Twitch when you manually ping the server -- `PONG`.
     pub const PONG: &'static str = "PONG";
+    /// The most common event, a user sends a message to a channel -- `PRIVMSG`.
     pub const PRIVMSG: &'static str = "PRIVMSG";
+    /// Twitch requests that you disconnect and reconnect -- `RECONNECT`.
     pub const RECONNECT: &'static str = "RECONNECT";
+    /// An event about the state of a room -- `ROOM_STATE`.
     pub const ROOM_STATE: &'static str = "ROOMSTATE";
+    /// An event about the state of a user -- `USERNOTICE`.
     pub const USER_NOTICE: &'static str = "USERNOTICE";
+    /// An event about the state of a user -- `USERSTATE`.
     pub const USER_STATE: &'static str = "USERSTATE";
+    /// A message from a user directly to you -- `WHISPER`.
     pub const WHISPER: &'static str = "WHISPER";
 }
 
