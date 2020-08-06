@@ -1,3 +1,8 @@
+use crate::Str;
+
+mod from_irc_message;
+pub use from_irc_message::{FromIrcMessage, InvalidMessage};
+
 mod message;
 pub use message::IrcMessage;
 
@@ -9,8 +14,6 @@ pub use tags::Tags;
 
 mod tag_indices;
 pub use tag_indices::TagIndices;
-
-use crate::Str;
 
 mod parser;
 
