@@ -1,5 +1,6 @@
 use std::convert::Infallible;
 
+/// A trait to convert an IrcMessage into 'Self'.
 pub trait FromIrcMessage<'a>: Sized {
     type Error;
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>;
