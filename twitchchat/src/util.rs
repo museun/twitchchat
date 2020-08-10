@@ -16,17 +16,17 @@ pub enum Either<L, R> {
     Right(R),
 }
 
-impl<L, R> Either<L, R> {
+impl<L, R> Either<L, R>
+where
+    L: Future,
+    R: Future,
+    Self: Future<Output = Either<L::Output, R::Output>>,
+{
     pub fn pair(left: L, right: R) -> (Self, Self) {
         (Either::Left(left), Either::Right(right))
     }
 
-    pub async fn select(left: L, right: R) -> Either<L::Output, R::Output>
-    where
-        L: Future,
-        R: Future,
-        Self: Future<Output = Either<L::Output, R::Output>>,
-    {
+    pub async fn select(left: L, right: R) -> Either<L::Output, R::Output> {
         let (left, right) = Self::pair(left, right);
         futures_lite::future::race(left, right).await
     }

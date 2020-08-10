@@ -2,9 +2,61 @@ use crate::{rate_limit::AsyncBlocker, AsyncEncoder, Encodable, RateLimit, Receiv
 
 use async_dup::Arc;
 use futures_lite::AsyncWrite;
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
+
+pub struct MpscWriter {
+    buf: Vec<u8>,
+    channel: crate::Sender<Vec<u8>>,
+}
+
+impl MpscWriter {
+    pub fn new(channel: crate::Sender<Vec<u8>>) -> Self {
+        Self {
+            buf: Vec::new(),
+            channel,
+        }
+    }
+}
+
+impl AsyncWrite for MpscWriter {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        let mut this = self.as_mut();
+        this.buf.extend_from_slice(buf);
+        Poll::Ready(Ok(buf.len()))
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        let mut this = self.as_mut();
+        let data = std::mem::take(&mut this.buf);
+        match this.channel.try_send(data) {
+            Ok(()) => Poll::Ready(Ok(())),
+            // this should never happen, but place the 'data' back into self and have it try again
+            Err(crate::channel::TrySendError::Full(data)) => {
+                this.buf = data;
+                Poll::Pending
+            }
+            Err(crate::channel::TrySendError::Closed(..)) => {
+                let kind = std::io::ErrorKind::UnexpectedEof;
+                let err = std::io::Error::new(kind, "writer was closed");
+                Poll::Ready(Err(err))
+            }
+        }
+    }
+
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        self.poll_flush(cx)
+    }
+}
 
 pub struct AsyncWriter<W> {
-    inner: AsyncEncoder<async_dup::Arc<W>>,
+    inner: AsyncEncoder<W>,
     sender: Sender<()>,
     should_quit: Receiver<()>,
 
@@ -14,7 +66,7 @@ pub struct AsyncWriter<W> {
 
 impl<W> Clone for AsyncWriter<W>
 where
-    for<'a> &'a W: AsyncWrite + Unpin + Send + Sync,
+    W: AsyncWrite + Unpin + Send + Sync + Clone,
 {
     fn clone(&self) -> Self {
         Self {
@@ -29,11 +81,11 @@ where
 
 impl<W> AsyncWriter<W>
 where
-    for<'a> &'a W: AsyncWrite + Unpin + Send + Sync,
+    W: AsyncWrite + Unpin + Send + Sync,
 {
     /// Create a new Writer
     pub(crate) fn new(
-        inner: async_dup::Arc<W>,
+        inner: W,
         sender: Sender<()>,
         should_quit: Receiver<()>,
         rate_limit: impl Into<Option<RateLimit>>,
