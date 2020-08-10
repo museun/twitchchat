@@ -100,7 +100,7 @@ pub enum Status {
 }
 
 pub struct AsyncRunner {
-    dispatcher: Dispatcher,
+    dispatcher: AsyncDispatcher,
     writer: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
     activity: (Sender<()>, Receiver<()>),
     quit: (Sender<()>, Receiver<()>),
@@ -108,7 +108,7 @@ pub struct AsyncRunner {
 
 // where for<'a> &'a IO: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 impl AsyncRunner {
-    pub fn create(dispatcher: Dispatcher) -> Self {
+    pub fn create(dispatcher: AsyncDispatcher) -> Self {
         Self {
             dispatcher,
             writer: channel::bounded(64),
@@ -127,7 +127,7 @@ impl AsyncRunner {
         AsyncWriter::new(writer, tx, rx, rate_limit, blocker)
     }
 
-    pub fn dispatcher(&mut self) -> &mut Dispatcher {
+    pub fn dispatcher(&mut self) -> &mut AsyncDispatcher {
         &mut self.dispatcher
     }
 
@@ -184,8 +184,8 @@ impl AsyncRunner {
         let stream = connector.connect().await?;
         let stream = async_dup::Arc::new(stream);
 
-        let mut ping = self.dispatcher.subscribe_internal::<Ping>().await;
-        let mut pong = self.dispatcher.subscribe_internal::<Pong>().await;
+        let mut ping = self.dispatcher.subscribe_system::<Ping>().await;
+        let mut pong = self.dispatcher.subscribe_system::<Pong>().await;
 
         let (mut reader, mut writer) = (
             AsyncDecoder::new(stream.clone()), //
