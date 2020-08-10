@@ -1,6 +1,7 @@
 use crate::BoxedFuture;
 
 /// A `tokio` connector. This does not use TLS
+#[derive(Debug, Clone, PartialEq)]
 pub struct Connector {
     addrs: Vec<std::net::SocketAddr>,
 }
