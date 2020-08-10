@@ -1,17 +1,25 @@
-use crate::connector::{try_connect, ConnectorConfig};
+use crate::connector::try_connect;
 use crate::BoxedFuture;
 
 type TcpStream = smol::Async<std::net::TcpStream>;
 
 /// A `smol` connector. This does not use TLS
+#[derive(Debug, Clone, PartialEq)]
 pub struct Connector {
-    config: ConnectorConfig,
+    addrs: Vec<std::net::SocketAddr>,
 }
 
 impl Connector {
-    /// Create a new connector with the provided configuration
-    pub const fn new(config: ConnectorConfig) -> Self {
-        Self { config }
+    /// Create a Connector that connects to Twitch
+    pub fn twitch() -> Self {
+        Self::custom(crate::TWITCH_IRC_ADDRESS).expect("twitch DNS resolution")
+    }
+
+    /// Create a connector with provided address(es)
+    pub fn custom<A: std::net::ToSocketAddrs>(addrs: A) -> std::io::Result<Self> {
+        addrs.to_socket_addrs().map(|addrs| Self {
+            addrs: addrs.collect(),
+        })
     }
 }
 
@@ -19,8 +27,8 @@ impl crate::connector::Connector for Connector {
     type Output = TcpStream;
 
     fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
-        let config = self.config.clone();
-        let fut = async move { try_connect(&*config.addrs, TcpStream::connect).await };
+        let addrs = self.addrs.clone();
+        let fut = async move { try_connect(&*addrs, TcpStream::connect).await };
         Box::pin(fut)
     }
 }
@@ -36,24 +44,30 @@ mod tls {
     ///
     /// To use this type, ensure you set up the 'TLS Domain' in the
     /// configuration. The crate provides the 'TLS domain' for Twitch in the root of this crate.
+    #[derive(Debug, Clone, PartialEq)]
     pub struct ConnectorTls {
-        config: ConnectorConfig,
+        addrs: Vec<std::net::SocketAddr>,
+        tls_domain: String,
     }
 
     impl ConnectorTls {
         /// Create a new `smol` TLS connector.
-        ///
-        /// To use this type, ensure you set up the 'TLS Domain' in the configuration.
-        ///
-        /// The crate provides the 'TLS domain' for Twitch in the root of this crate.
-        pub fn new(config: ConnectorConfig) -> std::io::Result<Self> {
-            if config.tls_domain.is_empty() {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "you must provide a TLS domain",
-                ));
-            }
-            Ok(Self { config })
+        pub fn twitch() -> Self {
+            Self::custom(crate::TWITCH_IRC_ADDRESS, crate::TWITCH_TLS_DOMAIN)
+                .expect("twitch DNS resolution")
+        }
+
+        /// Create a new `smol` TLS connector.
+        pub fn custom<A, D>(addrs: A, domain: D) -> std::io::Result<Self>
+        where
+            A: std::net::ToSocketAddrs,
+            D: Into<String>,
+        {
+            let tls_domain = domain.into();
+            addrs.to_socket_addrs().map(|addrs| Self {
+                addrs: addrs.collect(),
+                tls_domain,
+            })
         }
     }
 
@@ -61,11 +75,11 @@ mod tls {
         type Output = async_tls::client::TlsStream<TcpStream>;
 
         fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
-            let config = self.config.clone();
+            let this = self.clone();
             let fut = async move {
-                let stream = try_connect(&*config.addrs, TcpStream::connect).await?;
+                let stream = try_connect(&*this.addrs, TcpStream::connect).await?;
                 async_tls::TlsConnector::new()
-                    .connect(config.tls_domain, stream)
+                    .connect(this.tls_domain, stream)
                     .await
             };
             Box::pin(fut)

@@ -1,9 +1,5 @@
 use futures_lite::{AsyncRead, AsyncWrite};
-use std::{
-    future::Future,
-    io::Result as IoResult,
-    net::{SocketAddr, ToSocketAddrs},
-};
+use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 
 #[cfg(feature = "async-io")]
 /// Connector for using an `async_io` wrapper over `std::net::TcpStream`
@@ -33,41 +29,6 @@ pub trait Connector {
     ///
     /// e.g. `Box::pin(async move { std::net::TcpStream::connect("someaddr") })
     fn connect(&mut self) -> crate::BoxedFuture<IoResult<Self::Output>>;
-}
-
-/// Configuration for the connector
-#[derive(Debug, Clone)]
-pub struct ConnectorConfig {
-    pub(crate) addrs: Vec<SocketAddr>,
-    pub(crate) tls_domain: String,
-}
-
-impl ConnectorConfig {
-    /// Create an empty configuration
-    ///
-    /// It is highly recommended that you add some socket addresses to this config via `with_addrs`
-    pub fn unconfigured() -> Self {
-        Self {
-            addrs: vec![],
-            tls_domain: "".to_string(),
-        }
-    }
-
-    /// Use this TLS domain when using a TLS connector.
-    pub fn with_tls_domain(self, domain: impl Into<String>) -> Self {
-        Self {
-            tls_domain: domain.into(),
-            ..self
-        }
-    }
-
-    /// Use these resolved socket addresses with any connector implementation
-    pub fn with_addrs(self, addrs: impl ToSocketAddrs) -> IoResult<Self> {
-        addrs.to_socket_addrs().map(|s| Self {
-            addrs: s.collect(),
-            ..self
-        })
-    }
 }
 
 // This is used because smol/async_io uses an indv. SocketAddr for their connect
