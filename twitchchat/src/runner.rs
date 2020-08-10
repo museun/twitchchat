@@ -117,11 +117,11 @@ impl AsyncRunner {
         }
     }
 
-    pub fn writer(
-        &self,
-        rate_limit: impl Into<Option<RateLimit>>,
-        blocker: impl AsyncBlocker,
-    ) -> AsyncWriter<MpscWriter> {
+    pub fn writer<R, B>(&self, rate_limit: R, blocker: B) -> AsyncWriter<MpscWriter>
+    where
+        R: Into<Option<RateLimit>>,
+        B: AsyncBlocker,
+    {
         let (tx, rx) = (self.activity.0.clone(), self.quit.1.clone());
         let writer = MpscWriter::new(self.writer.0.clone());
         AsyncWriter::new(writer, tx, rx, rate_limit, blocker)
