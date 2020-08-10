@@ -39,7 +39,7 @@ mod decoder;
 pub use decoder::{AsyncDecoder, Decoder, Error as DecodeError};
 
 mod dispatcher;
-pub use dispatcher::{DispatchError, Dispatcher};
+pub use dispatcher::{AsyncDispatcher, DispatchError, SyncDispatcher};
 
 mod encoder;
 pub use encoder::{AsyncEncoder, Encodable, Encoder};
