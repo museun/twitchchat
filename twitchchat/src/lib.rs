@@ -69,6 +69,21 @@ pub use rate_limit::RateLimit;
 #[cfg(feature = "serde")]
 mod serde;
 
+pub mod runner;
+pub mod writer;
+
+mod util;
+
+pub mod channel;
+#[doc(inline)]
+pub use channel::{Receiver, Sender};
+
+/// Asynchronous connectors for various runtimes.
+pub mod connector;
+
+/// A boxed `Future` that is `Send + Sync`
+pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
+
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
@@ -90,18 +105,3 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
 // a public dep
 pub use simple_event_map::{EventMap, EventStream};
-
-pub mod runner;
-pub mod writer;
-
-mod util;
-
-pub mod channel;
-#[doc(inline)]
-pub use channel::{Receiver, Sender};
-
-/// Asynchronous connectors for various runtimes.
-pub mod connector;
-
-/// A boxed `Future` that is `Send + Sync`
-pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
