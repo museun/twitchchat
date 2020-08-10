@@ -58,7 +58,7 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
-    // Create a new message dispatcher
+    /// Create a new message dispatcher
     pub fn new() -> Self {
         Self::default()
     }
