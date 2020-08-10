@@ -1,3 +1,6 @@
+//! A set of utilities for running a main loop
+//!
+//! This includes an asynchronous main loop called `AsyncRunner`
 mod error;
 pub use error::RunnerError;
 
