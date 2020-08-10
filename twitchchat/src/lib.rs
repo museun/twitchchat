@@ -1,3 +1,8 @@
+#![allow(
+    clippy::missing_const_for_fn,
+    clippy::redundant_pub_crate,
+    clippy::use_self
+)]
 // #![warn(
 //     missing_docs,
 //     missing_debug_implementations,

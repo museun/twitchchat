@@ -57,30 +57,30 @@ impl PrefixIndex {
 
     /// Was this message from a user?
     pub fn is_nick(&self) -> bool {
-        matches!(self, PrefixIndex::User{ .. })
+        matches!(self, Self::User{ .. })
     }
 
     /// Get the index of the nickname
     pub fn nick_index(self) -> Option<StrIndex> {
         match self {
-            PrefixIndex::User { nick } => Some(nick),
-            PrefixIndex::Server { .. } => None,
+            Self::User { nick } => Some(nick),
+            Self::Server { .. } => None,
         }
     }
 
     /// Get the index of the hostname
     pub fn host_index(self) -> Option<StrIndex> {
         match self {
-            PrefixIndex::Server { host } => Some(host),
-            PrefixIndex::User { .. } => None,
+            Self::Server { host } => Some(host),
+            Self::User { .. } => None,
         }
     }
 
     /// Consumes this returning the index
     pub fn as_index(self) -> StrIndex {
         match self {
-            PrefixIndex::User { nick } => nick,
-            PrefixIndex::Server { host } => host,
+            Self::User { nick } => nick,
+            Self::Server { host } => host,
         }
     }
 }

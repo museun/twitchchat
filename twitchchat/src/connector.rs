@@ -39,11 +39,15 @@ pub trait Connector: Clone {
 async fn try_connect<F, T, R>(addrs: &[SocketAddr], connect: F) -> IoResult<T>
 where
     F: Fn(SocketAddr) -> R,
-    R: Future<Output = IoResult<T>>,
+    F: Send,
+    R: Future<Output = IoResult<T>> + Send,
+    R::Output: Send,
+    T: Send,
 {
     let mut last = None;
     for addr in addrs {
-        match connect(*addr).await {
+        let fut = connect(*addr);
+        match fut.await {
             Ok(socket) => return Ok(socket),
             Err(err) => last.replace(err),
         };

@@ -51,7 +51,7 @@ impl MaybeOwnedIndex {
     }
 
     /// Replace this index with a new one start/ending at `pos`, returning the old index
-    pub fn replace(&mut self, pos: usize) -> MaybeOwnedIndex {
+    pub fn replace(&mut self, pos: usize) -> Self {
         std::mem::replace(self, Self::new(pos))
     }
 
@@ -88,14 +88,14 @@ impl<'a> Index<MaybeOwnedIndex> for MaybeOwned<'a> {
 }
 
 impl<'a> Index<&MaybeOwnedIndex> for str {
-    type Output = str;
+    type Output = Self;
     fn index(&self, index: &MaybeOwnedIndex) -> &Self::Output {
         &self[index.as_range()]
     }
 }
 
 impl<'a> Index<MaybeOwnedIndex> for str {
-    type Output = str;
+    type Output = Self;
     fn index(&self, index: MaybeOwnedIndex) -> &Self::Output {
         &self[index.as_range()]
     }

@@ -132,7 +132,7 @@ impl<'a> Tags<'a> {
 
     /// Get an iterator over all of the `key, value` pairs of tags
     pub fn iter(&self) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
-        self.indices.iter(&self.data)
+        self.indices.iter(self.data)
     }
 }
 

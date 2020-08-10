@@ -90,7 +90,7 @@ pin_project_lite::pin_project! {
     }
 }
 
-impl<W: AsyncWrite + Unpin + Clone> Clone for AsyncEncoder<W> {
+impl<W: AsyncWrite + Send + Sync + Unpin + Clone> Clone for AsyncEncoder<W> {
     fn clone(&self) -> Self {
         Self {
             writer: self.writer.clone(),
@@ -100,7 +100,7 @@ impl<W: AsyncWrite + Unpin + Clone> Clone for AsyncEncoder<W> {
     }
 }
 
-impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
+impl<W: AsyncWrite + Send + Sync + Unpin> AsyncEncoder<W> {
     /// Create a new Encoder over this `futures::io::AsyncWrite` instance
     pub fn new(writer: W) -> Self {
         Self {
@@ -129,7 +129,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
-        M: Encodable,
+        M: Encodable + Send + Sync,
     {
         msg.encode(&mut self.data)?;
         self.writer.write_all(&self.data[self.pos..]).await?;
@@ -142,7 +142,7 @@ impl<W: AsyncWrite + Unpin> AsyncEncoder<W> {
     }
 }
 
-impl<W: AsyncWrite + Unpin> AsyncWrite for AsyncEncoder<W> {
+impl<W: AsyncWrite + Send + Sync + Unpin> AsyncWrite for AsyncEncoder<W> {
     fn poll_write(
         self: Pin<&mut Self>,
         ctx: &mut Context<'_>,

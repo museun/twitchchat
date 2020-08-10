@@ -14,7 +14,10 @@ pub struct Sender<T> {
 }
 
 impl<T> Sender<T> {
-    pub async fn send(&self, item: T) -> Result<(), T> {
+    pub async fn send(&self, item: T) -> Result<(), T>
+    where
+        T: Send,
+    {
         self.inner.send(item).await.map_err(|e| e.into_inner())
     }
 
@@ -35,7 +38,10 @@ pin_project_lite::pin_project! {
 }
 
 impl<T> Receiver<T> {
-    pub async fn recv(&self) -> Option<T> {
+    pub async fn recv(&self) -> Option<T>
+    where
+        T: Send,
+    {
         self.inner.recv().await.ok()
     }
 

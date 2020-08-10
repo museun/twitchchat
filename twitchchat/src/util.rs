@@ -18,12 +18,14 @@ pub enum Either<L, R> {
 
 impl<L, R> Either<L, R>
 where
-    L: Future,
-    R: Future,
-    Self: Future<Output = Either<L::Output, R::Output>>,
+    L: Future + Send,
+    R: Future + Send,
+    L::Output: Send,
+    R::Output: Send,
+    Self: Future<Output = Either<L::Output, R::Output>> + Send,
 {
     pub fn pair(left: L, right: R) -> (Self, Self) {
-        (Either::Left(left), Either::Right(right))
+        (Self::Left(left), Self::Right(right))
     }
 
     pub async fn select(left: L, right: R) -> Either<L::Output, R::Output> {
@@ -32,18 +34,24 @@ where
     }
 }
 
-impl<L: Future + Unpin, R: Future + Unpin> Future for Either<L, R> {
+impl<L, R> Future for Either<L, R>
+where
+    L: Future + Send + Unpin,
+    R: Future + Send + Unpin,
+    L::Output: Send,
+    R::Output: Send,
+{
     type Output = Either<L::Output, R::Output>;
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         use futures_lite::{pin, ready};
 
         match &mut *self.as_mut() {
-            Either::Left(left) => {
+            Self::Left(left) => {
                 pin!(left);
                 let left = ready!(left.poll(ctx));
                 Poll::Ready(Either::Left(left))
             }
-            Either::Right(right) => {
+            Self::Right(right) => {
                 pin!(right);
                 let right = ready!(right.poll(ctx));
                 Poll::Ready(Either::Right(right))

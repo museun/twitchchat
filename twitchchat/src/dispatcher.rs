@@ -10,12 +10,12 @@ pub enum DispatchError {
     /// The message type was wrong -- this will only happen on user-defined events.
     InvalidMessage(InvalidMessage),
     /// A custom error message -- this will only happen on user-defined events.
-    Custom(Box<dyn std::error::Error>),
+    Custom(Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl DispatchError {
     /// Create a new custom error message type
-    pub fn custom(err: impl std::error::Error + 'static) -> Self {
+    pub fn custom(err: impl std::error::Error + Send + Sync + 'static) -> Self {
         Self::Custom(Box::new(err))
     }
 }

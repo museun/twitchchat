@@ -143,7 +143,7 @@ impl serde::Serialize for RGB {
         S: ::serde::Serializer,
     {
         use ::serde::ser::SerializeStruct;
-        let RGB(r, g, b) = *self;
+        let Self(r, g, b) = *self;
         let mut rgb = serializer.serialize_struct("rgb", 3)?;
         rgb.serialize_field("r", &r)?;
         rgb.serialize_field("g", &g)?;
@@ -332,7 +332,7 @@ pub enum TwitchColor {
 }
 
 impl<'a> TryFrom<&'a str> for Color {
-    type Error = <Color as FromStr>::Err;
+    type Error = <Self as FromStr>::Err;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         value.parse()
     }

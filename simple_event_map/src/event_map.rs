@@ -125,7 +125,7 @@ impl EventMap {
 
         if let Some(inner) = self.inner.get_mut(&TypeId::of::<T>()) {
             // inverted so we remove them
-            inner.retain(|(id, _)| !values.remove(&id))
+            inner.retain(|(id, _)| !values.remove(id))
         }
     }
 }
