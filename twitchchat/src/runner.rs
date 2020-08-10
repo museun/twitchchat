@@ -80,12 +80,14 @@ pub struct ResetConfig {
 }
 
 impl ResetConfig {
-    pub fn new() -> (Self, Receiver<()>) {
+    pub fn should_reset_handlers() -> (Self, Receiver<()>) {
         let (tx, rx) = crate::channel::bounded(1);
         let this = Self { reset_handlers: tx };
         (this, rx)
     }
 }
+
+pub trait ConnectorSafe: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
 
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -141,16 +143,12 @@ impl AsyncRunner {
         reset_config: E,
     ) -> Result<(), RunnerError>
     where
-        C: Connector + Send + Sync,
-        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+        C: Connector,
+        for<'a> &'a C::Output: ConnectorSafe,
 
-        F: Fn(Result<Status, RunnerError>) -> R,
-        F: Send + Sync,
+        F: Fn(Result<Status, RunnerError>) -> R + Send + Sync,
         R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
-        R::Output: Send + Sync,
-
-        E: Send + Sync,
-        E: Into<Option<ResetConfig>>,
+        E: Into<Option<ResetConfig>> + Send + Sync,
     {
         let mut reset_config = reset_config.into();
 
@@ -178,8 +176,8 @@ impl AsyncRunner {
 
     pub async fn run_to_completion<C>(&mut self, connector: C) -> Result<Status, RunnerError>
     where
-        C: Connector + Send + Sync,
-        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+        C: Connector,
+        for<'a> &'a C::Output: ConnectorSafe,
     {
         let mut connector = connector;
 
