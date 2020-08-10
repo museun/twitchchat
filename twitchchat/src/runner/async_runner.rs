@@ -11,93 +11,16 @@ use async_writer::{AsyncWriter, MpscWriter};
 use futures_lite::{pin, AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
 
+use runner::{ResetConfig, RunnerError, Status};
 use std::{
     future::Future,
     time::{Duration, Instant},
 };
 
-#[derive(Debug)]
-pub enum RunnerError {
-    Dispatch(DispatchError),
-    Decode(DecodeError),
-    Io(std::io::Error),
-}
-
-impl From<DispatchError> for RunnerError {
-    fn from(err: DispatchError) -> Self {
-        Self::Dispatch(err)
-    }
-}
-
-impl From<DecodeError> for RunnerError {
-    fn from(err: DecodeError) -> Self {
-        Self::Decode(err)
-    }
-}
-
-impl From<std::io::Error> for RunnerError {
-    fn from(err: std::io::Error) -> Self {
-        Self::Io(err)
-    }
-}
-
-/// Some common retry strategies.
-///
-/// These are used with [`Runner::run_with_retry`][retry].
-///
-/// You can provide your own by simplying having an async function with the same
-/// signature.
-///
-/// That is `async fn(result: Result<Status, Error>) -> Result<bool, Error>`.
-///
-/// Return one of:
-/// * `Ok(true)` to cause it to reconnect.
-/// * `Ok(false)` will gracefully exit with `Ok(Status::Eof)`
-/// * `Err(err)` will return that error
-#[derive(Copy, Clone, Debug, Default)]
-pub struct RetryStrategy;
-
-impl RetryStrategy {
-    /// Reconnect immediately unless the `Status` was `Cancelled`
-    pub async fn immediately(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
-        Ok(!matches!(result, Ok(Status::Cancelled)))
-    }
-
-    /// Retries if `Status` was a **TimedOut**, otherwise return the `Err` or `false` (to stop the connection loop).
-    pub async fn on_timeout(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
-        Ok(matches!(result?, Status::TimedOut))
-    }
-
-    /// Retries if the `Result` was an error
-    pub async fn on_error(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
-        Ok(result.is_err())
-    }
-}
-
-#[derive(Clone)]
-pub struct ResetConfig {
-    reset_handlers: Sender<()>,
-}
-
-impl ResetConfig {
-    pub fn should_reset_handlers() -> (Self, Receiver<()>) {
-        let (tx, rx) = crate::channel::bounded(1);
-        let this = Self { reset_handlers: tx };
-        (this, rx)
-    }
-}
-
 pub trait ConnectorSafe: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
 
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
-
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub enum Status {
-    TimedOut,
-    Cancelled,
-    Eof,
-}
 
 pub struct AsyncRunner {
     dispatcher: AsyncDispatcher,
@@ -338,84 +261,3 @@ impl TimeoutState {
         Self::WaitingForPong(Instant::now())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn does_it_loop() {
-//         use std::net::ToSocketAddrs;
-
-//         std::env::set_var("RUST_LOG", "twitchchat=trace");
-
-//         let _ = alto_logger::init_term_logger();
-
-//         let addr = crate::TWITCH_IRC_ADDRESS
-//             .to_socket_addrs()
-//             .unwrap()
-//             .next()
-//             .unwrap();
-
-//         log::trace!("hello?");
-
-//         async_executor::Executor::new().run(async move {
-//             log::info!("connecting");
-//             let conn = async_io::Async::<std::net::TcpStream>::connect(addr)
-//                 .await
-//                 .unwrap();
-//             log::info!("connected");
-
-//             let mut dispatcher = Dispatcher::new();
-//             let mut all = dispatcher.subscribe::<crate::messages::AllCommands>();
-
-//             log::info!("spawning");
-//             async_executor::Spawner::current()
-//                 .spawn(async move {
-//                     while let Some(msg) = <_ as StreamExt>::next(&mut all).await {
-//                         log::debug!("{:#?}", msg)
-//                     }
-//                 })
-//                 .detach();
-
-//             log::info!("creating thing");
-//             let runner = AsyncRunner::create(dispatcher, conn);
-
-//             let mut writer = runner.writer(RateLimit::default(), super::rate_limit::NullBlocker {});
-
-//             let task = async_executor::Spawner::current().spawn({
-//                 let writer = writer.clone();
-//                 async move {
-//                     log::info!("sending quit in 5 seconds");
-//                     futures_timer::Delay::new(std::time::Duration::from_secs(5)).await;
-//                     log::info!("sending quit");
-//                     writer.quit().await.unwrap();
-//                     log::info!("exiting task");
-//                 }
-//             });
-
-//             log::info!("registering");
-//             writer
-//                 .encode("PASS justinfan1234\r\nNICK justinfan1234\r\n")
-//                 .await
-//                 .unwrap();
-
-//             log::info!("joining");
-//             writer
-//                 .encode(crate::commands::join("#museun"))
-//                 .await
-//                 .unwrap();
-
-//             log::info!("running to completion");
-//             let t = runner.run_to_completion().await.unwrap();
-//             log::error!("{:?}", t);
-
-//             log::info!("waiting quit task");
-//             task.await;
-
-//             log::info!("done running?");
-//         });
-
-//         log::error!("end of test");
-//     }
-// }
