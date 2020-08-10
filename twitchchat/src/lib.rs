@@ -91,8 +91,8 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 // a public dep
 pub use simple_event_map::{EventMap, EventStream};
 
-pub mod async_writer;
 pub mod runner;
+pub mod writer;
 
 mod util;
 

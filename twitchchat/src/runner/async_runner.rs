@@ -9,9 +9,9 @@ use crate::{
 
 use runner::{ResetConfig, RunnerError, Status};
 
-use async_writer::{AsyncWriter, MpscWriter};
 use futures_lite::{pin, AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
+use writer::{AsyncWriter, MpscWriter};
 
 use std::{
     future::Future,
