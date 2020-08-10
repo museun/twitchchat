@@ -64,11 +64,17 @@ impl Dispatcher {
     }
 
     /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
-    pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
+    pub fn subscribe<T>(&mut self) -> EventStream<T>
+    where
+        T: Send + Sync + Clone + 'static,
+    {
         self.map.register_stream()
     }
 
-    pub(crate) fn subscribe_internal<T: Clone + 'static>(&mut self) -> EventStream<T> {
+    pub(crate) fn subscribe_internal<T>(&mut self) -> EventStream<T>
+    where
+        T: Send + Sync + Clone + 'static,
+    {
         self.system.register_stream()
     }
 
@@ -128,7 +134,7 @@ impl Dispatcher {
     fn dispatch_static<T>(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError>
     where
         T: FromIrcMessage<'static>,
-        T: Clone + 'static,
+        T: Send + Sync + Clone + 'static,
         DispatchError: From<T::Error>,
     {
         let msg = T::from_irc(message)?;

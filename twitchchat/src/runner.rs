@@ -83,6 +83,19 @@ impl RetryStrategy {
     }
 }
 
+#[derive(Clone)]
+pub struct ResetConfig {
+    reset_handlers: Sender<()>,
+}
+
+impl ResetConfig {
+    pub fn new() -> (Self, Receiver<()>) {
+        let (tx, rx) = crate::channel::bounded(1);
+        let this = Self { reset_handlers: tx };
+        (this, rx)
+    }
+}
+
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -130,35 +143,53 @@ impl AsyncRunner {
         rx.clone()
     }
 
-    pub async fn run_with_retry<C, F, R>(
+    pub async fn run_with_retry<C, F, R, E>(
         &mut self,
         connector: C,
         retry: F,
+        reset_config: E,
     ) -> Result<(), RunnerError>
     where
         C: Connector + Send + Sync,
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+
         F: Fn(Result<Status, RunnerError>) -> R,
         R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
         R::Output: Send + Sync,
+
+        E: Into<Option<ResetConfig>>,
     {
+        let mut reset_config = reset_config.into();
+
         loop {
             let status = self.run_to_completion(connector.clone()).await;
             match retry(status).await {
                 Err(err) => break Err(err),
                 Ok(false) => break Ok(()),
-                Ok(true) => {}
-            }
+                Ok(true) => {
+                    // if we have a reset config, reset the handlers and send the signal
+                    // otherwise just restart without resetting the handlers
+                    if let Some(config) = &reset_config {
+                        self.dispatcher.reset();
 
-            // TODO do we reset here?
+                        // if they dropped the receiver assume they don't want to reset any more
+                        // so clear the option
+                        if config.reset_handlers.send(()).await.is_err() {
+                            reset_config.take();
+                        }
+                    };
+                }
+            }
         }
     }
 
-    pub async fn run_to_completion<C>(&mut self, mut connector: C) -> Result<Status, RunnerError>
+    pub async fn run_to_completion<C>(&mut self, connector: C) -> Result<Status, RunnerError>
     where
         C: Connector + Send + Sync,
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
     {
+        let mut connector = connector;
+
         let stream = connector.connect().await?;
         let stream = async_dup::Arc::new(stream);
 
