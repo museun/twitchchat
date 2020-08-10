@@ -1,4 +1,5 @@
 use crate::{
+    connector::Connector,
     messages::{Ping, Pong},
     rate_limit::AsyncBlocker,
     util::timestamp,
@@ -6,10 +7,14 @@ use crate::{
     *,
 };
 
-use async_writer::AsyncWriter;
+use async_writer::{AsyncWriter, MpscWriter};
 use futures_lite::{pin, AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
-use std::time::{Duration, Instant};
+
+use std::{
+    future::Future,
+    time::{Duration, Instant},
+};
 
 #[derive(Debug)]
 pub enum RunnerError {
@@ -36,6 +41,48 @@ impl From<std::io::Error> for RunnerError {
     }
 }
 
+/// Some common retry strategies.
+///
+/// These are used with [`Runner::run_with_retry`][retry].
+///
+/// You can provide your own by simplying having an async function with the same
+/// signature.
+///
+/// That is `async fn(result: Result<Status, Error>) -> Result<bool, Error>`.
+///
+/// Return one of:
+/// * `Ok(true)` to cause it to reconnect.
+/// * `Ok(false)` will gracefully exit with `Ok(Status::Eof)`
+/// * `Err(err)` will return that error
+#[derive(Copy, Clone, Debug, Default)]
+pub struct RetryStrategy;
+
+impl RetryStrategy {
+    /// Reconnect immediately unless the `Status` was `Cancelled`
+    pub async fn immediately(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+        if let Ok(Status::Cancelled) = result {
+            return Ok(false);
+        }
+        Ok(true)
+    }
+
+    /// Retries if `Status` was a **TimedOut**, otherwise return the `Err` or `false` (to stop the connection loop).
+    pub async fn on_timeout(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+        let status = if let Status::TimedOut = result? {
+            true
+        } else {
+            false
+        };
+
+        Ok(status)
+    }
+
+    /// Retries if the `Result` was an error
+    pub async fn on_error(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+        Ok(result.is_err())
+    }
+}
+
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -46,30 +93,32 @@ pub enum Status {
     Eof,
 }
 
-pub struct AsyncRunner<IO> {
+pub struct AsyncRunner {
     dispatcher: Dispatcher,
-    stream: async_dup::Arc<IO>,
-
+    writer: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
     activity: (Sender<()>, Receiver<()>),
     quit: (Sender<()>, Receiver<()>),
 }
 
-impl<IO> AsyncRunner<IO>
-where
-    for<'a> &'a IO: AsyncRead + AsyncWrite + Unpin + Send + Sync,
-{
-    pub fn create(dispatcher: Dispatcher, io: IO) -> Self {
+// where for<'a> &'a IO: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+impl AsyncRunner {
+    pub fn create(dispatcher: Dispatcher) -> Self {
         Self {
             dispatcher,
-            stream: async_dup::Arc::new(io),
+            writer: channel::bounded(64),
             activity: channel::bounded(32),
             quit: channel::bounded(1),
         }
     }
 
-    pub fn writer(&self, rate_limit: RateLimit, blocker: impl AsyncBlocker) -> AsyncWriter<IO> {
+    pub fn writer(
+        &self,
+        rate_limit: RateLimit,
+        blocker: impl AsyncBlocker,
+    ) -> AsyncWriter<MpscWriter> {
         let (tx, rx) = (self.activity.0.clone(), self.quit.1.clone());
-        AsyncWriter::<IO>::new(self.stream.clone(), tx, rx, rate_limit, blocker)
+        let writer = MpscWriter::new(self.writer.0.clone());
+        AsyncWriter::new(writer, tx, rx, rate_limit, blocker)
     }
 
     pub fn dispatcher(&mut self) -> &mut Dispatcher {
@@ -81,43 +130,83 @@ where
         rx.clone()
     }
 
-    pub async fn run_to_completion(self) -> Result<Status, RunnerError> {
-        let mut this = self;
+    pub async fn run_with_retry<C, F, R>(
+        &mut self,
+        connector: C,
+        retry: F,
+    ) -> Result<(), RunnerError>
+    where
+        C: Connector + Send + Sync,
+        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+        F: Fn(Result<Status, RunnerError>) -> R,
+        R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
+        R::Output: Send + Sync,
+    {
+        loop {
+            let status = self.run_to_completion(connector.clone()).await;
+            match retry(status).await {
+                Err(err) => break Err(err),
+                Ok(false) => break Ok(()),
+                Ok(true) => {}
+            }
 
-        let mut ping = this.dispatcher.subscribe_internal::<Ping>();
-        let mut pong = this.dispatcher.subscribe_internal::<Pong>();
+            // TODO do we reset here?
+        }
+    }
 
-        let mut reader = AsyncDecoder::new(this.stream.clone());
-        let mut writer = AsyncEncoder::new(this.stream);
+    pub async fn run_to_completion<C>(&mut self, mut connector: C) -> Result<Status, RunnerError>
+    where
+        C: Connector + Send + Sync,
+        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+    {
+        let stream = connector.connect().await?;
+        let stream = async_dup::Arc::new(stream);
+
+        let (mut ping, mut pong) = (
+            self.dispatcher.subscribe_internal::<Ping>(),
+            self.dispatcher.subscribe_internal::<Pong>(),
+        );
+        let (mut reader, mut writer) = (
+            AsyncDecoder::new(stream.clone()), //
+            AsyncEncoder::new(stream),
+        );
 
         let mut state = TimeoutState::Start;
 
-        let (_, rx) = this.activity;
+        let (_, rx) = &self.activity;
+        let (_, write) = &self.writer;
 
         // this is awful. but look. no select!{}
         let status = loop {
-            let (read, write) = (reader.read_message(), rx.recv());
-            let (ping, pong) = (Self::next_event(&mut ping), Self::next_event(&mut pong));
-
+            let (read, activity) = (reader.read_message(), rx.recv());
+            let (ping, pong) = (ping.next(), pong.next());
             pin!(read);
             pin!(ping);
-            pin!(write);
+            pin!(activity);
             pin!(pong);
 
             // Bind all 4 interesting events together
-            let (left, right) = (Either::select(read, ping), Either::select(write, pong));
+            let (left, right) = (Either::select(read, ping), Either::select(activity, pong));
             pin!(left);
             pin!(right);
 
-            // and bind them with the timeout
-            let (notification, timeout) = (Either::select(left, right), Delay::new(WINDOW));
+            let notification = Either::select(left, right);
             pin!(notification);
+
+            let write = write.recv();
+            pin!(write);
+
+            let notification = Either::select(notification, write);
+            pin!(notification);
+
+            // and bind them with the timeout
+            let timeout = Delay::new(WINDOW);
             pin!(timeout);
 
             // and select the first one
             match Either::select(notification, timeout).await {
                 // we read a message
-                Left(Left(Left(read))) => {
+                Left(Left(Left(Left(read)))) => {
                     let msg = match read {
                         Err(DecodeError::Eof) => {
                             log::info!("got an EOF, exiting main loop");
@@ -127,12 +216,12 @@ where
                         Ok(msg) => msg,
                     };
                     log::trace!("dispatching: {:#?}", msg);
-                    this.dispatcher.dispatch(msg)?;
+                    self.dispatcher.dispatch(msg)?;
                     state = TimeoutState::Activity(Instant::now())
                 }
 
                 // we get a ping
-                Left(Left(Right(Some(ping)))) => {
+                Left(Left(Left(Right(Some(ping))))) => {
                     let token = ping.token();
                     log::debug!(
                         "got a ping from the server. responding with token '{}'",
@@ -144,18 +233,26 @@ where
                 }
 
                 // they wrote a message
-                Left(Right(Left(_write))) => {
+                Left(Left(Right(Left(_write)))) => {
                     state = TimeoutState::activity();
                 }
 
                 // we got a pong
-                Left(Right(Right(Some(_pong)))) => {
+                Left(Left(Right(Right(Some(_pong))))) => {
                     if let TimeoutState::WaitingForPong(_ts) = state {
                         state = TimeoutState::activity();
                     }
                 }
 
                 // our future timed out, send a ping
+                Left(Right(write)) => {
+                    if let Some(write) = write {
+                        writer.encode(write).await?;
+                    } else {
+                        log::warn!("no more writers detected");
+                    }
+                }
+
                 Right(_timeout) => {
                     log::info!("idle connectiond detected, sending a ping");
                     let ts = timestamp().to_string();
@@ -186,7 +283,7 @@ where
             }
         };
 
-        let (tx, _) = this.quit;
+        let (tx, _) = &self.quit;
         // send the quit signal
         let _ = tx.send(()).await;
 
@@ -201,10 +298,6 @@ where
         // }
 
         Ok(status)
-    }
-
-    async fn next_event<T>(ev: &mut EventStream<T>) -> Option<T> {
-        <_ as StreamExt>::next(ev).await
     }
 }
 

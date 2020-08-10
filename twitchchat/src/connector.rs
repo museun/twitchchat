@@ -20,7 +20,7 @@ pub mod tokio;
 /// The connector traits. This is used to abstract out runtimes.
 ///
 /// You can implement this on your own type to provide a custom connection behavior.
-pub trait Connector {
+pub trait Connector: Clone {
     /// Output IO type returned by calling `connect`
     ///
     /// This type must implement `futures::io::AsyncRead` and `futures::io::AsyncWrite`
