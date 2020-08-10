@@ -97,6 +97,7 @@ pub mod writer;
 mod util;
 
 pub mod channel;
+#[doc(inline)]
 pub use channel::{Receiver, Sender};
 
 /// Asynchronous connectors for various runtimes.
