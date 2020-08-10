@@ -76,6 +76,9 @@ pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
 
+/// A TLS domain for Twitch
+pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
+
 /// An anonymous login.
 pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
@@ -90,3 +93,9 @@ mod util;
 
 pub mod channel;
 pub use channel::{Receiver, Sender};
+
+/// Asynchronous connectors for various runtimes.
+pub mod connector;
+
+/// A boxed `Future` that is `Send + Sync`
+pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;

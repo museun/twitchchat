@@ -225,83 +225,83 @@ impl TimeoutState {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn does_it_loop() {
-        use std::net::ToSocketAddrs;
+//     #[test]
+//     fn does_it_loop() {
+//         use std::net::ToSocketAddrs;
 
-        std::env::set_var("RUST_LOG", "twitchchat=trace");
+//         std::env::set_var("RUST_LOG", "twitchchat=trace");
 
-        let _ = alto_logger::init_term_logger();
+//         let _ = alto_logger::init_term_logger();
 
-        let addr = crate::TWITCH_IRC_ADDRESS
-            .to_socket_addrs()
-            .unwrap()
-            .next()
-            .unwrap();
+//         let addr = crate::TWITCH_IRC_ADDRESS
+//             .to_socket_addrs()
+//             .unwrap()
+//             .next()
+//             .unwrap();
 
-        log::trace!("hello?");
+//         log::trace!("hello?");
 
-        async_executor::Executor::new().run(async move {
-            log::info!("connecting");
-            let conn = async_io::Async::<std::net::TcpStream>::connect(addr)
-                .await
-                .unwrap();
-            log::info!("connected");
+//         async_executor::Executor::new().run(async move {
+//             log::info!("connecting");
+//             let conn = async_io::Async::<std::net::TcpStream>::connect(addr)
+//                 .await
+//                 .unwrap();
+//             log::info!("connected");
 
-            let mut dispatcher = Dispatcher::new();
-            let mut all = dispatcher.subscribe::<crate::messages::AllCommands>();
+//             let mut dispatcher = Dispatcher::new();
+//             let mut all = dispatcher.subscribe::<crate::messages::AllCommands>();
 
-            log::info!("spawning");
-            async_executor::Spawner::current()
-                .spawn(async move {
-                    while let Some(msg) = <_ as StreamExt>::next(&mut all).await {
-                        log::debug!("{:#?}", msg)
-                    }
-                })
-                .detach();
+//             log::info!("spawning");
+//             async_executor::Spawner::current()
+//                 .spawn(async move {
+//                     while let Some(msg) = <_ as StreamExt>::next(&mut all).await {
+//                         log::debug!("{:#?}", msg)
+//                     }
+//                 })
+//                 .detach();
 
-            log::info!("creating thing");
-            let runner = AsyncRunner::create(dispatcher, conn);
+//             log::info!("creating thing");
+//             let runner = AsyncRunner::create(dispatcher, conn);
 
-            let mut writer = runner.writer(RateLimit::default(), super::rate_limit::NullBlocker {});
+//             let mut writer = runner.writer(RateLimit::default(), super::rate_limit::NullBlocker {});
 
-            let task = async_executor::Spawner::current().spawn({
-                let writer = writer.clone();
-                async move {
-                    log::info!("sending quit in 5 seconds");
-                    futures_timer::Delay::new(std::time::Duration::from_secs(5)).await;
-                    log::info!("sending quit");
-                    writer.quit().await.unwrap();
-                    log::info!("exiting task");
-                }
-            });
+//             let task = async_executor::Spawner::current().spawn({
+//                 let writer = writer.clone();
+//                 async move {
+//                     log::info!("sending quit in 5 seconds");
+//                     futures_timer::Delay::new(std::time::Duration::from_secs(5)).await;
+//                     log::info!("sending quit");
+//                     writer.quit().await.unwrap();
+//                     log::info!("exiting task");
+//                 }
+//             });
 
-            log::info!("registering");
-            writer
-                .encode("PASS justinfan1234\r\nNICK justinfan1234\r\n")
-                .await
-                .unwrap();
+//             log::info!("registering");
+//             writer
+//                 .encode("PASS justinfan1234\r\nNICK justinfan1234\r\n")
+//                 .await
+//                 .unwrap();
 
-            log::info!("joining");
-            writer
-                .encode(crate::commands::join("#museun"))
-                .await
-                .unwrap();
+//             log::info!("joining");
+//             writer
+//                 .encode(crate::commands::join("#museun"))
+//                 .await
+//                 .unwrap();
 
-            log::info!("running to completion");
-            let t = runner.run_to_completion().await.unwrap();
-            log::error!("{:?}", t);
+//             log::info!("running to completion");
+//             let t = runner.run_to_completion().await.unwrap();
+//             log::error!("{:?}", t);
 
-            log::info!("waiting quit task");
-            task.await;
+//             log::info!("waiting quit task");
+//             task.await;
 
-            log::info!("done running?");
-        });
+//             log::info!("done running?");
+//         });
 
-        log::error!("end of test");
-    }
-}
+//         log::error!("end of test");
+//     }
+// }
