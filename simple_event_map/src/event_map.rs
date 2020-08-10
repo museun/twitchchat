@@ -6,7 +6,7 @@ use std::{
     marker::PhantomData,
 };
 
-type SenderList = Vec<(Id, Box<dyn Any>)>;
+type SenderList = Vec<(Id, Box<dyn Any + Send + Sync>)>;
 
 /// The id of the mapped Sender
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -26,7 +26,10 @@ impl EventMap {
     }
 
     /// Register this type with the EventMap, returning a clonable Receiver end
-    pub fn register_stream<T: Clone + 'static>(&mut self) -> EventStream<T> {
+    pub fn register_stream<T>(&mut self) -> EventStream<T>
+    where
+        T: Clone + Send + Sync + 'static,
+    {
         let (tx, rx) = crate::channel::unbounded();
         self.inner
             .entry(TypeId::of::<T>())
@@ -37,7 +40,10 @@ impl EventMap {
     }
 
     /// Register this type with the EventMap, returning a clonable Receiver end
-    pub fn register_iter<T: Clone + 'static>(&mut self) -> EventIter<T> {
+    pub fn register_iter<T>(&mut self) -> EventIter<T>
+    where
+        T: Clone + Send + Sync + 'static,
+    {
         let (tx, rx) = crate::channel::unbounded();
         self.inner
             .entry(TypeId::of::<T>())
@@ -50,7 +56,10 @@ impl EventMap {
     /// Send this message to anything listening for it
     ///
     /// This will automatically clean up any stale senders after it fails to send
-    pub fn send<T: Clone + 'static>(&mut self, msg: T) -> bool {
+    pub fn send<T>(&mut self, msg: T) -> bool
+    where
+        T: Clone + Send + Sync + 'static,
+    {
         if self.active::<T>() == 0 {
             return false;
         }
@@ -90,7 +99,10 @@ impl EventMap {
     /// The iterator will be over the `(Id, Sender<T>)`
     ///
     /// This returns None if no active senders are available
-    pub fn get_senders<T: 'static>(&self) -> Option<Senders<'_, T>> {
+    pub fn get_senders<T>(&self) -> Option<Senders<'_, T>>
+    where
+        T: Send + Sync + 'static,
+    {
         self.inner.get(&TypeId::of::<T>()).map(|list| Senders {
             inner: list.iter(),
             marker: PhantomData,
@@ -121,12 +133,12 @@ impl EventMap {
 /// An iterator over Senders for this message
 ///
 /// This produces the `Id` and the `Sender` for that type
-pub struct Senders<'a, T: 'static> {
-    inner: std::slice::Iter<'a, (Id, Box<dyn Any>)>,
+pub struct Senders<'a, T: Send + Sync + 'static> {
+    inner: std::slice::Iter<'a, (Id, Box<dyn Any + Send + Sync>)>,
     marker: PhantomData<T>,
 }
 
-impl<'a, T: 'static> Iterator for Senders<'a, T> {
+impl<'a, T: Send + Sync + 'static> Iterator for Senders<'a, T> {
     type Item = (Id, Sender<T>);
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().and_then(|(id, d)| {
