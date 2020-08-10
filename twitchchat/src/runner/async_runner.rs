@@ -7,21 +7,24 @@ use crate::{
     *,
 };
 
+use runner::{ResetConfig, RunnerError, Status};
+
 use async_writer::{AsyncWriter, MpscWriter};
 use futures_lite::{pin, AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
 
-use runner::{ResetConfig, RunnerError, Status};
 use std::{
     future::Future,
     time::{Duration, Instant},
 };
 
-pub trait ConnectorSafe: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
-
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+/// A trait alias to make function signatures smaller
+pub trait ConnectorSafe: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
+
+/// An async runner. This will act as a main loop, if you want one.
 pub struct AsyncRunner {
     dispatcher: AsyncDispatcher,
     writer: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
@@ -29,9 +32,9 @@ pub struct AsyncRunner {
     quit: (Sender<()>, Receiver<()>),
 }
 
-// where for<'a> &'a IO: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 impl AsyncRunner {
-    pub fn create(dispatcher: AsyncDispatcher) -> Self {
+    /// Create a new async runner with this dispatcher
+    pub fn new(dispatcher: AsyncDispatcher) -> Self {
         Self {
             dispatcher,
             writer: channel::bounded(64),
@@ -40,6 +43,7 @@ impl AsyncRunner {
         }
     }
 
+    /// Get a **clonable** `Writer` with the provided `rate limiter` and `async blocker`
     pub fn writer<R, B>(&self, rate_limit: R, blocker: B) -> AsyncWriter<MpscWriter>
     where
         R: Into<Option<RateLimit>>,
@@ -50,15 +54,22 @@ impl AsyncRunner {
         AsyncWriter::new(writer, tx, rx, rate_limit, blocker)
     }
 
+    /// Get a mutable borrow to the dispatcher
     pub fn dispatcher(&mut self) -> &mut AsyncDispatcher {
         &mut self.dispatcher
     }
 
+    /// Get a channel you can use to have the main loop exit early.
     pub fn quit_signal(&self) -> Receiver<()> {
         let (_, rx) = &self.quit;
         rx.clone()
     }
 
+    /// Using this connector, retry strategy and reset config try to reconnect based on the retry strategy.
+    ///
+    /// This will act like run to completion in a loop with a configurable criteria for when a reconnect should happen.
+    ///
+    /// The reset configuration allows you to determine (and have a way to be notified when you should resubscribe, if you want to.)
     pub async fn run_with_retry<C, F, R, E>(
         &mut self,
         connector: C,
@@ -97,6 +108,7 @@ impl AsyncRunner {
         }
     }
 
+    /// Using this connector, run the loop to completion.
     pub async fn run_to_completion<C>(&mut self, connector: C) -> Result<Status, RunnerError>
     where
         C: Connector,
