@@ -65,11 +65,11 @@ impl Dispatcher {
 
     /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
     pub fn subscribe<T: Clone + 'static>(&mut self) -> EventStream<T> {
-        self.map.register()
+        self.map.register_stream()
     }
 
     pub(crate) fn subscribe_internal<T: Clone + 'static>(&mut self) -> EventStream<T> {
-        self.system.register()
+        self.system.register_stream()
     }
 
     /// Dispatch this `IrcMessage`

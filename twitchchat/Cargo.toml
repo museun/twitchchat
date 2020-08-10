@@ -22,7 +22,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 log = "0.4.11"
 
 # event dispatching
-simple_event_map = "0.1.0"
+simple_event_map = { path = "../simple_event_map" }
 
 # serializion/deserializion support
 serde = { version = "1.0.114", optional = true, features = ["derive"] }
