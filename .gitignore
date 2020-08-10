@@ -1,10 +1,13 @@
+.vscode/*
+
 /target
-**/*.rs.bk
 Cargo.lock
-TODO.txt
+
+**/*.rs.bk
+
 *.txt
 *.json
 *.log
-.vscode/*
-/t_examples
 *.html
+
+
