@@ -161,7 +161,7 @@ impl AsyncRunner {
                     // if we have a reset config, reset the handlers and send the signal
                     // otherwise just restart without resetting the handlers
                     if let Some(config) = &reset_config {
-                        self.dispatcher.reset();
+                        self.dispatcher.reset().await;
 
                         // if they dropped the receiver assume they don't want to reset any more
                         // so clear the option
@@ -184,10 +184,9 @@ impl AsyncRunner {
         let stream = connector.connect().await?;
         let stream = async_dup::Arc::new(stream);
 
-        let (mut ping, mut pong) = (
-            self.dispatcher.subscribe_internal::<Ping>(),
-            self.dispatcher.subscribe_internal::<Pong>(),
-        );
+        let mut ping = self.dispatcher.subscribe_internal::<Ping>().await;
+        let mut pong = self.dispatcher.subscribe_internal::<Pong>().await;
+
         let (mut reader, mut writer) = (
             AsyncDecoder::new(stream.clone()), //
             AsyncEncoder::new(stream),
@@ -238,7 +237,7 @@ impl AsyncRunner {
                         Ok(msg) => msg,
                     };
                     log::trace!("dispatching: {:#?}", msg);
-                    self.dispatcher.dispatch(msg)?;
+                    self.dispatcher.dispatch(msg).await?;
                     state = TimeoutState::Activity(Instant::now())
                 }
 

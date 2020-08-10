@@ -1,7 +1,8 @@
 use crate::{
     messages::*, EventMap, EventStream, FromIrcMessage, IntoOwned, InvalidMessage, IrcMessage,
 };
-use std::convert::Infallible;
+use async_mutex::Mutex;
+use std::{convert::Infallible, sync::Arc};
 
 /// An error produced by the Dispatcher
 #[derive(Debug)]
@@ -51,10 +52,10 @@ impl From<Infallible> for DispatchError {
 }
 
 /// A message dispatcher
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Dispatcher {
-    map: EventMap,
-    system: EventMap,
+    map: Arc<Mutex<EventMap>>,
+    system: Arc<Mutex<EventMap>>,
 }
 
 impl Dispatcher {
@@ -64,28 +65,28 @@ impl Dispatcher {
     }
 
     /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
-    pub fn subscribe<T>(&mut self) -> EventStream<T>
+    pub async fn subscribe<T>(&mut self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
     {
-        self.map.register_stream()
+        self.map.lock().await.register_stream()
     }
 
-    pub(crate) fn subscribe_internal<T>(&mut self) -> EventStream<T>
+    pub(crate) async fn subscribe_internal<T>(&mut self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
     {
-        self.system.register_stream()
+        self.system.lock().await.register_stream()
     }
 
     /// Dispatch this `IrcMessage`
-    pub fn dispatch<'a>(&mut self, message: IrcMessage<'a>) -> Result<(), DispatchError> {
+    pub async fn dispatch(&mut self, message: IrcMessage<'_>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
         let msg = message.into_owned();
         macro_rules! dispatch {
             ($ty:ty) => {
-                self.dispatch_static::<$ty>(msg)?
+                self.dispatch_static::<$ty>(msg).await?
             };
         }
 
@@ -112,9 +113,11 @@ impl Dispatcher {
                 // TODO user-defined messages
 
                 self.dispatch_static::<IrcMessage>(msg.clone())
+                    .await
                     .expect("identity conversion should be upheld");
 
                 self.dispatch_static::<AllCommands>(msg)
+                    .await
                     .expect("identity conversion should be upheld");
             }
         };
@@ -127,11 +130,14 @@ impl Dispatcher {
     /// You'll have to re-subscribe to events after this.
     ///
     /// This is a way to stop any polling event handlers
-    pub fn reset(&mut self) {
-        self.map.reset()
+    pub async fn reset(&mut self) {
+        self.map.lock().await.reset()
     }
 
-    fn dispatch_static<T>(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError>
+    async fn dispatch_static<T>(
+        &mut self,
+        message: IrcMessage<'static>,
+    ) -> Result<(), DispatchError>
     where
         T: FromIrcMessage<'static>,
         T: Send + Sync + Clone + 'static,
@@ -139,12 +145,15 @@ impl Dispatcher {
     {
         let msg = T::from_irc(message)?;
 
-        // only clone if we're actually listening for it
-        if !self.system.is_empty::<T>() {
-            self.system.send(msg.clone());
+        {
+            let mut system = self.system.lock().await;
+            // only clone if we're actually listening for it
+            if !system.is_empty::<T>() {
+                system.send(msg.clone());
+            }
         }
 
-        self.map.send(msg);
+        self.map.lock().await.send(msg);
         Ok(())
     }
 }
