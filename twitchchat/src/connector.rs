@@ -38,10 +38,8 @@ pub trait Connector: Send + Sync + Clone {
 #[allow(dead_code)]
 async fn try_connect<F, T, R>(addrs: &[SocketAddr], connect: F) -> IoResult<T>
 where
-    F: Fn(SocketAddr) -> R,
-    F: Send,
+    F: Fn(SocketAddr) -> R + Send,
     R: Future<Output = IoResult<T>> + Send,
-    R::Output: Send,
     T: Send,
 {
     let mut last = None;
