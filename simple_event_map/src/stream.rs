@@ -1,5 +1,5 @@
+#![allow(clippy::redundant_pub_crate)]
 use async_channel::Receiver;
-
 use std::{
     pin::Pin,
     task::{Context, Poll},

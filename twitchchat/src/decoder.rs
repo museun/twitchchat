@@ -118,7 +118,7 @@ pub struct AsyncDecoder<R> {
     buf: Vec<u8>,
 }
 
-impl<R: AsyncRead + Unpin> AsyncDecoder<R> {
+impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
     /// Create a new AsyncDecoder from this `futures::io::Read` instance
     pub fn new(reader: R) -> Self {
         Self {
@@ -153,7 +153,7 @@ impl<R: AsyncRead + Unpin> AsyncDecoder<R> {
 }
 
 /// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
-impl<R: AsyncRead + Unpin> Stream for AsyncDecoder<R> {
+impl<R: AsyncRead + Send + Sync + Unpin> Stream for AsyncDecoder<R> {
     type Item = Result<IrcMessage<'static>, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

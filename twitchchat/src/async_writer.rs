@@ -115,7 +115,7 @@ where
     /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> std::io::Result<()>
     where
-        M: Encodable,
+        M: Encodable + Send + Sync,
     {
         self.inner.encode(msg).await?;
         let _ = self.sender.send(()).await;

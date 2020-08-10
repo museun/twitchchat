@@ -1,8 +1,10 @@
+#![allow(clippy::redundant_pub_crate)]
+
 /// A sender that lets you send messages to an EventStream
 pub struct Sender<T>(async_channel::Sender<T>);
 
 impl<T> Clone for Sender<T> {
-    fn clone(&self) -> Sender<T> {
+    fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }

@@ -60,21 +60,12 @@ pub struct RetryStrategy;
 impl RetryStrategy {
     /// Reconnect immediately unless the `Status` was `Cancelled`
     pub async fn immediately(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
-        if let Ok(Status::Cancelled) = result {
-            return Ok(false);
-        }
-        Ok(true)
+        Ok(!matches!(result, Ok(Status::Cancelled)))
     }
 
     /// Retries if `Status` was a **TimedOut**, otherwise return the `Err` or `false` (to stop the connection loop).
     pub async fn on_timeout(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
-        let status = if let Status::TimedOut = result? {
-            true
-        } else {
-            false
-        };
-
-        Ok(status)
+        Ok(matches!(result?, Status::TimedOut))
     }
 
     /// Retries if the `Result` was an error
@@ -154,9 +145,11 @@ impl AsyncRunner {
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 
         F: Fn(Result<Status, RunnerError>) -> R,
+        F: Send + Sync,
         R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
         R::Output: Send + Sync,
 
+        E: Send + Sync,
         E: Into<Option<ResetConfig>>,
     {
         let mut reset_config = reset_config.into();

@@ -30,7 +30,7 @@ pub enum InvalidMessage {
         /// The tag name
         name: String,
         /// The parse error
-        error: Box<dyn std::error::Error>,
+        error: Box<dyn std::error::Error + Send + Sync>,
     },
 
     /// An incomplete message was provided
@@ -45,7 +45,7 @@ pub enum InvalidMessage {
     /// A custom error message
     Custom {
         /// The inner error
-        error: Box<dyn std::error::Error>,
+        error: Box<dyn std::error::Error + Send + Sync>,
     },
 }
 

@@ -55,10 +55,7 @@ impl<'t> Privmsg<'t> {
 
     /// Whether this message was an Action (a `/me` or `/action`)
     pub fn is_action(&self) -> bool {
-        match self.ctcp() {
-            Some(Ctcp::Action) => true,
-            _ => false,
-        }
+        matches!(self.ctcp(), Some(Ctcp::Action))
     }
 
     /// Metadata related to the chat badges
