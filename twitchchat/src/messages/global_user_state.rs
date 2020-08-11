@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Sent on successful login, if `TAGS` capability have been sent beforehand.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct GlobalUserState<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -96,6 +96,16 @@ impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
 into_owned!(GlobalUserState {
     raw,
     tags,
+    user_id,
+    display_name,
+    color,
+});
+
+impl_custom_debug!(GlobalUserState {
+    raw,
+    tags,
+    emote_sets,
+    badges,
     user_id,
     display_name,
     color,

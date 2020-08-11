@@ -3,7 +3,7 @@ use crate::*;
 /// When a single message has been removed from a channel.
 ///
 /// This is triggered via `/delete` on IRC.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct ClearMsg<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -56,6 +56,15 @@ into_owned!(ClearMsg {
     tags,
     channel,
     message,
+});
+
+impl_custom_debug!(ClearMsg {
+    raw,
+    tags,
+    channel,
+    message,
+    login,
+    target_msg_id,
 });
 
 serde_struct!(ClearMsg {

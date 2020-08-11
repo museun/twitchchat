@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct UserState<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -76,7 +76,7 @@ impl<'a> FromIrcMessage<'a> for UserState<'a> {
 }
 
 into_owned!(UserState { raw, tags, channel });
-
+impl_custom_debug!(UserState { raw, tags, channel });
 serde_struct!(UserState { raw, tags, channel });
 
 #[cfg(test)]

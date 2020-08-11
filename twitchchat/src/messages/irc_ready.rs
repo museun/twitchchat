@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Happens when the IRC connection has been succesfully established
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct IrcReady<'a> {
     raw: Str<'a>,
     nickname: StrIndex,
@@ -31,7 +31,7 @@ impl<'a> FromIrcMessage<'a> for IrcReady<'a> {
 }
 
 into_owned!(IrcReady { raw, nickname });
-
+impl_custom_debug!(IrcReady { raw, nickname });
 serde_struct!(IrcReady { raw, nickname });
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Message sent by a user
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Whisper<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -115,7 +115,12 @@ into_owned!(Whisper {
     name,
     data,
 });
-
+impl_custom_debug!(Whisper {
+    raw,
+    tags,
+    name,
+    data,
+});
 serde_struct!(Whisper {
     raw,
     tags,

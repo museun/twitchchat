@@ -3,7 +3,7 @@ use crate::*;
 /// A pong response sent from the server
 ///
 /// This should be a response to sending a PING to the server
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Pong<'a> {
     raw: Str<'a>,
     token: StrIndex,
@@ -33,7 +33,7 @@ impl<'a> FromIrcMessage<'a> for Pong<'a> {
 }
 
 into_owned!(Pong { raw, token });
-
+impl_custom_debug!(Pong { raw, token });
 serde_struct!(Pong { raw, token });
 
 #[cfg(test)]

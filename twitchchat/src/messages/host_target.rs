@@ -14,7 +14,7 @@ pub enum HostTargetKind<'a> {
 }
 
 /// When a channel starts to host another channel
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct HostTarget<'a> {
     raw: Str<'a>,
     source: StrIndex,
@@ -83,6 +83,13 @@ into_owned!(HostTarget {
     source,
     viewers,
     target,
+});
+
+impl_custom_debug!(HostTarget {
+    raw,
+    source,
+    viewers,
+    host_target_kind,
 });
 
 serde_struct!(HostTarget {

@@ -2,7 +2,7 @@ use crate::*;
 
 /// An event that is produced when the Twitch connection has been succesfully
 /// established
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Ready<'a> {
     raw: Str<'a>,
     username: StrIndex,
@@ -32,7 +32,7 @@ impl<'a> FromIrcMessage<'a> for Ready<'a> {
 }
 
 into_owned!(Ready { raw, username });
-
+impl_custom_debug!(Ready { raw, username });
 serde_struct!(Ready { raw, username });
 
 #[cfg(test)]

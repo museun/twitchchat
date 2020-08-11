@@ -7,7 +7,7 @@ use crate::*;
 /// issued a `RECONNECT`. After a short time, the connection is closed. In this
 /// case, reconnect and rejoin channels that were on the connection, as you
 /// would normally.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Reconnect<'a> {
     raw: Str<'a>,
 }
@@ -26,7 +26,7 @@ impl<'a> FromIrcMessage<'a> for Reconnect<'a> {
 }
 
 into_owned!(Reconnect { raw });
-
+impl_custom_debug!(Reconnect { raw });
 serde_struct!(Reconnect { raw });
 
 #[cfg(test)]

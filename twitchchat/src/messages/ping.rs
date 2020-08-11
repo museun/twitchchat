@@ -1,7 +1,7 @@
 use crate::*;
 
 /// A ping request from the server
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Ping<'a> {
     raw: Str<'a>,
     token: StrIndex,
@@ -31,7 +31,7 @@ impl<'a> FromIrcMessage<'a> for Ping<'a> {
 }
 
 into_owned!(Ping { raw, token });
-
+impl_custom_debug!(Ping { raw, token });
 serde_struct!(Ping { raw, token });
 
 #[cfg(test)]

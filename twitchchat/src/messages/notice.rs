@@ -1,7 +1,7 @@
 use crate::*;
 
 /// General notices from the server.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Notice<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -55,6 +55,14 @@ into_owned!(Notice {
     message,
 });
 
+impl_custom_debug!(Notice {
+    raw,
+    tags,
+    channel,
+    message,
+    msg_id,
+});
+
 serde_struct!(Notice {
     raw,
     tags,
@@ -65,7 +73,7 @@ serde_struct!(Notice {
 
 /// These tags apply to both the NOTICE (Twitch Commands) and NOTICE (Twitch Chat Rooms) commands.
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum MessageId<'a> {
     /// <user> is already banned in this channel.

@@ -3,7 +3,7 @@ use crate::*;
 /// User join message
 ///
 /// The happens when a user (yourself included) joins a channel
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Join<'a> {
     raw: Str<'a>,
     name: StrIndex,
@@ -39,7 +39,7 @@ impl<'a> FromIrcMessage<'a> for Join<'a> {
 }
 
 into_owned!(Join { raw, name, channel });
-
+impl_custom_debug!(Join { raw, name, channel });
 serde_struct!(Join { raw, name, channel });
 
 #[cfg(test)]

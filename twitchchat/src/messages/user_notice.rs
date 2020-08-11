@@ -53,7 +53,7 @@ pub enum NoticeType<'a> {
 }
 
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct UserNotice<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -325,6 +325,13 @@ impl<'a> FromIrcMessage<'a> for UserNotice<'a> {
 }
 
 into_owned!(UserNotice {
+    raw,
+    tags,
+    channel,
+    message,
+});
+
+impl_custom_debug!(UserNotice {
     raw,
     tags,
     channel,

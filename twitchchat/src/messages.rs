@@ -35,6 +35,18 @@ macro_rules! serde_struct {
     };
 }
 
+macro_rules! impl_custom_debug {
+    ($ty:ident { $($field:ident),* $(,)? }) => {
+        impl<'a> std::fmt::Debug for $ty<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_struct(stringify!($ty))
+                    $( .field(stringify!($field), &self.$field()) )*
+                .finish()
+            }
+        }
+    };
+}
+
 // TODO get rid of these macros
 macro_rules! raw {
     () => {

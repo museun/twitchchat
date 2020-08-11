@@ -17,7 +17,7 @@ pub enum Capability<'a> {
 }
 
 /// Acknowledgement (or not) on a **CAPS** request
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Cap<'a> {
     raw: Str<'a>,
     capability: StrIndex,
@@ -61,6 +61,8 @@ into_owned!(Cap {
     capability,
     acknowledged
 });
+
+impl_custom_debug!(Cap { raw, capability });
 
 serde_struct!(Cap { raw, capability });
 

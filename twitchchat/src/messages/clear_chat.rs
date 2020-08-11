@@ -3,7 +3,7 @@ use crate::*;
 /// When a user's message(s) have been purged.
 ///
 /// Typically after a user is banned from chat or timed out
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct ClearChat<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -29,11 +29,10 @@ impl<'a> ClearChat<'a> {
         self.tags().get_parsed("ban-duration")
     }
 
-    // TODO https://github.com/museun/twitchchat/pull/163#discussion_r465344127
-    // /// The room id this event happened on
-    // pub fn room_id(&self) -> Option<&str> {
-    //     self.tags().get("room-id")
-    // }
+    /// The room id this event happened on
+    pub fn room_id(&self) -> Option<&str> {
+        self.tags().get("room-id")
+    }
 }
 
 impl<'a> FromIrcMessage<'a> for ClearChat<'a> {
@@ -58,6 +57,15 @@ into_owned!(ClearChat {
     tags,
     channel,
     name
+});
+
+impl_custom_debug!(ClearChat {
+    raw,
+    tags,
+    channel,
+    name,
+    ban_duration,
+    room_id,
 });
 
 serde_struct!(ClearChat {

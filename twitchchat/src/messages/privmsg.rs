@@ -16,7 +16,7 @@ pub enum Ctcp<'a> {
 }
 
 /// Message sent by a user
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Privmsg<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -234,6 +234,35 @@ into_owned!(Privmsg {
     channel,
     data,
     ctcp,
+});
+
+impl_custom_debug!(Privmsg {
+    raw,
+    tags,
+    name,
+    channel,
+    data,
+    ctcp,
+    // TODO decide /how/ much should be in the debug, all of this is in the tags
+    // is_action,
+    // badge_info,
+    // badges,
+    // bits,
+    // color,
+    // display_name,
+    // emotes,
+    // is_broadcaster,
+    // is_moderator,
+    // is_vip,
+    // is_subscriber,
+    // is_staff,
+    // is_turbo,
+    // is_global_moderator,
+    // room_id,
+    // tmi_sent_ts,
+    // user_id,
+    // custom_reward_id,
+    // msg_id,
 });
 
 serde_struct!(Privmsg {

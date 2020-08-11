@@ -13,7 +13,7 @@ pub enum FollowersOnly {
 }
 
 /// Identifies the channel's chat settings (e.g., slow mode duration).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct RoomState<'a> {
     raw: Str<'a>,
     tags: TagIndices,
@@ -83,7 +83,7 @@ impl<'a> RoomState<'a> {
 }
 
 into_owned!(RoomState { raw, tags, channel });
-
+impl_custom_debug!(RoomState { raw, tags, channel });
 serde_struct!(RoomState { raw, tags, channel });
 
 #[cfg(test)]

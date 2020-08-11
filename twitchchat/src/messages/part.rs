@@ -3,7 +3,7 @@ use crate::*;
 /// User leave message
 ///
 /// The happens when a user (yourself included) leaves a channel
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Part<'a> {
     raw: Str<'a>,
     name: StrIndex,
@@ -39,7 +39,7 @@ impl<'a> FromIrcMessage<'a> for Part<'a> {
 }
 
 into_owned!(Part { raw, name, channel });
-
+impl_custom_debug!(Part { raw, name, channel });
 serde_struct!(Part { raw, name, channel });
 
 #[cfg(test)]
