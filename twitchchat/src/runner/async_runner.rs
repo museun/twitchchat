@@ -103,9 +103,7 @@ impl AsyncRunner {
         let mut reset_config = reset_config.into();
 
         loop {
-            let status = self
-                .run_to_completion(&user_config, connector.clone())
-                .await;
+            let status = self.run_to_completion(user_config, connector.clone()).await;
 
             match retry(status).await {
                 Ok(true) => {
