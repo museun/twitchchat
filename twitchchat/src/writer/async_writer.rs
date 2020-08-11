@@ -55,6 +55,21 @@ where
         }
     }
 
+    pub(crate) fn reconfigure<R, B>(&self, rate_limit: R, blocker: B) -> Self
+    where
+        W: Clone,
+        R: Into<Option<RateLimit>>,
+        B: AsyncBlocker,
+    {
+        Self::new(
+            self.inner.writer.clone(),
+            self.sender.clone(),
+            self.should_quit.clone(),
+            rate_limit.into(),
+            Arc::new(blocker),
+        )
+    }
+
     /// Clone this writer with a new rate limiter
     pub fn clone_with_new_rate_limit<R>(&self, rate_limit: R) -> Self
     where
@@ -101,6 +116,27 @@ where
             futures_lite::pin!(fut);
             fut.await;
         }
+
+        Ok(())
+    }
+
+    /// Encode a slice of `Encodable` messages to the writer.
+    ///
+    /// This flushes the data before returning
+    pub async fn encode_many<M>(&mut self, msgs: &[M]) -> io::Result<()>
+    where
+        M: Encodable + Send + Sync,
+    {
+        for msg in msgs {
+            self.inner.encode(msg).await?;
+            let _ = self.sender.send(()).await;
+            if let Some(rate) = &mut self.rate_limit {
+                let fut = rate.take_async(&*self.blocker);
+                futures_lite::pin!(fut);
+                fut.await;
+            }
+        }
+
         Ok(())
     }
 }
