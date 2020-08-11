@@ -144,6 +144,7 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
         }
 
         let str = std::str::from_utf8(&self.buf[..n]).map_err(Error::InvalidUtf8)?;
+        log::trace!("< {}", str.escape_debug());
 
         // this should only ever parse 1 message
         crate::irc::parse_one(str)

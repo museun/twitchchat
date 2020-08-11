@@ -35,7 +35,8 @@ impl<'a> Encodable for Register<'a> {
             write!(buf, "{}\r\n", cap)?;
         }
 
-        write!(buf, "PASS {}\r\nNICK {}\r\n", token, name)?;
+        write!(buf, "PASS {}\r\n", token)?;
+        write!(buf, "NICK {}\r\n", name)?;
         buf.flush()
     }
 }

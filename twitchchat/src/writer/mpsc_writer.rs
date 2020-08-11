@@ -50,16 +50,18 @@ impl Write for MpscWriter {
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        use crate::channel::TrySendError;
+
         let buf = std::mem::take(&mut self.buf);
         match self.channel.try_send(buf) {
             Ok(..) => Ok(()),
-            Err(crate::channel::TrySendError::Closed(..)) => Err(io::Error::new(
-                io::ErrorKind::UnexpectedEof,
-                "writer was closed",
-            )),
+            Err(TrySendError::Closed(..)) => {
+                let err = io::Error::new(io::ErrorKind::UnexpectedEof, "writer was closed");
+                Err(err)
+            }
             // this should never happen, but place the 'data' back into self and
             // have it try again
-            Err(crate::channel::TrySendError::Full(data)) => {
+            Err(TrySendError::Full(data)) => {
                 self.buf = data;
                 Ok(())
             }
