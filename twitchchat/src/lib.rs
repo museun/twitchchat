@@ -70,6 +70,9 @@ pub use rate_limit::RateLimit;
 mod serde;
 
 pub mod runner;
+#[doc(inline)]
+pub use runner::Error as RunnerError;
+
 pub mod writer;
 
 mod util;

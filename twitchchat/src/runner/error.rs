@@ -1,6 +1,6 @@
 use crate::{DecodeError, DispatchError};
 
-/// An error produce by the runner
+/// An error produce by a Runner
 #[derive(Debug)]
 pub enum Error {
     /// There was a dispatch error
