@@ -1,5 +1,5 @@
 use super::{MaybeOwned, MaybeOwnedIndex};
-use crate::color::Color;
+use crate::{color::Color, UserConfig};
 
 macro_rules! into_owned {
     ($ty:ident { $($field:ident),* $(,)? }) => {
@@ -41,6 +41,20 @@ impl IntoOwned<'static> for Color {
     type Output = Self;
     fn into_owned(self) -> Self::Output {
         self
+    }
+}
+
+impl IntoOwned<'static> for UserConfig {
+    type Output = Self;
+    fn into_owned(self) -> Self::Output {
+        self
+    }
+}
+
+impl<'a, T: IntoOwned<'a> + Clone> IntoOwned<'a> for &'a T {
+    type Output = T::Output;
+    fn into_owned(self) -> Self::Output {
+        self.clone().into_owned()
     }
 }
 

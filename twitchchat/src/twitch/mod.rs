@@ -3,8 +3,8 @@
 mod capability;
 pub use capability::Capability;
 
-// mod userconfig;
-// pub use userconfig::{UserConfig, UserConfigBuilder, UserConfigError};
+mod userconfig;
+pub use userconfig::{UserConfig, UserConfigBuilder, UserConfigError};
 
 mod emotes;
 pub use emotes::Emotes;

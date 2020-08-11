@@ -65,13 +65,17 @@ impl AsyncRunner {
         rx.clone()
     }
 
-    /// Using this connector, retry strategy and reset config try to reconnect based on the retry strategy.
+    /// Using this connector, retry strategy and reset config try to reconnect
+    /// based on the retry strategy.
     ///
-    /// This will act like run to completion in a loop with a configurable criteria for when a reconnect should happen.
+    /// This will act like run to completion in a loop with a configurable
+    /// criteria for when a reconnect should happen.
     ///
-    /// The reset configuration allows you to determine (and have a way to be notified when you should resubscribe, if you want to.)
+    /// The reset configuration allows you to determine (and have a way to be
+    /// notified when you should resubscribe, if you want to.)
     pub async fn run_with_retry<C, F, R, E>(
         &mut self,
+        user_config: &UserConfig,
         connector: C,
         retry: F,
         reset_config: E,
@@ -87,7 +91,10 @@ impl AsyncRunner {
         let mut reset_config = reset_config.into();
 
         loop {
-            let status = self.run_to_completion(connector.clone()).await;
+            let status = self
+                .run_to_completion(&user_config, connector.clone())
+                .await;
+
             match retry(status).await {
                 Err(err) => break Err(err),
                 Ok(false) => break Ok(()),
@@ -109,7 +116,11 @@ impl AsyncRunner {
     }
 
     /// Using this connector, run the loop to completion.
-    pub async fn run_to_completion<C>(&mut self, connector: C) -> Result<Status, RunnerError>
+    pub async fn run_to_completion<C>(
+        &mut self,
+        user_config: &UserConfig,
+        connector: C,
+    ) -> Result<Status, RunnerError>
     where
         C: Connector,
         for<'a> &'a C::Output: ConnectorSafe,
@@ -126,6 +137,11 @@ impl AsyncRunner {
             AsyncDecoder::new(stream.clone()), //
             AsyncEncoder::new(stream),
         );
+
+        // register with the connection
+        writer
+            .encode(crate::commands::register(user_config))
+            .await?;
 
         let mut state = TimeoutState::Start;
 

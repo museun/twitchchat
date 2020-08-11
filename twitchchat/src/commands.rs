@@ -47,6 +47,7 @@ export_commands! {
     r9k_beta_off    => R9kBetaOff
     raid            => Raid
     raw             => Raw
+    register        => Register
     slow            => Slow
     slow_off        => SlowOff
     subscribers     => Subscribers
@@ -189,6 +190,7 @@ serde_for_commands! {
     R9kBetaOff { channel };
     Raid { source, target };
     Raw { data };
+    Register { user_config };
     Slow { channel, duration };
     SlowOff { channel };
     Subscribers { channel };
