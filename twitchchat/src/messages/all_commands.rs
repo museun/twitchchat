@@ -47,6 +47,33 @@ pub enum AllCommands<'a> {
     Whisper(Whisper<'a>),
 }
 
+impl<'a> AllCommands<'a> {
+    /// Get the raw string out of this
+    pub fn raw(&'a self) -> &'a str {
+        match self {
+            Self::Raw(msg) => msg.get_raw(),
+            Self::IrcReady(msg) => msg.raw(),
+            Self::Ready(msg) => msg.raw(),
+            Self::Cap(msg) => msg.raw(),
+            Self::ClearChat(msg) => msg.raw(),
+            Self::ClearMsg(msg) => msg.raw(),
+            Self::GlobalUserState(msg) => msg.raw(),
+            Self::HostTarget(msg) => msg.raw(),
+            Self::Join(msg) => msg.raw(),
+            Self::Notice(msg) => msg.raw(),
+            Self::Part(msg) => msg.raw(),
+            Self::Ping(msg) => msg.raw(),
+            Self::Pong(msg) => msg.raw(),
+            Self::Privmsg(msg) => msg.raw(),
+            Self::Reconnect(msg) => msg.raw(),
+            Self::RoomState(msg) => msg.raw(),
+            Self::UserNotice(msg) => msg.raw(),
+            Self::UserState(msg) => msg.raw(),
+            Self::Whisper(msg) => msg.raw(),
+        }
+    }
+}
+
 impl<'a> IntoOwned<'a> for AllCommands<'a> {
     type Output = AllCommands<'static>;
     fn into_owned(self) -> Self::Output {
