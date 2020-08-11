@@ -7,6 +7,7 @@ use std::io::Write;
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Register<'a> {
     pub(crate) user_config: UserConfig,
+    #[cfg_attr(feature = "serde", serde(skip, default))]
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
