@@ -159,3 +159,5 @@ pub use user_state::UserState;
 
 mod whisper;
 pub use whisper::Whisper;
+
+pub use crate::irc::IrcMessage;
