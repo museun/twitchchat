@@ -1,8 +1,8 @@
 use crate::{
     connector::Connector,
-    messages::{GlobalUserState, IrcReady, Ping, Pong},
+    messages::{Ping, Pong},
     rate_limit::{AsyncBlocker, NullBlocker},
-    runner::{Error, ResetConfig, Status},
+    runner::{Error, ReadyMessage, ResetConfig, Status},
     util::Either::{Left, Right},
     util::{timestamp, FutExt},
     writer::{AsyncWriter, MpscWriter},
@@ -12,9 +12,7 @@ use crate::{
 use futures_lite::{AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
 
-use messages::Ready;
 use std::{
-    collections::HashMap,
     future::Future,
     time::{Duration, Instant},
 };
@@ -35,7 +33,7 @@ where
     quit_tx: Sender<()>,
     quit_rx: Receiver<()>,
 
-    wait_for: WaitFor,
+    wait_for: super::WaitFor,
 
     user_config: UserConfig,
     connector: C,
@@ -72,7 +70,7 @@ where
             quit_tx,
             quit_rx,
 
-            wait_for: WaitFor::default(),
+            wait_for: super::WaitFor::default(),
 
             user_config,
             connector,
@@ -384,62 +382,5 @@ impl TimeoutState {
 
     fn waiting_for_pong() -> Self {
         Self::WaitingForPong(Instant::now())
-    }
-}
-
-pub trait ReadyMessage<'a>: FromIrcMessage<'a> {
-    // TODO this should return which caps
-    fn requires_caps() -> bool {
-        false
-    }
-    fn command() -> &'static str;
-}
-
-impl<'a> ReadyMessage<'a> for IrcReady<'a> {
-    fn command() -> &'static str {
-        IrcMessage::IRC_READY
-    }
-}
-
-impl<'a> ReadyMessage<'a> for Ready<'a> {
-    fn command() -> &'static str {
-        IrcMessage::READY
-    }
-}
-
-impl<'a> ReadyMessage<'a> for GlobalUserState<'a> {
-    fn command() -> &'static str {
-        IrcMessage::GLOBAL_USER_STATE
-    }
-}
-
-#[derive(Default)]
-struct WaitFor {
-    want: HashMap<&'static str, usize>,
-    queue: HashMap<&'static str, IrcMessage<'static>>,
-}
-
-impl WaitFor {
-    fn register<T>(&mut self)
-    where
-        T: ReadyMessage<'static>,
-    {
-        *self.want.entry(T::command()).or_default() += 1;
-    }
-
-    fn maybe_add<'a>(&mut self, msg: &IrcMessage<'a>) {
-        if let Some((k, v)) = self.want.get_key_value(msg.get_command()) {
-            self.queue.insert(*k, msg.into_owned());
-        }
-    }
-
-    fn check_queue<T>(&mut self) -> Option<IrcMessage<'static>>
-    where
-        T: ReadyMessage<'static> + 'static + Send + Sync + Clone,
-        DispatchError: From<T::Error>,
-    {
-        let msg = self.queue.remove(T::command())?;
-        self.want.remove(T::command());
-        Some(msg)
     }
 }
