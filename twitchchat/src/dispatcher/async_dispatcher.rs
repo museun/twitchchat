@@ -19,7 +19,7 @@ impl AsyncDispatcher {
     }
 
     /// Subscribe to the provided message type, giving you an stream (and iterator) over any future messages.
-    pub async fn subscribe<T>(&mut self) -> EventStream<T>
+    pub async fn subscribe<T>(&self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
     {
@@ -27,7 +27,7 @@ impl AsyncDispatcher {
     }
 
     /// Subscrive to a message that cannot be cleared. These should be 'system' events, e.g. 'PING'
-    pub async fn subscribe_system<T>(&mut self) -> EventStream<T>
+    pub async fn subscribe_system<T>(&self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
     {
@@ -35,7 +35,7 @@ impl AsyncDispatcher {
     }
 
     /// Dispatch this `IrcMessage`
-    pub async fn dispatch(&mut self, message: IrcMessage<'_>) -> Result<(), DispatchError> {
+    pub async fn dispatch(&self, message: IrcMessage<'_>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
         let msg = message.into_owned();
@@ -85,14 +85,11 @@ impl AsyncDispatcher {
     /// You'll have to re-subscribe to events after this.
     ///
     /// This is a way to stop any polling event handlers
-    pub async fn reset(&mut self) {
+    pub async fn reset(&self) {
         self.map.lock().await.reset()
     }
 
-    async fn dispatch_static<T>(
-        &mut self,
-        message: IrcMessage<'static>,
-    ) -> Result<(), DispatchError>
+    async fn dispatch_static<T>(&self, message: IrcMessage<'static>) -> Result<(), DispatchError>
     where
         T: FromIrcMessage<'static>,
         T: Send + Sync + Clone + 'static,
