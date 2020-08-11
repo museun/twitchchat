@@ -2,7 +2,7 @@
 //!
 //! This includes an asynchronous main loop called `AsyncRunner`
 mod error;
-pub use error::RunnerError;
+pub use error::Error;
 
 mod reset;
 pub use reset::ResetConfig;

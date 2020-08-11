@@ -2,7 +2,7 @@ use crate::{DecodeError, DispatchError};
 
 /// An error produce by the runner
 #[derive(Debug)]
-pub enum RunnerError {
+pub enum Error {
     /// There was a dispatch error
     Dispatch(DispatchError),
     /// There was a decode error
@@ -11,19 +11,19 @@ pub enum RunnerError {
     Io(std::io::Error),
 }
 
-impl From<DispatchError> for RunnerError {
+impl From<DispatchError> for Error {
     fn from(err: DispatchError) -> Self {
         Self::Dispatch(err)
     }
 }
 
-impl From<DecodeError> for RunnerError {
+impl From<DecodeError> for Error {
     fn from(err: DecodeError) -> Self {
         Self::Decode(err)
     }
 }
 
-impl From<std::io::Error> for RunnerError {
+impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Self::Io(err)
     }

@@ -1,4 +1,4 @@
-use super::{error::RunnerError, Status};
+use super::{error::Error, Status};
 
 /// Some common retry strategies.
 ///
@@ -18,17 +18,17 @@ pub struct RetryStrategy;
 
 impl RetryStrategy {
     /// Reconnect immediately unless the `Status` was `Cancelled`
-    pub async fn immediately(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+    pub async fn immediately(result: Result<Status, Error>) -> Result<bool, Error> {
         Ok(!matches!(result, Ok(Status::Cancelled)))
     }
 
     /// Retries if `Status` was a **TimedOut**, otherwise return the `Err` or `false` (to stop the connection loop).
-    pub async fn on_timeout(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+    pub async fn on_timeout(result: Result<Status, Error>) -> Result<bool, Error> {
         Ok(matches!(result?, Status::TimedOut))
     }
 
     /// Retries if the `Result` was an error
-    pub async fn on_error(result: Result<Status, RunnerError>) -> Result<bool, RunnerError> {
+    pub async fn on_error(result: Result<Status, Error>) -> Result<bool, Error> {
         Ok(result.is_err())
     }
 }

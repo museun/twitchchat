@@ -2,7 +2,7 @@ use crate::{
     connector::Connector,
     messages::{Ping, Pong},
     rate_limit::{AsyncBlocker, NullBlocker},
-    runner::{ResetConfig, RunnerError, Status},
+    runner::{Error, ResetConfig, Status},
     util::Either::{Left, Right},
     util::{timestamp, FutExt},
     writer::{AsyncWriter, MpscWriter},
@@ -91,13 +91,13 @@ impl AsyncRunner {
         connector: C,
         retry: F,
         reset_config: E,
-    ) -> Result<(), RunnerError>
+    ) -> Result<(), Error>
     where
         C: Connector,
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 
-        F: Fn(Result<Status, RunnerError>) -> R + Send + Sync,
-        R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
+        F: Fn(Result<Status, Error>) -> R + Send + Sync,
+        R: Future<Output = Result<bool, Error>> + Send + Sync,
         E: Into<Option<ResetConfig>> + Send + Sync,
     {
         let mut reset_config = reset_config.into();
@@ -133,7 +133,7 @@ impl AsyncRunner {
         &mut self,
         user_config: &UserConfig,
         connector: C,
-    ) -> Result<Status, RunnerError>
+    ) -> Result<Status, Error>
     where
         C: Connector,
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
@@ -244,7 +244,7 @@ impl AsyncRunner {
     async fn register<W>(
         user_config: &UserConfig,
         writer: &mut AsyncEncoder<W>,
-    ) -> Result<(), RunnerError>
+    ) -> Result<(), Error>
     where
         W: AsyncWrite + Send + Sync + Unpin,
     {
