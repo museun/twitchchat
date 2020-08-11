@@ -4,14 +4,14 @@ use crate::*;
 ///
 /// Typically after a user is banned from chat or timed out
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClearChat<'t> {
-    raw: Str<'t>,
+pub struct ClearChat<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
     name: Option<StrIndex>,
 }
 
-impl<'t> ClearChat<'t> {
+impl<'a> ClearChat<'a> {
     raw!();
     tags!();
 
@@ -36,10 +36,10 @@ impl<'t> ClearChat<'t> {
     // }
 }
 
-impl<'t> FromIrcMessage<'t> for ClearChat<'t> {
+impl<'a> FromIrcMessage<'a> for ClearChat<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_CHAT)?;
 
         let this = Self {

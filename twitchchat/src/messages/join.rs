@@ -4,13 +4,13 @@ use crate::*;
 ///
 /// The happens when a user (yourself included) joins a channel
 #[derive(Debug, Clone, PartialEq)]
-pub struct Join<'t> {
-    raw: Str<'t>,
+pub struct Join<'a> {
+    raw: Str<'a>,
     name: StrIndex,
     channel: StrIndex,
 }
 
-impl<'t> Join<'t> {
+impl<'a> Join<'a> {
     raw!();
     str_field!(
         /// Name of the user that joined the channel
@@ -22,10 +22,10 @@ impl<'t> Join<'t> {
     );
 }
 
-impl<'t> FromIrcMessage<'t> for Join<'t> {
+impl<'a> FromIrcMessage<'a> for Join<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::JOIN)?;
 
         let this = Self {

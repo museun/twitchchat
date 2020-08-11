@@ -3,28 +3,28 @@ use crate::*;
 /// A parsed Capability
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum Capability<'t> {
+pub enum Capability<'a> {
     // This Capability was Acknowledged
     Acknowledged(
         /// The name of the requested capability
-        &'t str,
+        &'a str,
     ),
     // This Capability was not acknowledged
     NotAcknowledged(
         /// The name of the requested capability
-        &'t str,
+        &'a str,
     ),
 }
 
 /// Acknowledgement (or not) on a **CAPS** request
 #[derive(Debug, Clone, PartialEq)]
-pub struct Cap<'t> {
-    raw: Str<'t>,
+pub struct Cap<'a> {
+    raw: Str<'a>,
     capability: StrIndex,
     acknowledged: bool,
 }
 
-impl<'t> Cap<'t> {
+impl<'a> Cap<'a> {
     raw!();
 
     /// The parsed capability

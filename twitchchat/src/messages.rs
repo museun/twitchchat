@@ -6,7 +6,7 @@ macro_rules! serde_struct {
 
     ($ty:ident { $($field:ident),* $(,)? }) => {
         #[cfg(feature = "serde")]
-        impl<'t> ::serde::Serialize for $ty<'t> {
+        impl<'a> ::serde::Serialize for $ty<'a> {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: ::serde::Serializer,
@@ -24,8 +24,8 @@ macro_rules! serde_struct {
 
     (@de $ty:ident) => {
         #[cfg(feature = "serde")]
-        impl<'de, 't> ::serde::Deserialize<'de> for $ty<'t> {
-            fn deserialize<D>(deserializer: D) -> Result<$ty<'t>, D::Error>
+        impl<'de, 'a> ::serde::Deserialize<'de> for $ty<'a> {
+            fn deserialize<D>(deserializer: D) -> Result<$ty<'a>, D::Error>
             where
                 D: ::serde::Deserializer<'de>,
             {
@@ -44,7 +44,7 @@ macro_rules! raw {
         }
 
         /// Consumes the message, returning the raw [`Str<'_>`](./enum.Str.html)
-        pub fn into_inner(self) -> Str<'t> {
+        pub fn into_inner(self) -> Str<'a> {
             self.raw
         }
     };

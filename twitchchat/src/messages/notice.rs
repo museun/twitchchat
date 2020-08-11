@@ -2,14 +2,14 @@ use crate::*;
 
 /// General notices from the server.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Notice<'t> {
-    raw: Str<'t>,
+pub struct Notice<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
     message: StrIndex,
 }
 
-impl<'t> Notice<'t> {
+impl<'a> Notice<'a> {
     raw!();
     tags!();
     str_field!(
@@ -31,10 +31,10 @@ impl<'t> Notice<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for Notice<'t> {
+impl<'a> FromIrcMessage<'a> for Notice<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::NOTICE)?;
 
         let this = Self {
@@ -67,7 +67,7 @@ serde_struct!(Notice {
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum MessageId<'t> {
+pub enum MessageId<'a> {
     /// <user> is already banned in this channel.
     AlreadyBanned,
     /// This room is not in emote-only mode.
@@ -414,11 +414,11 @@ pub enum MessageId<'t> {
     /// That user's settings prevent them from receiving this whisper.
     WhisperRestrictedRecipient,
     /// Unknown message id
-    Unknown(&'t str),
+    Unknown(&'a str),
 }
 
-impl<'t> MessageId<'t> {
-    pub(super) fn parse(input: &'t str) -> MessageId<'t> {
+impl<'a> MessageId<'a> {
+    pub(super) fn parse(input: &'a str) -> MessageId<'a> {
         use MessageId::*;
         match input {
             "already_banned" => AlreadyBanned,

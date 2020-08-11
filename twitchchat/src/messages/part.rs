@@ -4,13 +4,13 @@ use crate::*;
 ///
 /// The happens when a user (yourself included) leaves a channel
 #[derive(Debug, Clone, PartialEq)]
-pub struct Part<'t> {
-    raw: Str<'t>,
+pub struct Part<'a> {
+    raw: Str<'a>,
     name: StrIndex,
     channel: StrIndex,
 }
 
-impl<'t> Part<'t> {
+impl<'a> Part<'a> {
     raw!();
     str_field!(
         /// Name of the user that left the channel
@@ -22,10 +22,10 @@ impl<'t> Part<'t> {
     );
 }
 
-impl<'t> FromIrcMessage<'t> for Part<'t> {
+impl<'a> FromIrcMessage<'a> for Part<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PART)?;
 
         let this = Self {

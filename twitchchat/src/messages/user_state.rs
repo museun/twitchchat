@@ -2,13 +2,13 @@ use crate::*;
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Debug, Clone, PartialEq)]
-pub struct UserState<'t> {
-    raw: Str<'t>,
+pub struct UserState<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
 }
 
-impl<'t> UserState<'t> {
+impl<'a> UserState<'a> {
     raw!();
     tags!();
     str_field!(
@@ -59,10 +59,10 @@ impl<'t> UserState<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for UserState<'t> {
+impl<'a> FromIrcMessage<'a> for UserState<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_STATE)?;
 
         let this = Self {

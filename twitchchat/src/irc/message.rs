@@ -197,7 +197,7 @@ impl<'a> std::fmt::Debug for IrcMessage<'a> {
 }
 
 #[cfg(feature = "serde")]
-impl<'t> ::serde::Serialize for IrcMessage<'t> {
+impl<'a> ::serde::Serialize for IrcMessage<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
@@ -216,8 +216,8 @@ impl<'t> ::serde::Serialize for IrcMessage<'t> {
 }
 
 #[cfg(feature = "serde")]
-impl<'de, 't> ::serde::Deserialize<'de> for IrcMessage<'t> {
-    fn deserialize<D>(deserializer: D) -> Result<IrcMessage<'t>, D::Error>
+impl<'de, 'a> ::serde::Deserialize<'de> for IrcMessage<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<IrcMessage<'a>, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {

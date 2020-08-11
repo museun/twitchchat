@@ -4,7 +4,7 @@ use crate::*;
 #[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum SubPlan<'t> {
+pub enum SubPlan<'a> {
     /// A `Prime` subscription
     Prime,
     /// A Tier-1 subscription (currently $4.99)
@@ -14,7 +14,7 @@ pub enum SubPlan<'t> {
     /// A Tier-3 subscription (currently $24.99)
     Tier3,
     /// An unknown tier -- this will catch and future tiers if they are added.
-    Unknown(&'t str),
+    Unknown(&'a str),
 }
 
 /// The kind of notice it was, retrieved via [`UserNotice::msg_id`][msg_id]
@@ -23,7 +23,7 @@ pub enum SubPlan<'t> {
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum NoticeType<'t> {
+pub enum NoticeType<'a> {
     /// This was a subscription notice
     Sub,
     /// This was a re-subscription notice
@@ -49,19 +49,19 @@ pub enum NoticeType<'t> {
     /// A the tier that the bits were part of
     BitsBadgeTier,
     /// An unknown notice type (a catch-all)
-    Unknown(&'t str),
+    Unknown(&'a str),
 }
 
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Debug, Clone, PartialEq)]
-pub struct UserNotice<'t> {
-    raw: Str<'t>,
+pub struct UserNotice<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
     message: Option<StrIndex>,
 }
 
-impl<'t> UserNotice<'t> {
+impl<'a> UserNotice<'a> {
     raw!();
     tags!();
     str_field!(
@@ -76,7 +76,7 @@ impl<'t> UserNotice<'t> {
     /// Metadata related to the chat badges
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of months the user has been a subscriber
-    pub fn badge_info(&'t self) -> Vec<BadgeInfo<'t>> {
+    pub fn badge_info(&'a self) -> Vec<BadgeInfo<'a>> {
         self.tags()
             .get("badge-info")
             .map(parse_badges)
@@ -84,7 +84,7 @@ impl<'t> UserNotice<'t> {
     }
 
     /// Badges attached to this message
-    pub fn badges(&'t self) -> Vec<Badge<'t>> {
+    pub fn badges(&'a self) -> Vec<Badge<'a>> {
         self.tags()
             .get("badges")
             .map(parse_badges)
@@ -127,7 +127,7 @@ impl<'t> UserNotice<'t> {
     }
 
     /// The kind of notice this message is
-    pub fn msg_id(&'t self) -> Option<NoticeType<'t>> {
+    pub fn msg_id(&'a self) -> Option<NoticeType<'a>> {
         let kind = self.tags().get("msg-id")?;
         match kind {
             "sub" => NoticeType::Sub,
@@ -266,7 +266,7 @@ impl<'t> UserNotice<'t> {
     /// Valid values: Prime, 1000, 2000, 3000. 1000, 2000, and
     /// 3000 refer to the first, second, and third levels of paid subscriptions,
     /// respectively (currently $4.99, $9.99, and $24.99).
-    pub fn msg_param_sub_plan(&'t self) -> Option<SubPlan<'t>> {
+    pub fn msg_param_sub_plan(&'a self) -> Option<SubPlan<'a>> {
         self.tags().get("msg-param-sub-plan").and_then(|s| {
             match s {
                 "Prime" => SubPlan::Prime,
@@ -307,10 +307,10 @@ impl<'t> UserNotice<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for UserNotice<'t> {
+impl<'a> FromIrcMessage<'a> for UserNotice<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_NOTICE)?;
 
         let this = Self {

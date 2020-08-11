@@ -2,18 +2,18 @@ use crate::*;
 
 /// Sent on successful login, if `TAGS` capability have been sent beforehand.
 #[derive(Debug, Clone, PartialEq)]
-pub struct GlobalUserState<'t> {
-    raw: Str<'t>,
+pub struct GlobalUserState<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     /// Your user-id
-    pub user_id: Str<'t>,
+    pub user_id: Str<'a>,
     /// Your display name, if set   
-    pub display_name: Option<Str<'t>>,
+    pub display_name: Option<Str<'a>>,
     /// Your color, if set. Defaults to `white`
     pub color: Color,
 }
 
-impl<'t> GlobalUserState<'t> {
+impl<'a> GlobalUserState<'a> {
     raw!();
     tags!();
 
@@ -49,10 +49,10 @@ impl<'t> GlobalUserState<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for GlobalUserState<'t> {
+impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::GLOBAL_USER_STATE)?;
 
         let tag_index = msg.parse_tags();

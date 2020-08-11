@@ -2,14 +2,14 @@ use crate::*;
 
 /// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
-pub struct Whisper<'t> {
-    raw: Str<'t>,
+pub struct Whisper<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     name: StrIndex,
     data: StrIndex,
 }
 
-impl<'t> Whisper<'t> {
+impl<'a> Whisper<'a> {
     raw!();
     tags!();
     str_field!(
@@ -35,12 +35,12 @@ impl<'t> Whisper<'t> {
     /// their display name to **FOO** then this'll return that **FOO**.
     ///
     /// Otherwise it'll return `None`.
-    pub fn display_name(&'t self) -> Option<&'t str> {
+    pub fn display_name(&'a self) -> Option<&'a str> {
         self.tags().get("display-name")
     }
 
     /// Badges attached to this message
-    pub fn badges(&'t self) -> Vec<Badge<'t>> {
+    pub fn badges(&'a self) -> Vec<Badge<'a>> {
         self.tags()
             .get("badges")
             .map(parse_badges)
@@ -89,10 +89,10 @@ impl<'t> Whisper<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for Whisper<'t> {
+impl<'a> FromIrcMessage<'a> for Whisper<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::WHISPER)?;
 
         // :sender WHISPER target :data

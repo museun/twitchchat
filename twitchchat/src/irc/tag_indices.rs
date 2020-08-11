@@ -78,7 +78,7 @@ impl TagIndices {
     }
 
     // NOTE these 2 aren't public because they don't verify 'data' is the same as the built-indices data
-    pub(crate) fn get<'t>(&'t self, key: &str, data: &'t str) -> Option<&'t str> {
+    pub(crate) fn get<'a>(&'a self, key: &str, data: &'a str) -> Option<&'a str> {
         self.map.iter().find_map(|(k, v)| {
             if key == &data[k] {
                 Some(&data[v])
@@ -88,10 +88,10 @@ impl TagIndices {
         })
     }
     // NOTE these 2 aren't public because they don't verify 'data' is the same as the built-indices data
-    pub(crate) fn iter<'t>(
-        &'t self,
-        data: &'t str,
-    ) -> impl Iterator<Item = (&'t str, &'t str)> + 't {
+    pub(crate) fn iter<'a>(
+        &'a self,
+        data: &'a str,
+    ) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
         self.map.iter().map(move |(k, v)| (&data[k], &data[v]))
     }
 }

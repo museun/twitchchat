@@ -15,14 +15,14 @@ pub enum HostTargetKind<'a> {
 
 /// When a channel starts to host another channel
 #[derive(Debug, Clone, PartialEq)]
-pub struct HostTarget<'t> {
-    raw: Str<'t>,
+pub struct HostTarget<'a> {
+    raw: Str<'a>,
     source: StrIndex,
     viewers: Option<usize>,
     target: Option<StrIndex>,
 }
 
-impl<'t> HostTarget<'t> {
+impl<'a> HostTarget<'a> {
     raw!();
     str_field!(
         /// Source channel (the one doing the hosting).
@@ -45,10 +45,10 @@ impl<'t> HostTarget<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for HostTarget<'t> {
+impl<'a> FromIrcMessage<'a> for HostTarget<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::HOST_TARGET)?;
 
         // [- | <target>] number?

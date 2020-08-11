@@ -8,18 +8,18 @@ use crate::*;
 /// case, reconnect and rejoin channels that were on the connection, as you
 /// would normally.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Reconnect<'t> {
-    raw: Str<'t>,
+pub struct Reconnect<'a> {
+    raw: Str<'a>,
 }
 
-impl<'t> Reconnect<'t> {
+impl<'a> Reconnect<'a> {
     raw!();
 }
 
-impl<'t> FromIrcMessage<'t> for Reconnect<'t> {
+impl<'a> FromIrcMessage<'a> for Reconnect<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::RECONNECT)?;
         Ok(Self { raw: msg.raw })
     }

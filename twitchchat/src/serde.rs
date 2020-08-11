@@ -7,7 +7,7 @@ use serde::{
 
 use std::marker::PhantomData;
 
-impl<'de, 't> Deserialize<'de> for Str<'t> {
+impl<'de, 'a> Deserialize<'de> for Str<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -24,9 +24,9 @@ impl<'a, T> Default for RawVisitor<'a, T> {
     }
 }
 
-impl<'de, 't, T> Visitor<'de> for RawVisitor<'t, T>
+impl<'de, 'a, T> Visitor<'de> for RawVisitor<'a, T>
 where
-    T: FromIrcMessage<'t>,
+    T: FromIrcMessage<'a>,
     T::Error: std::error::Error,
 {
     type Value = T;
@@ -50,7 +50,7 @@ where
                 map.next_value::<serde::de::IgnoredAny>()?;
                 continue;
             }
-            let val = map.next_value::<Str<'t>>()?;
+            let val = map.next_value::<Str<'a>>()?;
             if raw.replace(val).is_some() {
                 return Err(A::Error::duplicate_field(RAW));
             }

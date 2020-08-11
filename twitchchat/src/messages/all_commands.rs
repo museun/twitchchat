@@ -114,8 +114,8 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
 macro_rules! from_other {
     ($($ident:tt)*) => {
         $(
-            impl<'t> From<$ident<'t>> for AllCommands<'t> {
-                fn from(msg: $ident<'t>) -> Self {
+            impl<'a> From<$ident<'a>> for AllCommands<'a> {
+                fn from(msg: $ident<'a>) -> Self {
                     Self::$ident(msg)
                 }
             }
@@ -123,7 +123,7 @@ macro_rules! from_other {
     };
 }
 
-type Raw<'t> = IrcMessage<'t>;
+type Raw<'a> = IrcMessage<'a>;
 
 from_other! {
     Raw

@@ -2,12 +2,12 @@ use crate::*;
 
 /// A ping request from the server
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ping<'t> {
-    raw: Str<'t>,
+pub struct Ping<'a> {
+    raw: Str<'a>,
     token: StrIndex,
 }
 
-impl<'t> Ping<'t> {
+impl<'a> Ping<'a> {
     raw!();
     str_field!(
         /// Token associated with the PING event
@@ -15,10 +15,10 @@ impl<'t> Ping<'t> {
     );
 }
 
-impl<'t> FromIrcMessage<'t> for Ping<'t> {
+impl<'a> FromIrcMessage<'a> for Ping<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PING)?;
 
         let this = Self {

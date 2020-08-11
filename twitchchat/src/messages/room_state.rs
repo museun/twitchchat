@@ -14,8 +14,8 @@ pub enum FollowersOnly {
 
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Debug, Clone, PartialEq)]
-pub struct RoomState<'t> {
-    raw: Str<'t>,
+pub struct RoomState<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
 }
@@ -35,7 +35,7 @@ impl<'a> FromIrcMessage<'a> for RoomState<'a> {
     }
 }
 
-impl<'t> RoomState<'t> {
+impl<'a> RoomState<'a> {
     raw!();
     tags!();
     str_field!(

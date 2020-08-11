@@ -17,8 +17,8 @@ pub enum Ctcp<'a> {
 
 /// Message sent by a user
 #[derive(Debug, Clone, PartialEq)]
-pub struct Privmsg<'t> {
-    raw: Str<'t>,
+pub struct Privmsg<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     name: StrIndex,
     channel: StrIndex,
@@ -26,7 +26,7 @@ pub struct Privmsg<'t> {
     ctcp: Option<StrIndex>,
 }
 
-impl<'t> Privmsg<'t> {
+impl<'a> Privmsg<'a> {
     raw!();
     tags!();
     str_field!(
@@ -62,7 +62,7 @@ impl<'t> Privmsg<'t> {
     ///
     /// Currently used only for `subscriber`, to indicate the exact number of
     /// months the user has been a subscriber
-    pub fn badge_info(&'t self) -> Vec<BadgeInfo<'t>> {
+    pub fn badge_info(&'a self) -> Vec<BadgeInfo<'a>> {
         self.tags()
             .get("badge-info")
             .map(parse_badges)
@@ -70,7 +70,7 @@ impl<'t> Privmsg<'t> {
     }
 
     /// Badges attached to this message
-    pub fn badges(&'t self) -> Vec<Badge<'t>> {
+    pub fn badges(&'a self) -> Vec<Badge<'a>> {
         self.tags()
             .get("badges")
             .map(parse_badges)
@@ -96,7 +96,7 @@ impl<'t> Privmsg<'t> {
     /// their display name to **FOO** then this'll return that **FOO**.
     ///
     /// Otherwise it'll return `None`.
-    pub fn display_name(&'t self) -> Option<&str> {
+    pub fn display_name(&'a self) -> Option<&str> {
         self.tags().get("display-name")
     }
 
@@ -185,10 +185,10 @@ impl<'t> Privmsg<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for Privmsg<'t> {
+impl<'a> FromIrcMessage<'a> for Privmsg<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         const CTCP_MARKER: char = '\x01';
         msg.expect_command(IrcMessage::PRIVMSG)?;
 

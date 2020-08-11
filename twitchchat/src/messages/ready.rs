@@ -3,12 +3,12 @@ use crate::*;
 /// An event that is produced when the Twitch connection has been succesfully
 /// established
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ready<'t> {
-    raw: Str<'t>,
+pub struct Ready<'a> {
+    raw: Str<'a>,
     username: StrIndex,
 }
 
-impl<'t> Ready<'t> {
+impl<'a> Ready<'a> {
     raw!();
     str_field!(
         /// The name Twitch will refer to you as
@@ -16,10 +16,10 @@ impl<'t> Ready<'t> {
     );
 }
 
-impl<'t> FromIrcMessage<'t> for Ready<'t> {
+impl<'a> FromIrcMessage<'a> for Ready<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::READY)?;
 
         let this = Self {

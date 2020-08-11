@@ -4,14 +4,14 @@ use crate::*;
 ///
 /// This is triggered via `/delete` on IRC.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ClearMsg<'t> {
-    raw: Str<'t>,
+pub struct ClearMsg<'a> {
+    raw: Str<'a>,
     tags: TagIndices,
     channel: StrIndex,
     message: Option<StrIndex>,
 }
 
-impl<'t> ClearMsg<'t> {
+impl<'a> ClearMsg<'a> {
     raw!();
     tags!();
     str_field!(
@@ -34,10 +34,10 @@ impl<'t> ClearMsg<'t> {
     }
 }
 
-impl<'t> FromIrcMessage<'t> for ClearMsg<'t> {
+impl<'a> FromIrcMessage<'a> for ClearMsg<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_MSG)?;
 
         let this = Self {

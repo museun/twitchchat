@@ -4,12 +4,12 @@ use crate::*;
 ///
 /// This should be a response to sending a PING to the server
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pong<'t> {
-    raw: Str<'t>,
+pub struct Pong<'a> {
+    raw: Str<'a>,
     token: StrIndex,
 }
 
-impl<'t> Pong<'t> {
+impl<'a> Pong<'a> {
     raw!();
     str_field!(
         /// Token associated with the PONG event
@@ -17,10 +17,10 @@ impl<'t> Pong<'t> {
     );
 }
 
-impl<'t> FromIrcMessage<'t> for Pong<'t> {
+impl<'a> FromIrcMessage<'a> for Pong<'a> {
     type Error = InvalidMessage;
 
-    fn from_irc(msg: IrcMessage<'t>) -> Result<Self, Self::Error> {
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PONG)?;
 
         let this = Self {
