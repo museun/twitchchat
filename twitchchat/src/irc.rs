@@ -47,9 +47,12 @@ pub fn parse(input: &str) -> IrcParserIter<'_> {
 ///
 /// This returns the index of the /next/ message (e.g, 0 for a single message) and the parsed message
 pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), InvalidMessage> {
+    const CRLF: &str = "\r\n";
+
     let pos = input
-        .find("\r\n")
+        .find(CRLF)
         .ok_or_else(|| InvalidMessage::IncompleteMessage { pos: 0 })?;
-    let msg = IrcMessage::parse(crate::Str::Borrowed(&input[..pos]))?;
+
+    let msg = IrcMessage::parse(crate::Str::Borrowed(&input[..pos + CRLF.len()]))?;
     Ok((pos, msg))
 }
