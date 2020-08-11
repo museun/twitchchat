@@ -13,6 +13,8 @@ pub use async_dispatcher::AsyncDispatcher;
 pub enum DispatchError {
     /// The message type was wrong -- this will only happen on user-defined events.
     InvalidMessage(InvalidMessage),
+    /// Could not wait for message
+    CouldNotWait(String),
     /// A custom error message -- this will only happen on user-defined events.
     Custom(Box<dyn std::error::Error + Send + Sync>),
 }
@@ -28,6 +30,7 @@ impl std::fmt::Display for DispatchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidMessage(err) => write!(f, "invalid message: {}", err),
+            Self::CouldNotWait(msg) => write!(f, "could not wait for '{}'", msg),
             Self::Custom(err) => write!(f, "unknown error: {}", err),
         }
     }
@@ -38,6 +41,7 @@ impl std::error::Error for DispatchError {
         match self {
             Self::InvalidMessage(err) => Some(err),
             Self::Custom(err) => Some(&**err),
+            _ => None,
         }
     }
 }
