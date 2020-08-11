@@ -67,9 +67,9 @@ impl AsyncRunner {
         self.writer.reconfigure(rate_limit, blocker)
     }
 
-    /// Get a mutable borrow to the dispatcher
-    pub fn dispatcher(&mut self) -> &mut AsyncDispatcher {
-        &mut self.dispatcher
+    /// Get a borrow of the dispatcher
+    pub fn dispatcher(&self) -> &AsyncDispatcher {
+        &self.dispatcher
     }
 
     /// Get a channel you can use to have the main loop exit early.
@@ -149,7 +149,7 @@ impl AsyncRunner {
             AsyncEncoder::new(stream),
         );
 
-        self.register(user_config, &mut writer).await?;
+        Self::register(user_config, &mut writer).await?;
 
         let mut state = TimeoutState::Start;
         let status = loop {
@@ -242,7 +242,6 @@ impl AsyncRunner {
     }
 
     async fn register<W>(
-        &mut self,
         user_config: &UserConfig,
         writer: &mut AsyncEncoder<W>,
     ) -> Result<(), RunnerError>
