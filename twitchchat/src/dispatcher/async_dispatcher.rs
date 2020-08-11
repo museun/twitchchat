@@ -38,11 +38,24 @@ impl AsyncDispatcher {
     pub async fn dispatch(&self, message: IrcMessage<'_>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
+        let mut map = self.map.lock().await;
+        let mut system = self.system.lock().await;
+
         let msg = message.into_owned();
         macro_rules! dispatch {
             ($ty:ty) => {
-                self.dispatch_static::<$ty>(msg).await?
+                Self::dispatch_static::<$ty>(msg, &mut system, &mut map)?
             };
+        }
+
+        if Self::has_any_listener::<IrcMessage>(&system, &map) {
+            Self::dispatch_static::<IrcMessage>(msg.clone(), &mut system, &mut map)
+                .expect("identity conversion should be upheld");
+        }
+
+        if Self::has_any_listener::<AllCommands>(&system, &map) {
+            Self::dispatch_static::<AllCommands>(msg.clone(), &mut system, &mut map)
+                .expect("identity conversion should be upheld");
         }
 
         match msg.get_command() {
@@ -66,14 +79,6 @@ impl AsyncDispatcher {
             M::WHISPER => dispatch!(Whisper),
             _ => {
                 // TODO user-defined messages
-
-                self.dispatch_static::<IrcMessage>(msg.clone())
-                    .await
-                    .expect("identity conversion should be upheld");
-
-                self.dispatch_static::<AllCommands>(msg)
-                    .await
-                    .expect("identity conversion should be upheld");
             }
         };
 
@@ -89,7 +94,15 @@ impl AsyncDispatcher {
         self.map.lock().await.reset()
     }
 
-    async fn dispatch_static<T>(&self, message: IrcMessage<'static>) -> Result<(), DispatchError>
+    fn has_any_listener<T: 'static>(system: &EventMap, map: &EventMap) -> bool {
+        !system.is_empty::<T>() || !map.is_empty::<T>()
+    }
+
+    fn dispatch_static<T>(
+        message: IrcMessage<'static>,
+        system: &mut EventMap,
+        map: &mut EventMap,
+    ) -> Result<(), DispatchError>
     where
         T: FromIrcMessage<'static>,
         T: Send + Sync + Clone + 'static,
@@ -97,15 +110,15 @@ impl AsyncDispatcher {
     {
         let msg = T::from_irc(message)?;
 
-        {
-            let mut system = self.system.lock().await;
-            // only clone if we're actually listening for it
-            if !system.is_empty::<T>() {
-                system.send(msg.clone());
-            }
+        // only clone if we're actually listening for it
+        if !system.is_empty::<T>() {
+            system.send(msg.clone());
         }
 
-        self.map.lock().await.send(msg);
+        if !map.is_empty::<T>() {
+            map.send(msg);
+        }
+
         Ok(())
     }
 }
