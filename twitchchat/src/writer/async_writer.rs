@@ -94,9 +94,10 @@ where
     /// Consume the writer, sending a quit message.
     ///
     /// This will cause the main loop to exit. This blocks until the quit signal has been received.
-    pub async fn quit(mut self) -> io::Result<()> {
-        self.encode("QUIT\r\n").await?;
-        let _ = self.should_quit.recv().await;
+    pub async fn quit(self) -> io::Result<()> {
+        let mut this = self;
+        this.encode("QUIT\r\n").await?;
+        let _ = this.should_quit.recv().await;
         log::info!("got shutdown signal");
         Ok(())
     }
