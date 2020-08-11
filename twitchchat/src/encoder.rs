@@ -8,38 +8,55 @@ use std::{
 /// A trait to allow writing messags to any `std::io::Write` implementation
 pub trait Encodable {
     /// Encode this message to the provided `std::io::Write` implementation
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()>;
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized;
 }
 
 impl<T> Encodable for &T
 where
     T: Encodable + ?Sized,
 {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized,
+    {
         <_ as Encodable>::encode(*self, buf)
     }
 }
 
 impl Encodable for str {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized,
+    {
         buf.write_all(self.as_bytes())
     }
 }
 
 impl Encodable for String {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized,
+    {
         buf.write_all(self.as_bytes())
     }
 }
 
 impl Encodable for [u8] {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized,
+    {
         buf.write_all(self)
     }
 }
 
 impl Encodable for Vec<u8> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
+    where
+        W: Write + ?Sized,
+    {
         buf.write_all(self)
     }
 }
@@ -49,7 +66,10 @@ pub struct Encoder<W> {
     writer: W,
 }
 
-impl<W: Write> Encoder<W> {
+impl<W> Encoder<W>
+where
+    W: Write,
+{
     /// Create a new Encoder over this `std::io::Write` instance
     pub fn new(writer: W) -> Self {
         Self { writer }
@@ -70,7 +90,21 @@ impl<W: Write> Encoder<W> {
     }
 }
 
-impl<W: Write> Write for Encoder<W> {
+impl<W> Clone for Encoder<W>
+where
+    W: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            writer: self.writer.clone(),
+        }
+    }
+}
+
+impl<W> Write for Encoder<W>
+where
+    W: Write,
+{
     fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
         self.writer.write(buf)
     }
@@ -84,13 +118,16 @@ pin_project_lite::pin_project! {
     /// An asynchronous encoder.
     pub struct AsyncEncoder<W> {
         #[pin]
-        writer: W,
+        pub(crate) writer: W,
         pos: usize,
         data: Vec<u8>
     }
 }
 
-impl<W: AsyncWrite + Send + Sync + Unpin + Clone> Clone for AsyncEncoder<W> {
+impl<W> Clone for AsyncEncoder<W>
+where
+    W: Clone,
+{
     fn clone(&self) -> Self {
         Self {
             writer: self.writer.clone(),
@@ -100,7 +137,10 @@ impl<W: AsyncWrite + Send + Sync + Unpin + Clone> Clone for AsyncEncoder<W> {
     }
 }
 
-impl<W: AsyncWrite + Send + Sync + Unpin> AsyncEncoder<W> {
+impl<W> AsyncEncoder<W>
+where
+    W: AsyncWrite + Send + Sync + Unpin,
+{
     /// Create a new Encoder over this `futures::io::AsyncWrite` instance
     pub fn new(writer: W) -> Self {
         Self {
@@ -132,17 +172,21 @@ impl<W: AsyncWrite + Send + Sync + Unpin> AsyncEncoder<W> {
         M: Encodable + Send + Sync,
     {
         msg.encode(&mut self.data)?;
-        self.writer.write_all(&self.data[self.pos..]).await?;
+        let data = &self.data[self.pos..];
+
+        self.writer.write_all(data).await?;
         self.writer.flush().await?;
-        self.pos = {
-            self.data.clear();
-            self.data.len()
-        };
+
+        self.data.clear();
+        self.pos = 0;
         Ok(())
     }
 }
 
-impl<W: AsyncWrite + Send + Sync + Unpin> AsyncWrite for AsyncEncoder<W> {
+impl<W> AsyncWrite for AsyncEncoder<W>
+where
+    W: AsyncWrite + Send + Sync + Unpin,
+{
     fn poll_write(
         self: Pin<&mut Self>,
         ctx: &mut Context<'_>,
@@ -188,8 +232,6 @@ mod tests {
         encoder.encode(join("#museun")).unwrap();
         encoder.encode(join("#shaken_bot")).unwrap();
 
-        encoder.flush().unwrap();
-
         // using into_inner here instead of &mut borrowing the vec and dropping the encoder
         let out = encoder.into_inner();
         let s = std::str::from_utf8(&out).unwrap();
@@ -205,8 +247,6 @@ mod tests {
 
                 encoder.encode(join("#museun")).await.unwrap();
                 encoder.encode(join("#shaken_bot")).await.unwrap();
-
-                encoder.flush().await.unwrap();
             }
 
             let s = std::str::from_utf8(&output).unwrap();
