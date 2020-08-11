@@ -11,6 +11,26 @@ pub enum Error {
     Io(std::io::Error),
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Dispatch(err) => write!(f, "dispatching error: {}", err),
+            Self::Decode(err) => write!(f, "decoding error: {}", err),
+            Self::Io(err) => write!(f, "i/o error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Dispatch(err) => Some(err),
+            Self::Decode(err) => Some(err),
+            Self::Io(err) => Some(err),
+        }
+    }
+}
+
 impl From<DispatchError> for Error {
     fn from(err: DispatchError) -> Self {
         Self::Dispatch(err)
