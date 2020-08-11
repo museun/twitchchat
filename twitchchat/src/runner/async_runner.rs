@@ -1,17 +1,16 @@
 use crate::{
     connector::Connector,
     messages::{Ping, Pong},
-    rate_limit::AsyncBlocker,
-    util::timestamp,
-    util::Either::{self, Left, Right},
+    rate_limit::{AsyncBlocker, NullBlocker},
+    runner::{ResetConfig, RunnerError, Status},
+    util::Either::{Left, Right},
+    util::{timestamp, FutExt},
+    writer::{AsyncWriter, MpscWriter},
     *,
 };
 
-use runner::{ResetConfig, RunnerError, Status};
-
-use futures_lite::{pin, AsyncRead, AsyncWrite, StreamExt};
+use futures_lite::{AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
-use writer::{AsyncWriter, MpscWriter};
 
 use std::{
     future::Future,
@@ -21,25 +20,41 @@ use std::{
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
 
-/// A trait alias to make function signatures smaller
-pub trait ConnectorSafe: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
-
 /// An async runner. This will act as a main loop, if you want one.
 pub struct AsyncRunner {
     dispatcher: AsyncDispatcher,
-    writer: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
-    activity: (Sender<()>, Receiver<()>),
-    quit: (Sender<()>, Receiver<()>),
+    writer: AsyncWriter<MpscWriter>,
+
+    writer_rx: Receiver<Vec<u8>>,
+    activity_rx: Receiver<()>,
+    quit_tx: Sender<()>,
+    quit_rx: Receiver<()>,
 }
 
 impl AsyncRunner {
     /// Create a new async runner with this dispatcher
     pub fn new(dispatcher: AsyncDispatcher) -> Self {
+        let (writer_tx, writer_rx) = channel::bounded(64);
+        let (activity_tx, activity_rx) = channel::bounded(32);
+        let (quit_tx, quit_rx) = channel::bounded(1);
+
+        let writer = MpscWriter::new(writer_tx);
+        let writer = AsyncWriter::new(
+            writer,
+            activity_tx,
+            quit_rx.clone(),
+            None,
+            NullBlocker::default(),
+        );
+
         Self {
             dispatcher,
-            writer: channel::bounded(64),
-            activity: channel::bounded(32),
-            quit: channel::bounded(1),
+            writer,
+
+            writer_rx,
+            activity_rx,
+            quit_tx,
+            quit_rx,
         }
     }
 
@@ -49,9 +64,7 @@ impl AsyncRunner {
         R: Into<Option<RateLimit>>,
         B: AsyncBlocker,
     {
-        let (tx, rx) = (self.activity.0.clone(), self.quit.1.clone());
-        let writer = MpscWriter::new(self.writer.0.clone());
-        AsyncWriter::new(writer, tx, rx, rate_limit, blocker)
+        self.writer.reconfigure(rate_limit, blocker)
     }
 
     /// Get a mutable borrow to the dispatcher
@@ -61,8 +74,7 @@ impl AsyncRunner {
 
     /// Get a channel you can use to have the main loop exit early.
     pub fn quit_signal(&self) -> Receiver<()> {
-        let (_, rx) = &self.quit;
-        rx.clone()
+        self.quit_rx.clone()
     }
 
     /// Using this connector, retry strategy and reset config try to reconnect
@@ -82,7 +94,7 @@ impl AsyncRunner {
     ) -> Result<(), RunnerError>
     where
         C: Connector,
-        for<'a> &'a C::Output: ConnectorSafe,
+        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 
         F: Fn(Result<Status, RunnerError>) -> R + Send + Sync,
         R: Future<Output = Result<bool, RunnerError>> + Send + Sync,
@@ -96,8 +108,6 @@ impl AsyncRunner {
                 .await;
 
             match retry(status).await {
-                Err(err) => break Err(err),
-                Ok(false) => break Ok(()),
                 Ok(true) => {
                     // if we have a reset config, reset the handlers and send the signal
                     // otherwise just restart without resetting the handlers
@@ -109,8 +119,11 @@ impl AsyncRunner {
                         if config.reset_handlers.send(()).await.is_err() {
                             reset_config.take();
                         }
-                    };
+                    }
                 }
+
+                Ok(false) => break Ok(()),
+                Err(err) => break Err(err),
             }
         }
     }
@@ -123,11 +136,9 @@ impl AsyncRunner {
     ) -> Result<Status, RunnerError>
     where
         C: Connector,
-        for<'a> &'a C::Output: ConnectorSafe,
+        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
     {
-        let mut connector = connector;
-
-        let stream = connector.connect().await?;
+        let stream = { connector }.connect().await?;
         let stream = async_dup::Arc::new(stream);
 
         let mut ping = self.dispatcher.subscribe_system::<Ping>().await;
@@ -138,61 +149,40 @@ impl AsyncRunner {
             AsyncEncoder::new(stream),
         );
 
-        // register with the connection
-        writer
-            .encode(crate::commands::register(user_config))
-            .await?;
+        self.register(user_config, &mut writer).await?;
 
         let mut state = TimeoutState::Start;
-
-        let (_, rx) = &self.activity;
-        let (_, write) = &self.writer;
-
-        // this is awful. but look. no select!{}
         let status = loop {
-            let (read, activity) = (reader.read_message(), rx.recv());
-            let (ping, pong) = (ping.next(), pong.next());
-            pin!(read);
-            pin!(ping);
-            pin!(activity);
-            pin!(pong);
+            let select = FutExt::either(reader.read_message(), self.activity_rx.recv())
+                .either(ping.next())
+                .either(pong.next())
+                .either(self.writer_rx.recv())
+                .either(Delay::new(WINDOW))
+                .await;
 
-            // Bind all 4 interesting events together
-            let (left, right) = (Either::select(read, ping), Either::select(activity, pong));
-            pin!(left);
-            pin!(right);
-
-            let notification = Either::select(left, right);
-            pin!(notification);
-
-            let write = write.recv();
-            pin!(write);
-
-            let notification = Either::select(notification, write);
-            pin!(notification);
-
-            // and bind them with the timeout
-            let timeout = Delay::new(WINDOW);
-            pin!(timeout);
-
-            // and select the first one
-            match Either::select(notification, timeout).await {
-                // we read a message
-                Left(Left(Left(Left(read)))) => {
+            match select {
+                Left(Left(Left(Left(Left(read))))) => {
                     let msg = match read {
                         Err(DecodeError::Eof) => {
                             log::info!("got an EOF, exiting main loop");
                             break Status::Eof;
                         }
-                        Err(err) => return Err(err.into()),
+                        Err(err) => {
+                            log::warn!("read an error: {}", err);
+                            return Err(err.into());
+                        }
                         Ok(msg) => msg,
                     };
-                    log::trace!("dispatching: {:#?}", msg);
+
+                    log::trace!("dispatching: {}", util::name(&msg));
                     self.dispatcher.dispatch(msg).await?;
                     state = TimeoutState::Activity(Instant::now())
                 }
 
-                // we get a ping
+                Left(Left(Left(Left(Right(Some(_activity)))))) => {
+                    state = TimeoutState::activity();
+                }
+
                 Left(Left(Left(Right(Some(ping))))) => {
                     let token = ping.token();
                     log::debug!(
@@ -204,37 +194,27 @@ impl AsyncRunner {
                     state = TimeoutState::activity();
                 }
 
-                // they wrote a message
-                Left(Left(Right(Left(_write)))) => {
-                    state = TimeoutState::activity();
-                }
-
-                // we got a pong
-                Left(Left(Right(Right(Some(_pong))))) => {
+                Left(Left(Right(Some(_pong)))) => {
                     if let TimeoutState::WaitingForPong(_ts) = state {
                         state = TimeoutState::activity();
                     }
                 }
 
-                // our future timed out, send a ping
-                Left(Right(write)) => {
-                    if let Some(write) = write {
-                        writer.encode(write).await?;
-                    } else {
-                        log::warn!("no more writers detected");
-                    }
+                Left(Right(Some(write))) => {
+                    let msg = std::str::from_utf8(&write).unwrap().escape_debug();
+                    log::trace!("> {}", msg);
+                    writer.encode(write).await?;
                 }
 
                 Right(_timeout) => {
-                    log::info!("idle connectiond detected, sending a ping");
+                    log::info!("idle connection detected, sending a ping");
                     let ts = timestamp().to_string();
                     writer.encode(crate::commands::ping(&ts)).await?;
                     state = TimeoutState::waiting_for_pong();
                 }
 
-                // we have a dead future -- they should all be alive unless we're shutting down
                 _ => break Status::Eof,
-            };
+            }
 
             match state {
                 TimeoutState::WaitingForPong(dt) => {
@@ -255,21 +235,36 @@ impl AsyncRunner {
             }
         };
 
-        let (tx, _) = &self.quit;
         // send the quit signal
-        let _ = tx.send(()).await;
-
-        // TODO: determine if we want to wait for all writers to finish
-        // it wouldn't make much sense, twitch closes the connection as soon as
-        // it reads the QUIT message
-        //
-        // but this could 'spin' on writers (or if we don't give quit_tx to
-        // writers), or some other 'spawned' task
-        // while !self.quit_tx.is_closed() {
-        //     futures_lite::future::yield_now().await;
-        // }
+        let _ = self.quit_tx.send(()).await;
 
         Ok(status)
+    }
+
+    async fn register<W>(
+        &mut self,
+        user_config: &UserConfig,
+        writer: &mut AsyncEncoder<W>,
+    ) -> Result<(), RunnerError>
+    where
+        W: AsyncWrite + Send + Sync + Unpin,
+    {
+        for cap in &user_config.capabilities {
+            log::info!("sending capability: '{}'", cap.encode_as_str());
+        }
+
+        log::info!(
+            "sending PASS '{}' (redacted)",
+            "*".repeat(user_config.token.len())
+        );
+        log::info!("sending NICK '{}'", &user_config.name);
+
+        // register with the connection
+        writer
+            .encode(crate::commands::register(user_config))
+            .await?;
+
+        Ok(())
     }
 }
 

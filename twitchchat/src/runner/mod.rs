@@ -14,4 +14,4 @@ mod status;
 pub use status::Status;
 
 mod async_runner;
-pub use async_runner::{AsyncRunner, ConnectorSafe};
+pub use async_runner::AsyncRunner;

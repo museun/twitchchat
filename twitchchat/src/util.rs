@@ -4,6 +4,10 @@ use std::{
     task::{Context, Poll},
 };
 
+pub fn name<T>(_: &T) -> &'static str {
+    std::any::type_name::<T>()
+}
+
 pub fn timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -16,46 +20,71 @@ pub enum Either<L, R> {
     Right(R),
 }
 
-impl<L, R> Either<L, R>
+pub trait FutExt
 where
-    L: Future + Send,
-    R: Future + Send,
-    L::Output: Send,
-    R::Output: Send,
-    Self: Future<Output = Either<L::Output, R::Output>> + Send,
+    Self: Future + Send + Sync + Sized,
+    Self::Output: Send + Sync,
 {
-    pub fn pair(left: L, right: R) -> (Self, Self) {
-        (Self::Left(left), Self::Right(right))
-    }
+    fn either<F>(self, other: F) -> Or<Self, F>
+    where
+        F: Future + Send + Sync,
+        F::Output: Send + Sync;
+}
 
-    pub async fn select(left: L, right: R) -> Either<L::Output, R::Output> {
-        let (left, right) = Self::pair(left, right);
-        futures_lite::future::race(left, right).await
+impl<T> FutExt for T
+where
+    T: Future + Send + Sync,
+    T::Output: Send + Sync,
+{
+    fn either<F>(self, right: F) -> Or<Self, F>
+    where
+        F: Future + Send + Sync,
+        F::Output: Send + Sync,
+    {
+        let left = self;
+        Or { left, right }
     }
 }
 
-impl<L, R> Future for Either<L, R>
-where
-    L: Future + Send + Unpin,
-    R: Future + Send + Unpin,
-    L::Output: Send,
-    R::Output: Send,
-{
-    type Output = Either<L::Output, R::Output>;
-    fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
-        use futures_lite::{pin, ready};
+pin_project_lite::pin_project! {
+    pub struct Or<A,B> {
+        #[pin]
+        left: A,
 
-        match &mut *self.as_mut() {
-            Self::Left(left) => {
-                pin!(left);
-                let left = ready!(left.poll(ctx));
-                Poll::Ready(Either::Left(left))
-            }
-            Self::Right(right) => {
-                pin!(right);
-                let right = ready!(right.poll(ctx));
-                Poll::Ready(Either::Right(right))
-            }
+        #[pin]
+        right: B,
+    }
+}
+
+impl<A, B> Future for Or<A, B>
+where
+    A: Future + Send + Sync,
+    A::Output: Send + Sync,
+
+    B: Future + Send + Sync,
+    A::Output: Send + Sync,
+{
+    type Output = Either<A::Output, B::Output>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+
+        macro_rules! poll {
+            ($expr:ident => $map:expr) => {
+                if let Poll::Ready(t) = this.$expr.poll(cx).map($map) {
+                    return Poll::Ready(t);
+                }
+            };
         }
+
+        if fastrand::bool() {
+            poll!(left => Either::Left);
+            poll!(right => Either::Right);
+        } else {
+            poll!(right => Either::Right);
+            poll!(left => Either::Left);
+        }
+
+        Poll::Pending
     }
 }

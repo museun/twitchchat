@@ -45,8 +45,9 @@ futures-timer = "3.0.2"
 # async mutex
 async-mutex = "1.1.5"
 
-# optional runtimes (for TcpStream)
+fastrand = "1.3.4"
 
+# optional runtimes (for TcpStream)
 # these use the futures AsyncWrite+AsyncRead
 async-io  = { version = "0.1.11", optional = true }
 smol      = { version = "0.3.3", optional = true }
