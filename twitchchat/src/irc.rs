@@ -36,7 +36,7 @@ pub use error::InvalidMessage;
 mod parser;
 pub use parser::IrcParserIter;
 
-/// Parses a string and iterators an iterator over the `IrcMessages` in it.
+/// Parses a string and returns an iterator over the `IrcMessages` in it.
 ///
 /// This borrows from the input string.
 pub fn parse(input: &str) -> IrcParserIter<'_> {
