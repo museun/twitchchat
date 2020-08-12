@@ -72,3 +72,7 @@ async-executor = "0.1.2"
 [[example]]
 name = "smol_demo"
 required-features = ["smol"]
+
+[[example]]
+name = "async_std_demo"
+required-features = ["async-std", "async-std/attributes"]
