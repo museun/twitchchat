@@ -17,7 +17,7 @@ pub struct Ban<'a> {
 ///
 /// Reason is optional and will be shown to the target user and other moderators.
 ///
-/// Use [unban] to remove a ban.
+/// Use [`unban`](./fn.unban.html) to remove a ban.
 pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a str>>) -> Ban<'a> {
     Ban {
         channel,

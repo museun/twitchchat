@@ -1,9 +1,21 @@
-//! Provides `Encodable` commands.
+//! Provides [`Encodable`][encodable] commands.
 //!
-//! These can be used with an encoder, or with the `Encodable` trait directly to write typed messages.
+//! These can be used with an encoder, or with the [`Encodable`][encodable] trait directly to write typed messages.
 //!
-//! The functions in this module produce borrowed types in the `types` module. You can store the `types` for multiple-encodings.
+//! The [functions][functions] in this module produce borrowed types in the [`types`][types] module. You can store the [`types`][types] for multiple encodings.
+//!
+//! ### Some provided encoders:
+//! * [`AsyncEncoder`](../struct.AsyncEncoder.html)
+//! * [`Encoder`](../struct.Encoder.html)
+//! * [`MpscWriter`](../writer/struct.MpscWriter.html)
+//! * [`AsyncWriter`](../writer/struct.AsyncWriter.html)
+//!
+//! [functions]: ./index.html#functions
+//! [types]: ./types/index.html
+//! [encodable]: ./trait.Encodable.html
 use std::io::{Result, Write};
+
+pub use super::Encodable;
 
 macro_rules! export_commands {
     ($($ident:ident => $ty:ident)*) => {

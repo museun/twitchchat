@@ -16,7 +16,7 @@ pub struct GiveMod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./struct.Encoder.html#method.mods
+/// [mods]: ./fn.mods.html
 pub const fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
     GiveMod { channel, username }
 }

@@ -11,7 +11,9 @@ pub struct Register<'a> {
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
-/// Write the User registration to the user. This is required to be done before you do anything else.
+/// Write the User Registration to the connection.
+///
+/// This is required to be done before you do anything else.
 pub fn register(user_config: &UserConfig) -> Register<'_> {
     // TODO serde really doesn't like this type, so lets clone it
     let user_config = user_config.clone();

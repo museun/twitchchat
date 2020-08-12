@@ -18,7 +18,7 @@ pub struct Slow<'a> {
 ///
 /// Use [slow_off] to disable.
 ///
-/// [slow_off]: ./struct.Encoder.html#method.slow_off
+/// [slow_off]: ./fn.slow_off.html
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
     Slow {
         channel,

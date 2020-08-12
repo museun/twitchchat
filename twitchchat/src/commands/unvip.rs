@@ -16,7 +16,7 @@ pub struct Unvip<'a> {
 ///
 /// Use [vips] to list the VIPs of this channel.
 ///
-/// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
+/// [vips]: ./fn.vips.html
 pub const fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
     Unvip { channel, username }
 }

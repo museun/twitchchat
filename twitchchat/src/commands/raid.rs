@@ -16,7 +16,7 @@ pub struct Raid<'a> {
 ///
 /// Use [unraid] to cancel the Raid.
 ///
-/// [unraid]: ./struct.Encoder.html#method.unraid
+/// [unraid]: ./fn.unraid.html
 pub const fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
     Raid { source, target }
 }

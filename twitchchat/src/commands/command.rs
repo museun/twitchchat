@@ -3,7 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
-/// Sends the command: data (e.g. /color #FFFFFF)
+/// Sends the `command` to the `channel` (e.g. `/color #FFFFFF`)
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -12,7 +12,7 @@ pub struct Command<'a> {
     pub(crate) data: &'a str,
 }
 
-/// Sends the command: data (e.g. /color #FFFFFF)
+/// Sends the `command` to the `channel` (e.g. `/color #FFFFFF`)
 pub const fn command<'a>(channel: &'a str, data: &'a str) -> Command<'a> {
     Command { channel, data }
 }

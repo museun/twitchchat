@@ -17,6 +17,10 @@ pub struct Followers<'a> {
 /// Examples: `"30m"`, `"1 week"`, `"5 days 12 hours"`.
 ///
 /// Must be less than 3 months.
+///
+/// Use [followers_off] to disable.
+///
+/// [followers_off]: ./fn.followers_off.html
 pub const fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
     Followers { channel, duration }
 }

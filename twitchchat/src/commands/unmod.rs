@@ -16,7 +16,7 @@ pub struct Unmod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./struct.Encoder.html#methodruct.html#method.mods
+/// [mods]: ./fn.mods.html
 pub const fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
     Unmod { channel, username }
 }

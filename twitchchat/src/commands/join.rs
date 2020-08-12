@@ -3,7 +3,7 @@ use std::io::{Result, Write};
 
 use super::ByteWriter;
 
-/// Join a channel
+/// Join a channel. This handles prepending a leading '#' for you if you omit it.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
@@ -11,7 +11,7 @@ pub struct Join<'a> {
     pub(crate) channel: &'a str,
 }
 
-/// Join a channel
+/// Join a channel. This handles prepending a leading '#' for you if you omit it.
 pub const fn join(channel: &str) -> Join<'_> {
     Join { channel }
 }

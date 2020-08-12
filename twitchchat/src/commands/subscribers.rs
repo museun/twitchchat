@@ -15,7 +15,7 @@ pub struct Subscribers<'a> {
 ///
 /// Use [subscribers_off] to disable.
 ///
-/// [subscribers_off]: ./struct.Encoder.html#methodruct.html#method.subscribers_off
+/// [subscribers_off]: ./fn.subscribers_off.html
 pub const fn subscribers(channel: &str) -> Subscribers<'_> {
     Subscribers { channel }
 }

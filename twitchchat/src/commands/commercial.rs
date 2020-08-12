@@ -14,7 +14,7 @@ pub struct Commercial<'a> {
 
 /// Triggers a commercial.
 ///
-/// Length (optional) must be a positive number of seconds.
+/// Length *(optional)* must be a positive number of seconds.
 pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial<'_> {
     Commercial {
         channel,

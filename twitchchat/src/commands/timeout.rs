@@ -31,7 +31,7 @@ pub struct Timeout<'a> {
 ///
 /// Use [untimeout] to remove a timeout.
 ///
-/// [untimeout]: ./struct.Encoder.html#methodruct.html#method.untimeout
+/// [untimeout]: ./fn.untimeout.html
 pub fn timeout<'a>(
     channel: &'a str,
     username: &'a str,
