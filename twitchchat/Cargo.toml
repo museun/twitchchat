@@ -68,9 +68,9 @@ async-io = "0.1.11"
 alto_logger = "0.3.6"
 async-executor = "0.1.2"
 
-# [[example]]
-# name = "demo"
-# required-features = ["async", "tokio_native_tls"]
+[[example]]
+name = "smol_demo"
+required-features = ["smol"]
 
 # [[example]]
 # name = "wait_to_join"
