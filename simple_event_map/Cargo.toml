@@ -12,6 +12,6 @@ repository    = "https://github.com/museun/twitchchat/simple_event_map"
 documentation = "https://docs.rs/simple_event_map"
 
 [dependencies]
-async-channel    = "1.4"
-pin-project-lite = "0.1"
-futures-lite     = "0.1"
+async-channel    = "1.4.0"
+pin-project-lite = "0.1.7"
+futures-lite     = "0.1.10"
