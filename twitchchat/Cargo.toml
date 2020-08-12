@@ -76,3 +76,7 @@ required-features = ["smol"]
 [[example]]
 name = "async_std_demo"
 required-features = ["async-std", "async-std/attributes"]
+
+[[example]]
+name = "tokio_demo"
+required-features = ["tokio/full", "tokio-util"]

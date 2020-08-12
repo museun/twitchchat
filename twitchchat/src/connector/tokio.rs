@@ -21,16 +21,42 @@ impl Connector {
 }
 
 impl crate::connector::Connector for Connector {
-    type Output = tokio_util::compat::Compat<tokio::net::TcpStream>;
+    // this Mutex is required because async_dup::Arc only impls the traits for `for<'a> &'a T`
+    type Output = async_dup::Mutex<tokio_util::compat::Compat<tokio::net::TcpStream>>;
 
     fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
         let addrs = self.addrs.clone();
         let fut = async move {
             use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
             let stream = tokio::net::TcpStream::connect(&*addrs).await?;
-            Ok(stream.compat())
+            Ok(async_dup::Mutex::new(stream.compat()))
         };
         Box::pin(fut)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn assert_connector_is_futures_traits() {
+        use crate::connector::Connector as ConnectorTrait;
+        use futures_lite::{AsyncRead, AsyncWrite};
+
+        fn assert_connector<T: ConnectorTrait>() {}
+        fn assert_type_is_read_write<T: AsyncRead + AsyncWrite>() {}
+        fn assert_obj_is_sane<T>(_obj: T)
+        where
+            T: ConnectorTrait,
+            T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+            for<'a> &'a T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+        {
+        }
+
+        assert_connector::<Connector>();
+        assert_type_is_read_write::<<Connector as ConnectorTrait>::Output>();
+        assert_obj_is_sane(Connector::twitch());
     }
 }
 
@@ -74,8 +100,9 @@ mod tls {
     }
 
     impl crate::connector::Connector for ConnectorTls {
-        type Output =
-            tokio_util::compat::Compat<tokio_rustls::client::TlsStream<tokio::net::TcpStream>>;
+        type Output = async_dup::Mutex<
+            tokio_util::compat::Compat<tokio_rustls::client::TlsStream<tokio::net::TcpStream>>,
+        >;
 
         fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
             let this = self.clone();
@@ -94,10 +121,34 @@ mod tls {
 
                 let stream = tokio::net::TcpStream::connect(&*this.addrs).await?;
                 let stream = connector.connect(domain, stream).await?;
-
-                Ok(stream.compat())
+                Ok(async_dup::Mutex::new(stream.compat()))
             };
             Box::pin(fut)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn assert_connector_is_futures_traits() {
+            use crate::connector::Connector as ConnectorTrait;
+            use futures_lite::{AsyncRead, AsyncWrite};
+
+            fn assert_connector<T: ConnectorTrait>() {}
+            fn assert_type_is_read_write<T: AsyncRead + AsyncWrite>() {}
+            fn assert_obj_is_sane<T>(_obj: T)
+            where
+                T: ConnectorTrait,
+                T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+                for<'a> &'a T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+            {
+            }
+
+            assert_connector::<ConnectorTls>();
+            assert_type_is_read_write::<<ConnectorTls as ConnectorTrait>::Output>();
+            assert_obj_is_sane(ConnectorTls::twitch());
         }
     }
 }
