@@ -20,11 +20,7 @@ This crate provides a way to interface with [Twitch]'s chat.
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
-# Demonstration
-See `examples/demo.rs` for a demo of the api
-
 ---
-Here's a quick link to the [Event Mapping](./struct.Dispatcher.html#a-table-of-mappings)
 
 [Twitch]: https://www.twitch.tv
 */
