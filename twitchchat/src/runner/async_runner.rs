@@ -97,9 +97,15 @@ where
         self.quit_rx.clone()
     }
 
+    /// Wait for a specific message.
+    ///
+    /// This acts as a temporary main loop.
+    ///
+    /// You'd use this to wait for an event to come in before switching to the
+    /// 'run' style loops.
     pub async fn wait_for_ready<T>(&mut self) -> Result<T, RunnerError>
     where
-        T: ReadyMessage<'static> + Clone + Send + Sync + 'static,
+        T: ReadyMessage<'static> + Send + Sync + 'static,
         DispatchError: From<T::Error>,
     {
         self.wait_for.register::<T>();

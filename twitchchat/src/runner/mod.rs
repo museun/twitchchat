@@ -25,11 +25,14 @@ pub use async_runner::AsyncRunner;
 mod wait_for;
 use wait_for::WaitFor;
 
+/// Trait for determining if a message if one that you can wait for.
 pub trait ReadyMessage<'a>: FromIrcMessage<'a> {
     // TODO this should return which caps
+    /// Does this message require CAPs to be sent?
     fn requires_caps() -> bool {
         false
     }
+    /// The command name of the message.
     fn command() -> &'static str;
 }
 

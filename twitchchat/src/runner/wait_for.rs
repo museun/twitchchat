@@ -23,7 +23,7 @@ impl WaitFor {
 
     pub fn check_queue<T>(&mut self) -> Option<IrcMessage<'static>>
     where
-        T: ReadyMessage<'static> + 'static + Send + Sync + Clone,
+        T: ReadyMessage<'static> + 'static,
         DispatchError: From<T::Error>,
     {
         let msg = self.queue.remove(T::command())?;
