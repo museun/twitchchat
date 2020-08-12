@@ -16,6 +16,7 @@ use std::{
     future::Future,
     time::{Duration, Instant},
 };
+use util::{Notify, NotifyHandle};
 
 const WINDOW: Duration = Duration::from_secs(45);
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -30,8 +31,9 @@ where
 
     writer_rx: Receiver<Vec<u8>>,
     activity_rx: Receiver<()>,
-    quit_tx: Sender<()>,
-    quit_rx: Receiver<()>,
+
+    quit_notify: Notify,
+    quit_handle: NotifyHandle,
 
     wait_for: super::WaitFor,
 
@@ -50,13 +52,14 @@ where
     pub fn new(dispatcher: AsyncDispatcher, user_config: UserConfig, connector: C) -> Self {
         let (writer_tx, writer_rx) = channel::bounded(64);
         let (activity_tx, activity_rx) = channel::bounded(32);
-        let (quit_tx, quit_rx) = channel::bounded(1);
+
+        let (quit_notify, quit_handle) = Notify::new();
 
         let writer = MpscWriter::new(writer_tx);
         let writer = AsyncWriter::new(
             writer,
             activity_tx,
-            quit_rx.clone(),
+            quit_handle.clone(),
             None,
             NullBlocker::default(),
         );
@@ -67,8 +70,9 @@ where
 
             writer_rx,
             activity_rx,
-            quit_tx,
-            quit_rx,
+
+            quit_notify,
+            quit_handle,
 
             wait_for: super::WaitFor::default(),
 
@@ -92,9 +96,9 @@ where
         &self.dispatcher
     }
 
-    /// Get a channel you can use to have the main loop exit early.
-    pub fn quit_signal(&self) -> Receiver<()> {
-        self.quit_rx.clone()
+    /// Get a handle you can use to notify that the main loop should exit early.
+    pub fn quit_signal(&self) -> NotifyHandle {
+        self.quit_handle.clone()
     }
 
     /// Wait for a specific message.
@@ -141,25 +145,50 @@ where
         }
     }
 
+    /// Using this connector try to reconnect based on the Retry strategy
+    ///
+    /// This will act like run to completion in a loop with a configurable
+    /// criteria for when a reconnect should happen.
+    pub async fn run_with_retry<Retry, Fut>(&mut self, retry: Retry) -> Result<(), Error>
+    where
+        Retry: Fn(Result<Status, Error>) -> Fut + Send + Sync,
+        Fut: Future<Output = Result<bool, Error>> + Send + Sync,
+    {
+        self.run_with_retry_advanced(retry, |_| async move { Ok(()) }, None)
+            .await
+    }
+
     /// Using this connector, retry strategy and reset config try to reconnect
     /// based on the retry strategy.
+    ///
+    /// The Connect async closure allows you 'wait' for events before the main loop starts.
     ///
     /// This will act like run to completion in a loop with a configurable
     /// criteria for when a reconnect should happen.
     ///
     /// The reset configuration allows you to determine (and have a way to be
     /// notified when you should resubscribe, if you want to.)
-    pub async fn run_with_retry<F, R, E>(&mut self, retry: F, reset_config: E) -> Result<(), Error>
+    pub async fn run_with_retry_advanced<Retry, RetryRes, Connect, ConnectRes, Reset>(
+        &mut self,
+        retry: Retry,
+        on_connect: Connect,
+        reset_config: Reset,
+    ) -> Result<(), Error>
     where
-        F: Fn(Result<Status, Error>) -> R + Send + Sync,
-        R: Future<Output = Result<bool, Error>> + Send + Sync,
-        E: Into<Option<ResetConfig>> + Send + Sync,
+        Retry: Fn(Result<Status, Error>) -> RetryRes + Send + Sync,
+        RetryRes: Future<Output = Result<bool, Error>> + Send + Sync,
+
+        Connect: Fn(&mut Self) -> ConnectRes + Send + Sync,
+        ConnectRes: Future<Output = std::io::Result<()>> + Send + Sync,
+
+        Reset: Into<Option<ResetConfig>> + Send + Sync,
     {
         let mut reset_config = reset_config.into();
 
         loop {
-            let status = self.run_to_completion().await;
+            on_connect(self).await?;
 
+            let status = self.run_to_completion().await;
             match retry(status).await {
                 Ok(true) => {
                     // if we have a reset config, reset the handlers and send the signal
@@ -178,6 +207,8 @@ where
                 Ok(false) => break Ok(()),
                 Err(err) => break Err(err),
             }
+
+            self.stream.take();
         }
     }
 
@@ -191,15 +222,23 @@ where
 
         Self::register(&self.user_config, &mut step_state.writer).await?;
 
-        let status = loop {
+        let mut status = loop {
             match self.step(&mut step_state).await? {
                 StepResult::Continue => {}
                 StepResult::Break(done) => break done,
             }
         };
 
-        // send the quit signal
-        let _ = self.quit_tx.send(()).await;
+        // and see if we triggered it
+        match self
+            .quit_notify
+            .wait()
+            .either(futures_lite::future::ready(()))
+            .await
+        {
+            Left(_quit) => status = Status::Cancelled,
+            Right(_nope) => {}
+        }
 
         Ok(status)
     }

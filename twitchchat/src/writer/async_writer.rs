@@ -1,4 +1,6 @@
-use crate::{rate_limit::AsyncBlocker, AsyncEncoder, Encodable, RateLimit, Receiver, Sender};
+use crate::{
+    rate_limit::AsyncBlocker, util::NotifyHandle, AsyncEncoder, Encodable, RateLimit, Sender,
+};
 
 use futures_lite::AsyncWrite;
 use std::{
@@ -7,28 +9,13 @@ use std::{
 };
 
 /// An asynchronous writer that has optional rate limiting.
+#[derive(Clone)]
 pub struct AsyncWriter<W> {
     inner: AsyncEncoder<W>,
     sender: Sender<()>,
-    should_quit: Receiver<()>,
-
+    quit: NotifyHandle,
     rate_limit: Option<RateLimit>,
     blocker: Arc<dyn AsyncBlocker>,
-}
-
-impl<W> Clone for AsyncWriter<W>
-where
-    W: AsyncWrite + Unpin + Send + Sync + Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            sender: self.sender.clone(),
-            rate_limit: self.rate_limit.clone(),
-            blocker: self.blocker.clone(),
-            should_quit: self.should_quit.clone(),
-        }
-    }
 }
 
 impl<W> AsyncWriter<W>
@@ -38,7 +25,7 @@ where
     pub(crate) fn new<R, B>(
         inner: W,
         sender: Sender<()>,
-        should_quit: Receiver<()>,
+        quit: NotifyHandle,
         rate_limit: R,
         blocker: B,
     ) -> Self
@@ -51,7 +38,7 @@ where
             sender,
             rate_limit: rate_limit.into(),
             blocker: Arc::new(blocker),
-            should_quit,
+            quit,
         }
     }
 
@@ -64,7 +51,7 @@ where
         Self::new(
             self.inner.writer.clone(),
             self.sender.clone(),
-            self.should_quit.clone(),
+            self.quit.clone(),
             rate_limit.into(),
             Arc::new(blocker),
         )
@@ -97,7 +84,7 @@ where
     pub async fn quit(self) -> io::Result<()> {
         let mut this = self;
         this.encode("QUIT\r\n").await?;
-        let _ = this.should_quit.recv().await;
+        let _ = this.quit.notify().await;
         log::info!("got shutdown signal");
         Ok(())
     }

@@ -15,6 +15,33 @@ pub fn timestamp() -> u64 {
         .as_secs()
 }
 
+pub struct Notify {
+    rx: crate::channel::Receiver<()>,
+}
+
+impl Notify {
+    pub fn new() -> (Self, NotifyHandle) {
+        let (tx, rx) = crate::channel::bounded(1);
+        (Self { rx }, NotifyHandle { tx })
+    }
+
+    pub async fn wait(&mut self) {
+        use futures_lite::StreamExt as _;
+        let _ = self.rx.next().await;
+    }
+}
+
+#[derive(Clone)]
+pub struct NotifyHandle {
+    tx: crate::channel::Sender<()>,
+}
+
+impl NotifyHandle {
+    pub async fn notify(self) -> bool {
+        self.tx.send(()).await.is_ok()
+    }
+}
+
 pub enum Either<L, R> {
     Left(L),
     Right(R),
