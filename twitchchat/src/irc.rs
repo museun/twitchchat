@@ -53,8 +53,14 @@ pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), InvalidMessage>
 
     let pos = input
         .find(CRLF)
-        .ok_or_else(|| InvalidMessage::IncompleteMessage { pos: 0 })?;
+        .ok_or_else(|| InvalidMessage::IncompleteMessage { pos: 0 })?
+        + CRLF.len();
 
-    let msg = IrcMessage::parse(crate::Str::Borrowed(&input[..pos + CRLF.len()]))?;
-    Ok((pos, msg))
+    let next = &input[..pos];
+    let done = next.len() == input.len();
+
+    let msg = IrcMessage::parse(crate::Str::Borrowed(next))?;
+    Ok((if done { 0 } else { pos }, msg))
 }
+
+// TODO add a test for parse_one. it was wrong

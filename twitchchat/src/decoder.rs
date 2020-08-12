@@ -100,6 +100,11 @@ impl<R: Read> Decoder<R> {
     pub fn iter(&mut self) -> &mut Self {
         self
     }
+
+    /// Consume the decoder returning the inner Reader
+    pub fn into_inner(self) -> R {
+        self.reader.into_inner()
+    }
 }
 
 /// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
@@ -162,6 +167,11 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
         crate::irc::parse_one(str)
             .map_err(Error::ParseError)
             .map(|(_, msg)| msg)
+    }
+
+    /// Consume the decoder returning the inner Reader
+    pub fn into_inner(self) -> R {
+        self.reader.into_inner()
     }
 }
 
