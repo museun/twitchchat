@@ -66,6 +66,12 @@ pub struct Encoder<W> {
     writer: W,
 }
 
+impl<W> std::fmt::Debug for Encoder<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Encoder").finish()
+    }
+}
+
 impl<W> Encoder<W>
 where
     W: Write,

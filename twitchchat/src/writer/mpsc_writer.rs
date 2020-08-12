@@ -15,6 +15,12 @@ pub struct MpscWriter {
     channel: crate::Sender<Vec<u8>>,
 }
 
+impl std::fmt::Debug for MpscWriter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MpscWriter").finish()
+    }
+}
+
 impl Clone for MpscWriter {
     fn clone(&self) -> MpscWriter {
         Self {

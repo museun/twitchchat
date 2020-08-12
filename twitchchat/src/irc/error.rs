@@ -14,7 +14,10 @@ pub enum InvalidMessage {
     ExpectedNick,
 
     /// Expected an argument at position `pos`
-    ExpectedArg { pos: usize },
+    ExpectedArg {
+        /// 'index' of the argument (e.g. 0)
+        pos: usize,
+    },
 
     /// expected data attached to that message
     ExpectedData,

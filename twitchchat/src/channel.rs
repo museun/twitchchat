@@ -5,6 +5,7 @@ use std::{
 };
 
 /// An error on send
+#[derive(Debug)]
 pub enum TrySendError<T> {
     /// The receiver was closed
     Closed(T),
@@ -16,6 +17,12 @@ pub enum TrySendError<T> {
 #[derive(Clone)]
 pub struct Sender<T> {
     inner: async_channel::Sender<T>,
+}
+
+impl<T> std::fmt::Debug for Sender<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Sender").finish()
+    }
 }
 
 impl<T> Sender<T> {

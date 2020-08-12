@@ -4,12 +4,12 @@ use crate::*;
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum Capability<'a> {
-    // This Capability was Acknowledged
+    /// This Capability was Acknowledged
     Acknowledged(
         /// The name of the requested capability
         &'a str,
     ),
-    // This Capability was not acknowledged
+    /// This Capability was not acknowledged
     NotAcknowledged(
         /// The name of the requested capability
         &'a str,

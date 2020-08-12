@@ -18,6 +18,12 @@ pub struct AsyncWriter<W> {
     blocker: Arc<dyn AsyncBlocker>,
 }
 
+impl<W> std::fmt::Debug for AsyncWriter<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncWriter").finish()
+    }
+}
+
 impl<W> AsyncWriter<W>
 where
     W: AsyncWrite + Unpin + Send + Sync,

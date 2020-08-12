@@ -28,7 +28,7 @@ impl<'a> Prefix<'a> {
         &self.data[self.index.as_index()]
     }
 
-    // Get the nickname of this prefix, if it was sent by a user
+    /// Get the nickname of this prefix, if it was sent by a user
     pub fn get_nick(&self) -> Option<&'a str> {
         self.index.nick_index().map(|index| &self.data[index])
     }

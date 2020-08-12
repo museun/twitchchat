@@ -19,6 +19,12 @@ pub struct Notify {
     rx: crate::channel::Receiver<()>,
 }
 
+impl std::fmt::Debug for Notify {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Notify").finish()
+    }
+}
+
 impl Notify {
     pub fn new() -> (Self, NotifyHandle) {
         let (tx, rx) = crate::channel::bounded(1);
@@ -34,6 +40,12 @@ impl Notify {
 #[derive(Clone)]
 pub struct NotifyHandle {
     tx: crate::channel::Sender<()>,
+}
+
+impl std::fmt::Debug for NotifyHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NotifyHandle").finish()
+    }
 }
 
 impl NotifyHandle {

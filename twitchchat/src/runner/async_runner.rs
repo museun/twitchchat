@@ -42,6 +42,15 @@ where
     stream: Option<async_dup::Arc<C::Output>>,
 }
 
+impl<C> std::fmt::Debug for AsyncRunner<C>
+where
+    C: Connector,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncRunner").finish()
+    }
+}
+
 impl<C> AsyncRunner<C>
 where
     C: Connector + Send + Sync,
@@ -114,14 +123,16 @@ where
     {
         self.wait_for.register::<T>();
 
-        let mut should_register = false;
-        if self.stream.is_none() {
-            log::warn!("initializing stream in wait for ready");
-            let stream = self.connector.connect().await?;
-            let stream = async_dup::Arc::new(stream);
-            self.stream.replace(stream);
-            should_register = true;
-        }
+        let should_register = match self.stream {
+            Some(..) => false,
+            None => {
+                log::warn!("initializing stream in wait for ready");
+                let stream = self.connector.connect().await?;
+                let stream = async_dup::Arc::new(stream);
+                self.stream.replace(stream);
+                true
+            }
+        };
 
         let mut step_state = StepState::build(self).await;
         if should_register {

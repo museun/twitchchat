@@ -54,6 +54,12 @@ pub struct Decoder<R> {
     buf: Vec<u8>,
 }
 
+impl<R> std::fmt::Debug for Decoder<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Decoder").finish()
+    }
+}
+
 impl<R: Read> Decoder<R> {
     /// Create a new Decoder from this `std::io::Read` instance
     pub fn new(reader: R) -> Self {
@@ -116,6 +122,12 @@ impl<R: Read> Iterator for Decoder<R> {
 pub struct AsyncDecoder<R> {
     reader: AsyncBufReader<R>,
     buf: Vec<u8>,
+}
+
+impl<R> std::fmt::Debug for AsyncDecoder<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncDecoder").finish()
+    }
 }
 
 impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {

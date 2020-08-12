@@ -8,7 +8,9 @@ type IndexWidth = u16;
 /// This also is type-aliased to `StrIndex`
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct MaybeOwnedIndex {
+    /// The start index
     pub start: IndexWidth,
+    /// The end index
     pub end: IndexWidth,
 }
 

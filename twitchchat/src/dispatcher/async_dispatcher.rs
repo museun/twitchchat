@@ -12,6 +12,12 @@ pub struct AsyncDispatcher {
     system: Arc<Mutex<EventMap>>,
 }
 
+impl std::fmt::Debug for AsyncDispatcher {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncDispatcher").finish()
+    }
+}
+
 impl AsyncDispatcher {
     /// Create a new message dispatcher
     pub fn new() -> Self {

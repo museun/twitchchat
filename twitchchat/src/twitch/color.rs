@@ -80,7 +80,7 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-impl std::str::FromStr for RGB {
+impl FromStr for RGB {
     type Err = ParseError;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         let input = input.trim();
@@ -209,7 +209,7 @@ pub struct Color {
     pub rgb: RGB,
 }
 
-impl std::str::FromStr for Color {
+impl FromStr for Color {
     type Err = ParseError;
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         use TwitchColor::*;

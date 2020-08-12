@@ -68,6 +68,8 @@ impl<'a> Parser<'a> {
     }
 }
 
+/// An iterator over a `&'a str` that produces `IrcMessage<'a>`
+#[derive(Copy, Clone, Debug)]
 pub struct IrcParserIter<'a> {
     data: &'a str,
     pos: usize,

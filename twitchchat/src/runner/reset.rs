@@ -6,6 +6,12 @@ pub struct ResetConfig {
     pub(crate) reset_handlers: Sender<()>,
 }
 
+impl std::fmt::Debug for ResetConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ResetConfig").finish()
+    }
+}
+
 impl ResetConfig {
     /// User Handlers (`EventStream`s) should be reset.
     ///

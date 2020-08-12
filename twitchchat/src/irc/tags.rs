@@ -154,6 +154,7 @@ impl<'a> ::serde::Serialize for Tags<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn invalid_input_missing_leading_at() {
@@ -193,7 +194,7 @@ mod tests {
         #[derive(Debug)]
         struct Badges(std::collections::HashMap<String, usize>);
 
-        impl std::str::FromStr for Badges {
+        impl FromStr for Badges {
             type Err = std::convert::Infallible;
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 let iter = s.split_terminator(',').filter_map(|s| {

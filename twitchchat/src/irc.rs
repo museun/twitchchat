@@ -7,7 +7,9 @@ use std::convert::Infallible;
 
 /// A trait to convert an `IrcMessage` into `Self`.
 pub trait FromIrcMessage<'a>: Sized {
+    /// An error returned if this message could not be parsed.
     type Error;
+    /// This method consumes an `IrcMessage` and tries to produce an instance of `Self`
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>;
 }
 

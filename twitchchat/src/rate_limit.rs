@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+#![allow(missing_docs)] // this is because this module is getting removed soon
 /*!
 A simple leaky-bucket style token-based rate limiter
 */
