@@ -13,7 +13,7 @@ pub enum TrySendError<T> {
     Full(T),
 }
 
-/// Async and sync mpsc Sender.
+/// Async and Sync MPMP Sender.
 #[derive(Clone)]
 pub struct Sender<T> {
     inner: async_channel::Sender<T>,
@@ -48,7 +48,7 @@ impl<T> Sender<T> {
 }
 
 pin_project_lite::pin_project! {
-    /// Async and sync mpsc Receiver.
+    /// Async and Sync MPMP Receiver.
     #[derive(Clone)]
     pub struct Receiver<T> {
         #[pin]
