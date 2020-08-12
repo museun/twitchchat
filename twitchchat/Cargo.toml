@@ -25,7 +25,7 @@ log = "0.4.11"
 simple_event_map = { path = "../simple_event_map" }
 
 # serializion/deserializion support
-serde = { version = "1.0.114", optional = true, features = ["derive"] }
+serde = { version = "1.0.115", optional = true, features = ["derive"] }
 
 # just the futures traits
 futures-lite = "0.1.10"
