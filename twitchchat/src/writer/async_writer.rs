@@ -1,21 +1,14 @@
-use crate::{
-    rate_limit::AsyncBlocker, util::NotifyHandle, AsyncEncoder, Encodable, RateLimit, Sender,
-};
+use crate::{util::NotifyHandle, AsyncEncoder, Encodable, Sender};
 
 use futures_lite::AsyncWrite;
-use std::{
-    io::{self},
-    sync::Arc,
-};
+use std::io::{self};
 
-/// An asynchronous writer that has optional rate limiting.
+/// An asynchronous writer.
 #[derive(Clone)]
 pub struct AsyncWriter<W> {
     inner: AsyncEncoder<W>,
     sender: Sender<()>,
     quit: NotifyHandle,
-    rate_limit: Option<RateLimit>,
-    blocker: Arc<dyn AsyncBlocker>,
 }
 
 impl<W> std::fmt::Debug for AsyncWriter<W> {
@@ -28,60 +21,12 @@ impl<W> AsyncWriter<W>
 where
     W: AsyncWrite + Unpin + Send + Sync,
 {
-    pub(crate) fn new<R, B>(
-        inner: W,
-        sender: Sender<()>,
-        quit: NotifyHandle,
-        rate_limit: R,
-        blocker: B,
-    ) -> Self
-    where
-        R: Into<Option<RateLimit>>,
-        B: AsyncBlocker,
-    {
+    pub(crate) fn new(inner: W, sender: Sender<()>, quit: NotifyHandle) -> Self {
         Self {
             inner: AsyncEncoder::new(inner),
             sender,
-            rate_limit: rate_limit.into(),
-            blocker: Arc::new(blocker),
             quit,
         }
-    }
-
-    pub(crate) fn reconfigure<R, B>(&self, rate_limit: R, blocker: B) -> Self
-    where
-        W: Clone,
-        R: Into<Option<RateLimit>>,
-        B: AsyncBlocker,
-    {
-        Self::new(
-            self.inner.writer.clone(),
-            self.sender.clone(),
-            self.quit.clone(),
-            rate_limit.into(),
-            Arc::new(blocker),
-        )
-    }
-
-    /// Clone this writer with a new rate limiter
-    pub fn clone_with_new_rate_limit<R>(&self, rate_limit: R) -> Self
-    where
-        W: Clone,
-        R: Into<Option<RateLimit>> + Send + Sync,
-    {
-        Self {
-            rate_limit: rate_limit.into(),
-            ..self.clone()
-        }
-    }
-
-    /// Overwrites the rate limiter for this writer and any future writer cloned from this.
-    pub fn set_rate_limit<R>(&mut self, rate_limit: R)
-    where
-        R: Into<Option<RateLimit>> + Send + Sync,
-    {
-        let rate_limit = rate_limit.into();
-        self.rate_limit = rate_limit;
     }
 
     /// Consume the writer, sending a quit message.
@@ -104,13 +49,6 @@ where
     {
         self.inner.encode(msg).await?;
         let _ = self.sender.send(()).await;
-
-        if let Some(rate) = &mut self.rate_limit {
-            let fut = rate.take_async(&*self.blocker);
-            futures_lite::pin!(fut);
-            fut.await;
-        }
-
         Ok(())
     }
 
@@ -124,11 +62,6 @@ where
         for msg in msgs {
             self.inner.encode(msg).await?;
             let _ = self.sender.send(()).await;
-            if let Some(rate) = &mut self.rate_limit {
-                let fut = rate.take_async(&*self.blocker);
-                futures_lite::pin!(fut);
-                fut.await;
-            }
         }
 
         Ok(())

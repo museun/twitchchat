@@ -1,7 +1,6 @@
 use crate::{
     connector::Connector,
     messages::{Ping, Pong},
-    rate_limit::{AsyncBlocker, NullBlocker},
     runner::{Error, ReadyMessage, ResetConfig, Status},
     util::Either::{Left, Right},
     util::{timestamp, FutExt},
@@ -13,6 +12,7 @@ use futures_lite::{AsyncRead, AsyncWrite, StreamExt};
 use futures_timer::Delay;
 
 use std::{
+    collections::VecDeque,
     future::Future,
     time::{Duration, Instant},
 };
@@ -36,6 +36,8 @@ where
     quit_handle: NotifyHandle,
 
     wait_for: super::WaitFor,
+
+    rate_limit: RateLimitQueue<Vec<u8>>,
 
     user_config: UserConfig,
     connector: C,
@@ -65,13 +67,7 @@ where
         let (quit_notify, quit_handle) = Notify::new();
 
         let writer = MpscWriter::new(writer_tx);
-        let writer = AsyncWriter::new(
-            writer,
-            activity_tx,
-            quit_handle.clone(),
-            None,
-            NullBlocker::default(),
-        );
+        let writer = AsyncWriter::new(writer, activity_tx, quit_handle.clone());
 
         Self {
             dispatcher,
@@ -83,6 +79,8 @@ where
             quit_notify,
             quit_handle,
 
+            // TODO make the rate limiter configurable
+            rate_limit: RateLimitQueue::default(),
             wait_for: super::WaitFor::default(),
 
             user_config,
@@ -91,13 +89,9 @@ where
         }
     }
 
-    /// Get a **clonable** `Writer` with the provided `rate limiter` and `async blocker`
-    pub fn writer<R, B>(&self, rate_limit: R, blocker: B) -> AsyncWriter<MpscWriter>
-    where
-        R: Into<Option<RateLimit>>,
-        B: AsyncBlocker,
-    {
-        self.writer.reconfigure(rate_limit, blocker)
+    /// Get a **clonable** `Writer`.
+    pub fn writer(&self) -> AsyncWriter<MpscWriter> {
+        self.writer.clone()
     }
 
     /// Get a borrow of the dispatcher
@@ -108,6 +102,19 @@ where
     /// Get a handle you can use to notify that the main loop should exit early.
     pub fn quit_signal(&self) -> NotifyHandle {
         self.quit_handle.clone()
+    }
+
+    /// Get the current 'tickets' per 'duration' from the rate limiter
+    pub fn get_current_rate_limit(&mut self) -> (u64, Duration) {
+        let tickets = self.rate_limit.rate_limit.get_cap();
+        let period = self.rate_limit.rate_limit.get_period();
+        (tickets, period)
+    }
+
+    /// Set a custom 'tickets' per 'duration' for the rate limiter
+    pub fn set_custom_rate_limit(&mut self, tickets: u64, period: Duration) {
+        self.rate_limit.rate_limit.set_cap(tickets);
+        self.rate_limit.rate_limit.set_period(period);
     }
 
     /// Wait for a specific message.
@@ -254,7 +261,10 @@ where
         Ok(status)
     }
 
-    async fn step(&mut self, step_state: &mut StepState<C>) -> Result<StepResult, Error> {
+    async fn step(&mut self, step_state: &mut StepState<C>) -> Result<StepResult, Error>
+    where
+        <C as Connector>::Output: Unpin,
+    {
         let StepState {
             ping,
             pong,
@@ -315,7 +325,9 @@ where
             Left(Right(Some(write))) => {
                 let msg = std::str::from_utf8(&write).unwrap().escape_debug();
                 log::trace!("> {}", msg);
-                writer.encode(write).await?;
+                // TODO if we listen for Notice for 'MessageId::MsgRatelimit' we
+                // can dynamically adjust the rate limiter
+                self.rate_limit.enqueue(write, writer).await?
             }
 
             Right(_timeout) => {
@@ -438,5 +450,44 @@ impl TimeoutState {
 
     fn waiting_for_pong() -> Self {
         Self::WaitingForPong(Instant::now())
+    }
+}
+
+#[derive(Default)]
+struct RateLimitQueue<T> {
+    queue: VecDeque<T>,
+    rate_limit: rate_limit::RateLimit,
+}
+
+impl<T> RateLimitQueue<T> {
+    async fn enqueue<W>(&mut self, msg: T, enc: &mut AsyncEncoder<W>) -> std::io::Result<()>
+    where
+        W: AsyncWrite + Send + Sync + Unpin, // this is unfortunate
+        T: Encodable + Send + Sync,
+    {
+        match self.rate_limit.consume(1) {
+            // we don't have any messages queued so lets send the current one
+            Ok(_) if self.queue.is_empty() => {
+                enc.encode(msg).await?;
+            }
+            // other wise drain as much of the queue as possible
+            Ok(tokens) => {
+                log::trace!(target: "twitchchat::rate_limit", "we're draining the queue for {} items", tokens);
+                // we have 'tokens' available. so write up to that many messages
+                for msg in self.queue.drain(0..tokens as usize) {
+                    enc.encode(msg).await?;
+                }
+
+                log::trace!(target: "twitchchat::rate_limit", "enqueue new message");
+                self.queue.push_back(msg);
+            }
+            // we're limited, so enqueue the message
+            Err(dur) => {
+                log::trace!(target: "twitchchat::rate_limit", "we're limited for: {:?}. enqueuing message", dur);
+                self.queue.push_back(msg)
+            }
+        }
+
+        Ok(())
     }
 }

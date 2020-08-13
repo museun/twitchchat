@@ -1,63 +1,9 @@
-#![allow(missing_docs)] // this is because this module is getting removed soon
+#![allow(dead_code)] // TODO actually write tests for this
 /*!
 A simple leaky-bucket style token-based rate limiter
 */
-use futures_lite::future::Boxed;
-use std::{
-    sync::Arc,
-    time::{Duration, Instant},
-};
 
-pub trait AsyncBlocker: Send + Sync + 'static {
-    fn block(&self, duration: Duration) -> Boxed<()>;
-}
-
-impl<T: AsyncBlocker + Send + Sync> AsyncBlocker for &'static T {
-    fn block(&self, duration: Duration) -> Boxed<()> {
-        (*self).block(duration)
-    }
-}
-
-impl<T: AsyncBlocker + Send> AsyncBlocker for &'static mut T {
-    fn block(&self, duration: Duration) -> Boxed<()> {
-        (**self).block(duration)
-    }
-}
-
-impl<T: AsyncBlocker + Send> AsyncBlocker for Box<T> {
-    fn block(&self, duration: Duration) -> Boxed<()> {
-        (**self).block(duration)
-    }
-}
-
-impl<T: AsyncBlocker + Send + Sync> AsyncBlocker for Arc<T> {
-    fn block(&self, duration: Duration) -> Boxed<()> {
-        (**self).block(duration)
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-pub struct NullBlocker {}
-
-impl AsyncBlocker for NullBlocker {
-    fn block(&self, _: Duration) -> Boxed<()> {
-        Box::pin(async move {})
-    }
-}
-
-// struct TokioBlocker {}
-
-// impl Blocker for TokioBlocker {
-//     type F = Boxed<'static, ()>;
-//     fn block(&self, duration: Duration) -> Self::F
-//     where
-//         <Self::F as Future>::Output: Send + 'static,
-//     {
-//         Box::pin(async move {
-//             tokio::time::delay_for(duration).await;
-//         })
-//     }
-// }
+use std::time::{Duration, Instant};
 
 /// A preset number of tokens as described by Twitch
 #[non_exhaustive]
@@ -110,6 +56,26 @@ impl Default for RateLimit {
 }
 
 impl RateLimit {
+    /// Overwrite the current capacity with this value
+    pub fn set_cap(&mut self, cap: u64) {
+        self.cap = cap
+    }
+
+    /// Overwrite the current period with this value
+    pub fn set_period(&mut self, period: Duration) {
+        self.bucket.period = period;
+    }
+
+    /// Get the current capacity with this value
+    pub fn get_cap(&mut self) -> u64 {
+        self.cap
+    }
+
+    /// Get the current period with this value
+    pub fn get_period(&mut self) -> Duration {
+        self.bucket.period
+    }
+
     /// Create a rate limit from a RateClass
     pub fn from_class(rate_class: RateClass) -> Self {
         Self::full(rate_class.tickets(), RateClass::period())
@@ -173,68 +139,6 @@ impl RateLimit {
 
         let prev = bucket.tokens;
         Err(bucket.estimate(tokens - prev, now))
-    }
-
-    /// Throttle the current task, consuming a specific amount of tokens and
-    /// possibly blocking until tokens are available
-    ///
-    /// # Returns
-    /// the amount of tokens remaining
-    pub async fn throttle_async<B>(&mut self, tokens: u64, blocker: &B) -> u64
-    where
-        B: AsyncBlocker + ?Sized,
-    {
-        loop {
-            match self.consume(tokens) {
-                Ok(rem) => return rem,
-                Err(time) => {
-                    log::debug!("blocking for: {:.3?}", time);
-                    blocker.block(time).await;
-                }
-            }
-        }
-    }
-
-    /// Throttle the current task, consuming a specific amount of tokens and
-    /// possibly blocking until tokens are available
-    ///
-    /// # Returns
-    /// the amount of tokens remaining
-    pub fn throttle<F>(&mut self, tokens: u64, blocker: F) -> u64
-    where
-        F: Fn(Duration),
-    {
-        loop {
-            match self.consume(tokens) {
-                Ok(rem) => return rem,
-                Err(time) => {
-                    log::debug!("blocking for: {:.3?}", time);
-                    blocker(time)
-                }
-            }
-        }
-    }
-
-    /// Take a single token, returning how many are available
-    ///
-    /// This'll block the task if none are available
-    #[inline]
-    pub async fn take_async<B>(&mut self, blocker: &B) -> u64
-    where
-        B: AsyncBlocker + ?Sized,
-    {
-        self.throttle_async(1, blocker).await
-    }
-
-    /// Take a single token, returning how many are available
-    ///
-    /// This'll block the task if none are available
-    #[inline]
-    pub fn take<F>(&mut self, blocker: F) -> u64
-    where
-        F: Fn(Duration),
-    {
-        self.throttle(1, blocker)
     }
 }
 

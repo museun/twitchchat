@@ -4,7 +4,7 @@
 // `futures_lite` or `futures` would work. you'd just need the `StreamExt` trait to iterate over `EventStream`
 use futures_lite::*;
 
-use twitchchat::{commands, connector, messages, rate_limit::NullBlocker, runner::Status};
+use twitchchat::{commands, connector, messages, runner::Status};
 
 fn expect_env_var(key: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| panic!("please set `{}`", key))
@@ -69,8 +69,8 @@ async fn main() {
 
     // create a new runner. this is a provided async 'main loop'
     let mut runner = twitchchat::AsyncRunner::new(dispatcher, user_config, connector);
-    // which'll let you get a writer out. this'll let you pass in a rate limiter and a blocking strategy.
-    let mut writer = runner.writer(None, NullBlocker::default());
+    // which'll let you get a writer out.
+    let mut writer = runner.writer();
 
     async_std::task::spawn({
         let mut writer = writer.clone();

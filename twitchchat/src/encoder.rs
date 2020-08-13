@@ -176,6 +176,7 @@ where
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
         M: Encodable + Send + Sync,
+        W: Unpin,
     {
         msg.encode(&mut self.data)?;
         let data = &self.data[self.pos..];
@@ -191,7 +192,7 @@ where
 
 impl<W> AsyncWrite for AsyncEncoder<W>
 where
-    W: AsyncWrite + Send + Sync + Unpin,
+    W: AsyncWrite + Send + Sync,
 {
     fn poll_write(
         self: Pin<&mut Self>,
