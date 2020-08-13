@@ -2,6 +2,8 @@ use futures_lite::{AsyncWrite, AsyncWriteExt};
 use std::{
     io::{Result as IoResult, Write},
     pin::Pin,
+    rc::Rc,
+    sync::Arc,
     task::{Context, Poll},
 };
 
@@ -43,22 +45,22 @@ impl Encodable for String {
     }
 }
 
-impl Encodable for [u8] {
-    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
-    where
-        W: Write + ?Sized,
-    {
-        buf.write_all(self)
-    }
+macro_rules! encodable_byte_slice {
+    ($($ty:ty)*) => {
+        $(impl Encodable for $ty {
+            fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
+                buf.write_all(self)
+            }
+        })*
+    };
 }
 
-impl Encodable for Vec<u8> {
-    fn encode<W>(&self, buf: &mut W) -> IoResult<()>
-    where
-        W: Write + ?Sized,
-    {
-        buf.write_all(self)
-    }
+encodable_byte_slice! {
+    [u8]
+    Box<[u8]>
+    Rc<[u8]>
+    Arc<[u8]>
+    Vec<u8>
 }
 
 /// A synchronous encoder

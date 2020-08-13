@@ -29,7 +29,7 @@ where
     dispatcher: AsyncDispatcher,
     writer: AsyncWriter<MpscWriter>,
 
-    writer_rx: Receiver<Vec<u8>>,
+    writer_rx: Receiver<Box<[u8]>>,
     activity_rx: Receiver<()>,
 
     quit_notify: Notify,
@@ -37,7 +37,7 @@ where
 
     wait_for: super::WaitFor,
 
-    rate_limit: RateLimitQueue<Vec<u8>>,
+    rate_limit: RateLimitQueue<Box<[u8]>>,
 
     user_config: UserConfig,
     connector: C,
