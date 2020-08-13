@@ -50,14 +50,16 @@ impl EventMap {
     where
         T: Clone + Send + Sync + 'static,
     {
+        // this ensures the index/unwrap below will always succeed
         if self.is_empty::<T>() {
             return false;
         }
 
-        let handlers = match self.get_senders::<T>() {
-            Some(handlers) => handlers,
-            None => return false,
-        };
+        let handlers = self.inner[&TypeId::of::<T>()].iter().map(|(id, sender)| {
+            // the type will always be valid, we don't expose the map
+            let sender = sender.downcast_ref::<Sender<T>>().unwrap();
+            (*id, sender)
+        });
 
         let mut bad = BTreeSet::new();
         for (id, handler) in handlers {
@@ -144,17 +146,37 @@ pub struct Senders<'a, T: Send + Sync + 'static> {
 impl<'a, T: Send + Sync + 'static> Iterator for Senders<'a, T> {
     type Item = (Id, Sender<T>);
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().and_then(|(id, d)| {
-            // TODO this should assert that it still exists
-            let sender = d.downcast_ref::<Sender<T>>().cloned()?;
-            Some((*id, sender))
-        })
+        let (id, sender) = self.inner.next()?;
+        // because we control the map, users cannot insert a non 'Sender<T>', so this unwrap is safe
+        let sender = sender.downcast_ref::<Sender<T>>().cloned().unwrap();
+        Some((*id, sender))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn event_map_senders_iter() {
+        let mut map = EventMap::new();
+        let _strings = map.register_iter::<&'static str>();
+        let mut a = map.register_iter::<i32>();
+        let mut b = map.register_iter::<i32>();
+
+        assert!(map.get_senders::<usize>().is_none());
+
+        for (_, sender) in map.get_senders::<i32>().unwrap() {
+            sender.send(42).unwrap();
+        }
+
+        assert_eq!(a.next().unwrap(), 42);
+        assert_eq!(b.next().unwrap(), 42);
+
+        assert!(a.next().is_none());
+        assert!(b.next().is_none());
+    }
+
     #[test]
     fn event_map_async() {
         futures_lite::future::block_on(async move {
