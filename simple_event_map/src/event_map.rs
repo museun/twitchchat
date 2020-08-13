@@ -30,12 +30,7 @@ impl EventMap {
     where
         T: Clone + Send + Sync + 'static,
     {
-        let (tx, rx) = crate::channel::unbounded();
-        self.inner
-            .entry(TypeId::of::<T>())
-            .or_default()
-            .push((Id(self.id), Box::new(tx)));
-        self.id += 1;
+        let rx = self.register::<T>();
         EventStream { inner: rx }
     }
 
@@ -44,12 +39,7 @@ impl EventMap {
     where
         T: Clone + Send + Sync + 'static,
     {
-        let (tx, rx) = crate::channel::unbounded();
-        self.inner
-            .entry(TypeId::of::<T>())
-            .or_default()
-            .push((Id(self.id), Box::new(tx)));
-        self.id += 1;
+        let rx = self.register::<T>();
         EventIter { inner: rx }
     }
 
@@ -60,7 +50,7 @@ impl EventMap {
     where
         T: Clone + Send + Sync + 'static,
     {
-        if self.active::<T>() == 0 {
+        if self.is_empty::<T>() {
             return false;
         }
 
@@ -127,6 +117,19 @@ impl EventMap {
             // inverted so we remove them
             inner.retain(|(id, _)| !values.remove(id))
         }
+    }
+
+    fn register<T>(&mut self) -> async_channel::Receiver<T>
+    where
+        T: Clone + Send + Sync + 'static,
+    {
+        let (tx, rx) = crate::channel::unbounded();
+        self.inner
+            .entry(TypeId::of::<T>())
+            .or_default()
+            .push((Id(self.id), Box::new(tx)));
+        self.id += 1;
+        rx
     }
 }
 
