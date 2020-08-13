@@ -220,10 +220,7 @@ serde_for_commands! {
 }
 
 #[cfg(test)]
-fn test_encode(
-    enc: impl super::Encodable,
-    expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug,
-) {
+fn test_encode(enc: impl Encodable, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug) {
     let mut data = vec![];
     enc.encode(&mut data).unwrap();
     assert_eq!(expected, std::str::from_utf8(&data).unwrap());
@@ -232,7 +229,7 @@ fn test_encode(
 #[cfg(all(test, feature = "serde"))]
 fn test_serde<'de, T>(enc: T, expected: impl for<'a> PartialEq<&'a str> + std::fmt::Debug)
 where
-    T: super::Encodable + PartialEq + std::fmt::Debug,
+    T: Encodable + PartialEq + std::fmt::Debug,
     T: ::serde::Serialize + ::serde::Deserialize<'de>,
 {
     let json = serde_json::to_string_pretty(&enc).unwrap();
