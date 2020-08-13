@@ -4,12 +4,12 @@
 //!
 //! To use..
 //!
-//! | Read/Write provider | features |
-//! | --- | --- |
-//! | [`async_io`](https://docs.rs/async-io/latest/async_io/) |`async-io` |
-//! | [`smol`](https://docs.rs/smol/latest/smol/) |`smol` |
-//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) |`async-std` |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/) |`tokio` and `tokio-util` |
+//! | Read/Write provider                                        | Features                |
+//! | ---                                                        | ---                     |
+//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    |`async-io`               |
+//! | [`smol`](https://docs.rs/smol/latest/smol/)                |`smol`                   |
+//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) |`async-std`              |
+//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             |`tokio` and `tokio-util` |
 //!
 //! ## TLS
 //!
@@ -17,12 +17,12 @@
 //!
 //! Enable the above runtime and also enable the cooresponding features:
 //!
-//! | Read/Write provider | features |
-//! | --- | --- |
-//! | [`async_io`](https://docs.rs/async-io/latest/async_io/) |`async-tls` |
-//! | [`smol`](https://docs.rs/smol/latest/smol/) |`async-tls` |
-//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) |`async-tls` |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/) | `tokio-rustls` and `webpki-roots` |
+//! | Read/Write provider                                        | Runtime     | Features                                        |
+//! | ---                                                        | ---         | ---                                             |
+//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `async-tls`                                     |
+//! | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `async-tls`                                     |
+//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `async-tls`                                     |
+//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `tokio-util`, `tokio-rustls` and `webpki-roots` |
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 
@@ -82,5 +82,28 @@ where
             std::io::ErrorKind::ConnectionRefused,
             "cannot connect with any provided address",
         )),
+    }
+}
+
+mod required {
+    #[cfg(all(
+        feature = "async-tls",
+        not(any(feature = "async-io", feature = "async-std", feature = "smol"))
+    ))]
+    compile_error! {
+        "'async-io' or 'async-std' or 'smol' must be enabled when 'async-tls' is enabled"
+    }
+
+    #[cfg(all(feature = "tokio", not(feature = "tokio-util")))]
+    compile_error! {
+        "'tokio-util' must be enabled when 'tokio' is enabled"
+    }
+
+    #[cfg(all(
+        feature = "tokio-rustls",
+        not(all(feature = "tokio", feature = "tokio-util", feature = "webpki-roots"))
+    ))]
+    compile_error! {
+        "'tokio', 'tokio-util' and 'webpki-roots' must be enabled when 'tokio-rustls' is enabled"
     }
 }

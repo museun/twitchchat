@@ -60,10 +60,10 @@ mod tests {
     }
 }
 
-#[cfg(feature = "tokio-rustls")]
+#[cfg(all(feature = "tokio-rustls", feature = "webpki-roots"))]
 pub use tls::*;
 
-#[cfg(feature = "tokio-rustls")]
+#[cfg(all(feature = "tokio-rustls", feature = "webpki-roots"))]
 mod tls {
     use super::*;
 
