@@ -18,7 +18,7 @@ pub use maybe_owned_index::MaybeOwnedIndex;
 pub enum MaybeOwned<'a> {
     /// Owned variant, a `Box<str>`. This usually means it has a `'static` lifetime
     Owned(Box<str>),
-    /// Borrowed variant, a `&'a str`. This means it has a `'a' lifetime
+    /// Borrowed variant, a `&'a str`. This means it has a `'a` lifetime
     Borrowed(&'a str),
 }
 
