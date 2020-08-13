@@ -25,6 +25,8 @@ impl SyncDispatcher {
     pub fn subscribe<T>(&mut self) -> EventIter<T>
     where
         T: Send + Sync + Clone + 'static,
+        T: FromIrcMessage<'static>,
+        DispatchError: From<T::Error>,
     {
         self.map.lock().unwrap().register_iter()
     }
@@ -33,6 +35,8 @@ impl SyncDispatcher {
     pub fn subscribe_system<T>(&mut self) -> EventIter<T>
     where
         T: Send + Sync + Clone + 'static,
+        T: FromIrcMessage<'static>,
+        DispatchError: From<T::Error>,
     {
         self.system.lock().unwrap().register_iter()
     }
@@ -41,14 +45,17 @@ impl SyncDispatcher {
     pub fn dispatch(&mut self, message: IrcMessage<'_>) -> Result<(), DispatchError> {
         use IrcMessage as M;
 
-        let msg = message.into_owned();
+        let mut map = self.map.lock().unwrap();
+        let mut system = self.system.lock().unwrap();
+
         macro_rules! dispatch {
             ($ty:ty) => {
-                self.dispatch_static::<$ty>(msg)?
+                return Self::dispatch_static::<$ty, _>(message, &mut system, &mut map);
             };
         }
 
-        match msg.get_command() {
+        // and then conditionally dispatch these
+        match message.get_command() {
             M::IRC_READY => dispatch!(IrcReady),
             M::READY => dispatch!(Ready),
             M::CAP => dispatch!(Cap),
@@ -67,18 +74,12 @@ impl SyncDispatcher {
             M::USER_NOTICE => dispatch!(UserNotice),
             M::USER_STATE => dispatch!(UserState),
             M::WHISPER => dispatch!(Whisper),
-            _ => {
-                // TODO user-defined messages
-
-                self.dispatch_static::<IrcMessage>(msg.clone())
-                    .expect("identity conversion should be upheld");
-
-                self.dispatch_static::<AllCommands>(msg)
-                    .expect("identity conversion should be upheld");
-            }
+            _ => {}
         };
 
-        Ok(())
+        // we should always dispatch these 2
+        Self::dispatch_static::<AllCommands, _>(&message, &mut system, &mut map)?;
+        Self::dispatch_static::<IrcMessage, _>(message, &mut system, &mut map)
     }
 
     /// Reset the dispatcher, this will cause all `EventStreams` previously produce via subscription to eventually return None.
@@ -90,23 +91,40 @@ impl SyncDispatcher {
         self.map.lock().unwrap().reset()
     }
 
-    fn dispatch_static<T>(&mut self, message: IrcMessage<'static>) -> Result<(), DispatchError>
+    fn dispatch_static<'a, T, O>(
+        message: O,
+        system: &mut EventMap,
+        map: &mut EventMap,
+    ) -> Result<(), DispatchError>
     where
+        O: IntoOwned<'a, Output = IrcMessage<'static>>,
         T: FromIrcMessage<'static>,
         T: Send + Sync + Clone + 'static,
         DispatchError: From<T::Error>,
     {
-        let msg = T::from_irc(message)?;
-
-        {
-            let mut system = self.system.lock().unwrap();
-            // only clone if we're actually listening for it
-            if !system.is_empty::<T>() {
-                system.send(msg.clone());
-            }
+        let (want_system, want_map) = (!system.is_empty::<T>(), !map.is_empty::<T>());
+        // no one is listening, so don't even parse it
+        if !want_system && !want_map {
+            return Ok(());
         }
 
-        self.map.lock().unwrap().send(msg);
+        let message = message.into_owned();
+        let msg = T::from_irc(message)?;
+
+        match (want_system, want_map) {
+            (true, true) => {
+                system.send(msg.clone());
+                map.send(msg);
+            }
+            (true, false) => {
+                system.send(msg);
+            }
+            (false, true) => {
+                map.send(msg);
+            }
+            _ => {}
+        };
+
         Ok(())
     }
 }

@@ -28,6 +28,8 @@ impl AsyncDispatcher {
     pub async fn subscribe<T>(&self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
+        T: FromIrcMessage<'static>,
+        DispatchError: From<T::Error>,
     {
         self.map.lock().await.register_stream()
     }
@@ -36,6 +38,8 @@ impl AsyncDispatcher {
     pub async fn subscribe_system<T>(&self) -> EventStream<T>
     where
         T: Send + Sync + Clone + 'static,
+        T: FromIrcMessage<'static>,
+        DispatchError: From<T::Error>,
     {
         self.system.lock().await.register_stream()
     }
@@ -47,24 +51,14 @@ impl AsyncDispatcher {
         let mut map = self.map.lock().await;
         let mut system = self.system.lock().await;
 
-        let msg = message.into_owned();
         macro_rules! dispatch {
             ($ty:ty) => {
-                Self::dispatch_static::<$ty>(msg, &mut system, &mut map)?
+                return Self::dispatch_static::<$ty, _>(message, &mut system, &mut map);
             };
         }
 
-        if Self::has_any_listener::<IrcMessage>(&system, &map) {
-            Self::dispatch_static::<IrcMessage>(msg.clone(), &mut system, &mut map)
-                .expect("identity conversion should be upheld");
-        }
-
-        if Self::has_any_listener::<AllCommands>(&system, &map) {
-            Self::dispatch_static::<AllCommands>(msg.clone(), &mut system, &mut map)
-                .expect("identity conversion should be upheld");
-        }
-
-        match msg.get_command() {
+        // and then conditionally dispatch these
+        match message.get_command() {
             M::IRC_READY => dispatch!(IrcReady),
             M::READY => dispatch!(Ready),
             M::CAP => dispatch!(Cap),
@@ -83,12 +77,12 @@ impl AsyncDispatcher {
             M::USER_NOTICE => dispatch!(UserNotice),
             M::USER_STATE => dispatch!(UserState),
             M::WHISPER => dispatch!(Whisper),
-            _ => {
-                // TODO user-defined messages
-            }
+            _ => {}
         };
 
-        Ok(())
+        // we should always dispatch these 2
+        Self::dispatch_static::<AllCommands, _>(&message, &mut system, &mut map)?;
+        Self::dispatch_static::<IrcMessage, _>(message, &mut system, &mut map)
     }
 
     /// Reset the dispatcher, this will cause all `EventStreams` previously produce via subscription to eventually return None.
@@ -100,30 +94,39 @@ impl AsyncDispatcher {
         self.map.lock().await.reset()
     }
 
-    fn has_any_listener<T: 'static>(system: &EventMap, map: &EventMap) -> bool {
-        !system.is_empty::<T>() || !map.is_empty::<T>()
-    }
-
-    fn dispatch_static<T>(
-        message: IrcMessage<'static>,
+    fn dispatch_static<'a, T, O>(
+        message: O,
         system: &mut EventMap,
         map: &mut EventMap,
     ) -> Result<(), DispatchError>
     where
+        O: IntoOwned<'a, Output = IrcMessage<'static>>,
         T: FromIrcMessage<'static>,
         T: Send + Sync + Clone + 'static,
         DispatchError: From<T::Error>,
     {
+        let (want_system, want_map) = (!system.is_empty::<T>(), !map.is_empty::<T>());
+        // no one is listening, so don't even parse it
+        if !want_system && !want_map {
+            return Ok(());
+        }
+
+        let message = message.into_owned();
         let msg = T::from_irc(message)?;
 
-        // only clone if we're actually listening for it
-        if !system.is_empty::<T>() {
-            system.send(msg.clone());
-        }
-
-        if !map.is_empty::<T>() {
-            map.send(msg);
-        }
+        match (want_system, want_map) {
+            (true, true) => {
+                system.send(msg.clone());
+                map.send(msg);
+            }
+            (true, false) => {
+                system.send(msg);
+            }
+            (false, true) => {
+                map.send(msg);
+            }
+            _ => {}
+        };
 
         Ok(())
     }

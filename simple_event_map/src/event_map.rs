@@ -109,7 +109,7 @@ impl EventMap {
         self.id = 0;
     }
 
-    pub(crate) fn remove<T: 'static>(&mut self, mut values: BTreeSet<Id>) {
+    fn remove<T: 'static>(&mut self, mut values: BTreeSet<Id>) {
         if values.is_empty() {
             // quick path because remove is called every dispatch
             return;
