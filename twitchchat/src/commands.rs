@@ -76,72 +76,6 @@ export_commands! {
     whisper         => Whisper
 }
 
-struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
-impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
-    fn new(writer: &'a mut W) -> Self {
-        Self(writer)
-    }
-
-    fn channel(&mut self, data: impl AsRef<[u8]>) -> Result<()> {
-        let data = data.as_ref();
-        if !data.starts_with(b"#") {
-            self.0.write_all(b"#")?;
-        }
-        self.0.write_all(data)
-    }
-
-    fn write_bytes(self, data: impl AsRef<[u8]>) -> Result<()> {
-        self.0.write_all(data.as_ref())?;
-        self.endline()
-    }
-
-    fn endline(self) -> Result<()> {
-        self.0.write_all(b"\r\n")
-    }
-
-    fn parts_term(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        parts
-            .iter()
-            .map(|p| self.0.write_all(p.as_ref()))
-            .collect::<Result<()>>()?;
-        self.endline()
-    }
-
-    fn parts(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        parts
-            .iter()
-            .filter_map(|p| {
-                let part = p.as_ref();
-                if part.is_empty() {
-                    None
-                } else {
-                    Some(part)
-                }
-            })
-            .enumerate()
-            .map(|(i, part)| {
-                if i > 0 {
-                    self.0.write_all(b" ")?;
-                }
-                self.0.write_all(part.as_ref())
-            })
-            .collect::<Result<()>>()?;
-        self.endline()
-    }
-
-    fn jtv_command(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        self.0.write_all(b"PRIVMSG jtv :")?;
-        self.parts(parts)
-    }
-
-    fn command(mut self, channel: impl AsRef<[u8]>, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        self.0.write_all(b"PRIVMSG ")?;
-        self.channel(channel)?;
-        self.0.write_all(b" :")?;
-        self.parts(parts)
-    }
-}
-
 macro_rules! serde_for_commands {
     (@one $($x:tt)*) => { () };
     (@len $($e:expr),*) => { <[()]>::len(&[$(serde_for_commands!(@one $e)),*]); };
@@ -217,6 +151,72 @@ serde_for_commands! {
     Vip { channel, username };
     Vips { channel };
     Whisper { username, message };
+}
+
+struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
+impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
+    fn new(writer: &'a mut W) -> Self {
+        Self(writer)
+    }
+
+    fn channel(&mut self, data: impl AsRef<[u8]>) -> Result<()> {
+        let data = data.as_ref();
+        if !data.starts_with(b"#") {
+            self.0.write_all(b"#")?;
+        }
+        self.0.write_all(data)
+    }
+
+    fn write_bytes(self, data: impl AsRef<[u8]>) -> Result<()> {
+        self.0.write_all(data.as_ref())?;
+        self.endline()
+    }
+
+    fn endline(self) -> Result<()> {
+        self.0.write_all(b"\r\n")
+    }
+
+    fn parts_term(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
+        parts
+            .iter()
+            .map(|p| self.0.write_all(p.as_ref()))
+            .collect::<Result<()>>()?;
+        self.endline()
+    }
+
+    fn parts(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
+        parts
+            .iter()
+            .filter_map(|p| {
+                let part = p.as_ref();
+                if part.is_empty() {
+                    None
+                } else {
+                    Some(part)
+                }
+            })
+            .enumerate()
+            .map(|(i, part)| {
+                if i > 0 {
+                    self.0.write_all(b" ")?;
+                }
+                self.0.write_all(part.as_ref())
+            })
+            .collect::<Result<()>>()?;
+        self.endline()
+    }
+
+    fn jtv_command(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
+        self.0.write_all(b"PRIVMSG jtv :")?;
+        self.parts(parts)
+    }
+
+    fn command(mut self, channel: impl AsRef<[u8]>, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
+        self.0.write_all(b"PRIVMSG ")?;
+        self.channel(channel)?;
+        self.0.write_all(b" :")?;
+        self.parts(parts)
+    }
 }
 
 #[cfg(test)]
