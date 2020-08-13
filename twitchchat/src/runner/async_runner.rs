@@ -55,9 +55,8 @@ where
 
 impl<C> AsyncRunner<C>
 where
-    C: Connector + Send + Sync,
-    C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
-    for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+    C: Connector,
+    for<'a> &'a C::Output: AsyncRead + AsyncWrite + Send + Sync,
 {
     /// Create a new async runner with this dispatcher
     pub fn new(dispatcher: AsyncDispatcher, user_config: UserConfig, connector: C) -> Self {
@@ -261,10 +260,7 @@ where
         Ok(status)
     }
 
-    async fn step(&mut self, step_state: &mut StepState<C>) -> Result<StepResult, Error>
-    where
-        <C as Connector>::Output: Unpin,
-    {
+    async fn step(&mut self, step_state: &mut StepState<C>) -> Result<StepResult, Error> {
         let StepState {
             ping,
             pong,
@@ -390,6 +386,7 @@ where
 struct StepState<C>
 where
     C: Connector,
+    for<'a> &'a C::Output: AsyncRead + AsyncWrite + Sync + Send,
 {
     ping: EventStream<Ping<'static>>,
     pong: EventStream<Pong<'static>>,
@@ -403,8 +400,7 @@ where
 impl<C> StepState<C>
 where
     C: Connector,
-    C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
-    for<'a> &'a C::Output: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+    for<'a> &'a C::Output: AsyncRead + AsyncWrite + Send + Sync,
 {
     async fn build(runner: &mut AsyncRunner<C>) -> Self {
         let stream = runner
