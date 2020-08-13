@@ -131,8 +131,53 @@ impl<'a> Tags<'a> {
     }
 
     /// Get an iterator over all of the `key, value` pairs of tags
-    pub fn iter(&self) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
-        self.indices.iter(self.data)
+    pub fn iter(&self) -> TagsIter<'_> {
+        TagsIter {
+            inner: self,
+            pos: 0,
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a Tags<'a> {
+    type Item = (&'a str, &'a str);
+    type IntoIter = TagsIter<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        TagsIter {
+            inner: &self,
+            pos: 0,
+        }
+    }
+}
+
+/// An iterator over the Tags
+#[derive(Clone)]
+pub struct TagsIter<'a> {
+    inner: &'a Tags<'a>,
+    pos: usize,
+}
+
+impl<'a> std::fmt::Debug for TagsIter<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagsIter").finish()
+    }
+}
+
+impl<'a> Iterator for TagsIter<'a> {
+    type Item = (&'a str, &'a str);
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos > self.inner.indices.len() {
+            return None;
+        }
+
+        let pos = self.pos;
+        self.pos += 1;
+
+        self.inner
+            .indices
+            .map
+            .get(pos)
+            .map(|&(k, v)| (&self.inner.data[k], &self.inner.data[v]))
     }
 }
 
@@ -241,6 +286,25 @@ mod tests {
             assert_eq!(tags.get("foo").unwrap(), "bar");
             assert_eq!(tags.get("baz").unwrap(), "");
             assert!(tags.get("non-existant").is_none());
+        }
+    }
+
+    #[test]
+    fn tags_iter() {
+        let inputs = &[
+            "@foo=bar;baz=",
+            "@baz=;foo=bar",
+            "@foo=bar;baz=;quux=asdf",
+            "@baz=;quux=asdf;foo=bar",
+        ];
+
+        for input in inputs {
+            let data = Str::Borrowed(*input);
+            let indices = TagIndices::build_indices(&*data);
+            let tags = Tags::from_data_indices(&data, &indices);
+
+            let v = tags.into_iter().collect::<Vec<_>>();
+            assert_eq!(v.len(), input.chars().filter(|&c| c == ';').count() + 1);
         }
     }
 

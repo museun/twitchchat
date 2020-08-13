@@ -5,7 +5,7 @@ use crate::{IntoOwned, StrIndex};
 /// This type is only exposed for those wanting to extend/make custom types.
 #[derive(Default, Clone, PartialEq)]
 pub struct TagIndices {
-    map: Box<[(StrIndex, StrIndex)]>,
+    pub(super) map: Box<[(StrIndex, StrIndex)]>,
 }
 
 impl std::fmt::Debug for TagIndices {
@@ -77,7 +77,7 @@ impl TagIndices {
         self.len() == 0
     }
 
-    // NOTE these 2 aren't public because they don't verify 'data' is the same as the built-indices data
+    // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
     pub(crate) fn get<'a>(&'a self, key: &str, data: &'a str) -> Option<&'a str> {
         self.map.iter().find_map(|(k, v)| {
             if key == &data[k] {
@@ -86,13 +86,6 @@ impl TagIndices {
                 None
             }
         })
-    }
-    // NOTE these 2 aren't public because they don't verify 'data' is the same as the built-indices data
-    pub(crate) fn iter<'a>(
-        &'a self,
-        data: &'a str,
-    ) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
-        self.map.iter().map(move |(k, v)| (&data[k], &data[v]))
     }
 }
 
