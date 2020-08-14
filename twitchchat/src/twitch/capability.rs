@@ -33,4 +33,14 @@ impl Capability {
             Self::ChatRooms => "CAP REQ :twitch.tv/tags twitch.tv/commands",
         }
     }
+
+    pub(crate) fn maybe_from_str(s: &str) -> Option<Self> {
+        match s {
+            "twitch.tv/membership" => Some(Self::Membership),
+            "twitch.tv/tags" => Some(Self::Tags),
+            "twitch.tv/commands" => Some(Self::Commands),
+            "twitch.tv/tags twitch.tv/commands" => Some(Self::ChatRooms),
+            _ => None,
+        }
+    }
 }

@@ -68,6 +68,9 @@ where
         let writer = MpscWriter::new(writer_tx);
         let writer = AsyncWriter::new(writer, activity_tx, quit_handle.clone());
 
+        let mut wait_for = super::WaitFor::default();
+        wait_for.are_we_anonymous = user_config.is_anonymous();
+
         Self {
             dispatcher,
             writer,
@@ -80,7 +83,7 @@ where
 
             // TODO make the rate limiter configurable
             rate_limit: RateLimitQueue::default(),
-            wait_for: super::WaitFor::default(),
+            wait_for,
 
             user_config,
             connector,
@@ -127,12 +130,19 @@ where
         T: ReadyMessage<'static> + Send + Sync + 'static,
         DispatchError: From<T::Error>,
     {
-        self.wait_for.register::<T>();
+        log::debug!(
+            "registering to wait for '{}'",
+            crate::util::trim_type_name::<T>()
+        );
+        self.wait_for.register::<T>()?;
 
-        let should_register = match self.stream {
-            Some(..) => false,
-            None => {
-                log::warn!("initializing stream in wait for ready");
+        let should_register = match self.stream.is_some() {
+            true => false,
+            false => {
+                log::debug!(
+                    "initializing stream in wait_for_ready ({})",
+                    crate::util::trim_type_name::<T>(),
+                );
                 let stream = self.connector.connect().await?;
                 let stream = async_dup::Arc::new(stream);
                 self.stream.replace(stream);
@@ -146,17 +156,37 @@ where
         }
 
         loop {
-            if let Some(msg) = self.wait_for.check_queue::<T>() {
-                return T::from_irc(msg)
-                    .map_err(DispatchError::from)
-                    .map_err(Into::into);
+            match self.wait_for.check_queue::<T>() {
+                runner::wait_for::CapsStatus::RequiredCap(cap) => {
+                    log::error!(
+                        "we reached ready state, but we will never get this message ('{}') because the '{:?}' capability isn't acknowledged", 
+                        crate::util::trim_type_name::<T>(),
+                        cap
+                    );
+                    return Err(RunnerError::RequiredCaps(
+                        cap,
+                        crate::util::trim_type_name::<T>(),
+                    ));
+                }
+
+                runner::wait_for::CapsStatus::Seen(msg) => {
+                    log::debug!("done waiting for '{}'", crate::util::trim_type_name::<T>(),);
+                    return T::from_irc(msg)
+                        .map_err(DispatchError::from)
+                        .map_err(Into::into);
+                }
+
+                runner::wait_for::CapsStatus::NotSeen => {}
             }
 
-            log::warn!("stepping in wait for ready");
             match self.step(&mut step_state).await? {
                 StepResult::Continue => {}
+                // we got a break signal for an error, report it
                 StepResult::Break(_) => {
-                    // this is an error
+                    log::warn!("breaking out of a wait_for_message -- this means the connection was closed early.");
+                    return Err(RunnerError::WaitForMessage(
+                        crate::util::trim_type_name::<T>(),
+                    ));
                 }
             }
         }
@@ -231,13 +261,22 @@ where
 
     /// Using this connector, run the loop to completion.
     pub async fn run_to_completion(&mut self) -> Result<Status, Error> {
-        let stream = self.connector.connect().await?;
-        let stream = async_dup::Arc::new(stream);
+        let should_register = match self.stream.is_some() {
+            true => false,
+            false => {
+                log::debug!("initializing stream in run_to_completion",);
+                let stream = self.connector.connect().await?;
+                let stream = async_dup::Arc::new(stream);
+                self.stream.replace(stream);
+                true
+            }
+        };
 
-        self.stream.replace(stream);
         let mut step_state = StepState::build(self).await;
 
-        Self::register(&self.user_config, &mut step_state.writer).await?;
+        if should_register {
+            Self::register(&self.user_config, &mut step_state.writer).await?;
+        }
 
         let mut status = loop {
             match self.step(&mut step_state).await? {
@@ -291,8 +330,6 @@ where
                 };
 
                 self.wait_for.maybe_add(&msg);
-
-                log::trace!("dispatching: {}", util::name(&msg));
                 self.dispatcher.dispatch(msg).await?;
                 *state = TimeoutState::Activity(Instant::now())
             }

@@ -29,8 +29,8 @@ use wait_for::WaitFor;
 pub trait ReadyMessage<'a>: FromIrcMessage<'a> {
     // TODO this should return which caps
     /// Does this message require CAPs to be sent?
-    fn requires_caps() -> bool {
-        false
+    fn required_cap() -> Option<crate::Capability> {
+        None
     }
     /// The command name of the message.
     fn command() -> &'static str;
@@ -49,6 +49,10 @@ impl<'a> ReadyMessage<'a> for Ready<'a> {
 }
 
 impl<'a> ReadyMessage<'a> for GlobalUserState<'a> {
+    fn required_cap() -> Option<crate::Capability> {
+        Some(crate::Capability::Tags)
+    }
+
     fn command() -> &'static str {
         IrcMessage::GLOBAL_USER_STATE
     }
