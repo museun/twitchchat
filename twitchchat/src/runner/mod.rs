@@ -20,10 +20,13 @@ mod status;
 pub use status::Status;
 
 mod async_runner;
-pub use async_runner::AsyncRunner;
+pub use async_runner::{AsyncRunner, ChannelError};
 
 mod wait_for;
 use wait_for::WaitFor;
+
+mod rate_limit;
+use rate_limit::RateLimitedChannels;
 
 /// Trait for determining if a message if one that you can wait for.
 pub trait ReadyMessage<'a>: FromIrcMessage<'a> {
