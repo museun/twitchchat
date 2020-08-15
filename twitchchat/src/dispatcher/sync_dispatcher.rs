@@ -54,6 +54,10 @@ impl SyncDispatcher {
             };
         }
 
+        // we should always dispatch these 2
+        Self::dispatch_static::<AllCommands, _>(&message, &mut system, &mut map)?;
+        Self::dispatch_static::<IrcMessage, _>(&message, &mut system, &mut map)?;
+
         // and then conditionally dispatch these
         match message.get_command() {
             M::IRC_READY => dispatch!(IrcReady),
@@ -77,9 +81,7 @@ impl SyncDispatcher {
             _ => {}
         };
 
-        // we should always dispatch these 2
-        Self::dispatch_static::<AllCommands, _>(&message, &mut system, &mut map)?;
-        Self::dispatch_static::<IrcMessage, _>(message, &mut system, &mut map)
+        Ok(())
     }
 
     /// Reset the dispatcher, this will cause all `EventStreams` previously produce via subscription to eventually return None.

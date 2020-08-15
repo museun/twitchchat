@@ -80,6 +80,8 @@ pub enum Either<L, R> {
     Right(R),
 }
 
+pub use Either::{Left, Right};
+
 pub trait FutExt
 where
     Self: Future + Send + Sync + Sized,
@@ -138,11 +140,11 @@ where
         }
 
         if fastrand::bool() {
-            poll!(left => Either::Left);
-            poll!(right => Either::Right);
+            poll!(left => Left);
+            poll!(right => Right);
         } else {
-            poll!(right => Either::Right);
-            poll!(left => Either::Left);
+            poll!(right => Right);
+            poll!(left => Left);
         }
 
         Poll::Pending

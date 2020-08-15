@@ -10,7 +10,9 @@ pub enum Error {
     RequiredCaps(crate::Capability, &'static str),
     /// There was an error while waiting for a message
     WaitForMessage(&'static str),
-    /// There was a dispatch error
+    /// Invalid connection
+    InvalidConnection,
+    /// There was a dispatch error    
     Dispatch(DispatchError),
     /// There was a decode error
     Decode(DecodeError),
@@ -31,6 +33,7 @@ impl std::fmt::Display for Error {
                 "connection closed before message of '{}' was received",
                 ty
             ),
+            Self::InvalidConnection => write!(f, "twitch never gave us your username"),
             Self::Dispatch(err) => write!(f, "dispatching error: {}", err),
             Self::Decode(err) => write!(f, "decoding error: {}", err),
             Self::Io(err) => write!(f, "i/o error: {}", err),

@@ -67,12 +67,12 @@ impl RateLimit {
     }
 
     /// Get the current capacity with this value
-    pub fn get_cap(&mut self) -> u64 {
+    pub fn get_cap(&self) -> u64 {
         self.cap
     }
 
     /// Get the current period with this value
-    pub fn get_period(&mut self) -> Duration {
+    pub fn get_period(&self) -> Duration {
         self.bucket.period
     }
 
@@ -114,6 +114,25 @@ impl RateLimit {
             cap,
             bucket: Bucket::new(cap, 0, period),
         }
+    }
+
+    /// Get the current available tokens
+    pub fn get_available_tokens(&self) -> u64 {
+        self.bucket.tokens
+    }
+
+    /// Tries to get the current RateClass.
+    pub fn get_current_rate_class(&self) -> Option<RateClass> {
+        const DUR: Duration = Duration::from_secs(30);
+
+        let class = match (self.get_cap(), self.get_period()) {
+            (20, DUR) => RateClass::Regular,
+            (50, DUR) => RateClass::Known,
+            (100, DUR) => RateClass::Moderator,
+            (7500, DUR) => RateClass::Verified,
+            _ => return None,
+        };
+        Some(class)
     }
 
     /// Consume a specific ammount of tokens

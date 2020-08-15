@@ -12,6 +12,13 @@ pub struct WaitFor {
 }
 
 impl WaitFor {
+    pub fn new(are_we_anonymous: bool) -> Self {
+        Self {
+            are_we_anonymous,
+            ..Default::default()
+        }
+    }
+
     pub fn register<T>(&mut self) -> Result<(), crate::RunnerError>
     where
         T: ReadyMessage<'static>,
