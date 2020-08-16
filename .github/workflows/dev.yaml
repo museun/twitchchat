@@ -35,17 +35,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Test all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
+
+      - name: Test all features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --all-features
 
   windows:
     name: Windows
@@ -71,17 +71,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Test all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
+
+      - name: Test all features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --all-features
 
   macos:
     name: MacOS
@@ -105,14 +105,14 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Test all features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --all-features
-
       - name: Test no default features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
+
+      - name: Test all features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --all-features
