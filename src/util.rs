@@ -58,6 +58,7 @@ impl Notify {
     }
 }
 
+/// A notify handle for sending a single-shot signal to the 'other side'
 #[derive(Clone)]
 pub struct NotifyHandle {
     tx: crate::channel::Sender<()>,
@@ -70,6 +71,9 @@ impl std::fmt::Debug for NotifyHandle {
 }
 
 impl NotifyHandle {
+    /// Consumes the handle, notifying the other side.
+    ///
+    /// Returns false if the other side wasn't around any more
     pub async fn notify(self) -> bool {
         self.tx.send(()).await.is_ok()
     }
