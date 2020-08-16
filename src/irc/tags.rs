@@ -141,7 +141,9 @@ impl<'a> Tags<'a> {
 
 impl<'a> IntoIterator for &'a Tags<'a> {
     type Item = (&'a str, &'a str);
+
     type IntoIter = TagsIter<'a>;
+
     fn into_iter(self) -> Self::IntoIter {
         TagsIter {
             inner: self,
