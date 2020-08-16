@@ -64,8 +64,8 @@ alto_logger    = "0.3.6"
 async-executor = "0.1.2"
 anyhow = "*"
 
-# [[example]]
-# name = "message_parse"
+[[example]]
+name = "message_parse"
 
 # [[example]]
 # name = "smol_demo"
