@@ -12,7 +12,7 @@ use crate::{
 use super::{
     channel::Channels,
     timeout::{TimeoutState, TIMEOUT, WINDOW},
-    Capabilities, Channel, Error, Identity,
+    Capabilities, Channel, Error, Identity, Status, StepResult,
 };
 
 use futures_lite::{AsyncRead, AsyncWrite, AsyncWriteExt};
@@ -199,7 +199,7 @@ impl AsyncRunner {
     }
 
     /// Get the next message. you'll usually want to call this in a loop
-    pub async fn next_message(&mut self) -> Result<Status, Error> {
+    pub async fn next_message(&mut self) -> Result<Status<'static>, Error> {
         loop {
             match self.step().await? {
                 StepResult::Nothing => continue,
@@ -209,7 +209,7 @@ impl AsyncRunner {
     }
 
     /// Single step the loop. This is useful for testing.
-    pub async fn step(&mut self) -> Result<StepResult, Error> {
+    pub async fn step(&mut self) -> Result<StepResult<'static>, Error> {
         use crate::util::*;
         use crate::IntoOwned as _;
 
@@ -373,7 +373,7 @@ impl AsyncRunner {
     }
 }
 
-type WaitFor<T> = Either<VecDeque<T>, Status>;
+type WaitFor<T> = Either<VecDeque<T>, Status<'static>>;
 
 impl AsyncRunner {
     async fn wait_for_cmd<F, T, E>(&mut self, extract: F, cmp: E) -> Result<(), Error>
@@ -549,17 +549,4 @@ impl AsyncRunner {
 
         Ok(identity)
     }
-}
-
-#[derive(Debug)]
-pub enum StepResult {
-    Status(Status),
-    Nothing,
-}
-
-#[derive(Debug)]
-pub enum Status {
-    Message(AllCommands<'static>),
-    Quit,
-    Eof,
 }

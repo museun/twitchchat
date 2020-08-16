@@ -3,6 +3,9 @@
 mod async_runner;
 pub use async_runner::AsyncRunner;
 
+mod status;
+pub use status::{Status, StepResult};
+
 mod capabilities;
 pub use capabilities::Capabilities;
 
@@ -17,3 +20,6 @@ mod timeout;
 
 mod channel;
 pub use channel::Channel;
+
+#[doc(inline)]
+pub use crate::util::NotifyHandle;
