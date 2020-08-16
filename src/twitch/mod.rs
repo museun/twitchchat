@@ -14,9 +14,6 @@ pub use badge::{Badge, BadgeInfo, BadgeKind};
 
 pub mod color;
 
-mod channel;
-pub use channel::{Channel, Error as ChannelError, IntoChannel};
-
 pub(crate) fn parse_emotes(input: &str) -> Vec<Emotes> {
     Emotes::parse(input).collect()
 }
