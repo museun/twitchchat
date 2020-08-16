@@ -71,8 +71,8 @@ pub use irc::FromIrcMessage;
 mod validator;
 pub use validator::Validator;
 
-pub mod twitch;
-#[doc(hidden)]
+mod twitch;
+#[doc(inline)]
 pub use twitch::*;
 
 use twitch::color::Color;
