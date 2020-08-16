@@ -36,17 +36,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Test no default features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --no-default-features
+
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Test no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
 
   windows:
     name: Windows
@@ -72,17 +72,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Test no default features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --no-default-features
+
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Test no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
 
   macos:
     name: MacOS
@@ -106,17 +106,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Test no default features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --target ${{ matrix.target }} --no-default-features
+
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
-
-      - name: Test no default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --target ${{ matrix.target }} --no-default-features --manifest-path twitchchat/Cargo.toml
 # jobs:
 #   linux:
 #     name: Linux
