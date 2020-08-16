@@ -21,7 +21,7 @@ macro_rules! export_commands {
     ($($ident:ident => $ty:ident)*) => {
         /// Concrete types produced by the functions in the `commands` module.
         ///
-        /// e.g. join("#museun") -> Join<'_> (where its borrowed from the input `&str`)
+        /// e.g. `join("#museun") -> Join<'_>` (where its borrowed from the input `&str`)
         pub mod types {
             $( pub use super::$ident::$ty; )*
         }
