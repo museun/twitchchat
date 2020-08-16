@@ -64,17 +64,17 @@ alto_logger    = "0.3.6"
 async-executor = "0.1.2"
 anyhow = "*"
 
-[[example]]
-name = "message_parse"
+# [[example]]
+# name = "message_parse"
 
-[[example]]
-name = "smol_demo"
-required-features = ["smol"]
+# [[example]]
+# name = "smol_demo"
+# required-features = ["smol"]
 
-[[example]]
-name = "async_std_demo"
-required-features = ["async-std", "async-std/attributes"]
+# [[example]]
+# name = "async_std_demo"
+# required-features = ["async-std", "async-std/attributes"]
 
-[[example]]
-name = "tokio_demo"
-required-features = ["tokio/full", "tokio-util"]
+# [[example]]
+# name = "tokio_demo"
+# required-features = ["tokio/full", "tokio-util"]

@@ -61,7 +61,6 @@ mod tests {
             "CAP REQ :twitch.tv/membership\r\n\
             CAP REQ :twitch.tv/tags\r\n\
             CAP REQ :twitch.tv/commands\r\n\
-            CAP REQ :twitch.tv/tags twitch.tv/commands\r\n\
             PASS justinfan1234\r\n\
             NICK justinfan1234\r\n",
         )
@@ -81,7 +80,6 @@ mod tests {
             "CAP REQ :twitch.tv/membership\r\n\
             CAP REQ :twitch.tv/tags\r\n\
             CAP REQ :twitch.tv/commands\r\n\
-            CAP REQ :twitch.tv/tags twitch.tv/commands\r\n\
             PASS justinfan1234\r\n\
             NICK justinfan1234\r\n",
         )
