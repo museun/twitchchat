@@ -6,10 +6,18 @@ use std::{
 };
 
 /// A channel that you are on.
+///
+/// This is exposed for 'advanced' users who want to modify the rate limiter.
+///
+/// # Warning
+/// You shouldn't need to touch this unless you have a good reason to do so.
+/// Improperly using this could result in Twitch disconnecting you, at best and
+/// a ban at worst.
 pub struct Channel {
     pub(crate) name: String,
     pub(crate) rate_limited: RateLimitedEncoder,
     pub(crate) previous: Option<PreviousRate>,
+    pub(crate) rated_limited_at: Option<std::time::Instant>,
 }
 
 impl std::fmt::Debug for Channel {
@@ -29,12 +37,14 @@ impl Channel {
             name,
             rate_limited,
             previous: None,
+            rated_limited_at: None,
         }
     }
 
     /// Set the `RateClass` for this channel
     pub fn set_rate_class(&mut self, rate_class: RateClass) {
         self.rate_limited.rate_limit = RateLimit::from_class(rate_class);
+        self.rated_limited_at.take();
     }
 
     /// Mark this channel as being under slow mode for `duration`
@@ -51,7 +61,6 @@ impl Channel {
     /// Mark this channel as not being in slow mode
     pub fn disable_slow_mode(&mut self) {
         let PreviousRate { cap, period } = self.previous.take().unwrap_or_default();
-
         let rate = &mut self.rate_limited.rate_limit;
         rate.set_cap(cap);
         rate.set_period(period);
@@ -60,12 +69,14 @@ impl Channel {
     /// Mark that you've been rate limited on this channel
     pub fn set_rate_limited(&mut self) {
         self.rate_limited.rate_limit.set_cap(1);
+        self.rated_limited_at.replace(std::time::Instant::now());
     }
 
     /// Reset to the default rate class
     pub fn reset_rate_limit(&mut self) {
         let PreviousRate { cap, period } = self.previous.take().unwrap_or_default();
         self.rate_limited.rate_limit = RateLimit::full(cap, period);
+        self.rated_limited_at.take();
     }
 }
 

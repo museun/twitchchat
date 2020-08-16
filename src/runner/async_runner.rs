@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     channel::Channels,
-    timeout::{TimeoutState, TIMEOUT, WINDOW},
+    timeout::{TimeoutState, RATE_LIMIT_WINDOW, TIMEOUT, WINDOW},
     Capabilities, Channel, Error, Identity, Status, StepResult,
 };
 
@@ -316,11 +316,12 @@ impl AsyncRunner {
                     if !self.channels.is_on(ch) {
                         self.channels.add(ch)
                     }
-                    self.channels
-                        .get_mut(ch)
-                        .unwrap()
-                        .rate_limited
-                        .enqueue(write_data)
+
+                    let ch = self.channels.get_mut(ch).unwrap();
+                    if ch.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
+                        ch.reset_rate_limit();
+                    }
+                    ch.rate_limited.enqueue(write_data)
                 }
             }
 
@@ -429,6 +430,10 @@ impl AsyncRunner {
 
         // for each channel, try to take up to 'limit' tokens
         for channel in self.channels.map.values_mut() {
+            if channel.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
+                channel.reset_rate_limit();
+            }
+
             // drain until we're out of messages, or tokens
             channel
                 .rate_limited
