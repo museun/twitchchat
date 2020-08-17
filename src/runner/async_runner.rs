@@ -198,11 +198,20 @@ impl AsyncRunner {
         Ok(())
     }
 
-    /// Get the next message. you'll usually want to call this in a loop
+    /// Get the next message. You'll usually want to call this in a loop
     pub async fn next_message(&mut self) -> Result<Status<'static>, Error> {
         loop {
             match self.step().await? {
                 StepResult::Nothing => continue,
+                StepResult::Status(status @ Status::Quit) => {
+                    while self.available_queued_messages() > 0 {
+                        self.drain_queued_messages().await?;
+                        futures_lite::future::yield_now().await;
+                    }
+
+                    self.encoder.encode(commands::raw("QUIT\r\n")).await?;
+                    break Ok(status);
+                }
                 StepResult::Status(status) => break Ok(status),
             }
         }
@@ -436,6 +445,14 @@ impl AsyncRunner {
                 StepResult::Nothing => futures_lite::future::yield_now().await,
             }
         }
+    }
+
+    fn available_queued_messages(&self) -> usize {
+        self.channels
+            .map
+            .values()
+            .map(|s| s.rate_limited.queue.len())
+            .sum()
     }
 
     async fn drain_queued_messages(&mut self) -> std::io::Result<()> {

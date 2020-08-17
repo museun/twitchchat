@@ -29,17 +29,6 @@ where
         }
     }
 
-    /// Consume the writer, sending a quit message.
-    ///
-    /// This will cause the main loop to exit. This blocks until the quit signal has been received.
-    pub async fn quit(self) -> io::Result<()> {
-        let mut this = self;
-        this.encode("QUIT\r\n").await?;
-        let _ = this.quit.notify().await;
-        log::info!("received the shutdown signal");
-        Ok(())
-    }
-
     /// Encode this `Encodable` message to the writer.
     ///
     /// This flushes the data before returning
