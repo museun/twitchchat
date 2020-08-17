@@ -57,12 +57,10 @@ tokio-rustls = { version = "0.14.0", optional = true }
 webpki-roots = { version = "0.20.0", optional = true }
 
 [dev-dependencies]
-doc-comment    = "0.3.3"
-serde_json     = "1.0.57"
-async-io       = "0.1.11"
-alto_logger    = "0.3.6"
-async-executor = "0.1.2"
 anyhow         = "1.0.32"
+async-executor = { version = "0.1.2", default-features = false }
+doc-comment    = "0.3.3"
+serde_json     = { version = "1.0.57", default-features = false, features = ["alloc"] }
 
 [[example]]
 name = "message_parse"
