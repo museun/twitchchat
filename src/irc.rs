@@ -4,7 +4,6 @@
 //!
 //! This provides a _Twitch-flavored_ IRC parser and types.
 use crate::Str;
-use std::convert::Infallible;
 
 /// A trait to convert an `IrcMessage` into `Self`.
 pub trait FromIrcMessage<'a>: Sized {
