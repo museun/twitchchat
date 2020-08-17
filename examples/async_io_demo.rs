@@ -1,4 +1,4 @@
-// NOTE: this demo requires `--feature smol`.
+// NOTE: this demo requires `--feature async-io`.
 use anyhow::Context;
 
 use twitchchat::{
@@ -37,9 +37,9 @@ fn channels_to_join() -> anyhow::Result<Vec<String>> {
 }
 
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
-    // create a connector using ``smol``, this connects to Twitch.
+    // create a connector using ``async_io``, this connects to Twitch.
     // you can provide a different address with `custom`
-    let connector = connector::smol::Connector::twitch();
+    let connector = connector::async_io::Connector::twitch();
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'
@@ -141,12 +141,12 @@ fn main() -> anyhow::Result<()> {
         let mut writer = runner.writer();
 
         // spawn something off in the background that'll exit in 10 seconds
-        smol::Task::spawn({
+        async_executor::Task::spawn({
             let mut writer = writer.clone();
             let channels = channels.clone();
             async move {
                 println!("in 10 seconds we'll exit");
-                smol::Timer::new(std::time::Duration::from_secs(10)).await;
+                async_io::Timer::new(std::time::Duration::from_secs(10)).await;
 
                 // send one final message to all channels
                 for channel in channels {
@@ -170,5 +170,6 @@ fn main() -> anyhow::Result<()> {
         main_loop(runner).await
     };
 
-    smol::run(fut)
+    // any executor would work, we'll use async_executor so can spawn tasks
+    async_executor::Executor::new().run(fut)
 }

@@ -1,4 +1,4 @@
-// NOTE: this demo requires `--feature smol`.
+// NOTE: this demo requires `--features="tokio/full tokio-util"`.
 use anyhow::Context;
 
 use twitchchat::{
@@ -37,9 +37,9 @@ fn channels_to_join() -> anyhow::Result<Vec<String>> {
 }
 
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
-    // create a connector using ``smol``, this connects to Twitch.
+    // create a connector using ``tokio``, this connects to Twitch.
     // you can provide a different address with `custom`
-    let connector = connector::smol::Connector::twitch();
+    let connector = connector::tokio::Connector::twitch();
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'
@@ -124,51 +124,47 @@ async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn main() -> anyhow::Result<()> {
-    let fut = async move {
-        // create a user configuration
-        let user_config = get_user_config()?;
-        // get some channels to join from the environment
-        let channels = channels_to_join()?;
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // create a user configuration
+    let user_config = get_user_config()?;
+    // get some channels to join from the environment
+    let channels = channels_to_join()?;
 
-        // connect and join the provided channels
-        let runner = connect(&user_config, &channels).await?;
+    // connect and join the provided channels
+    let runner = connect(&user_config, &channels).await?;
 
-        // you can get a handle to shutdown the runner
-        let quit_handle = runner.quit_handle();
+    // you can get a handle to shutdown the runner
+    let quit_handle = runner.quit_handle();
 
-        // you can get a clonable writer
-        let mut writer = runner.writer();
+    // you can get a clonable writer
+    let mut writer = runner.writer();
 
-        // spawn something off in the background that'll exit in 10 seconds
-        smol::Task::spawn({
-            let mut writer = writer.clone();
-            let channels = channels.clone();
-            async move {
-                println!("in 10 seconds we'll exit");
-                smol::Timer::new(std::time::Duration::from_secs(10)).await;
+    // spawn something off in the background that'll exit in 10 seconds
+    tokio::spawn({
+        let mut writer = writer.clone();
+        let channels = channels.clone();
+        async move {
+            println!("in 10 seconds we'll exit");
+            tokio::time::delay_for(std::time::Duration::from_secs(10)).await;
 
-                // send one final message to all channels
-                for channel in channels {
-                    let cmd = commands::privmsg(&channel, "goodbye, world");
-                    writer.encode(cmd).await.unwrap();
-                }
-
-                println!("sending quit signal");
-                quit_handle.notify().await;
+            // send one final message to all channels
+            for channel in channels {
+                let cmd = commands::privmsg(&channel, "goodbye, world");
+                writer.encode(cmd).await.unwrap();
             }
-        })
-        .detach();
 
-        // you can encode all sorts of 'commands'
-        writer
-            .encode(commands::privmsg("#museun", "hello world!"))
-            .await?;
+            println!("sending quit signal");
+            quit_handle.notify().await;
+        }
+    });
 
-        println!("starting main loop");
-        // your 'main loop'. you'll just call next_message() until you're done
-        main_loop(runner).await
-    };
+    // you can encode all sorts of 'commands'
+    writer
+        .encode(commands::privmsg("#museun", "hello world!"))
+        .await?;
 
-    smol::run(fut)
+    println!("starting main loop");
+    // your 'main loop'. you'll just call next_message() until you're done
+    main_loop(runner).await
 }

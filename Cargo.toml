@@ -69,10 +69,14 @@ name = "message_parse"
 name = "smol_demo"
 required-features = ["smol"]
 
-# [[example]]
-# name = "async_std_demo"
-# required-features = ["async-std", "async-std/attributes"]
+[[example]]
+name = "async_io_demo"
+required-features = ["async-io"]
 
-# [[example]]
-# name = "tokio_demo"
-# required-features = ["tokio/full", "tokio-util"]
+[[example]]
+name = "async_std_demo"
+required-features = ["async-std", "async-std/attributes"]
+
+[[example]]
+name = "tokio_demo"
+required-features = ["tokio/full", "tokio-util"]
