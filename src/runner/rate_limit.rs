@@ -22,7 +22,7 @@ impl RateLimitedEncoder {
         while let Some(data) = self.queue.pop_front() {
             match self.rate_limit.consume(1) {
                 Ok(..) => {
-                    *limit -= 1;
+                    *limit = limit.saturating_sub(1);
                     log::trace!(
                         target: "twitchchat::encoder",
                         "> {}",

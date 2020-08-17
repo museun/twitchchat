@@ -110,6 +110,7 @@ impl<R: Read> Decoder<R> {
 /// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
 impl<R: Read> Iterator for Decoder<R> {
     type Item = Result<IrcMessage<'static>, Error>;
+
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_message() {
             Err(Error::Eof) => None,

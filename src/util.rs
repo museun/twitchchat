@@ -1,4 +1,5 @@
 #![allow(dead_code)] // some of these won't be used for now
+use futures_lite::future::{ready, Ready};
 use std::{
     future::Future,
     pin::Pin,
@@ -36,8 +37,10 @@ pub fn timestamp() -> u64 {
         .as_secs()
 }
 
+// TODO if we make this clonable it can be used in the Writers
 pub struct Notify {
     rx: crate::channel::Receiver<()>,
+    triggered: bool,
 }
 
 impl std::fmt::Debug for Notify {
@@ -49,12 +52,22 @@ impl std::fmt::Debug for Notify {
 impl Notify {
     pub fn new() -> (Self, NotifyHandle) {
         let (tx, rx) = crate::channel::bounded(1);
-        (Self { rx }, NotifyHandle { tx })
+        let this = Self {
+            rx,
+            triggered: false,
+        };
+        (this, NotifyHandle { tx })
     }
 
     pub async fn wait(&mut self) {
+        // cache the wait
+        if self.triggered {
+            return;
+        }
+
         use futures_lite::StreamExt as _;
         let _ = self.rx.next().await;
+        self.triggered = true;
     }
 }
 
@@ -95,6 +108,13 @@ where
     where
         F: Future + Send + Sync,
         F::Output: Send + Sync;
+
+    fn first<F>(self, other: F) -> Or<Self, F>
+    where
+        F: Future + Send + Sync,
+        F::Output: Send + Sync;
+
+    fn now_or_never(self) -> Or<Self, Ready<()>>;
 }
 
 impl<T> FutExt for T
@@ -108,7 +128,28 @@ where
         F::Output: Send + Sync,
     {
         let left = self;
-        Or { left, right }
+        Or {
+            left,
+            right,
+            biased: false,
+        }
+    }
+
+    fn first<F>(self, right: F) -> Or<Self, F>
+    where
+        F: Future + Send + Sync,
+        F::Output: Send + Sync,
+    {
+        let left = self;
+        Or {
+            left,
+            right,
+            biased: true,
+        }
+    }
+
+    fn now_or_never(self) -> Or<Self, Ready<()>> {
+        self.first(ready(()))
     }
 }
 
@@ -119,6 +160,8 @@ pin_project_lite::pin_project! {
 
         #[pin]
         right: B,
+
+        biased: bool,
     }
 }
 
@@ -141,6 +184,12 @@ where
                     return Poll::Ready(t);
                 }
             };
+        }
+
+        if *this.biased {
+            poll!(left => Left);
+            poll!(right => Right);
+            return Poll::Pending;
         }
 
         if fastrand::bool() {

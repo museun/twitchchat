@@ -67,6 +67,11 @@ impl<T> Receiver<T> {
         self.inner.recv().await.ok()
     }
 
+    /// Close the receiver
+    pub fn close(&self) -> bool {
+        self.inner.close()
+    }
+
     /// Synchronously receives an item
     ///
     /// If this returns None, the Sender was closed

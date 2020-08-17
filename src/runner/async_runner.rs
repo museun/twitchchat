@@ -85,11 +85,7 @@ impl AsyncRunner {
         let (notify, notify_handle) = Notify::new();
         let (activity_tx, activity_rx) = crate::channel::bounded(32);
 
-        let writer = AsyncWriter::new(
-            MpscWriter::new(writer_tx),
-            activity_tx,
-            notify_handle.clone(),
-        );
+        let writer = AsyncWriter::new(MpscWriter::new(writer_tx), activity_tx);
 
         let timeout_state = TimeoutState::Start;
         let (channels, missed_messages) = <_>::default();
@@ -200,17 +196,29 @@ impl AsyncRunner {
 
     /// Get the next message. You'll usually want to call this in a loop
     pub async fn next_message(&mut self) -> Result<Status<'static>, Error> {
+        use crate::util::{Either::*, FutExt as _};
+
         loop {
             match self.step().await? {
                 StepResult::Nothing => continue,
-                StepResult::Status(status @ Status::Quit) => {
-                    while self.available_queued_messages() > 0 {
-                        self.drain_queued_messages().await?;
-                        futures_lite::future::yield_now().await;
-                    }
+                StepResult::Status(Status::Quit) => {
+                    if let Left(_notified) = self.notify.wait().now_or_never().await {
+                        // close everything
+                        self.writer_rx.close();
+                        self.activity_rx.close();
 
-                    self.encoder.encode(commands::raw("QUIT\r\n")).await?;
-                    break Ok(status);
+                        // and then drain any remaining items
+                        while self.available_queued_messages() > 0 {
+                            self.drain_queued_messages().await?;
+                            futures_lite::future::yield_now().await;
+                        }
+
+                        // and finally send the quit
+                        self.encoder.encode(commands::raw("QUIT\r\n")).await?;
+
+                        // and signal that we've quit
+                        break Ok(Status::Quit);
+                    }
                 }
                 StepResult::Status(status) => break Ok(status),
             }
@@ -226,14 +234,17 @@ impl AsyncRunner {
             return Ok(StepResult::Status(Status::Message(msg)));
         }
 
-        let read = self.decoder.read_message();
-        let select = FutExt::either(read, self.activity_rx.recv())
+        let select = self
+            .decoder
+            .read_message()
+            .either(self.activity_rx.recv())
             .either(self.writer_rx.recv())
+            .either(self.notify.wait())
             .either(super::timeout::next_delay())
             .await;
 
         match select {
-            Left(Left(Left(msg))) => {
+            Left(Left(Left(Left(msg)))) => {
                 let msg = match msg {
                     Err(DecodeError::Eof) => {
                         log::info!("got an EOF, exiting main loop");
@@ -257,15 +268,13 @@ impl AsyncRunner {
                 return Ok(StepResult::Status(Status::Message(all)));
             }
 
-            Left(Left(Right(Some(_activity)))) => {
+            Left(Left(Left(Right(Some(_activity))))) => {
                 self.timeout_state = TimeoutState::activity();
             }
 
-            Left(Right(Some(write_data))) => {
-                // TODO parse a 'bytes' flavored parser
+            Left(Left(Right(Some(write_data)))) => {
+                // TODO provide a 'bytes' flavored parser
                 let msg = std::str::from_utf8(&*write_data).map_err(Error::InvalidUtf8)?;
-                // log::warn!("> {}", msg.escape_debug());
-
                 let msg = crate::IrcMessage::parse(crate::Str::Borrowed(msg))
                     .expect("encoder should produce valid IRC messages");
 
@@ -279,15 +288,13 @@ impl AsyncRunner {
                         if ch.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
                             ch.reset_rate_limit();
                         }
-                        // log::error!(
-                        //     "enqueue '{}' on '{}'",
-                        //     msg.get_raw().escape_debug(),
-                        //     ch.name
-                        // );
+
                         ch.rate_limited.enqueue(write_data)
                     }
                 }
             }
+
+            Left(Right(_notified)) => return Ok(StepResult::Status(Status::Quit)),
 
             Right(_timeout) => {
                 log::info!("idle connection detected, sending a ping");
@@ -296,7 +303,9 @@ impl AsyncRunner {
                 self.timeout_state = TimeoutState::waiting_for_pong();
             }
 
-            _ => return Ok(StepResult::Status(Status::Eof)),
+            _ => {
+                return Ok(StepResult::Status(Status::Eof));
+            }
         }
 
         match self.timeout_state {
@@ -319,20 +328,6 @@ impl AsyncRunner {
 
         log::trace!("draining messages");
         self.drain_queued_messages().await?;
-
-        match self
-            .notify
-            .wait()
-            .either(futures_lite::future::ready(()))
-            .await
-        {
-            Left(_yes) => return Ok(StepResult::Status(Status::Quit)),
-            Right(_no) => {}
-        }
-
-        if let Some(msg) = self.missed_messages.pop_front() {
-            return Ok(StepResult::Status(Status::Message(msg)));
-        }
 
         Ok(StepResult::Nothing)
     }

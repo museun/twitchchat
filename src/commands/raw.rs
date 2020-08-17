@@ -11,7 +11,7 @@ pub struct Raw<'a> {
     pub(crate) data: &'a str,
 }
 
-/// Send a raw IRC-style message
+/// Send a raw IRC-style message. This appends a `\r\n` for you.
 pub const fn raw(data: &str) -> Raw<'_> {
     Raw { data }
 }
