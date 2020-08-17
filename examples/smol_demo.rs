@@ -125,8 +125,6 @@ async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-    alto_logger::init_term_logger().expect("init logger");
-
     let fut = async move {
         // create a user configuration
         let user_config = get_user_config()?;
