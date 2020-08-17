@@ -91,6 +91,8 @@ impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(GlobalUserState {

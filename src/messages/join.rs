@@ -36,6 +36,8 @@ impl<'a> FromIrcMessage<'a> for Join<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(Join { raw, name, channel });

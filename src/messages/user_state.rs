@@ -73,6 +73,8 @@ impl<'a> FromIrcMessage<'a> for UserState<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(UserState { raw, tags, channel });

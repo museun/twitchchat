@@ -50,6 +50,8 @@ impl<'a> FromIrcMessage<'a> for ClearChat<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(ClearChat {

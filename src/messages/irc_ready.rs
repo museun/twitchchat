@@ -28,6 +28,8 @@ impl<'a> FromIrcMessage<'a> for IrcReady<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(IrcReady { raw, username });

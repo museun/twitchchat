@@ -46,6 +46,8 @@ impl<'a> FromIrcMessage<'a> for Notice<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(Notice {

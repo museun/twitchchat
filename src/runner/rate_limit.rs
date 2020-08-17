@@ -17,15 +17,25 @@ impl RateLimitedEncoder {
     where
         W: AsyncWrite + Send + Sync + Unpin + ?Sized,
     {
+        log::error!("'{}' has {} queued messages", name, self.queue.len());
+
         while let Some(data) = self.queue.pop_front() {
             match self.rate_limit.consume(1) {
                 Ok(..) => {
                     *limit -= 1;
-                    log::trace!(target: "twitchchat::encoder", "> {}", std::str::from_utf8(&*data).unwrap());
+                    log::trace!(
+                        target: "twitchchat::encoder",
+                        "> {}",
+                        std::str::from_utf8(&*data).unwrap().escape_debug()
+                    );
                     sink.write_all(&*data).await?;
                 }
                 Err(..) => {
-                    log::warn!(target: "twitchchat::rate_limit", "local rate limit for '{}' hit", name);
+                    log::warn!(
+                        target: "twitchchat::rate_limit",
+                        "local rate limit for '{}' hit",
+                        name
+                    );
                     break;
                 }
             }

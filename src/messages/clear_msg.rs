@@ -49,6 +49,8 @@ impl<'a> FromIrcMessage<'a> for ClearMsg<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(ClearMsg {

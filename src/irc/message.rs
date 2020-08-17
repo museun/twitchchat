@@ -1,5 +1,6 @@
 use super::{parser::Parser, InvalidMessage, Prefix, PrefixIndex};
-use crate::{Str, StrIndex};
+use crate::{FromIrcMessage, Str, StrIndex};
+use std::convert::Infallible;
 
 /// A raw irc message `@tags :prefix COMMAND args :data\r\n`
 #[derive(Clone, PartialEq)]
@@ -76,6 +77,11 @@ impl<'a> IrcMessage<'a> {
     /// Get the raw data
     pub fn get_data(&self) -> Option<&str> {
         self.data.map(|index| &self.raw[index])
+    }
+
+    /// Consumes this type returning the raw `Str<'a>`
+    pub fn into_inner(self) -> Str<'a> {
+        self.raw
     }
 
     /// Get the raw 'nth' argument
@@ -164,6 +170,16 @@ impl<'a> IrcMessage<'a> {
     pub const USER_STATE: &'static str = "USERSTATE";
     /// A message from a user directly to you -- `WHISPER`.
     pub const WHISPER: &'static str = "WHISPER";
+}
+
+impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
+    type Error = Infallible;
+
+    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
+        Ok(msg)
+    }
+
+    into_inner_raw!();
 }
 
 into_owned! {

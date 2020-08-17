@@ -225,6 +225,8 @@ impl<'a> FromIrcMessage<'a> for Privmsg<'a> {
         };
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(Privmsg {

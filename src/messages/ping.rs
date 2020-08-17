@@ -28,6 +28,8 @@ impl<'a> FromIrcMessage<'a> for Ping<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(Ping { raw, token });

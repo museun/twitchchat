@@ -33,6 +33,8 @@ impl<'a> FromIrcMessage<'a> for RoomState<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 impl<'a> RoomState<'a> {

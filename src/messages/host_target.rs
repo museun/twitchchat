@@ -76,6 +76,8 @@ impl<'a> FromIrcMessage<'a> for HostTarget<'a> {
 
         Ok(this)
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(HostTarget {

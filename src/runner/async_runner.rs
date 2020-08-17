@@ -131,14 +131,14 @@ impl AsyncRunner {
     }
 
     /// Get a clonable writer you can use
-    pub async fn writer(&self) -> AsyncWriter<MpscWriter> {
+    pub fn writer(&self) -> AsyncWriter<MpscWriter> {
         self.writer.clone()
     }
 
     /// Get a handle that you can trigger a normal 'quit'.
     ///
     /// You can also do `AsyncWriter::quit`.
-    pub async fn quit_handle(&self) -> NotifyHandle {
+    pub fn quit_handle(&self) -> NotifyHandle {
         self.notify_handle.clone()
     }
 
@@ -225,8 +225,6 @@ impl AsyncRunner {
 
         match select {
             Left(Left(Left(msg))) => {
-                use {AllCommands::*, TimeoutState::*};
-
                 let msg = match msg {
                     Err(DecodeError::Eof) => {
                         log::info!("got an EOF, exiting main loop");
@@ -242,62 +240,12 @@ impl AsyncRunner {
                 self.timeout_state = TimeoutState::activity();
 
                 let all = AllCommands::from_irc(msg) //
-                    .expect("msg identity conversion should be upheld");
+                    .expect("msg identity conversion should be upheld")
+                    .into_owned();
 
-                match &all {
-                    Ping(msg) => {
-                        let token = msg.token();
-                        log::debug!(
-                            "got a ping from the server. responding with token '{}'",
-                            token
-                        );
-                        self.encoder.encode(commands::pong(token)).await?;
-                        self.timeout_state = TimeoutState::activity();
-                    }
+                self.check_messages(&all).await?;
 
-                    Pong(..) if matches!(self.timeout_state, WaitingForPong {..}) => {
-                        self.timeout_state = TimeoutState::activity()
-                    }
-
-                    Join(msg) if msg.name() == self.identity.username() => {
-                        log::debug!("starting tracking channel for '{}'", msg.channel());
-                        self.channels.add(msg.channel());
-                    }
-
-                    Part(msg) if msg.name() == self.identity.username() => {
-                        log::debug!("stopping tracking of channel '{}'", msg.channel());
-                        self.channels.remove(msg.channel());
-                    }
-
-                    RoomState(msg) => {
-                        if let Some(dur) = msg.is_slow_mode() {
-                            if let Some(ch) = self.channels.get_mut(msg.channel()) {
-                                ch.enable_slow_mode(dur)
-                            }
-                        }
-                    }
-
-                    Notice(msg) => {
-                        let ch = self.channels.get_mut(msg.channel());
-                        match (msg.msg_id(), ch) {
-                            // we should enable slow mode
-                            (Some(MessageId::SlowOn), Some(ch)) => ch.enable_slow_mode(30),
-                            // we should disable slow mode
-                            (Some(MessageId::SlowOff), Some(ch)) => ch.disable_slow_mode(),
-                            // we've been rate limited on the channel
-                            (Some(MessageId::MsgRatelimit), Some(ch)) => ch.set_rate_limited(),
-                            // we cannot join/send to the channel because we're banned
-                            (Some(MessageId::MsgBanned), ..) => self.channels.remove(msg.channel()),
-                            _ => {}
-                        }
-                    }
-
-                    Reconnect(_) => return Err(Error::ShouldReconnect),
-
-                    _ => {}
-                }
-
-                return Ok(StepResult::Status(Status::Message(all.into_owned())));
+                return Ok(StepResult::Status(Status::Message(all)));
             }
 
             Left(Left(Right(Some(_activity)))) => {
@@ -307,21 +255,28 @@ impl AsyncRunner {
             Left(Right(Some(write_data))) => {
                 // TODO parse a 'bytes' flavored parser
                 let msg = std::str::from_utf8(&*write_data).map_err(Error::InvalidUtf8)?;
+                // log::warn!("> {}", msg.escape_debug());
 
                 let msg = crate::IrcMessage::parse(crate::Str::Borrowed(msg))
                     .expect("encoder should produce valid IRC messages");
 
-                if let Ok(pm) = crate::messages::Privmsg::from_irc(msg) {
-                    let ch = pm.channel();
-                    if !self.channels.is_on(ch) {
-                        self.channels.add(ch)
-                    }
+                if let crate::IrcMessage::PRIVMSG = msg.get_command() {
+                    if let Some(ch) = msg.nth_arg(0) {
+                        if !self.channels.is_on(ch) {
+                            self.channels.add(ch)
+                        }
 
-                    let ch = self.channels.get_mut(ch).unwrap();
-                    if ch.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
-                        ch.reset_rate_limit();
+                        let ch = self.channels.get_mut(ch).unwrap();
+                        if ch.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
+                            ch.reset_rate_limit();
+                        }
+                        // log::error!(
+                        //     "enqueue '{}' on '{}'",
+                        //     msg.get_raw().escape_debug(),
+                        //     ch.name
+                        // );
+                        ch.rate_limited.enqueue(write_data)
                     }
-                    ch.rate_limited.enqueue(write_data)
                 }
             }
 
@@ -371,6 +326,65 @@ impl AsyncRunner {
         }
 
         Ok(StepResult::Nothing)
+    }
+
+    async fn check_messages(&mut self, all: &AllCommands<'static>) -> Result<(), Error> {
+        use {AllCommands::*, TimeoutState::*};
+
+        match &all {
+            Ping(msg) => {
+                let token = msg.token();
+                log::debug!(
+                    "got a ping from the server. responding with token '{}'",
+                    token
+                );
+                self.encoder.encode(commands::pong(token)).await?;
+                self.timeout_state = TimeoutState::activity();
+            }
+
+            Pong(..) if matches!(self.timeout_state, WaitingForPong {..}) => {
+                self.timeout_state = TimeoutState::activity()
+            }
+
+            Join(msg) if msg.name() == self.identity.username() => {
+                log::debug!("starting tracking channel for '{}'", msg.channel());
+                self.channels.add(msg.channel());
+            }
+
+            Part(msg) if msg.name() == self.identity.username() => {
+                log::debug!("stopping tracking of channel '{}'", msg.channel());
+                self.channels.remove(msg.channel());
+            }
+
+            RoomState(msg) => {
+                if let Some(dur) = msg.is_slow_mode() {
+                    if let Some(ch) = self.channels.get_mut(msg.channel()) {
+                        ch.enable_slow_mode(dur)
+                    }
+                }
+            }
+
+            Notice(msg) => {
+                let ch = self.channels.get_mut(msg.channel());
+                match (msg.msg_id(), ch) {
+                    // we should enable slow mode
+                    (Some(MessageId::SlowOn), Some(ch)) => ch.enable_slow_mode(30),
+                    // we should disable slow mode
+                    (Some(MessageId::SlowOff), Some(ch)) => ch.disable_slow_mode(),
+                    // we've been rate limited on the channel
+                    (Some(MessageId::MsgRatelimit), Some(ch)) => ch.set_rate_limited(),
+                    // we cannot join/send to the channel because we're banned
+                    (Some(MessageId::MsgBanned), ..) => self.channels.remove(msg.channel()),
+                    _ => {}
+                }
+            }
+
+            Reconnect(_) => return Err(Error::ShouldReconnect),
+
+            _ => {}
+        }
+
+        Ok(())
     }
 }
 
@@ -428,6 +442,9 @@ impl AsyncRunner {
         let enc = &mut self.encoder;
         let limit = &mut self.global_rate_limit.get_available_tokens();
 
+        let start = *limit;
+        // log::error!("available tokens: {}", limit);
+
         // for each channel, try to take up to 'limit' tokens
         for channel in self.channels.map.values_mut() {
             if channel.rated_limited_at.map(|s| s.elapsed()) > Some(RATE_LIMIT_WINDOW) {
@@ -440,13 +457,16 @@ impl AsyncRunner {
                 .drain_until_blocked(&channel.name, limit, enc)
                 .await?;
 
+            let diff = start - *limit;
+            // log::error!("'{}' took '{}' tokens", channel.name, diff);
+
             if *limit == 0 {
                 log::warn!(target: "twitchchat::rate_limit", "global rate limit hit while draining '{}'", &channel.name);
                 break;
             }
 
             // and throttle the global one
-            match self.global_rate_limit.consume(*limit) {
+            match self.global_rate_limit.consume(diff) {
                 // use the new remaining amount of tokens
                 Ok(rem) => *limit = rem,
 

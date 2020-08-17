@@ -23,6 +23,8 @@ impl<'a> FromIrcMessage<'a> for Reconnect<'a> {
         msg.expect_command(IrcMessage::RECONNECT)?;
         Ok(Self { raw: msg.raw })
     }
+
+    into_inner_raw!();
 }
 
 into_owned!(Reconnect { raw });

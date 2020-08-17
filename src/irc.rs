@@ -3,6 +3,7 @@
 //! Twitch's chat is based on IRC, but not strictly conformant to the RFC-1459 and RFC-2812 specs.
 //!
 //! This provides a _Twitch-flavored_ IRC parser and types.
+use crate::Str;
 use std::convert::Infallible;
 
 /// A trait to convert an `IrcMessage` into `Self`.
@@ -11,12 +12,26 @@ pub trait FromIrcMessage<'a>: Sized {
     type Error;
     /// This method consumes an `IrcMessage` and tries to produce an instance of `Self`
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error>;
+
+    /// Consumes self returning the raw `Str<'a>`
+    fn into_inner(self) -> Str<'a>;
 }
 
-impl<'a> FromIrcMessage<'a> for IrcMessage<'a> {
-    type Error = Infallible;
-    fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
-        Ok(msg)
+/// A trait to convert a `Self` into an `IrcMessage`
+pub trait IntoIrcMessage<'a>: Sized + 'a
+where
+    Self: FromIrcMessage<'a>,
+{
+    /// Consumes self producing an `IrcMessage`
+    fn into_irc(self) -> IrcMessage<'a>;
+}
+
+impl<'a, T: 'a> IntoIrcMessage<'a> for T
+where
+    T: FromIrcMessage<'a>,
+{
+    fn into_irc(self) -> IrcMessage<'a> {
+        IrcMessage::parse(self.into_inner()).expect("identity conversion")
     }
 }
 

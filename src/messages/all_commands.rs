@@ -137,17 +137,40 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
 
         Ok(this)
     }
+
+    /// Consumes this wrapper and returns the raw `Str<'a>`
+    fn into_inner(self) -> Str<'a> {
+        match self {
+            Self::Raw(msg) => msg.into_inner(),
+            Self::IrcReady(msg) => msg.into_inner(),
+            Self::Ready(msg) => msg.into_inner(),
+            Self::Cap(msg) => msg.into_inner(),
+            Self::ClearChat(msg) => msg.into_inner(),
+            Self::ClearMsg(msg) => msg.into_inner(),
+            Self::GlobalUserState(msg) => msg.into_inner(),
+            Self::HostTarget(msg) => msg.into_inner(),
+            Self::Join(msg) => msg.into_inner(),
+            Self::Notice(msg) => msg.into_inner(),
+            Self::Part(msg) => msg.into_inner(),
+            Self::Ping(msg) => msg.into_inner(),
+            Self::Pong(msg) => msg.into_inner(),
+            Self::Privmsg(msg) => msg.into_inner(),
+            Self::Reconnect(msg) => msg.into_inner(),
+            Self::RoomState(msg) => msg.into_inner(),
+            Self::UserNotice(msg) => msg.into_inner(),
+            Self::UserState(msg) => msg.into_inner(),
+            Self::Whisper(msg) => msg.into_inner(),
+        }
+    }
 }
 
 macro_rules! from_other {
     ($($ident:tt)*) => {
-        $(
-            impl<'a> From<$ident<'a>> for AllCommands<'a> {
-                fn from(msg: $ident<'a>) -> Self {
-                    Self::$ident(msg)
-                }
+        $(impl<'a> From<$ident<'a>> for AllCommands<'a> {
+            fn from(msg: $ident<'a>) -> Self {
+                Self::$ident(msg)
             }
-        )*
+        })*
     };
 }
 

@@ -54,9 +54,13 @@ macro_rules! raw {
         pub fn raw(&self) -> &str {
             &*self.raw
         }
+    };
+}
 
+macro_rules! into_inner_raw {
+    () => {
         /// Consumes the message, returning the raw [`Str<'_>`](./enum.Str.html)
-        pub fn into_inner(self) -> Str<'a> {
+        fn into_inner(self) -> Str<'a> {
             self.raw
         }
     };

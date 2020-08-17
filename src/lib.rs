@@ -60,13 +60,14 @@ mod encoder;
 pub use encoder::{AsyncEncoder, Encodable, Encoder};
 
 pub mod commands;
+#[macro_use]
 pub mod messages;
 
 pub mod irc;
 pub use irc::{InvalidMessage, IrcMessage, TagIndices, Tags};
 
 #[doc(inline)]
-pub use irc::FromIrcMessage;
+pub use irc::{FromIrcMessage, IntoIrcMessage};
 
 mod validator;
 pub use validator::Validator;
