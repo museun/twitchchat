@@ -147,6 +147,27 @@ where
 
 impl<W> AsyncEncoder<W>
 where
+    W: Write + Send + Sync,
+{
+    /// If the wrapped writer is synchronous, you can use this method to encode the message to it.
+    pub fn encode_sync<M>(&mut self, msg: M) -> IoResult<()>
+    where
+        M: Encodable + Send + Sync,
+    {
+        msg.encode(&mut self.data)?;
+        let data = &self.data[self.pos..];
+
+        self.writer.write_all(data)?;
+        self.writer.flush()?;
+
+        self.data.clear();
+        self.pos = 0;
+        Ok(())
+    }
+}
+
+impl<W> AsyncEncoder<W>
+where
     W: AsyncWrite + Send + Sync + Unpin,
 {
     /// Create a new Encoder over this `futures::io::AsyncWrite` instance

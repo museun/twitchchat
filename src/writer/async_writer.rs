@@ -1,6 +1,7 @@
 use crate::{AsyncEncoder, Encodable, Sender};
 
 use futures_lite::AsyncWrite;
+use io::Write;
 use std::io::{self};
 
 /// An asynchronous writer.
@@ -13,6 +14,19 @@ pub struct AsyncWriter<W> {
 impl<W> std::fmt::Debug for AsyncWriter<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AsyncWriter").finish()
+    }
+}
+
+impl<W> AsyncWriter<W>
+where
+    W: Write + Send + Sync,
+{
+    /// If the wrapped writer is synchronous, you can use this method to encode the message to it.
+    pub fn encode_sync<M>(&mut self, msg: M) -> io::Result<()>
+    where
+        M: Encodable + Send + Sync,
+    {
+        self.inner.encode_sync(msg)
     }
 }
 
