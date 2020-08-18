@@ -145,6 +145,19 @@ where
     }
 }
 
+impl<W> Write for AsyncEncoder<W>
+where
+    W: Write + Send + Sync,
+{
+    fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
+        self.writer.write(buf)
+    }
+
+    fn flush(&mut self) -> IoResult<()> {
+        self.writer.flush()
+    }
+}
+
 impl<W> AsyncEncoder<W>
 where
     W: Write + Send + Sync,

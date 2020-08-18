@@ -30,6 +30,19 @@ where
     }
 }
 
+impl<W> Write for AsyncWriter<W>
+where
+    W: Write + Send + Sync,
+{
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.inner.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
 impl<W> AsyncWriter<W>
 where
     W: AsyncWrite + Unpin + Send + Sync,

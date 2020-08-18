@@ -61,6 +61,7 @@ anyhow         = "1.0.32"
 async-executor = { version = "0.1.2", default-features = false }
 doc-comment    = "0.3.3"
 serde_json     = { version = "1.0.57", default-features = false, features = ["alloc"] }
+alto_logger = "0.3.6"
 
 [[example]]
 name = "message_parse"
@@ -80,3 +81,7 @@ required-features = ["async-std", "async-std/attributes"]
 [[example]]
 name = "tokio_demo"
 required-features = ["tokio/full", "tokio-util"]
+
+[[example]]
+name = "simple_bot"
+required-features = ["smol"]

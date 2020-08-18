@@ -149,6 +149,8 @@ impl AsyncRunner {
         log::info!("joining '{}'", channel);
         self.encoder.encode(commands::join(channel)).await?;
 
+        let channel = crate::commands::Channel(channel).to_string();
+
         log::debug!("waiting for a response");
         let channel_and_us = |msg: &Join<'_>, this: &AsyncRunner| {
             msg.channel() == channel && msg.name() == this.identity.username()
@@ -176,6 +178,8 @@ impl AsyncRunner {
 
         log::info!("leaving '{}'", channel);
         self.encoder.encode(commands::part(channel)).await?;
+
+        let channel = crate::commands::Channel(channel).to_string();
 
         log::debug!("waiting for a response");
         let channel_and_us = |msg: &Part<'_>, this: &AsyncRunner| {
@@ -455,7 +459,6 @@ impl AsyncRunner {
         let limit = &mut self.global_rate_limit.get_available_tokens();
 
         let start = *limit;
-        // log::error!("available tokens: {}", limit);
 
         // for each channel, try to take up to 'limit' tokens
         for channel in self.channels.map.values_mut() {
@@ -469,8 +472,10 @@ impl AsyncRunner {
                 .drain_until_blocked(&channel.name, limit, enc)
                 .await?;
 
-            let diff = start - *limit;
-            // log::error!("'{}' took '{}' tokens", channel.name, diff);
+            let left = std::cmp::max(start, *limit);
+            let right = std::cmp::min(start, *limit);
+
+            let diff = left - right;
 
             if *limit == 0 {
                 log::warn!(target: "twitchchat::rate_limit", "global rate limit hit while draining '{}'", &channel.name);

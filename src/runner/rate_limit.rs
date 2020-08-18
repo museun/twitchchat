@@ -17,8 +17,6 @@ impl RateLimitedEncoder {
     where
         W: AsyncWrite + Send + Sync + Unpin + ?Sized,
     {
-        log::error!("'{}' has {} queued messages", name, self.queue.len());
-
         while let Some(data) = self.queue.pop_front() {
             match self.rate_limit.consume(1) {
                 Ok(..) => {

@@ -12,6 +12,13 @@ pub struct Reply<'a> {
     pub(crate) msg: &'a str,
 }
 
+// "reply-parent-display-name": "shaken_bot",
+// "reply-parent-msg-body": "hello\\smuseun!",
+// "reply-parent-msg-id": "1b136720-3a9a-4805-ab60-8c083e9f6fd2",
+// "reply-parent-user-id": "241015868",
+// "reply-parent-user-login": "shaken_bot",
+// "id": "2953829c-177c-42a3-9497-aed7ad916c78",
+
 /// Reply to a specific message (using an UUID) on a channel
 pub const fn reply<'a>(channel: &'a str, msg_id: &'a str, msg: &'a str) -> Reply<'a> {
     Reply {
