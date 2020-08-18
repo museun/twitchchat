@@ -79,7 +79,7 @@ mod tests {
         let input = ":tmi.twitch.tv JOIN\r\n";
         for msg in irc::parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(dbg!(err), InvalidMessage::ExpectedArg { pos: 0 }))
+            assert!(matches!(err, InvalidMessage::ExpectedArg { pos: 0 }))
         }
     }
 

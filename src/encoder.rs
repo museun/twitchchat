@@ -240,20 +240,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct JoinCommand<'a> {
-        channel: &'a str,
-    }
-
-    fn join(channel: &str) -> JoinCommand<'_> {
-        JoinCommand { channel }
-    }
-
-    impl<'a> Encodable for JoinCommand<'a> {
-        fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> IoResult<()> {
-            write!(buf, "JOIN {}\r\n", &self.channel)
-        }
-    }
+    use crate::commands::join;
 
     #[test]
     fn encoder() {
