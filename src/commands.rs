@@ -89,6 +89,7 @@ export_commands! {
     raid            => Raid
     raw             => Raw
     register        => Register
+    reply           => Reply
     slow            => Slow
     slow_off        => SlowOff
     subscribers     => Subscribers
@@ -166,6 +167,7 @@ serde_for_commands! {
     Raid { source, target };
     Raw { data };
     Register { user_config };
+    Reply { channel, msg_id, msg };
     Slow { channel, duration };
     SlowOff { channel };
     Subscribers { channel };
