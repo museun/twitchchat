@@ -13,7 +13,10 @@
 //! [functions]: ./index.html#functions
 //! [types]: ./types/index.html
 //! [encodable]: ./trait.Encodable.html
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 pub use super::Encodable;
 
@@ -151,6 +154,16 @@ serde_for_commands! {
     Vip { channel, username };
     Vips { channel };
     Whisper { username, message };
+}
+
+fn make_channel(channel: &str) -> Cow<'_, str> {
+    if channel.starts_with('#') {
+        channel.into()
+    } else {
+        let mut channel = channel.to_string();
+        channel.insert(0, '#');
+        channel.into()
+    }
 }
 
 struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);

@@ -1,25 +1,29 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Removes a ban on a user.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unban<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) username: &'a str,
 }
 
 /// Removes a ban on a user.
-pub const fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
+pub fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
+    let channel = super::make_channel(channel);
     Unban { channel, username }
 }
 
 impl<'a> Encodable for Unban<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unban", &self.username])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/unban", &self.username])
     }
 }
 
@@ -33,6 +37,10 @@ mod tests {
         test_encode(
             unban("#museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
+        );
+        test_encode(
+            unban("museun", "museun"),
+            "PRIVMSG #museun :/unban museun\r\n",
         )
     }
 
@@ -41,6 +49,10 @@ mod tests {
     fn unban_serde() {
         test_serde(
             unban("#museun", "museun"),
+            "PRIVMSG #museun :/unban museun\r\n",
+        );
+        test_serde(
+            unban("museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
         )
     }

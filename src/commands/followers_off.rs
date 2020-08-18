@@ -1,24 +1,28 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Disables followers-only mode.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct FollowersOff<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
 }
 
 /// Disables followers-only mode.
-pub const fn followers_off(channel: &str) -> FollowersOff<'_> {
+pub fn followers_off(channel: &str) -> FollowersOff<'_> {
+    let channel = super::make_channel(channel);
     FollowersOff { channel }
 }
 
 impl<'a> Encodable for FollowersOff<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/followersoff"])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/followersoff"])
     }
 }
 
@@ -32,7 +36,11 @@ mod tests {
         test_encode(
             followers_off("#museun"),
             "PRIVMSG #museun :/followersoff\r\n",
-        )
+        );
+        test_encode(
+            followers_off("museun"),
+            "PRIVMSG #museun :/followersoff\r\n",
+        );
     }
 
     #[test]
@@ -41,6 +49,10 @@ mod tests {
         test_serde(
             followers_off("#museun"),
             "PRIVMSG #museun :/followersoff\r\n",
-        )
+        );
+        test_serde(
+            followers_off("museun"),
+            "PRIVMSG #museun :/followersoff\r\n",
+        );
     }
 }

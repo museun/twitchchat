@@ -1,24 +1,28 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Disables emote-only mode.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct EmoteOnlyOff<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
 }
 
 /// Disables emote-only mode.
-pub const fn emote_only_off(channel: &str) -> EmoteOnlyOff<'_> {
+pub fn emote_only_off(channel: &str) -> EmoteOnlyOff<'_> {
+    let channel = super::make_channel(channel);
     EmoteOnlyOff { channel }
 }
 
 impl<'a> Encodable for EmoteOnlyOff<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/emoteonlyoff"])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/emoteonlyoff"])
     }
 }
 
@@ -32,7 +36,11 @@ mod tests {
         test_encode(
             emote_only_off("#museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
-        )
+        );
+        test_encode(
+            emote_only_off("museun"),
+            "PRIVMSG #museun :/emoteonlyoff\r\n",
+        );
     }
 
     #[test]
@@ -41,6 +49,10 @@ mod tests {
         test_serde(
             emote_only_off("#museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
-        )
+        );
+        test_serde(
+            emote_only_off("museun"),
+            "PRIVMSG #museun :/emoteonlyoff\r\n",
+        );
     }
 }

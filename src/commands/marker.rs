@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) comment: Option<&'a str>,
 }
 
@@ -18,6 +21,7 @@ pub struct Marker<'a> {
 ///
 /// If the string exceeds 140 characters then it will be truncated
 pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
+    let channel = super::make_channel(channel);
     Marker {
         channel,
         comment: comment.into(),
@@ -42,7 +46,7 @@ impl<'a> Encodable for Marker<'a> {
         }
 
         ByteWriter::new(buf).command(
-            self.channel,
+            &&*self.channel,
             &[&"/marker", &self.comment.map(truncate).unwrap_or_default()],
         )
     }
@@ -68,6 +72,20 @@ mod tests {
             format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
         );
         test_encode(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+
+        test_encode(
+            marker("museun", Some("this is an example")),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_encode(
+            marker("museun", "this is an example"),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_encode(
+            marker("museun", "a".repeat(200).as_str()),
+            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
+        );
+        test_encode(marker("museun", None), "PRIVMSG #museun :/marker\r\n");
     }
 
     #[test]
@@ -86,5 +104,19 @@ mod tests {
             format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
         );
         test_serde(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+
+        test_serde(
+            marker("museun", Some("this is an example")),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serde(
+            marker("museun", "this is an example"),
+            "PRIVMSG #museun :/marker this is an example\r\n",
+        );
+        test_serde(
+            marker("museun", "a".repeat(200).as_str()),
+            format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
+        );
+        test_serde(marker("museun", None), "PRIVMSG #museun :/marker\r\n");
     }
 }

@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Revoke VIP status from a user.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unvip<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) username: &'a str,
 }
 
@@ -17,13 +20,14 @@ pub struct Unvip<'a> {
 /// Use [vips] to list the VIPs of this channel.
 ///
 /// [vips]: ./fn.vips.html
-pub const fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
+pub fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
+    let channel = super::make_channel(channel);
     Unvip { channel, username }
 }
 
 impl<'a> Encodable for Unvip<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/unvip", &self.username])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/unvip", &self.username])
     }
 }
 
@@ -37,7 +41,11 @@ mod tests {
         test_encode(
             unvip("#museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
-        )
+        );
+        test_encode(
+            unvip("museun", "museun"),
+            "PRIVMSG #museun :/unvip museun\r\n",
+        );
     }
 
     #[test]
@@ -46,6 +54,10 @@ mod tests {
         test_serde(
             unvip("#museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
-        )
+        );
+        test_serde(
+            unvip("museun", "museun"),
+            "PRIVMSG #museun :/unvip museun\r\n",
+        );
     }
 }

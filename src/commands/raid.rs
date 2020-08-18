@@ -1,15 +1,18 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Raid another channel.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Raid<'a> {
-    pub(crate) source: &'a str,
-    pub(crate) target: &'a str,
+    pub(crate) source: Cow<'a, str>,
+    pub(crate) target: Cow<'a, str>,
 }
 
 /// Raid another channel.
@@ -17,13 +20,15 @@ pub struct Raid<'a> {
 /// Use [unraid] to cancel the Raid.
 ///
 /// [unraid]: ./fn.unraid.html
-pub const fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
+pub fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
+    let source = super::make_channel(source);
+    let target = super::make_channel(target);
     Raid { source, target }
 }
 
 impl<'a> Encodable for Raid<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.source, &[&"/raid", &self.target])
+        ByteWriter::new(buf).command(&&*self.source, &[&"/raid", &&*self.target])
     }
 }
 
@@ -37,7 +42,19 @@ mod tests {
         test_encode(
             raid("#museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
-        )
+        );
+        test_encode(
+            raid("museun", "#museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
+        test_encode(
+            raid("#museun", "museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
+        test_encode(
+            raid("museun", "museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
     }
 
     #[test]
@@ -46,6 +63,18 @@ mod tests {
         test_serde(
             raid("#museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
-        )
+        );
+        test_serde(
+            raid("museun", "#museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
+        test_serde(
+            raid("#museun", "museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
+        test_serde(
+            raid("museun", "museun"),
+            "PRIVMSG #museun :/raid #museun\r\n",
+        );
     }
 }

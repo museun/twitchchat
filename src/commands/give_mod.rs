@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Grant moderator status to a user.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct GiveMod<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) username: &'a str,
 }
 
@@ -17,13 +20,14 @@ pub struct GiveMod<'a> {
 /// Use [mods] to list the moderators of this channel.
 ///
 /// [mods]: ./fn.mods.html
-pub const fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
+pub fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
+    let channel = super::make_channel(channel);
     GiveMod { channel, username }
 }
 
 impl<'a> Encodable for GiveMod<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/mod", &self.username])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/mod", &self.username])
     }
 }
 
@@ -37,7 +41,11 @@ mod tests {
         test_encode(
             give_mod("#museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
-        )
+        );
+        test_encode(
+            give_mod("museun", "shaken_bot"),
+            "PRIVMSG #museun :/mod shaken_bot\r\n",
+        );
     }
 
     #[test]
@@ -46,6 +54,10 @@ mod tests {
         test_serde(
             give_mod("#museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
-        )
+        );
+        test_serde(
+            give_mod("museun", "shaken_bot"),
+            "PRIVMSG #museun :/mod shaken_bot\r\n",
+        );
     }
 }

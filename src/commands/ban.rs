@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Permanently prevent a user from chatting.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Ban<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) username: &'a str,
     pub(crate) reason: Option<&'a str>,
 }
@@ -19,6 +22,7 @@ pub struct Ban<'a> {
 ///
 /// Use [`unban`](./fn.unban.html) to remove a ban.
 pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a str>>) -> Ban<'a> {
+    let channel = super::make_channel(channel);
     Ban {
         channel,
         username,
@@ -29,7 +33,7 @@ pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a
 impl<'a> Encodable for Ban<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
         ByteWriter::new(buf).command(
-            self.channel,
+            &&*self.channel,
             &[&"/ban", &self.username, &self.reason.unwrap_or_default()],
         )
     }
@@ -45,7 +49,11 @@ mod tests {
         test_encode(
             ban("#museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
-        )
+        );
+        test_encode(
+            ban("museun", "museun", None),
+            "PRIVMSG #museun :/ban museun\r\n",
+        );
     }
 
     #[test]
@@ -54,6 +62,10 @@ mod tests {
         test_serde(
             ban("#museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
-        )
+        );
+        test_serde(
+            ban("museun", "museun", None),
+            "PRIVMSG #museun :/ban museun\r\n",
+        );
     }
 }

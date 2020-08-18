@@ -1,25 +1,29 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Sends an "emote" message in the third person to the channel
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Me<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) msg: &'a str,
 }
 
 /// Sends an "emote" message in the third person to the channel
-pub const fn me<'a>(channel: &'a str, msg: &'a str) -> Me<'a> {
+pub fn me<'a>(channel: &'a str, msg: &'a str) -> Me<'a> {
+    let channel = super::make_channel(channel);
     Me { channel, msg }
 }
 
 impl<'a> Encodable for Me<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/me", &self.msg])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/me", &self.msg])
     }
 }
 
@@ -34,6 +38,10 @@ mod tests {
             me("#museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
         );
+        test_encode(
+            me("museun", "some emote"),
+            "PRIVMSG #museun :/me some emote\r\n",
+        );
     }
 
     #[test]
@@ -41,6 +49,10 @@ mod tests {
     fn me_serde() {
         test_serde(
             me("#museun", "some emote"),
+            "PRIVMSG #museun :/me some emote\r\n",
+        );
+        test_serde(
+            me("museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
         );
     }

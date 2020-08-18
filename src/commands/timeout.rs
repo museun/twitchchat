@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Temporarily prevent a user from chatting.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Timeout<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
     pub(crate) username: &'a str,
     pub(crate) duration: Option<&'a str>,
     pub(crate) reason: Option<&'a str>,
@@ -38,6 +41,7 @@ pub fn timeout<'a>(
     duration: impl Into<Option<&'a str>>,
     reason: impl Into<Option<&'a str>>,
 ) -> Timeout<'a> {
+    let channel = super::make_channel(channel);
     Timeout {
         channel,
         username,
@@ -49,7 +53,7 @@ pub fn timeout<'a>(
 impl<'a> Encodable for Timeout<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
         ByteWriter::new(buf).command(
-            self.channel,
+            &&*self.channel,
             &[
                 &"/timeout",
                 &self.username,
@@ -83,6 +87,23 @@ mod tests {
             timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
             "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
         );
+
+        test_encode(
+            timeout("museun", "museun", None, None),
+            "PRIVMSG #museun :/timeout museun\r\n",
+        );
+        test_encode(
+            timeout("museun", "museun", Some("1d2h"), None),
+            "PRIVMSG #museun :/timeout museun 1d2h\r\n",
+        );
+        test_encode(
+            timeout("museun", "museun", None, Some("spamming")),
+            "PRIVMSG #museun :/timeout museun spamming\r\n",
+        );
+        test_encode(
+            timeout("museun", "museun", Some("1d2h"), Some("spamming")),
+            "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
+        );
     }
 
     #[test]
@@ -102,6 +123,23 @@ mod tests {
         );
         test_serde(
             timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
+            "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
+        );
+
+        test_serde(
+            timeout("museun", "museun", None, None),
+            "PRIVMSG #museun :/timeout museun\r\n",
+        );
+        test_serde(
+            timeout("museun", "museun", Some("1d2h"), None),
+            "PRIVMSG #museun :/timeout museun 1d2h\r\n",
+        );
+        test_serde(
+            timeout("museun", "museun", None, Some("spamming")),
+            "PRIVMSG #museun :/timeout museun spamming\r\n",
+        );
+        test_serde(
+            timeout("museun", "museun", Some("1d2h"), Some("spamming")),
             "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
         );
     }

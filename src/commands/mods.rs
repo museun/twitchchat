@@ -1,24 +1,28 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Lists the moderators of this channel.
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Mods<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
 }
 
 /// Lists the moderators of this channel.
-pub const fn mods(channel: &str) -> Mods<'_> {
+pub fn mods(channel: &str) -> Mods<'_> {
+    let channel = super::make_channel(channel);
     Mods { channel }
 }
 
 impl<'a> Encodable for Mods<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/mods"])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/mods"])
     }
 }
 
@@ -29,12 +33,14 @@ mod tests {
 
     #[test]
     fn mods_encode() {
-        test_encode(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
+        test_encode(mods("#museun"), "PRIVMSG #museun :/mods\r\n");
+        test_encode(mods("museun"), "PRIVMSG #museun :/mods\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn mods_serde() {
-        test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n")
+        test_serde(mods("#museun"), "PRIVMSG #museun :/mods\r\n");
+        test_serde(mods("museun"), "PRIVMSG #museun :/mods\r\n");
     }
 }

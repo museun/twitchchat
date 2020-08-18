@@ -1,14 +1,17 @@
 use crate::Encodable;
-use std::io::{Result, Write};
+use std::{
+    borrow::Cow,
+    io::{Result, Write},
+};
 
 use super::ByteWriter;
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Subscribers<'a> {
-    pub(crate) channel: &'a str,
+    pub(crate) channel: Cow<'a, str>,
 }
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).
@@ -16,13 +19,14 @@ pub struct Subscribers<'a> {
 /// Use [subscribers_off] to disable.
 ///
 /// [subscribers_off]: ./fn.subscribers_off.html
-pub const fn subscribers(channel: &str) -> Subscribers<'_> {
+pub fn subscribers(channel: &str) -> Subscribers<'_> {
+    let channel = super::make_channel(channel);
     Subscribers { channel }
 }
 
 impl<'a> Encodable for Subscribers<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(self.channel, &[&"/subscribers"])
+        ByteWriter::new(buf).command(&&*self.channel, &[&"/subscribers"])
     }
 }
 
@@ -33,12 +37,14 @@ mod tests {
 
     #[test]
     fn subscribers_encode() {
-        test_encode(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
+        test_encode(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n");
+        test_encode(subscribers("museun"), "PRIVMSG #museun :/subscribers\r\n");
     }
 
     #[test]
     #[cfg(feature = "serde")]
     fn subscribers_serde() {
-        test_serde(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n")
+        test_serde(subscribers("#museun"), "PRIVMSG #museun :/subscribers\r\n");
+        test_serde(subscribers("museun"), "PRIVMSG #museun :/subscribers\r\n");
     }
 }
