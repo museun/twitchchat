@@ -30,17 +30,54 @@ use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 /// Connector for using an [`async_io`](https://docs.rs/async-io/latest/async_io/) wrapper over [`std::net::TcpStream`](https://doc.rust-lang.org/std/net/struct.TcpStream.html)
 pub mod async_io;
 
+#[cfg(feature = "async-io")]
+#[doc(inline)]
+pub use self::async_io::Connector as AsyncIoConnector;
+
+#[cfg(all(feature = "async-io", feature = "async-tls"))]
+#[doc(inline)]
+pub use self::async_io::ConnectorTls as AsyncIoConnectorTls;
+
 #[cfg(feature = "async-std")]
 /// Connector for using an [`async_std::net::TcpStream`](https://docs.rs/async-std/latest/async_std/net/struct.TcpStream.html)
 pub mod async_std;
+
+#[cfg(feature = "async-std")]
+#[doc(inline)]
+pub use self::async_std::Connector as AsyncStdConnector;
+
+#[cfg(all(feature = "async-std", feature = "async-tls"))]
+#[doc(inline)]
+pub use self::async_std::ConnectorTls as AsyncStdConnectorTls;
 
 #[cfg(feature = "smol")]
 /// Connector for using a [`smol::Async`](https://docs.rs/smol/latest/smol/struct.Async.html) wrapper over [`std::net::TcpStream`](https://doc.rust-lang.org/std/net/struct.TcpStream.html)
 pub mod smol;
 
+#[cfg(feature = "smol")]
+#[doc(inline)]
+pub use self::smol::Connector as SmolConnector;
+
+#[cfg(all(feature = "smol", feature = "async-tls"))]
+#[doc(inline)]
+pub use self::smol::ConnectorTls as SmolConnectorTls;
+
 #[cfg(all(feature = "tokio", feature = "tokio-util"))]
 /// Connector for using a [`tokio::net::TcpStream`](https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html)
 pub mod tokio;
+
+#[cfg(all(feature = "tokio", feature = "tokio-util"))]
+#[doc(inline)]
+pub use self::tokio::Connector as TokioConnector;
+
+#[cfg(all(
+    feature = "tokio",
+    feature = "tokio-util",
+    feature = "tokio-rustls",
+    feature = "webpki-roots"
+))]
+#[doc(inline)]
+pub use self::tokio::ConnectorTls as TokioConnectorTls;
 
 /// The connector trait. This is used to abstract out runtimes.
 ///
