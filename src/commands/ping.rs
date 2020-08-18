@@ -1,4 +1,3 @@
-use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
 
@@ -16,8 +15,11 @@ pub const fn ping(token: &str) -> Ping<'_> {
 }
 
 impl<'a> Encodable for Ping<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts(&[&"PING", &self.token])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_nl!(buf, "PING {}", self.token)
     }
 }
 

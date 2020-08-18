@@ -1,4 +1,3 @@
-use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
 
@@ -16,8 +15,11 @@ pub const fn raw(data: &str) -> Raw<'_> {
 }
 
 impl<'a> Encodable for Raw<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).write_bytes(self.data)
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_nl!(buf, "{}", self.data)
     }
 }
 

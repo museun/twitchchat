@@ -1,4 +1,3 @@
-use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
 
@@ -16,8 +15,11 @@ pub const fn pong(token: &str) -> Pong<'_> {
 }
 
 impl<'a> Encodable for Pong<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts_term(&[&"PONG", &" :", &self.token])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_nl!(buf, "PONG :{}", self.token)
     }
 }
 
