@@ -24,7 +24,7 @@ impl<'a> Encodable for R9kBeta<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/r9kbeta")
+        write_cmd!(buf, Channel(self.channel) => "/r9kbeta")
     }
 }
 

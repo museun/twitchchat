@@ -21,7 +21,7 @@ impl<'a> Encodable for Command<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => &self.data)
+        write_cmd!(buf, Channel(self.channel) => &self.data)
     }
 }
 

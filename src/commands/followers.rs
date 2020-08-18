@@ -29,7 +29,7 @@ impl<'a> Encodable for Followers<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/followers {}", self.duration)
+        write_cmd!(buf, Channel(self.channel) => "/followers {}", self.duration)
     }
 }
 

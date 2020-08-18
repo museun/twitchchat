@@ -20,7 +20,7 @@ impl<'a> Encodable for Mods<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/mods")
+        write_cmd!(buf, Channel(self.channel) => "/mods")
     }
 }
 

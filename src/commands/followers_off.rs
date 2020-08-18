@@ -17,7 +17,7 @@ pub const fn followers_off(channel: &str) -> FollowersOff<'_> {
 
 impl<'a> Encodable for FollowersOff<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        write_cmd!(buf, Channel(&self.channel) => "/followersoff")
+        write_cmd!(buf, Channel(self.channel) => "/followersoff")
     }
 }
 

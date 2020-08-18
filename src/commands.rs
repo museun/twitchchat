@@ -114,7 +114,7 @@ macro_rules! serde_for_commands {
         $(
             #[cfg(feature = "serde")]
             impl<'a> ::serde::Serialize for $crate::commands::types::$ty<'a> {
-                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
                 where
                     S: ::serde::Serializer,
                 {

@@ -24,7 +24,7 @@ impl<'a> Encodable for EmoteOnly<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/emoteonly")
+        write_cmd!(buf, Channel(self.channel) => "/emoteonly")
     }
 }
 

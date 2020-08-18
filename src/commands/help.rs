@@ -20,7 +20,7 @@ impl<'a> Encodable for Help<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/help")
+        write_cmd!(buf, Channel(self.channel) => "/help")
     }
 }
 

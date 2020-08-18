@@ -21,7 +21,7 @@ impl<'a> Encodable for Privmsg<'a> {
     where
         W: Write + ?Sized,
     {
-        write_nl!(buf, "PRIVMSG {} :{}", Channel(&self.channel), self.msg)
+        write_nl!(buf, "PRIVMSG {} :{}", Channel(self.channel), self.msg)
     }
 }
 

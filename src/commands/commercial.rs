@@ -27,7 +27,7 @@ impl<'a> Encodable for Commercial<'a> {
         W: Write + ?Sized,
     {
         let length = self.length.map(|s| s.to_string());
-        write_cmd!(buf, Channel(&self.channel) => "/commercial{}", MaybeEmpty(length.as_deref()))
+        write_cmd!(buf, Channel(self.channel) => "/commercial{}", MaybeEmpty(length.as_deref()))
     }
 }
 

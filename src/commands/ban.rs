@@ -31,7 +31,7 @@ impl<'a> Encodable for Ban<'a> {
         W: Write + ?Sized,
     {
         write_cmd!(buf,
-            Channel(&self.channel) =>
+            Channel(self.channel) =>
             "/ban {}{}", self.username, MaybeEmpty(self.reason)
         )
     }

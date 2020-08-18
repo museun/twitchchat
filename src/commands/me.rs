@@ -21,7 +21,7 @@ impl<'a> Encodable for Me<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/me {}", self.msg)
+        write_cmd!(buf, Channel(self.channel) => "/me {}", self.msg)
     }
 }
 

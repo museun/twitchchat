@@ -40,7 +40,7 @@ impl<'a> Encodable for Marker<'a> {
             ""
         }
 
-        write_cmd!(buf, Channel(&self.channel) => "/marker{}", MaybeEmpty(self.comment.map(truncate)))
+        write_cmd!(buf, Channel(self.channel) => "/marker{}", MaybeEmpty(self.comment.map(truncate)))
     }
 }
 

@@ -25,7 +25,7 @@ impl<'a> Encodable for Host<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.source) => "/host {}", Channel(&self.target))
+        write_cmd!(buf, Channel(self.source) => "/host {}", Channel(self.target))
     }
 }
 

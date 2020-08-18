@@ -24,7 +24,7 @@ impl<'a> Encodable for Subscribers<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/subscribers")
+        write_cmd!(buf, Channel(self.channel) => "/subscribers")
     }
 }
 

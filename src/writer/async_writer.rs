@@ -73,6 +73,7 @@ where
     pub async fn encode_many<'a, I, M>(&mut self, msgs: I) -> io::Result<()>
     where
         I: IntoIterator<Item = &'a M> + Send + Sync + 'a,
+        I::IntoIter: Send + Sync,
         M: Encodable + Send + Sync + 'a,
     {
         for msg in msgs {

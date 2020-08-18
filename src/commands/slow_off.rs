@@ -20,7 +20,7 @@ impl<'a> Encodable for SlowOff<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/slowoff")
+        write_cmd!(buf, Channel(self.channel) => "/slowoff")
     }
 }
 

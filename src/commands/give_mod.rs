@@ -25,7 +25,7 @@ impl<'a> Encodable for GiveMod<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.channel) => "/mod {}", self.username)
+        write_cmd!(buf, Channel(self.channel) => "/mod {}", self.username)
     }
 }
 

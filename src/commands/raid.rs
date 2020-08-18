@@ -25,7 +25,7 @@ impl<'a> Encodable for Raid<'a> {
     where
         W: Write + ?Sized,
     {
-        write_cmd!(buf, Channel(&self.source) => "/raid {}", Channel(&self.target))
+        write_cmd!(buf, Channel(self.source) => "/raid {}", Channel(self.target))
     }
 }
 

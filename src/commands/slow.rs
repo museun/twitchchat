@@ -32,7 +32,7 @@ impl<'a> Encodable for Slow<'a> {
     {
         write_cmd!(
             buf,
-            Channel(&self.channel) =>
+            Channel(self.channel) =>
             "/slow {}",
             &self.duration.to_string()
         )
