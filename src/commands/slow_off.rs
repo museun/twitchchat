@@ -1,28 +1,26 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Disables slow mode.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct SlowOff<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Disables slow mode.
-pub fn slow_off(channel: &str) -> SlowOff<'_> {
-    let channel = super::make_channel(channel);
+pub const fn slow_off(channel: &str) -> SlowOff<'_> {
     SlowOff { channel }
 }
 
 impl<'a> Encodable for SlowOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/slowoff"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.channel) => "/slowoff")
     }
 }
 

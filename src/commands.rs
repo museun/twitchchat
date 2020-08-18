@@ -13,12 +13,38 @@
 //! [functions]: ./index.html#functions
 //! [types]: ./types/index.html
 //! [encodable]: ./trait.Encodable.html
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
 pub use super::Encodable;
+
+macro_rules! write_cmd {
+    ($w:expr, $chan:expr => $data:expr) => {{
+        write!($w, "PRIVMSG {} :", $chan)?;
+        write!($w, "{}", $data)?;
+        write!($w, "\r\n")
+    }};
+
+    ($w:expr, $chan:expr => $fmt:expr, $($args:expr),* $(,)?) => {{
+        write!($w, "PRIVMSG {} :", $chan)?;
+        write!($w, $fmt, $($args),*)?;
+        write!($w, "\r\n")
+    }};
+}
+
+macro_rules! write_jtv_cmd {
+    ($w:expr, $fmt:expr) => {
+        write_cmd!($w, "jtv" => $fmt)
+    };
+
+    ($w:expr, $fmt:expr, $($args:expr),* $(,)?) => {
+        write_cmd!($w, "jtv" => $fmt, $($args),*)
+    };
+}
+
+macro_rules! write_nl {
+    ($w:expr, $fmt:expr, $($args:expr),* $(,)?) => {{
+        write!($w, $fmt, $($args),*)?;
+        write!($w, "\r\n")
+    }};
+}
 
 macro_rules! export_commands {
     ($($ident:ident => $ty:ident)*) => {
@@ -156,79 +182,55 @@ serde_for_commands! {
     Whisper { username, message };
 }
 
-fn make_channel(channel: &str) -> Cow<'_, str> {
-    if channel.starts_with('#') {
-        channel.into()
-    } else {
-        let mut channel = channel.to_string();
-        channel.insert(0, '#');
-        channel.into()
+pub(crate) trait Length {
+    fn length(&self) -> usize;
+}
+
+impl Length for str {
+    fn length(&self) -> usize {
+        self.len()
     }
 }
 
-struct ByteWriter<'a, W: Write + ?Sized>(&'a mut W);
-impl<'a, W: Write + ?Sized> ByteWriter<'a, W> {
-    fn new(writer: &'a mut W) -> Self {
-        Self(writer)
+impl Length for &str {
+    fn length(&self) -> usize {
+        self.len()
     }
+}
 
-    fn channel(&mut self, data: impl AsRef<[u8]>) -> Result<()> {
-        let data = data.as_ref();
-        if !data.starts_with(b"#") {
-            self.0.write_all(b"#")?;
+use std::{fmt::Display, ops::Deref};
+impl<T> Length for Option<T>
+where
+    T: Length + Deref<Target = str>,
+{
+    fn length(&self) -> usize {
+        self.as_deref().map(Length::length).unwrap_or(0)
+    }
+}
+
+pub(crate) struct MaybeEmpty<T>(pub Option<T>);
+
+impl<T> Display for MaybeEmpty<T>
+where
+    T: Display + Length,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Some(d) if d.length() > 0 => write!(f, " {}", d),
+            _ => Ok(()),
         }
-        self.0.write_all(data)
     }
+}
 
-    fn write_bytes(self, data: impl AsRef<[u8]>) -> Result<()> {
-        self.0.write_all(data.as_ref())?;
-        self.endline()
-    }
+pub(crate) struct Channel<'a>(pub &'a str);
 
-    fn endline(self) -> Result<()> {
-        self.0.write_all(b"\r\n")
-    }
-
-    fn parts_term(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        parts
-            .iter()
-            .map(|p| self.0.write_all(p.as_ref()))
-            .collect::<Result<()>>()?;
-        self.endline()
-    }
-
-    fn parts(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        parts
-            .iter()
-            .filter_map(|p| {
-                let part = p.as_ref();
-                if part.is_empty() {
-                    None
-                } else {
-                    Some(part)
-                }
-            })
-            .enumerate()
-            .map(|(i, part)| {
-                if i > 0 {
-                    self.0.write_all(b" ")?;
-                }
-                self.0.write_all(part.as_ref())
-            })
-            .collect::<Result<()>>()?;
-        self.endline()
-    }
-
-    fn jtv_command(self, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        self.0.write_all(b"PRIVMSG jtv :")?;
-        self.parts(parts)
-    }
-
-    fn command(mut self, channel: impl AsRef<[u8]>, parts: &[&dyn AsRef<[u8]>]) -> Result<()> {
-        self.0.write_all(b"PRIVMSG ")?;
-        self.channel(channel)?;
-        self.0.write_all(b" :")?;
-        self.parts(parts)
+impl<'a> Display for Channel<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.0.starts_with('#') {
+            write!(f, "{}", self.0)
+        } else {
+            write!(f, "#{}", self.0)
+        }
     }
 }
 

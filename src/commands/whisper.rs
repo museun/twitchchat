@@ -1,8 +1,6 @@
 use crate::Encodable;
 use std::io::{Result, Write};
 
-use super::ByteWriter;
-
 /// Whispers a message to the username.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
@@ -18,8 +16,11 @@ pub const fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
 }
 
 impl<'a> Encodable for Whisper<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/w", &self.username, &self.message])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_jtv_cmd!(buf, "/w {} {}", self.username, self.message)
     }
 }
 

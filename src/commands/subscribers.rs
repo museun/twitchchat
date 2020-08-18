@@ -1,17 +1,13 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Subscribers<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).
@@ -19,14 +15,16 @@ pub struct Subscribers<'a> {
 /// Use [subscribers_off] to disable.
 ///
 /// [subscribers_off]: ./fn.subscribers_off.html
-pub fn subscribers(channel: &str) -> Subscribers<'_> {
-    let channel = super::make_channel(channel);
+pub const fn subscribers(channel: &str) -> Subscribers<'_> {
     Subscribers { channel }
 }
 
 impl<'a> Encodable for Subscribers<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/subscribers"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.channel) => "/subscribers")
     }
 }
 

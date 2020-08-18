@@ -1,17 +1,13 @@
+use super::{Channel, MaybeEmpty};
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Triggers a commercial.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Commercial<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) length: Option<usize>,
 }
 
@@ -19,7 +15,6 @@ pub struct Commercial<'a> {
 ///
 /// Length *(optional)* must be a positive number of seconds.
 pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial<'_> {
-    let channel = super::make_channel(channel);
     Commercial {
         channel,
         length: length.into(),
@@ -27,18 +22,12 @@ pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial
 }
 
 impl<'a> Encodable for Commercial<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(
-            &&*self.channel,
-            &[
-                &"/commercial",
-                &self
-                    .length
-                    .map(|s| s.to_string())
-                    .as_deref()
-                    .unwrap_or_default(),
-            ],
-        )
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        let length = self.length.map(|s| s.to_string());
+        write_cmd!(buf, Channel(&self.channel) => "/commercial{}", MaybeEmpty(length.as_deref()))
     }
 }
 

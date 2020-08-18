@@ -1,17 +1,13 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Enables slow mode (limit how often users may send messages).
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Slow<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) duration: usize,
 }
 
@@ -23,7 +19,6 @@ pub struct Slow<'a> {
 ///
 /// [slow_off]: ./fn.slow_off.html
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
-    let channel = super::make_channel(channel);
     Slow {
         channel,
         duration: duration.into().unwrap_or(120),
@@ -31,8 +26,16 @@ pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
 }
 
 impl<'a> Encodable for Slow<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/slow", &self.duration.to_string()])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(
+            buf,
+            Channel(&self.channel) =>
+            "/slow {}",
+            &self.duration.to_string()
+        )
     }
 }
 

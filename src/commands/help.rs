@@ -1,28 +1,26 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Lists the commands available to you in this room.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Help<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Lists the commands available to you in this room.
-pub fn help(channel: &str) -> Help<'_> {
-    let channel = super::make_channel(channel);
+pub const fn help(channel: &str) -> Help<'_> {
     Help { channel }
 }
 
 impl<'a> Encodable for Help<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/help"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.channel) => "/help")
     }
 }
 

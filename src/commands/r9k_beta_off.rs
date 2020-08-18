@@ -1,28 +1,26 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Disables r9k mode.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct R9kBetaOff<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Disables r9k mode.
-pub fn r9k_beta_off(channel: &str) -> R9kBetaOff<'_> {
-    let channel = super::make_channel(channel);
+pub const fn r9k_beta_off(channel: &str) -> R9kBetaOff<'_> {
     R9kBetaOff { channel }
 }
 
 impl<'a> Encodable for R9kBetaOff<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/r9kbetaoff"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.channel) => "/r9kbetaoff")
     }
 }
 

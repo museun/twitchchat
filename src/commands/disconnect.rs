@@ -1,8 +1,6 @@
 use crate::Encodable;
 use std::io::{Result, Write};
 
-use super::ByteWriter;
-
 /// Reconnects to chat.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
@@ -20,8 +18,11 @@ pub const fn disconnect() -> Disconnect<'static> {
 }
 
 impl<'a> Encodable for Disconnect<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/disconnect"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_jtv_cmd!(buf, "/disconnect")
     }
 }
 

@@ -1,28 +1,22 @@
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Leave a channel. This handles prepending a leading '#' for you if you omit it.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Part<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Leave a channel. This handles prepending a leading '#' for you if you omit it.
-pub fn part(channel: &str) -> Part<'_> {
-    let channel = super::make_channel(channel);
+pub const fn part(channel: &str) -> Part<'_> {
     Part { channel }
 }
 
 impl<'a> Encodable for Part<'a> {
     fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts(&[&"PART", &&*self.channel])
+        write!(buf, "PART {}\r\n", super::Channel(self.channel))
     }
 }
 

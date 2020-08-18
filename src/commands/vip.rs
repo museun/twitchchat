@@ -1,17 +1,13 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Grant VIP status to a user.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Vip<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) username: &'a str,
 }
 
@@ -20,14 +16,16 @@ pub struct Vip<'a> {
 /// Use [vips] to list the VIPs of this channel.
 ///
 /// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
-pub fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
-    let channel = super::make_channel(channel);
+pub const fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
     Vip { channel, username }
 }
 
 impl<'a> Encodable for Vip<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/vip", &self.username])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(self.channel) => "/vip {}", self.username)
     }
 }
 

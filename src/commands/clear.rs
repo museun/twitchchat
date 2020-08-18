@@ -1,28 +1,25 @@
-use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
+use {super::Channel, crate::Encodable};
 
 /// Clear chat history for all users in this room.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Clear<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
 }
 
 /// Clear chat history for all users in this room.
-pub fn clear(channel: &str) -> Clear<'_> {
-    let channel = super::make_channel(channel);
+pub const fn clear(channel: &str) -> Clear<'_> {
     Clear { channel }
 }
 
 impl<'a> Encodable for Clear<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/clear"])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(self.channel) => "/clear")
     }
 }
 

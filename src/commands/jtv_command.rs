@@ -1,8 +1,6 @@
 use crate::Encodable;
 use std::io::{Result, Write};
 
-use super::ByteWriter;
-
 /// Sends the data as a command to the 'jtv' channel (e.g. `/color #FFFFFF`)
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
@@ -17,8 +15,11 @@ pub const fn jtv_command(data: &str) -> JtvCommand<'_> {
 }
 
 impl<'a> Encodable for JtvCommand<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&self.data])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_jtv_cmd!(buf, self.data)
     }
 }
 

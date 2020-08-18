@@ -1,29 +1,27 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Send a normal message to a channel
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Privmsg<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) msg: &'a str,
 }
 
 /// Send a normal message to a channel
-pub fn privmsg<'a>(channel: &'a str, msg: &'a str) -> Privmsg<'a> {
-    let channel = super::make_channel(channel);
+pub const fn privmsg<'a>(channel: &'a str, msg: &'a str) -> Privmsg<'a> {
     Privmsg { channel, msg }
 }
 
 impl<'a> Encodable for Privmsg<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).parts_term(&[&"PRIVMSG ", &&*self.channel, &" :", &self.msg])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_nl!(buf, "PRIVMSG {} :{}", Channel(&self.channel), self.msg)
     }
 }
 

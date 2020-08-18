@@ -1,7 +1,6 @@
+use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
-
-use super::ByteWriter;
 
 /// Send a raw IRC-style message
 #[non_exhaustive]

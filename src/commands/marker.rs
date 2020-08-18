@@ -1,17 +1,13 @@
+use super::{Channel, MaybeEmpty};
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) comment: Option<&'a str>,
 }
 
@@ -21,7 +17,6 @@ pub struct Marker<'a> {
 ///
 /// If the string exceeds 140 characters then it will be truncated
 pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Marker<'_> {
-    let channel = super::make_channel(channel);
     Marker {
         channel,
         comment: comment.into(),
@@ -45,10 +40,7 @@ impl<'a> Encodable for Marker<'a> {
             ""
         }
 
-        ByteWriter::new(buf).command(
-            &&*self.channel,
-            &[&"/marker", &self.comment.map(truncate).unwrap_or_default()],
-        )
+        write_cmd!(buf, Channel(&self.channel) => "/marker{}", MaybeEmpty(self.comment.map(truncate)))
     }
 }
 

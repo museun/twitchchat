@@ -1,7 +1,6 @@
+use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
-
-use super::ByteWriter;
 
 /// Respond to a server request (normally a PING) with the provided token
 #[non_exhaustive]

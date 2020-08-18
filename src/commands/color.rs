@@ -2,8 +2,6 @@ use crate::Encodable;
 use std::convert::TryInto;
 use std::io::{Result, Write};
 
-use super::ByteWriter;
-
 /// Change your username color.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
@@ -26,8 +24,11 @@ where
 }
 
 impl<'a> Encodable for Color<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).jtv_command(&[&"/color", &self.color.to_string()])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_jtv_cmd!(buf, "/color {}", &self.color.to_string())
     }
 }
 

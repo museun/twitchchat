@@ -1,7 +1,6 @@
+use super::ByteWriter;
 use crate::Encodable;
 use std::io::{Result, Write};
-
-use super::ByteWriter;
 
 /// Request a servver response  with the provided token
 #[non_exhaustive]

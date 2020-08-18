@@ -1,17 +1,13 @@
+use super::{Channel, MaybeEmpty};
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Temporarily prevent a user from chatting.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Timeout<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) username: &'a str,
     pub(crate) duration: Option<&'a str>,
     pub(crate) reason: Option<&'a str>,
@@ -41,7 +37,6 @@ pub fn timeout<'a>(
     duration: impl Into<Option<&'a str>>,
     reason: impl Into<Option<&'a str>>,
 ) -> Timeout<'a> {
-    let channel = super::make_channel(channel);
     Timeout {
         channel,
         username,
@@ -51,15 +46,15 @@ pub fn timeout<'a>(
 }
 
 impl<'a> Encodable for Timeout<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(
-            &&*self.channel,
-            &[
-                &"/timeout",
-                &self.username,
-                &self.duration.unwrap_or_default(),
-                &self.reason.unwrap_or_default(),
-            ],
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(self.channel)=>
+            "/timeout {}{}{}",
+            self.username,
+            MaybeEmpty(self.duration),
+            MaybeEmpty(self.reason),
         )
     }
 }

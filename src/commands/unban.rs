@@ -1,29 +1,27 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Removes a ban on a user.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unban<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) username: &'a str,
 }
 
 /// Removes a ban on a user.
-pub fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
-    let channel = super::make_channel(channel);
+pub const fn unban<'a>(channel: &'a str, username: &'a str) -> Unban<'a> {
     Unban { channel, username }
 }
 
 impl<'a> Encodable for Unban<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/unban", &self.username])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(self.channel) => "/unban {}", self.username)
     }
 }
 

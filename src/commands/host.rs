@@ -1,18 +1,14 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Host another channel.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Host<'a> {
-    pub(crate) source: Cow<'a, str>,
-    pub(crate) target: Cow<'a, str>,
+    pub(crate) source: &'a str,
+    pub(crate) target: &'a str,
 }
 
 /// Host another channel.
@@ -20,15 +16,16 @@ pub struct Host<'a> {
 /// Use [unhost] to unset host mode.
 ///
 /// [unhost]: ./struct.Encoder.html#method.unhost
-pub fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
-    let source = super::make_channel(source);
-    let target = super::make_channel(target);
+pub const fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
     Host { source, target }
 }
 
 impl<'a> Encodable for Host<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.source, &[&"/host", &&*self.target])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.source) => "/host {}", Channel(&self.target))
     }
 }
 

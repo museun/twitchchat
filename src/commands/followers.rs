@@ -1,17 +1,13 @@
+use super::Channel;
 use crate::Encodable;
-use std::{
-    borrow::Cow,
-    io::{Result, Write},
-};
-
-use super::ByteWriter;
+use std::io::{Result, Write};
 
 /// Enables followers-only mode (only users who have followed for `duration` may chat).
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Followers<'a> {
-    pub(crate) channel: Cow<'a, str>,
+    pub(crate) channel: &'a str,
     pub(crate) duration: &'a str,
 }
 
@@ -24,14 +20,16 @@ pub struct Followers<'a> {
 /// Use [followers_off] to disable.
 ///
 /// [followers_off]: ./fn.followers_off.html
-pub fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
-    let channel = super::make_channel(channel);
+pub const fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
     Followers { channel, duration }
 }
 
 impl<'a> Encodable for Followers<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
-        ByteWriter::new(buf).command(&&*self.channel, &[&"/followers", &self.duration])
+    fn encode<W>(&self, buf: &mut W) -> Result<()>
+    where
+        W: Write + ?Sized,
+    {
+        write_cmd!(buf, Channel(&self.channel) => "/followers {}", self.duration)
     }
 }
 
