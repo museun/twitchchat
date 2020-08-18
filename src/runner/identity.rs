@@ -3,7 +3,7 @@ use crate::{color::Color, runner::Capabilities};
 /// Your identity on Twitch.
 ///
 /// Currently this is only updated when you connect.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Identity {
     /// An anonymous identity.
     Anonymous {
