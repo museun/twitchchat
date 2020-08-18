@@ -72,7 +72,10 @@ mod tests {
             format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
         );
         test_encode(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+    }
 
+    #[test]
+    fn marker_ensure_channel_encode() {
         test_encode(
             marker("museun", Some("this is an example")),
             "PRIVMSG #museun :/marker this is an example\r\n",
@@ -104,7 +107,11 @@ mod tests {
             format!("PRIVMSG #museun :/marker {}\r\n", "a".repeat(140)),
         );
         test_serde(marker("#museun", None), "PRIVMSG #museun :/marker\r\n");
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn marker_ensure_channel_serde() {
         test_serde(
             marker("museun", Some("this is an example")),
             "PRIVMSG #museun :/marker this is an example\r\n",

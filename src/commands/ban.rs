@@ -50,6 +50,10 @@ mod tests {
             ban("#museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
         );
+    }
+
+    #[test]
+    fn ban_ensure_channel() {
         test_encode(
             ban("museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
@@ -63,6 +67,11 @@ mod tests {
             ban("#museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn ban_ensure_channel_serde() {
         test_serde(
             ban("museun", "museun", None),
             "PRIVMSG #museun :/ban museun\r\n",

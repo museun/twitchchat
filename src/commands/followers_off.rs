@@ -37,6 +37,10 @@ mod tests {
             followers_off("#museun"),
             "PRIVMSG #museun :/followersoff\r\n",
         );
+    }
+
+    #[test]
+    fn followers_off_ensure_channel_encode() {
         test_encode(
             followers_off("museun"),
             "PRIVMSG #museun :/followersoff\r\n",
@@ -50,6 +54,11 @@ mod tests {
             followers_off("#museun"),
             "PRIVMSG #museun :/followersoff\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn followers_off_ensure_channel_serde() {
         test_serde(
             followers_off("museun"),
             "PRIVMSG #museun :/followersoff\r\n",

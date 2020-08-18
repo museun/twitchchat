@@ -38,6 +38,10 @@ mod tests {
             untimeout("#museun", "museun"),
             "PRIVMSG #museun :/untimeout museun\r\n",
         );
+    }
+
+    #[test]
+    fn untimeout_ensure_channel_encode() {
         test_encode(
             command("museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",
@@ -51,6 +55,11 @@ mod tests {
             untimeout("#museun", "museun"),
             "PRIVMSG #museun :/untimeout museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn untimeout_ensure_channel_serde() {
         test_serde(
             command("museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",

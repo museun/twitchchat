@@ -38,10 +38,14 @@ mod tests {
             unban("#museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
         );
+    }
+
+    #[test]
+    fn unban_ensure_channel_encode() {
         test_encode(
             unban("museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
-        )
+        );
     }
 
     #[test]
@@ -51,9 +55,14 @@ mod tests {
             unban("#museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unban_ensure_channel_serde() {
         test_serde(
             unban("museun", "museun"),
             "PRIVMSG #museun :/unban museun\r\n",
-        )
+        );
     }
 }

@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn join_encode() {
         test_encode(join("#museun"), "JOIN #museun\r\n");
+    }
+
+    #[test]
+    fn join_ensure_channel_encode() {
         test_encode(join("museun"), "JOIN #museun\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn join_serde() {
         test_serde(join("#museun"), "JOIN #museun\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn join_ensure_channel_serde() {
         test_serde(join("museun"), "JOIN #museun\r\n");
     }
 }

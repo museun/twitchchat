@@ -38,6 +38,10 @@ mod tests {
     #[test]
     fn emote_only_encode() {
         test_encode(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n");
+    }
+
+    #[test]
+    fn emote_only_ensure_channel_encode() {
         test_encode(emote_only("museun"), "PRIVMSG #museun :/emoteonly\r\n")
     }
 
@@ -45,6 +49,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn emote_only_serde() {
         test_serde(emote_only("#museun"), "PRIVMSG #museun :/emoteonly\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn emote_only_ensure_channel_serde() {
         test_serde(emote_only("museun"), "PRIVMSG #museun :/emoteonly\r\n")
     }
 }

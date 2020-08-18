@@ -46,6 +46,10 @@ mod tests {
             followers("#museun", "1 week"),
             "PRIVMSG #museun :/followers 1 week\r\n",
         );
+    }
+
+    #[test]
+    fn followers_ensure_channel_encode() {
         test_encode(
             followers("museun", "1 week"),
             "PRIVMSG #museun :/followers 1 week\r\n",
@@ -59,10 +63,14 @@ mod tests {
             followers("#museun", "1 week"),
             "PRIVMSG #museun :/followers 1 week\r\n",
         );
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn followers_ensure_channel_serde() {
         test_serde(
             followers("museun", "1 week"),
             "PRIVMSG #museun :/followers 1 week\r\n",
-        )
+        );
     }
 }

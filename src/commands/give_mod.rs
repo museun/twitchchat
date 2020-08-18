@@ -42,6 +42,10 @@ mod tests {
             give_mod("#museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
         );
+    }
+
+    #[test]
+    fn give_mod_ensure_channel_encode() {
         test_encode(
             give_mod("museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
@@ -55,6 +59,11 @@ mod tests {
             give_mod("#museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn give_mod_ensure_channel_serde() {
         test_serde(
             give_mod("museun", "shaken_bot"),
             "PRIVMSG #museun :/mod shaken_bot\r\n",

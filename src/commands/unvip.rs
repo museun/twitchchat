@@ -42,6 +42,10 @@ mod tests {
             unvip("#museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
         );
+    }
+
+    #[test]
+    fn unvip_ensure_channel_encode() {
         test_encode(
             unvip("museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
@@ -55,6 +59,11 @@ mod tests {
             unvip("#museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unvip_ensure_channel_serde() {
         test_serde(
             unvip("museun", "museun"),
             "PRIVMSG #museun :/unvip museun\r\n",

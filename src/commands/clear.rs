@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn clear_encode() {
         test_encode(clear("#museun"), "PRIVMSG #museun :/clear\r\n");
+    }
+
+    #[test]
+    fn clear_ensure_channel_encode() {
         test_encode(clear("museun"), "PRIVMSG #museun :/clear\r\n")
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn clear_serde() {
         test_serde(clear("#museun"), "PRIVMSG #museun :/clear\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn clear_ensure_channel_serde() {
         test_serde(clear("museun"), "PRIVMSG #museun :/clear\r\n")
     }
 }

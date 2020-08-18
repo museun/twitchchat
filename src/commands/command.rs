@@ -38,6 +38,10 @@ mod tests {
             command("#museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",
         );
+    }
+
+    #[test]
+    fn command_ensure_channel_encode() {
         test_encode(
             command("museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",
@@ -51,6 +55,11 @@ mod tests {
             command("#museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn command_ensure_channel_serde() {
         test_serde(
             command("museun", "/testing"),
             "PRIVMSG #museun :/testing\r\n",

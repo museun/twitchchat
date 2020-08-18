@@ -61,7 +61,10 @@ mod tests {
             commercial("#museun", Some(10)),
             "PRIVMSG #museun :/commercial 10\r\n",
         );
+    }
 
+    #[test]
+    fn commercial_ensure_channel_encode() {
         test_encode(
             commercial("museun", None),
             "PRIVMSG #museun :/commercial\r\n",
@@ -91,7 +94,11 @@ mod tests {
             commercial("#museun", Some(10)),
             "PRIVMSG #museun :/commercial 10\r\n",
         );
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn commercial_ensure_channel_serde() {
         test_serde(
             commercial("museun", None),
             "PRIVMSG #museun :/commercial\r\n",

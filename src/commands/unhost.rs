@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn unhost_encode() {
         test_encode(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n");
+    }
+
+    #[test]
+    fn unhost_ensure_channel_encode() {
         test_encode(unhost("museun"), "PRIVMSG #museun :/unhost\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn unhost_serde() {
         test_serde(unhost("#museun"), "PRIVMSG #museun :/unhost\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unhost_ensure_channel_serde() {
         test_serde(unhost("museun"), "PRIVMSG #museun :/unhost\r\n")
     }
 }

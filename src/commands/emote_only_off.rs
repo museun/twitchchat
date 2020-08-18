@@ -37,6 +37,10 @@ mod tests {
             emote_only_off("#museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
         );
+    }
+
+    #[test]
+    fn emote_only_off_ensure_channel_encode() {
         test_encode(
             emote_only_off("museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
@@ -50,6 +54,11 @@ mod tests {
             emote_only_off("#museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn emote_only_off_ensure_channel_serde() {
         test_serde(
             emote_only_off("museun"),
             "PRIVMSG #museun :/emoteonlyoff\r\n",

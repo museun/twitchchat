@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn vips_encode() {
         test_encode(vips("#museun"), "PRIVMSG #museun :/vips\r\n");
+    }
+
+    #[test]
+    fn vips_ensure_channel_encode() {
         test_encode(vips("museun"), "PRIVMSG #museun :/vips\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn vips_serde() {
         test_serde(vips("#museun"), "PRIVMSG #museun :/vips\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn vips_ensure_channel_serde() {
         test_serde(vips("museun"), "PRIVMSG #museun :/vips\r\n");
     }
 }

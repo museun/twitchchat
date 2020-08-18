@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn part_encode() {
         test_encode(part("#museun"), "PART #museun\r\n");
+    }
+
+    #[test]
+    fn part_ensure_channel_encode() {
         test_encode(part("museun"), "PART #museun\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn part_serde() {
         test_serde(part("#museun"), "PART #museun\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn part_ensure_channel_serde() {
         test_serde(part("museun"), "PART #museun\r\n");
     }
 }

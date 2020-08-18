@@ -43,10 +43,15 @@ mod tests {
             raid("#museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
         );
+    }
+
+    #[test]
+    fn raid_ensure_channel_encode() {
         test_encode(
             raid("museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
         );
+
         test_encode(
             raid("#museun", "museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
@@ -64,6 +69,11 @@ mod tests {
             raid("#museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn raid_ensure_channel_serde() {
         test_serde(
             raid("museun", "#museun"),
             "PRIVMSG #museun :/raid #museun\r\n",

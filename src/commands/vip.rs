@@ -39,6 +39,10 @@ mod tests {
     #[test]
     fn vip_encode() {
         test_encode(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n");
+    }
+
+    #[test]
+    fn vip_ensure_channel_encode() {
         test_encode(vip("museun", "museun"), "PRIVMSG #museun :/vip museun\r\n");
     }
 
@@ -46,6 +50,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn vip_serde() {
         test_serde(vip("#museun", "museun"), "PRIVMSG #museun :/vip museun\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn vip_ensure_channel_serde() {
         test_serde(vip("museun", "museun"), "PRIVMSG #museun :/vip museun\r\n");
     }
 }

@@ -37,6 +37,10 @@ mod tests {
             subscribers_off("#museun"),
             "PRIVMSG #museun :/subscribersoff\r\n",
         );
+    }
+
+    #[test]
+    fn subscribers_off_ensure_channel_encode() {
         test_encode(
             subscribers_off("museun"),
             "PRIVMSG #museun :/subscribersoff\r\n",
@@ -50,6 +54,11 @@ mod tests {
             subscribers_off("#museun"),
             "PRIVMSG #museun :/subscribersoff\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn subscribers_off_ensure_channel_serde() {
         test_serde(
             subscribers_off("museun"),
             "PRIVMSG #museun :/subscribersoff\r\n",

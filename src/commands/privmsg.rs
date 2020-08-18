@@ -43,7 +43,10 @@ mod tests {
             privmsg("#museun", &"foo ".repeat(500)),
             format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
         );
+    }
 
+    #[test]
+    fn privmsg_ensure_channel_encode() {
         test_encode(
             privmsg("museun", "this is a test of a line"),
             "PRIVMSG #museun :this is a test of a line\r\n",
@@ -67,7 +70,11 @@ mod tests {
             privmsg("#museun", &"foo ".repeat(500)),
             format!("PRIVMSG #museun :{}\r\n", &"foo ".repeat(500)),
         );
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn privmsg_ensure_channel_serde() {
         test_serde(
             privmsg("museun", "this is a test of a line"),
             "PRIVMSG #museun :this is a test of a line\r\n",

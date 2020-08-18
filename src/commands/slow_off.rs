@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn slow_off_encode() {
         test_encode(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n");
+    }
+
+    #[test]
+    fn slow_off_ensure_channel_encode() {
         test_encode(slow_off("museun"), "PRIVMSG #museun :/slowoff\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn slow_off_serde() {
         test_serde(slow_off("#museun"), "PRIVMSG #museun :/slowoff\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn slow_off_ensure_channel_serde() {
         test_serde(slow_off("museun"), "PRIVMSG #museun :/slowoff\r\n");
     }
 }

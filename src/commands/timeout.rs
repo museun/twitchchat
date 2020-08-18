@@ -87,7 +87,10 @@ mod tests {
             timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
             "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
         );
+    }
 
+    #[test]
+    fn timeout_ensure_channel_encode() {
         test_encode(
             timeout("museun", "museun", None, None),
             "PRIVMSG #museun :/timeout museun\r\n",
@@ -125,7 +128,11 @@ mod tests {
             timeout("#museun", "museun", Some("1d2h"), Some("spamming")),
             "PRIVMSG #museun :/timeout museun 1d2h spamming\r\n",
         );
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn timeout_ensure_channel_serde() {
         test_serde(
             timeout("museun", "museun", None, None),
             "PRIVMSG #museun :/timeout museun\r\n",

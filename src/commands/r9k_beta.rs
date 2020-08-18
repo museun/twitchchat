@@ -38,6 +38,10 @@ mod tests {
     #[test]
     fn r9k_beta_encode() {
         test_encode(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n");
+    }
+
+    #[test]
+    fn r9k_beta_ensure_channel_encode() {
         test_encode(r9k_beta("museun"), "PRIVMSG #museun :/r9kbeta\r\n");
     }
 
@@ -45,6 +49,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn r9k_beta_serde() {
         test_serde(r9k_beta("#museun"), "PRIVMSG #museun :/r9kbeta\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn r9k_beta_ensure_channel_serde() {
         test_serde(r9k_beta("museun"), "PRIVMSG #museun :/r9kbeta\r\n");
     }
 }

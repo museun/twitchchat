@@ -46,7 +46,10 @@ mod tests {
         test_encode(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
         test_encode(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
         test_encode(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+    }
 
+    #[test]
+    fn slow_ensure_channel_encode() {
         test_encode(slow("museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
         test_encode(slow("museun", 42), "PRIVMSG #museun :/slow 42\r\n");
         test_encode(slow("museun", None), "PRIVMSG #museun :/slow 120\r\n");
@@ -58,7 +61,11 @@ mod tests {
         test_serde(slow("#museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
         test_serde(slow("#museun", 42), "PRIVMSG #museun :/slow 42\r\n");
         test_serde(slow("#museun", None), "PRIVMSG #museun :/slow 120\r\n");
+    }
 
+    #[test]
+    #[cfg(feature = "serde")]
+    fn slow_ensure_channel_serde() {
         test_serde(slow("museun", Some(42)), "PRIVMSG #museun :/slow 42\r\n");
         test_serde(slow("museun", 42), "PRIVMSG #museun :/slow 42\r\n");
         test_serde(slow("museun", None), "PRIVMSG #museun :/slow 120\r\n");

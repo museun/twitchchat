@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn unraid_encode() {
         test_encode(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n");
+    }
+
+    #[test]
+    fn unraid_ensure_channel_encode() {
         test_encode(unraid("museun"), "PRIVMSG #museun :/unraid\r\n")
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn unraid_serde() {
         test_serde(unraid("#museun"), "PRIVMSG #museun :/unraid\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unraid_ensure_channel_serde() {
         test_serde(unraid("museun"), "PRIVMSG #museun :/unraid\r\n")
     }
 }

@@ -42,6 +42,10 @@ mod tests {
             unmod("#museun", "museun"),
             "PRIVMSG #museun :/unmod museun\r\n",
         );
+    }
+
+    #[test]
+    fn unmod_ensure_channel_encode() {
         test_encode(
             unmod("museun", "museun"),
             "PRIVMSG #museun :/unmod museun\r\n",
@@ -55,6 +59,11 @@ mod tests {
             unmod("#museun", "museun"),
             "PRIVMSG #museun :/unmod museun\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn unmod_ensure_channel_serde() {
         test_serde(
             unmod("museun", "museun"),
             "PRIVMSG #museun :/unmod museun\r\n",

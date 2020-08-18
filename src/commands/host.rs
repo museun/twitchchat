@@ -43,8 +43,12 @@ mod tests {
             host("#museun", "#shaken_bot"),
             "PRIVMSG #museun :/host #shaken_bot\r\n",
         );
+    }
+
+    #[test]
+    fn host_ensure_channel_encode() {
         test_encode(
-            host("museun", "shaken_bot"),
+            host("#museun", "shaken_bot"),
             "PRIVMSG #museun :/host #shaken_bot\r\n",
         );
 
@@ -66,8 +70,13 @@ mod tests {
             host("#museun", "#shaken_bot"),
             "PRIVMSG #museun :/host #shaken_bot\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn host_ensure_channel_serde() {
         test_serde(
-            host("museun", "shaken_bot"),
+            host("#museun", "shaken_bot"),
             "PRIVMSG #museun :/host #shaken_bot\r\n",
         );
 

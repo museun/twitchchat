@@ -38,6 +38,10 @@ mod tests {
             me("#museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
         );
+    }
+
+    #[test]
+    fn me_ensure_channel_encode() {
         test_encode(
             me("museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
@@ -51,6 +55,11 @@ mod tests {
             me("#museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",
         );
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn me_ensure_channel_serde() {
         test_serde(
             me("museun", "some emote"),
             "PRIVMSG #museun :/me some emote\r\n",

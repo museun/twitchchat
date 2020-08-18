@@ -34,6 +34,10 @@ mod tests {
     #[test]
     fn help_encode() {
         test_encode(help("#museun"), "PRIVMSG #museun :/help\r\n");
+    }
+
+    #[test]
+    fn help_ensure_channel_encode() {
         test_encode(help("museun"), "PRIVMSG #museun :/help\r\n");
     }
 
@@ -41,6 +45,11 @@ mod tests {
     #[cfg(feature = "serde")]
     fn help_serde() {
         test_serde(help("#museun"), "PRIVMSG #museun :/help\r\n");
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn help_ensure_channel_serde() {
         test_serde(help("museun"), "PRIVMSG #museun :/help\r\n");
     }
 }
