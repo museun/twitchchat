@@ -15,6 +15,7 @@
     unused_qualifications
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_alias))]
 /*!
 This crate provides a way to interface with [Twitch]'s chat.
 
