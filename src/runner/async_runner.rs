@@ -58,15 +58,15 @@ impl AsyncRunner {
         C: Connector,
         for<'a> &'a C::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
     {
-        log::info!("connecting");
+        log::debug!("connecting");
         let mut stream = { connector }.connect().await?;
-        log::info!("connection established");
+        log::debug!("connection established");
 
-        log::info!("registering");
+        log::debug!("registering");
         let mut buf = vec![];
         commands::register(user_config).encode(&mut buf)?;
         stream.write_all(&buf).await?;
-        log::info!("registered");
+        log::debug!("registered");
 
         let read = async_dup::Arc::new(stream);
         let write = read.clone();
@@ -77,9 +77,16 @@ impl AsyncRunner {
         let mut decoder = AsyncDecoder::new(read);
         let mut encoder = AsyncEncoder::new(write);
 
-        log::info!("waiting for the connection to be ready");
-        let identity = Self::wait_for_ready(&mut decoder, &mut encoder, user_config).await?;
-        log::info!("connection is ready: {:?}", identity);
+        log::debug!("waiting for the connection to be ready");
+        let mut missed_messages = VecDeque::new();
+        let identity = Self::wait_for_ready(
+            &mut decoder,
+            &mut encoder,
+            user_config,
+            &mut missed_messages,
+        )
+        .await?;
+        log::debug!("connection is ready: {:?}", identity);
 
         let (writer_tx, writer_rx) = crate::channel::bounded(64);
         let (notify, notify_handle) = Notify::new();
@@ -88,7 +95,7 @@ impl AsyncRunner {
         let writer = AsyncWriter::new(MpscWriter::new(writer_tx), activity_tx);
 
         let timeout_state = TimeoutState::Start;
-        let (channels, missed_messages) = <_>::default();
+        let channels = Channels::default();
 
         let global_rate_limit = RateLimit::from_class(RateClass::Regular);
 
@@ -146,7 +153,7 @@ impl AsyncRunner {
             });
         }
 
-        log::info!("joining '{}'", channel);
+        log::debug!("joining '{}'", channel);
         self.encoder.encode(commands::join(channel)).await?;
 
         let channel = crate::commands::Channel(channel).to_string();
@@ -163,7 +170,7 @@ impl AsyncRunner {
             channel_and_us,
         )
         .await?;
-        log::info!("joined '{}'", channel);
+        log::debug!("joined '{}'", channel);
 
         Ok(())
     }
@@ -176,7 +183,7 @@ impl AsyncRunner {
             });
         }
 
-        log::info!("leaving '{}'", channel);
+        log::debug!("leaving '{}'", channel);
         self.encoder.encode(commands::part(channel)).await?;
 
         let channel = crate::commands::Channel(channel).to_string();
@@ -193,7 +200,7 @@ impl AsyncRunner {
             channel_and_us,
         )
         .await?;
-        log::info!("left '{}'", channel);
+        log::debug!("left '{}'", channel);
 
         Ok(())
     }
@@ -502,11 +509,14 @@ impl AsyncRunner {
         decoder: &mut AsyncDecoder<R>,
         encoder: &mut AsyncEncoder<W>,
         user_config: &UserConfig,
+        missed_messages: &mut VecDeque<Commands<'static>>,
     ) -> Result<Identity, Error>
     where
         R: AsyncRead + Send + Sync + Unpin,
         W: AsyncWrite + Send + Sync + Unpin,
     {
+        use crate::IntoOwned as _;
+
         let is_anonymous = user_config.is_anonymous();
 
         let mut looking_for: HashSet<_> = user_config.capabilities.iter().collect();
@@ -519,7 +529,12 @@ impl AsyncRunner {
             // this should always be infallible. its not marked infallible
             // because of the 'non-exhaustive' attribute
             use Commands::*;
-            match Commands::from_irc(msg).unwrap() {
+            let commands = Commands::from_irc(msg).unwrap(); // TODO why is this unwrapped?
+
+            // this is the simpliest way. and this'll only clone like 9 messages
+            missed_messages.push_back(commands.clone().into_owned());
+
+            match commands {
                 Ready(msg) => {
                     our_name.replace(msg.username().to_string());
 
@@ -586,7 +601,7 @@ impl AsyncRunner {
                 Ping(msg) => encoder.encode(commands::pong(msg.token())).await?,
 
                 _ => {}
-            }
+            };
         };
 
         Ok(identity)
