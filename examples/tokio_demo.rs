@@ -74,8 +74,7 @@ async fn handle_message(msg: messages::Commands<'_>) {
         // this crate add them.
         Raw(_) => {}
 
-        // these three you'll normally never see. 'connect' uses
-        // them internally.
+        /// These happen when you initially connect
         IrcReady(_) => {}
         Ready(_) => {}
         Cap(_) => {}
