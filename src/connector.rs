@@ -13,16 +13,19 @@
 //!
 //! ## TLS
 //!
-//! If you want TLS supports, this crate currently supports using various [`rustls`](https://docs.rs/rustls/latest/rustls/) wrappers.
+//! If you want TLS supports, enable the above runtime and also enable the cooresponding features:
 //!
-//! Enable the above runtime and also enable the cooresponding features:
+//! | Read/Write provider                                        | Runtime     | Features                                          | TLS backend                |
+//! | ---                                                        | ---         | ---                                               | ---                        |
+//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `"async-tls"`                                       | [`rustls`][rustls]         |
+//! | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `"async-tls"`                                       | [`rustls`][rustls]         |
+//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                       | [`rustls`][rustls]         |
+//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
+//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
 //!
-//! | Read/Write provider                                        | Runtime     | Features                                        |
-//! | ---                                                        | ---         | ---                                             |
-//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `async-tls`                                     |
-//! | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `async-tls`                                     |
-//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `async-tls`                                     |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `tokio-util`, `tokio-rustls` and `webpki-roots` |
+//! [rustls]: https://docs.rs/rustls/0.18.1/rustls/
+//! [native-tls]: https://docs.rs/native-tls/0.2.4/native_tls/
+//!
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 
@@ -77,7 +80,16 @@ pub use self::tokio::Connector as TokioConnector;
     feature = "webpki-roots"
 ))]
 #[doc(inline)]
-pub use self::tokio::ConnectorTls as TokioConnectorTls;
+pub use self::tokio::ConnectorRustTls as TokioConnectorRustTls;
+
+#[cfg(all(
+    feature = "tokio",
+    feature = "tokio-util",
+    feature = "tokio-native-tls",
+    feature = "native-tls"
+))]
+#[doc(inline)]
+pub use self::tokio::ConnectorNativeTls as TokioConnectorNativeTls;
 
 /// The connector trait. This is used to abstract out runtimes.
 ///
@@ -134,6 +146,14 @@ mod required {
     #[cfg(all(feature = "tokio", not(feature = "tokio-util")))]
     compile_error! {
         "'tokio-util' must be enabled when 'tokio' is enabled"
+    }
+
+    #[cfg(all(
+        feature = "tokio-native-tls",
+        not(all(feature = "tokio", feature = "tokio-util", feature = "native-tls"))
+    ))]
+    compile_error! {
+        "'tokio', 'tokio-util' and 'native-tls' must be enabled when 'tokio-native-tls' is enabled"
     }
 
     #[cfg(all(
