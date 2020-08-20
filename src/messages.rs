@@ -107,8 +107,8 @@ macro_rules! opt_str_field {
     };
 }
 
-mod all_commands;
-pub use all_commands::Commands;
+mod commands;
+pub use commands::Commands;
 
 mod irc_ready;
 pub use irc_ready::IrcReady;

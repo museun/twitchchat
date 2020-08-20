@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "serde")]
-    fn all_commands_serde() {
+    fn commands_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
         crate::serde::round_trip_json::<Commands>(input);
         crate::serde::round_trip_rmp::<Commands>(input);
