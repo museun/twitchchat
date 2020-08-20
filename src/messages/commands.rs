@@ -6,7 +6,7 @@ use {super::*, crate::*};
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum AllCommands<'a> {
+pub enum Commands<'a> {
     /// An raw event occured
     Raw(IrcMessage<'a>),
     /// A capabilities event occured
@@ -47,7 +47,7 @@ pub enum AllCommands<'a> {
     Whisper(Whisper<'a>),
 }
 
-impl<'a> AllCommands<'a> {
+impl<'a> Commands<'a> {
     /// Get the raw string out of this
     pub fn raw(&'a self) -> &'a str {
         match self {
@@ -74,35 +74,35 @@ impl<'a> AllCommands<'a> {
     }
 }
 
-impl<'a> IntoOwned<'a> for AllCommands<'a> {
-    type Output = AllCommands<'static>;
+impl<'a> IntoOwned<'a> for Commands<'a> {
+    type Output = Commands<'static>;
 
     fn into_owned(self) -> Self::Output {
         match self {
-            Self::Raw(s) => AllCommands::Raw(s.into_owned()),
-            Self::IrcReady(s) => AllCommands::IrcReady(s.into_owned()),
-            Self::Ready(s) => AllCommands::Ready(s.into_owned()),
-            Self::Cap(s) => AllCommands::Cap(s.into_owned()),
-            Self::ClearChat(s) => AllCommands::ClearChat(s.into_owned()),
-            Self::ClearMsg(s) => AllCommands::ClearMsg(s.into_owned()),
-            Self::GlobalUserState(s) => AllCommands::GlobalUserState(s.into_owned()),
-            Self::HostTarget(s) => AllCommands::HostTarget(s.into_owned()),
-            Self::Join(s) => AllCommands::Join(s.into_owned()),
-            Self::Notice(s) => AllCommands::Notice(s.into_owned()),
-            Self::Part(s) => AllCommands::Part(s.into_owned()),
-            Self::Ping(s) => AllCommands::Ping(s.into_owned()),
-            Self::Pong(s) => AllCommands::Pong(s.into_owned()),
-            Self::Privmsg(s) => AllCommands::Privmsg(s.into_owned()),
-            Self::Reconnect(s) => AllCommands::Reconnect(s.into_owned()),
-            Self::RoomState(s) => AllCommands::RoomState(s.into_owned()),
-            Self::UserNotice(s) => AllCommands::UserNotice(s.into_owned()),
-            Self::UserState(s) => AllCommands::UserState(s.into_owned()),
-            Self::Whisper(s) => AllCommands::Whisper(s.into_owned()),
+            Self::Raw(s) => Commands::Raw(s.into_owned()),
+            Self::IrcReady(s) => Commands::IrcReady(s.into_owned()),
+            Self::Ready(s) => Commands::Ready(s.into_owned()),
+            Self::Cap(s) => Commands::Cap(s.into_owned()),
+            Self::ClearChat(s) => Commands::ClearChat(s.into_owned()),
+            Self::ClearMsg(s) => Commands::ClearMsg(s.into_owned()),
+            Self::GlobalUserState(s) => Commands::GlobalUserState(s.into_owned()),
+            Self::HostTarget(s) => Commands::HostTarget(s.into_owned()),
+            Self::Join(s) => Commands::Join(s.into_owned()),
+            Self::Notice(s) => Commands::Notice(s.into_owned()),
+            Self::Part(s) => Commands::Part(s.into_owned()),
+            Self::Ping(s) => Commands::Ping(s.into_owned()),
+            Self::Pong(s) => Commands::Pong(s.into_owned()),
+            Self::Privmsg(s) => Commands::Privmsg(s.into_owned()),
+            Self::Reconnect(s) => Commands::Reconnect(s.into_owned()),
+            Self::RoomState(s) => Commands::RoomState(s.into_owned()),
+            Self::UserNotice(s) => Commands::UserNotice(s.into_owned()),
+            Self::UserState(s) => Commands::UserState(s.into_owned()),
+            Self::Whisper(s) => Commands::Whisper(s.into_owned()),
         }
     }
 }
 
-impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
+impl<'a> FromIrcMessage<'a> for Commands<'a> {
     type Error = InvalidMessage;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
@@ -166,7 +166,7 @@ impl<'a> FromIrcMessage<'a> for AllCommands<'a> {
 
 macro_rules! from_other {
     ($($ident:tt)*) => {
-        $(impl<'a> From<$ident<'a>> for AllCommands<'a> {
+        $(impl<'a> From<$ident<'a>> for Commands<'a> {
             fn from(msg: $ident<'a>) -> Self {
                 Self::$ident(msg)
             }
@@ -206,15 +206,15 @@ mod tests {
     #[cfg(feature = "serde")]
     fn all_commands_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        crate::serde::round_trip_json::<AllCommands>(input);
-        crate::serde::round_trip_rmp::<AllCommands>(input);
+        crate::serde::round_trip_json::<Commands>(input);
+        crate::serde::round_trip_rmp::<Commands>(input);
     }
 
     #[test]
     fn ensure_const_match() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
         let msg = IrcMessage::parse(Str::Borrowed(input)).unwrap();
-        let all = AllCommands::from_irc(msg).unwrap();
-        assert!(matches!(all, AllCommands::Privmsg{..}));
+        let all = Commands::from_irc(msg).unwrap();
+        assert!(matches!(all, Commands::Privmsg{..}));
     }
 }

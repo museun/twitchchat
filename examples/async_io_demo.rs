@@ -62,8 +62,8 @@ async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Resul
     Ok(runner)
 }
 
-async fn handle_message(msg: messages::AllCommands<'_>) {
-    use messages::AllCommands::*;
+async fn handle_message(msg: messages::Commands<'_>) {
+    use messages::Commands::*;
     // All sorts of messages
     match msg {
         // This is the one users send to channels

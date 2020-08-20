@@ -5,7 +5,7 @@ use std::collections::HashMap;
 // extensions to the Privmsg type
 use twitchchat::PrivmsgExt as _;
 use twitchchat::{
-    messages::{AllCommands, Privmsg},
+    messages::{Commands, Privmsg},
     runner::{AsyncRunner, NotifyHandle, Status},
     writer::{AsyncWriter, MpscWriter},
     UserConfig,
@@ -108,8 +108,8 @@ impl Bot {
         loop {
             // this drives the internal state of the crate
             match runner.next_message().await? {
-                // if we get a Privmsg (you'll get an AllCommands enum for all messages received)
-                Status::Message(AllCommands::Privmsg(pm)) => {
+                // if we get a Privmsg (you'll get an Commands enum for all messages received)
+                Status::Message(Commands::Privmsg(pm)) => {
                     // see if its a command and do stuff with it
                     if let Some(cmd) = Self::parse_command(pm.data()) {
                         if let Some(command) = self.commands.get_mut(cmd) {

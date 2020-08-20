@@ -42,16 +42,16 @@ fn parse_demo() {
             .map(|s| s.unwrap())
             .unwrap();
 
-        // parse it as an AllCommands, which wraps all of the provided messages
-        let all = messages::AllCommands::from_irc(msg).unwrap();
-        assert!(matches!(all, messages::AllCommands::Privmsg{..}));
+        // parse it as an Commands, which wraps all of the provided messages
+        let all = messages::Commands::from_irc(msg).unwrap();
+        assert!(matches!(all, messages::Commands::Privmsg{..}));
 
         // this is still borrowing from the 'input' from above.
-        let all: messages::AllCommands<'_> = all;
+        let all: messages::Commands<'_> = all;
 
         // to turn it into an 'owned' version (e.g. a 'static lifetime)
         let all = all.into_owned();
-        let _all: messages::AllCommands<'static> = all;
+        let _all: messages::Commands<'static> = all;
     }
 
     // double the string for the test
@@ -80,9 +80,9 @@ fn parse_demo() {
     // or as a FromStr parsed value
     assert_eq!(msg.tags().get_parsed::<_, i32>("key3").unwrap(), 42);
 
-    // you can convert a parsed message into an AllCommands easily by using From/Into;
-    let all: messages::AllCommands<'_> = msg_b.into();
-    assert!(matches!(all, messages::AllCommands::Raw{..}));
+    // you can convert a parsed message into an Commands easily by using From/Into;
+    let all: messages::Commands<'_> = msg_b.into();
+    assert!(matches!(all, messages::Commands::Raw{..}));
 }
 
 fn decoder_demo() {
