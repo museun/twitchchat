@@ -81,7 +81,7 @@ mod native_tls {
     impl ConnectorNativeTls {
         /// Create a new `tokio` TLS connector.
         pub fn twitch() -> Self {
-            Self::custom(crate::TWITCH_IRC_ADDRESS, crate::TWITCH_TLS_DOMAIN)
+            Self::custom(crate::TWITCH_IRC_ADDRESS_TLS, crate::TWITCH_TLS_DOMAIN)
                 .expect("twitch DNS resolution")
         }
 
@@ -174,7 +174,7 @@ mod rustls {
     impl ConnectorRustTls {
         /// Create a new `tokio` TLS connector.
         pub fn twitch() -> Self {
-            Self::custom(crate::TWITCH_IRC_ADDRESS, crate::TWITCH_TLS_DOMAIN)
+            Self::custom(crate::TWITCH_IRC_ADDRESS_TLS, crate::TWITCH_TLS_DOMAIN)
                 .expect("twitch DNS resolution")
         }
 
