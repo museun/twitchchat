@@ -50,7 +50,7 @@ mod tls {
     impl ConnectorTls {
         /// Create a new `async_io` TLS connector.
         pub fn twitch() -> Self {
-            Self::custom(crate::TWITCH_IRC_ADDRESS, crate::TWITCH_TLS_DOMAIN)
+            Self::custom(crate::TWITCH_IRC_ADDRESS_TLS, crate::TWITCH_TLS_DOMAIN)
                 .expect("twitch DNS resolution")
         }
 
