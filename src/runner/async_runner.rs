@@ -2,7 +2,7 @@ use crate::{
     channel::Receiver,
     commands,
     connector::Connector,
-    messages::{AllCommands, Capability, Join, MessageId, Part},
+    messages::{Capability, Commands, Join, MessageId, Part},
     rate_limit::RateLimit,
     util::{Either, Notify, NotifyHandle},
     writer::{AsyncWriter, MpscWriter},
@@ -40,7 +40,7 @@ pub struct AsyncRunner {
     writer: AsyncWriter<MpscWriter>,
     global_rate_limit: RateLimit,
 
-    missed_messages: VecDeque<AllCommands<'static>>,
+    missed_messages: VecDeque<Commands<'static>>,
 }
 
 impl std::fmt::Debug for AsyncRunner {
@@ -157,7 +157,7 @@ impl AsyncRunner {
         };
         self.wait_for_cmd(
             |cmd| match cmd {
-                AllCommands::Join(msg) => Some(msg),
+                Commands::Join(msg) => Some(msg),
                 _ => None,
             },
             channel_and_us,
@@ -187,7 +187,7 @@ impl AsyncRunner {
         };
         self.wait_for_cmd(
             |cmd| match cmd {
-                AllCommands::Part(msg) => Some(msg),
+                Commands::Part(msg) => Some(msg),
                 _ => None,
             },
             channel_and_us,
@@ -263,7 +263,7 @@ impl AsyncRunner {
 
                 self.timeout_state = TimeoutState::activity();
 
-                let all = AllCommands::from_irc(msg) //
+                let all = Commands::from_irc(msg) //
                     .expect("msg identity conversion should be upheld")
                     .into_owned();
 
@@ -336,8 +336,8 @@ impl AsyncRunner {
         Ok(StepResult::Nothing)
     }
 
-    async fn check_messages(&mut self, all: &AllCommands<'static>) -> Result<(), Error> {
-        use {AllCommands::*, TimeoutState::*};
+    async fn check_messages(&mut self, all: &Commands<'static>) -> Result<(), Error> {
+        use {Commands::*, TimeoutState::*};
 
         match &all {
             Ping(msg) => {
@@ -401,7 +401,7 @@ type WaitFor<T> = Either<VecDeque<T>, Status<'static>>;
 impl AsyncRunner {
     async fn wait_for_cmd<F, T, E>(&mut self, extract: F, cmp: E) -> Result<(), Error>
     where
-        for<'a> F: Fn(&'a AllCommands<'static>) -> Option<&'a T>,
+        for<'a> F: Fn(&'a Commands<'static>) -> Option<&'a T>,
         E: Fn(&T, &Self) -> bool,
 
         // for clippy
@@ -424,9 +424,9 @@ impl AsyncRunner {
         Ok(())
     }
 
-    async fn wait_for<F>(&mut self, func: F) -> Result<WaitFor<AllCommands<'static>>, Error>
+    async fn wait_for<F>(&mut self, func: F) -> Result<WaitFor<Commands<'static>>, Error>
     where
-        F: Fn(&AllCommands<'static>, &Self) -> bool,
+        F: Fn(&Commands<'static>, &Self) -> bool,
 
         // for clippy
         F: Send + Sync,
@@ -518,8 +518,8 @@ impl AsyncRunner {
 
             // this should always be infallible. its not marked infallible
             // because of the 'non-exhaustive' attribute
-            use AllCommands::*;
-            match AllCommands::from_irc(msg).unwrap() {
+            use Commands::*;
+            match Commands::from_irc(msg).unwrap() {
                 Ready(msg) => {
                     our_name.replace(msg.username().to_string());
 

@@ -108,7 +108,7 @@ macro_rules! opt_str_field {
 }
 
 mod all_commands;
-pub use all_commands::AllCommands;
+pub use all_commands::Commands;
 
 mod irc_ready;
 pub use irc_ready::IrcReady;

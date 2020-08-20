@@ -1,4 +1,4 @@
-use crate::messages::AllCommands;
+use crate::messages::Commands;
 
 /// Result of a single step of the loop
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub enum StepResult<'a> {
 #[derive(Debug)]
 pub enum Status<'a> {
     /// A message was produced
-    Message(AllCommands<'a>),
+    Message(Commands<'a>),
     /// The user quit the loop
     Quit,
     /// Loop run to completion
