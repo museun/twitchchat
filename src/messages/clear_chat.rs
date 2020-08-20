@@ -87,6 +87,7 @@ mod tests {
     fn clear_chat_serde() {
         let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
         crate::serde::round_trip_json::<ClearChat>(input);
+        crate::serde::round_trip_rmp::<ClearChat>(input);
     }
 
     #[test]

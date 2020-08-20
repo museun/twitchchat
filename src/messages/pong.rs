@@ -48,6 +48,7 @@ mod tests {
     fn pong_serde() {
         let input = "PONG :1234567890\r\n";
         crate::serde::round_trip_json::<Pong>(input);
+        crate::serde::round_trip_rmp::<Pong>(input);
     }
 
     #[test]

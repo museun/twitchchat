@@ -47,6 +47,7 @@ mod tests {
     fn ready_serde() {
         let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
         crate::serde::round_trip_json::<Ready>(input);
+        crate::serde::round_trip_rmp::<Ready>(input);
     }
 
     #[test]

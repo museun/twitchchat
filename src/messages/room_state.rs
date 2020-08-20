@@ -98,6 +98,7 @@ mod tests {
     fn user_state_serde() {
         let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
         crate::serde::round_trip_json::<RoomState>(input);
+        crate::serde::round_trip_rmp::<RoomState>(input);
     }
 
     #[test]

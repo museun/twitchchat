@@ -292,6 +292,7 @@ mod tests {
 
         for input in input {
             crate::serde::round_trip_json::<Privmsg>(input);
+            crate::serde::round_trip_rmp::<Privmsg>(input);
         }
     }
 

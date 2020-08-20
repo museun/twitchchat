@@ -11,10 +11,10 @@ macro_rules! serde_struct {
             where
                 S: ::serde::Serializer,
             {
-                use ::serde::ser::SerializeStruct as _;
+                use ::serde::ser::SerializeMap as _;
                 let len = serde_struct!(@len $($field),*);
-                let mut s = serializer.serialize_struct(stringify!($ty), len)?;
-                $( s.serialize_field(stringify!($field), &self.$field())?; )*
+                let mut s = serializer.serialize_map(Some(len))?;
+                $( s.serialize_entry(stringify!($field), &self.$field())?; )*
                 s.end()
             }
         }

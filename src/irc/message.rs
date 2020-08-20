@@ -218,15 +218,15 @@ impl<'a> ::serde::Serialize for IrcMessage<'a> {
     where
         S: ::serde::Serializer,
     {
-        use ::serde::ser::SerializeStruct as _;
+        use ::serde::ser::SerializeMap as _;
 
-        let mut s = serializer.serialize_struct("IrcMessage", 6)?;
-        s.serialize_field("raw", &&*self.raw)?;
-        s.serialize_field("tags", &self.get_tags())?;
-        s.serialize_field("prefix", &self.get_prefix())?;
-        s.serialize_field("command", &self.get_command())?;
-        s.serialize_field("args", &self.get_args())?;
-        s.serialize_field("data", &self.get_data())?;
+        let mut s = serializer.serialize_map(Some(6))?;
+        s.serialize_entry("raw", &&*self.raw)?;
+        s.serialize_entry("tags", &self.get_tags())?;
+        s.serialize_entry("prefix", &self.get_prefix())?;
+        s.serialize_entry("command", &self.get_command())?;
+        s.serialize_entry("args", &self.get_args())?;
+        s.serialize_entry("data", &self.get_data())?;
         s.end()
     }
 }
@@ -250,6 +250,7 @@ mod tests {
     fn irc_message_serde() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
         crate::serde::round_trip_json::<IrcMessage>(input);
+        crate::serde::round_trip_rmp::<IrcMessage>(input);
     }
 
     #[test]

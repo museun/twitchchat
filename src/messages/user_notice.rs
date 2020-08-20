@@ -363,6 +363,7 @@ mod tests {
 
         for input in input {
             crate::serde::round_trip_json::<UserNotice>(input);
+            crate::serde::round_trip_rmp::<UserNotice>(input);
         }
     }
 

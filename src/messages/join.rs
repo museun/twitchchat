@@ -54,6 +54,7 @@ mod tests {
     fn join_serde() {
         let input = ":test!test@test JOIN #foo\r\n";
         crate::serde::round_trip_json::<Join>(input);
+        crate::serde::round_trip_rmp::<Join>(input);
     }
 
     #[test]

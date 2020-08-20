@@ -41,6 +41,7 @@ mod tests {
     fn reconnect_serde() {
         let input = ":tmi.twitch.tv RECONNECT\r\n";
         crate::serde::round_trip_json::<Reconnect>(input);
+        crate::serde::round_trip_rmp::<Reconnect>(input);
     }
 
     #[test]

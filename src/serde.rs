@@ -31,11 +31,7 @@ where
 {
     type Value = T;
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            formatter,
-            "expected to parse '{}'",
-            std::any::type_name::<T>()
-        )
+        write!(formatter, "map")
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -86,5 +82,19 @@ where
     let left = T::from_irc(msg).unwrap();
     let json = serde_json::to_string(&left).unwrap();
     let right = serde_json::from_str::<T>(&json).unwrap();
+    assert_eq!(left, right)
+}
+
+#[cfg(test)]
+pub(crate) fn round_trip_rmp<'a, T>(input: &'a str)
+where
+    T: FromIrcMessage<'a> + PartialEq + std::fmt::Debug,
+    T::Error: std::fmt::Debug,
+    for<'de> T: ::serde::Serialize + ::serde::Deserialize<'de>,
+{
+    let (_, msg) = crate::irc::parse_one(input).unwrap();
+    let left = T::from_irc(msg).unwrap();
+    let vec = rmp_serde::to_vec(&left).unwrap();
+    let right = rmp_serde::from_slice::<T>(&vec).unwrap();
     assert_eq!(left, right)
 }

@@ -46,6 +46,7 @@ mod tests {
     fn irc_ready_serde() {
         let input = ":tmi.twitch.tv 001 shaken_bot :Welcome, GLHF!\r\n";
         crate::serde::round_trip_json::<IrcReady>(input);
+        crate::serde::round_trip_rmp::<IrcReady>(input);
     }
 
     #[test]

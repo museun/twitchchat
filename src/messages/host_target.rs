@@ -111,6 +111,7 @@ mod tests {
     fn host_target_serde() {
         let input = ":tmi.twitch.tv HOSTTARGET #shaken_bot :museun 1024\r\n";
         crate::serde::round_trip_json::<HostTarget>(input);
+        crate::serde::round_trip_rmp::<HostTarget>(input);
     }
 
     #[test]
