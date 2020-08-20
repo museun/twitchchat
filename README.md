@@ -9,8 +9,7 @@ Along with parse messages as Rust types, it provides methods for sending message
 
 It also provides an 'event' loop which you can use to make a bot.
 
-
-## Runtime
+### Runtime
 This crate is runtime agonostic. To use..
 
 | Read/Write provider                                        | Features                |
@@ -19,16 +18,22 @@ This crate is runtime agonostic. To use..
 | [`smol`](https://docs.rs/smol/latest/smol/)                |`smol`                   |
 | [`async_std`](https://docs.rs/async-std/latest/async_std/) |`async-std`              |
 | [`tokio`](https://docs.rs/tokio/latest/tokio/)             |`tokio` and `tokio-util` |
-### TLS
-If you want TLS supports, this crate currently supports using various [`rustls`](https://docs.rs/rustls/latest/rustls/) wrappers.
 
-Enable the above runtime and also enable the cooresponding features:
-| Read/Write provider                                        | Runtime     | Features                                        |
-| ---                                                        | ---         | ---                                             |
-| [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `async-tls`                                     |
-| [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `async-tls`                                     |
-| [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `async-tls`                                     |
-| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `tokio-util`, `tokio-rustls` and `webpki-roots` |
+### TLS
+
+If you want TLS supports, enable the above runtime and also enable the cooresponding features:
+
+| Read/Write provider                                        | Runtime     | Features                                          | TLS backend                |
+| ---                                                        | ---         | ---                                               | ---                        |
+| [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `"async-tls"`                                       | [`rustls`][rustls]         |
+| [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `"async-tls"`                                       | [`rustls`][rustls]         |
+| [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                       | [`rustls`][rustls]         |
+| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
+| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
+
+[rustls]: https://docs.rs/rustls/0.18.1/rustls/
+[native-tls]: https://docs.rs/native-tls/0.2.4/native_tls/
+
 
 ## Serde support
 To enable serde support, simply enable the optional `serde` feature
