@@ -54,6 +54,7 @@ mod tests {
     fn part_serde() {
         let input = ":test!test@test PART #museun\r\n";
         crate::serde::round_trip_json::<Part>(input);
+        crate::serde::round_trip_rmp::<Part>(input);
     }
 
     #[test]

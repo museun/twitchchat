@@ -133,6 +133,7 @@ mod tests {
     fn global_user_state_serde() {
         let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
         crate::serde::round_trip_json::<GlobalUserState>(input);
+        crate::serde::round_trip_rmp::<GlobalUserState>(input);
     }
 
     #[test]

@@ -46,6 +46,7 @@ mod tests {
     fn ping_serde() {
         let input = "PING :1234567890\r\n";
         crate::serde::round_trip_json::<Ping>(input);
+        crate::serde::round_trip_rmp::<Ping>(input);
     }
 
     #[test]

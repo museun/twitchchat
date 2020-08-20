@@ -139,7 +139,8 @@ mod tests {
     #[cfg(feature = "serde")]
     fn whisper_serde() {
         let input = ":test!user@host WHISPER museun :this is a test\r\n";
-        crate::serde::round_trip_json::<Whisper>(input)
+        crate::serde::round_trip_json::<Whisper>(input);
+        crate::serde::round_trip_rmp::<Whisper>(input);
     }
 
     #[test]

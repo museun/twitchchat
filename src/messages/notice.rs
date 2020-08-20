@@ -590,6 +590,7 @@ mod tests {
     fn notice_serde() {
         let input = "@msg-id=tos_ban :tmi.twitch.tv NOTICE #museun :TOS ban.\r\n";
         crate::serde::round_trip_json::<Notice>(input);
+        crate::serde::round_trip_rmp::<Notice>(input);
     }
 
     #[test]
