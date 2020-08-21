@@ -78,7 +78,7 @@ macro_rules! into_inner_raw {
 macro_rules! tags {
     () => {
         /// Get a view of parsable tags
-        pub fn tags(&self) -> Tags<'_> {
+        pub fn tags(&self) -> $crate::irc::Tags<'_> {
             Tags {
                 data: &self.raw,
                 indices: &self.tags,

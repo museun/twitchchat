@@ -83,37 +83,6 @@ pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
 pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
-// traits
-#[doc(inline)]
-pub use encoder::Encodable;
-// #[doc(inline)]
-pub use ext::PrivmsgExt;
-#[doc(inline)]
-pub use irc::{FromIrcMessage, IntoIrcMessage};
-// #[doc(inline)]
-pub use maybe_owned::IntoOwned;
-#[doc(inline)]
-pub use validator::Validator;
-
-// errors
-#[doc(inline)]
-pub use decoder::DecodeError;
-// #[doc(inline)]
-pub use irc::MessageError;
-// #[doc(inline)]
-pub use runner::Error as RunnerError;
-
-/// Prelude with common types
-pub mod prelude {
-    pub use super::decoder::{AsyncDecoder, Decoder};
-    pub use super::encoder::{AsyncEncoder, Encodable, Encoder};
-    pub use super::irc::{IrcMessage, TagIndices, Tags};
-    pub use super::rate_limit::RateClass;
-    pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-    pub use super::twitch;
-    pub use super::{commands, messages};
-}
-
 #[macro_use]
 #[allow(unused_macros)]
 mod macros;
@@ -135,22 +104,58 @@ pub mod writer;
 // this is so we don't expose an external dep
 pub mod channel;
 
-#[doc(inline)]
-pub use crate::prelude::{
-    twitch::UserConfig, AsyncDecoder, AsyncEncoder, AsyncRunner, Decoder, Encoder, IrcMessage,
-    Status,
-};
-
-mod validator;
-
-use crate::channel::Sender;
-use crate::maybe_owned::{MaybeOwned, MaybeOwnedIndex};
-// use prelude::*;
-
 // our internal stuff that should never be exposed
 #[cfg(feature = "serde")]
 mod serde;
 mod util;
+mod validator;
+
+/// Prelude with common types
+// #[doc(no_inline)]
+pub mod prelude {
+    // #[doc(no_inline)]
+    pub use super::decoder::{AsyncDecoder, Decoder};
+    // #[doc(no_inline)]
+    pub use super::encoder::{AsyncEncoder, Encodable, Encoder};
+    // #[doc(no_inline)]
+    pub use super::irc::{IrcMessage, TagIndices, Tags};
+    // #[doc(no_inline)]
+    pub use super::rate_limit::RateClass;
+    // #[doc(no_inline)]
+    pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
+    // #[doc(no_inline)]
+    pub use super::twitch;
+    // #[doc(no_inline)]
+    pub use super::{commands, messages};
+}
+
+// errors
+#[doc(inline)]
+pub use decoder::DecodeError;
+pub use irc::MessageError;
+pub use runner::Error as RunnerError;
+
+// very common types
+#[doc(inline)]
+pub use self::decoder::{AsyncDecoder, Decoder};
+#[doc(inline)]
+pub use self::encoder::{AsyncEncoder, Encoder};
+pub use self::irc::IrcMessage;
+pub use self::runner::{AsyncRunner, Status};
+pub use self::twitch::UserConfig;
+
+// traits
+#[doc(inline)]
+pub use encoder::Encodable;
+pub use ext::PrivmsgExt;
+#[doc(inline)]
+pub use irc::{FromIrcMessage, IntoIrcMessage};
+pub use maybe_owned::IntoOwned;
+#[doc(inline)]
+pub use validator::Validator;
+
+use crate::channel::Sender;
+use crate::maybe_owned::{MaybeOwned, MaybeOwnedIndex};
 
 mod ext {
     use crate::{messages::Privmsg, Encodable};
