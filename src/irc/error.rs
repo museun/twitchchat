@@ -1,7 +1,7 @@
 /// An invalid message was either provided, or could not be parsed
 #[derive(Debug)]
 #[non_exhaustive]
-pub enum InvalidMessage {
+pub enum MessageError {
     /// Invalid command
     InvalidCommand {
         /// Expedted this command
@@ -52,7 +52,7 @@ pub enum InvalidMessage {
     },
 }
 
-impl std::fmt::Display for InvalidMessage {
+impl std::fmt::Display for MessageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCommand { expected, got } => {
@@ -71,7 +71,7 @@ impl std::fmt::Display for InvalidMessage {
     }
 }
 
-impl std::error::Error for InvalidMessage {
+impl std::error::Error for MessageError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::CannotParseTag { error, .. } => Some(&**error),

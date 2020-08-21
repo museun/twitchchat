@@ -1,11 +1,11 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// An event that is produced when the Twitch connection has been succesfully
 /// established
 #[derive(Clone, PartialEq)]
 pub struct Ready<'a> {
-    raw: Str<'a>,
-    username: StrIndex,
+    raw: MaybeOwned<'a>,
+    username: MaybeOwnedIndex,
 }
 
 impl<'a> Ready<'a> {
@@ -17,7 +17,7 @@ impl<'a> Ready<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Ready<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::READY)?;
@@ -40,7 +40,6 @@ serde_struct!(Ready { raw, username });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -53,7 +52,7 @@ mod tests {
     #[test]
     fn ready() {
         let input = ":tmi.twitch.tv 376 shaken_bot :>\r\n";
-        for irc in irc::parse(input).map(|s| s.unwrap()) {
+        for irc in parse(input).map(|s| s.unwrap()) {
             let msg = Ready::from_irc(irc).unwrap();
             assert_eq!(msg.username(), "shaken_bot")
         }

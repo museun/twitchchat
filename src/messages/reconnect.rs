@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, Validator};
 
 /// Signals that you should reconnect and rejoin channels after a restart.
 ///
@@ -9,7 +9,7 @@ use crate::*;
 /// would normally.
 #[derive(Clone, PartialEq)]
 pub struct Reconnect<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
 }
 
 impl<'a> Reconnect<'a> {
@@ -17,7 +17,7 @@ impl<'a> Reconnect<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Reconnect<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::RECONNECT)?;
@@ -34,7 +34,6 @@ serde_struct!(Reconnect { raw });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -47,7 +46,7 @@ mod tests {
     #[test]
     fn reconnect() {
         let input = ":tmi.twitch.tv RECONNECT\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let _msg = Reconnect::from_irc(msg).unwrap();
         }
     }

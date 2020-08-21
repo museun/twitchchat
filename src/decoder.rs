@@ -1,4 +1,53 @@
-use crate::{irc::IrcMessage, IntoOwned, InvalidMessage};
+//! Decoding utilities.
+//!
+//! A decoder lets you decode messages from an `std::io::Read` (or `futures::io::AsyncRead` for async) in either an iterative fashion, or one-by-one.
+//!
+//! When not using the Iterator (or Stream), you'll get a borrowed message from the reader that is valid until the next read.
+//!
+//! With the Iterator (or Stream) interface, it'll return an owned messages.
+//!
+//! This crate provides both 'Sync' (Iterator based) and 'Async' (Stream based) decoding.
+//! * sync: [`Decoder`][decoder]
+//! * async: [`AsyncDecoder`][async_decoder]
+//!
+//! # Borrowed messages
+//! ```
+//! let input = "@key1=val;key2=true :user!user@user PRIVMSG #some_channel :\x01ACTION hello world\x01\r\n";
+//! let mut reader = std::io::Cursor::new(input.as_bytes());
+//!
+//! // you can either &mut borrow the reader, or let the Decoder take ownership.
+//! // ff it takes ownership you can retrieve the inner reader later.
+//! let mut decoder = twitchchat::Decoder::new(&mut reader);
+//!
+//! // returns whether the message was valid
+//! // this'll block until it can read a 'full' message (e.g. one delimited by `\r\n`).
+//! let msg = decoder.read_message().unwrap();
+//!
+//! // msg is borrowed until the next `read_message()`
+//! // you can turn a borrowed message into an owned message by using the twitchchat::IntoOwned trait.
+//! use twitchchat::IntoOwned as _;
+//! let owned: twitchchat::IrcMessage<'static> = msg.into_owned();
+//! ```
+//!
+//! # Owned messages
+//! ```
+//! let input = "@key1=val;key2=true :user!user@user PRIVMSG #some_channel :\x01ACTION hello world\x01\r\n";
+//! let mut reader = std::io::Cursor::new(input.as_bytes());
+//!
+//! // you can either &mut borrow the reader, or let the Decoder take ownership.
+//! // ff it takes ownership you can retrieve the inner reader later.
+//! for msg in twitchchat::Decoder::new(&mut reader) {
+//!     // this yields whether the message was valid or not
+//!     // this'll block until it can read a 'full' message (e.g. one delimited by `\r\n`).
+//!
+//!     // notice its already owned here (denoted by the 'static lifetime)
+//!     let msg: twitchchat::IrcMessage<'static> = msg.unwrap();
+//! }
+//! ```
+//! [decoder]: struct.Decoder.html
+//! [async_decoder]: struct.AsyncDecoder.html
+
+use crate::{irc::IrcMessage, IntoOwned, MessageError};
 
 use std::{
     future::Future,
@@ -11,18 +60,18 @@ use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, 
 
 /// An error produced by a Decoder.
 #[derive(Debug)]
-pub enum Error {
+pub enum DecodeError {
     /// An I/O error occurred
     Io(std::io::Error),
     /// Invalid UTf-8 was read.
     InvalidUtf8(std::str::Utf8Error),
     /// Could not parse the IRC message
-    ParseError(InvalidMessage),
+    ParseError(MessageError),
     /// EOF was reached
     Eof,
 }
 
-impl std::fmt::Display for Error {
+impl std::fmt::Display for DecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Io(err) => write!(f, "io error: {}", err),
@@ -33,7 +82,7 @@ impl std::fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {
+impl std::error::Error for DecodeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Io(err) => Some(err),
@@ -44,9 +93,9 @@ impl std::error::Error for Error {
     }
 }
 
-/// A decoder which'll let you read `IrcMessage`s from an `std::io::Read` instance
+/// A decoder over `std::io::Read` that produces `IrcMessage`s
 ///
-/// This will return an `Error::Eof` when reading manually.
+/// This will return an `DecodeError::Eof` when reading manually.
 ///
 /// When reading it as a iterator, `Eof` will signal the end of the iterator (e.g. `None`)
 pub struct Decoder<R> {
@@ -74,23 +123,23 @@ impl<R: Read> Decoder<R> {
     /// This returns a borrowed IrcMessage which is valid until the next Decoder call is made.
     ///
     /// If you just want an owned one, use the Decoder as an iterator. e.g. dec.next().
-    pub fn read_message(&mut self) -> Result<IrcMessage<'_>, Error> {
+    pub fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
         use std::io::BufRead;
 
         self.buf.clear();
         let n = self
             .reader
             .read_until(b'\n', &mut self.buf)
-            .map_err(Error::Io)?;
+            .map_err(DecodeError::Io)?;
         if n == 0 {
-            return Err(Error::Eof);
+            return Err(DecodeError::Eof);
         }
 
-        let str = std::str::from_utf8(&self.buf[..n]).map_err(Error::InvalidUtf8)?;
+        let str = std::str::from_utf8(&self.buf[..n]).map_err(DecodeError::InvalidUtf8)?;
 
         // this should only ever parse 1 message
         crate::irc::parse_one(str)
-            .map_err(Error::ParseError)
+            .map_err(DecodeError::ParseError)
             .map(|(_, msg)| msg)
     }
 
@@ -107,22 +156,22 @@ impl<R: Read> Decoder<R> {
     }
 }
 
-/// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
+/// This will produce `Result<IrcMessage<'static>, DecodeError>` until an `Eof` is received
 impl<R: Read> Iterator for Decoder<R> {
-    type Item = Result<IrcMessage<'static>, Error>;
+    type Item = Result<IrcMessage<'static>, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_message() {
-            Err(Error::Eof) => None,
+            Err(DecodeError::Eof) => None,
             Ok(msg) => Some(Ok(msg.into_owned())),
             Err(err) => Some(Err(err)),
         }
     }
 }
 
-/// A decoder which'll let you read `IrcMessage`s from an `futures::io::Read` instance
+/// A decoder over `futures::io::AsyncRead` that produces `IrcMessage`s
 ///
-/// This will return an `Error::Eof` when its done reading manually.
+/// This will return an `DecodeError::Eof` when its done reading manually.
 ///
 /// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
 pub struct AsyncDecoder<R> {
@@ -150,23 +199,23 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
     /// This returns a borrowed IrcMessage which is valid until the next AsyncDecoder call is made.
     ///
     /// If you just want an owned one, use the AsyncDecoder as an stream. e.g. dec.next().
-    pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, Error> {
+    pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
         self.buf.clear();
         let n = self
             .reader
             .read_until(b'\n', &mut self.buf)
             .await
-            .map_err(Error::Io)?;
+            .map_err(DecodeError::Io)?;
         if n == 0 {
-            return Err(Error::Eof);
+            return Err(DecodeError::Eof);
         }
 
-        let str = std::str::from_utf8(&self.buf[..n]).map_err(Error::InvalidUtf8)?;
+        let str = std::str::from_utf8(&self.buf[..n]).map_err(DecodeError::InvalidUtf8)?;
         log::trace!("< {}", str.escape_debug());
 
         // this should only ever parse 1 message
         crate::irc::parse_one(str)
-            .map_err(Error::ParseError)
+            .map_err(DecodeError::ParseError)
             .map(|(_, msg)| msg)
     }
 
@@ -176,12 +225,12 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
     }
 }
 
-/// This will produce `Result<IrcMessage<'static>, Error>` until an `Eof` is received
+/// This will produce `Result<IrcMessage<'static>, DecodeError>` until an `Eof` is received
 impl<R> Stream for AsyncDecoder<R>
 where
     R: AsyncRead + Send + Sync + Unpin,
 {
-    type Item = Result<IrcMessage<'static>, Error>;
+    type Item = Result<IrcMessage<'static>, DecodeError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.as_mut();
@@ -190,7 +239,7 @@ where
         futures_lite::pin!(fut);
 
         match futures_lite::ready!(fut.poll(cx)) {
-            Err(Error::Eof) => Poll::Ready(None),
+            Err(DecodeError::Eof) => Poll::Ready(None),
             Ok(msg) => Poll::Ready(Some(Ok(msg.into_owned()))),
             Err(err) => Poll::Ready(Some(Err(err))),
         }
@@ -219,7 +268,7 @@ mod tests {
         for _ in 0..4 {
             dec.read_message().unwrap();
         }
-        assert!(matches!(dec.read_message().unwrap_err(), Error::Eof))
+        assert!(matches!(dec.read_message().unwrap_err(), DecodeError::Eof))
     }
 
     #[test]
@@ -232,7 +281,10 @@ mod tests {
             // reading from the stream won't produce the EOF
             let out = AsyncDecoder::new(&mut reader).collect::<Vec<_>>().await;
             // you cannot collect a Stream into aa result. so lets just do it manually
-            let out = out.into_iter().collect::<Result<Vec<_>, Error>>().unwrap();
+            let out = out
+                .into_iter()
+                .collect::<Result<Vec<_>, DecodeError>>()
+                .unwrap();
             assert_eq!(out.len(), 4);
 
             reader.set_position(0);
@@ -242,7 +294,10 @@ mod tests {
             for _ in 0..4 {
                 dec.read_message().await.unwrap();
             }
-            assert!(matches!(dec.read_message().await.unwrap_err(), Error::Eof))
+            assert!(matches!(
+                dec.read_message().await.unwrap_err(),
+                DecodeError::Eof
+            ))
         };
 
         futures_lite::future::block_on(fut);

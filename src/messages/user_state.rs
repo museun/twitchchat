@@ -1,11 +1,12 @@
-use crate::*;
+use crate::twitch::{parse_badges, parse_emotes, Badge, BadgeInfo, Color, Emotes};
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// Identifies a user's chat settings or properties (e.g., chat color)..
 #[derive(Clone, PartialEq)]
 pub struct UserState<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    channel: StrIndex,
+    channel: MaybeOwnedIndex,
 }
 
 impl<'a> UserState<'a> {
@@ -60,7 +61,7 @@ impl<'a> UserState<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for UserState<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_STATE)?;
@@ -84,7 +85,6 @@ serde_struct!(UserState { raw, tags, channel });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn user_state() {
         let input = ":tmi.twitch.tv USERSTATE #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = UserState::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#museun");
         }

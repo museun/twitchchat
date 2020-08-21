@@ -1,4 +1,5 @@
-use crate::*;
+use crate::twitch::{parse_badges, parse_emotes, Badge, BadgeInfo, Color, Emotes};
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// A paid subscription ot the channel
 #[non_exhaustive]
@@ -55,10 +56,10 @@ pub enum NoticeType<'a> {
 /// Announces Twitch-specific events to the channel (e.g., a user's subscription notification).
 #[derive(Clone, PartialEq)]
 pub struct UserNotice<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    channel: StrIndex,
-    message: Option<StrIndex>,
+    channel: MaybeOwnedIndex,
+    message: Option<MaybeOwnedIndex>,
 }
 
 impl<'a> UserNotice<'a> {
@@ -308,7 +309,7 @@ impl<'a> UserNotice<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for UserNotice<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::USER_NOTICE)?;
@@ -350,7 +351,6 @@ serde_struct!(UserNotice {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -371,7 +371,7 @@ mod tests {
     fn user_notice_message() {
         let input = ":tmi.twitch.tv USERNOTICE #museun :This room is no longer in slow mode.\r\n";
 
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = UserNotice::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#museun");
             assert_eq!(
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     fn user_notice() {
         let input = ":tmi.twitch.tv USERNOTICE #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = UserNotice::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#museun");
             assert_eq!(msg.message(), None);
@@ -394,7 +394,7 @@ mod tests {
     #[test]
     fn user_notice_unknown() {
         let input = "@badge-info=subscriber/8;badges=subscriber/6,bits/100;color=#59517B;display-name=lllAirJordanlll;emotes=;flags=;id=3198b02c-eaf4-4904-9b07-eb1b2b12ba50;login=lllairjordanlll;mod=0;msg-id=resub;msg-param-cumulative-months=8;msg-param-months=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(giantwaffle);msg-param-sub-plan=1000;room-id=22552479;subscriber=1;system-msg=lllAirJordanlll\\ssubscribed\\sat\\sTier\\s1.\\sThey\'ve\\ssubscribed\\sfor\\s8\\smonths!;tmi-sent-ts=1580932171144;user-id=44979519;user-type= :tmi.twitch.tv USERNOTICE #giantwaffle\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = UserNotice::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#giantwaffle");
             assert_eq!(msg.tags().is_empty(), false);

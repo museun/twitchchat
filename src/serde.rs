@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, IrcMessage, Str};
+use crate::{FromIrcMessage, IrcMessage, MaybeOwned};
 
 use serde::{
     de::{Error, MapAccess, Visitor},
@@ -7,12 +7,12 @@ use serde::{
 
 use std::marker::PhantomData;
 
-impl<'de, 'a> Deserialize<'de> for Str<'a> {
+impl<'de, 'a> Deserialize<'de> for MaybeOwned<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        <Box<str>>::deserialize(deserializer).map(Str::Owned)
+        <Box<str>>::deserialize(deserializer).map(MaybeOwned::Owned)
     }
 }
 
@@ -30,7 +30,7 @@ where
     T::Error: std::error::Error,
 {
     type Value = T;
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(formatter, "map")
     }
 
@@ -46,7 +46,7 @@ where
                 map.next_value::<serde::de::IgnoredAny>()?;
                 continue;
             }
-            let val = map.next_value::<Str<'a>>()?;
+            let val = map.next_value::<MaybeOwned<'a>>()?;
             if raw.replace(val).is_some() {
                 return Err(A::Error::duplicate_field(RAW));
             }

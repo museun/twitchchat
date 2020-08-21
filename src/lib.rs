@@ -4,9 +4,16 @@
     clippy::use_self
 )]
 #![warn(
-    missing_docs,
-    missing_debug_implementations,
+    deprecated_in_future,
+    exported_private_dependencies,
+    future_incompatible,
     missing_copy_implementations,
+    missing_crate_level_docs,
+    missing_debug_implementations,
+    missing_docs,
+    private_in_public,
+    rust_2018_compatibility,
+    rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code,
@@ -17,13 +24,39 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 /*!
-This crate provides a way to interface with [Twitch]'s chat.
+
+This crate provides a way to interface with [Twitch]'s chat (via IRC).
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
 ---
 
+For twitch types:
+* [twitch]
+* [messages]
+* [commands]
+---
+For the 'irc' types underneath it all:
+* [irc]
+---
+For an event loop:
+* [runner]
+---
+For just decoding messages:
+* [decoder]
+---
+For just encoding messages:
+* [encoder]
+---
+
 [Twitch]: https://www.twitch.tv
+[runner]: runner/index.html
+[encoder]: encoder/index.html
+[decoder]: decoder/index.html
+[twitch]: twitch/index.html
+[messages]: messages/index.html
+[commands]: commands/index.html
+[irc]: irc/index.html
 */
 // #[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
 // doc_comment::doctest!("../README.md");
@@ -50,55 +83,72 @@ pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
 pub const ANONYMOUS_LOGIN: (&str, &str) = (JUSTINFAN1234, JUSTINFAN1234);
 pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 
-#[macro_use]
-mod maybe_owned;
-pub use maybe_owned::{IntoOwned, MaybeOwned as Str, MaybeOwnedIndex as StrIndex};
-
-mod decoder;
-pub use decoder::{AsyncDecoder, Decoder, Error as DecodeError};
-
-mod encoder;
-pub use encoder::{AsyncEncoder, Encodable, Encoder};
-
-pub mod commands;
-#[macro_use]
-pub mod messages;
-
-pub mod irc;
-pub use irc::{InvalidMessage, IrcMessage, TagIndices, Tags};
-
+// traits
+#[doc(inline)]
+pub use encoder::Encodable;
+// #[doc(inline)]
+pub use ext::PrivmsgExt;
 #[doc(inline)]
 pub use irc::{FromIrcMessage, IntoIrcMessage};
-
-mod validator;
+// #[doc(inline)]
+pub use maybe_owned::IntoOwned;
+#[doc(inline)]
 pub use validator::Validator;
 
-mod twitch;
+// errors
 #[doc(inline)]
-pub use twitch::*;
+pub use decoder::DecodeError;
+// #[doc(inline)]
+pub use irc::MessageError;
+// #[doc(inline)]
+pub use runner::Error as RunnerError;
 
-use twitch::color::Color;
+/// Prelude with common types
+pub mod prelude {
+    pub use super::decoder::{AsyncDecoder, Decoder};
+    pub use super::encoder::{AsyncEncoder, Encodable, Encoder};
+    pub use super::irc::{IrcMessage, TagIndices, Tags};
+    pub use super::rate_limit::RateClass;
+    pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
+    pub use super::twitch;
+    pub use super::{commands, messages};
+}
 
-mod rate_limit;
-#[doc(inline)]
-pub use rate_limit::RateClass;
+#[macro_use]
+#[allow(unused_macros)]
+mod macros;
 
-#[cfg(feature = "serde")]
-mod serde;
+pub mod commands;
+pub mod connector;
+pub mod decoder;
+pub mod encoder;
+pub mod irc;
+pub mod maybe_owned;
+pub mod messages;
+pub mod rate_limit;
+pub mod runner;
+pub mod twitch;
 
+// TODO this could use more implementations and better documentation
 pub mod writer;
 
+// this is so we don't expose an external dep
 pub mod channel;
-#[doc(inline)]
-pub use channel::{Receiver, Sender};
-
-/// Asynchronous connectors for various runtimes.
-pub mod connector;
 
 #[doc(inline)]
-pub mod runner;
+pub use crate::prelude::{
+    twitch::UserConfig, AsyncDecoder, AsyncRunner, Decoder, IrcMessage, Status,
+};
+
+mod validator;
+
+use crate::channel::Sender;
+use crate::maybe_owned::{MaybeOwned, MaybeOwnedIndex};
+use prelude::*;
 
 // our internal stuff that should never be exposed
+#[cfg(feature = "serde")]
+mod serde;
 mod util;
 
 mod ext {
@@ -147,6 +197,3 @@ mod ext {
         }
     }
 }
-
-#[doc(inline)]
-pub use ext::PrivmsgExt;

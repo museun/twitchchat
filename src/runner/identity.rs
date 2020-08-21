@@ -1,4 +1,4 @@
-use crate::{color::Color, runner::Capabilities};
+use crate::{runner::Capabilities, twitch::Color};
 
 /// Your identity on Twitch.
 ///

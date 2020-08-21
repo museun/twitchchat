@@ -1,5 +1,4 @@
-use super::Channel;
-use crate::Encodable;
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).

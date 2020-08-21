@@ -1,4 +1,6 @@
-use crate::{Encodable, UserConfig};
+use super::Encodable;
+use crate::twitch::UserConfig;
+
 use std::io::Write;
 
 /// Registers with Twitch. This writes the `UserConfig` out

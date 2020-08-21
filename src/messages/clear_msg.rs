@@ -1,14 +1,14 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// When a single message has been removed from a channel.
 ///
 /// This is triggered via `/delete` on IRC.
 #[derive(Clone, PartialEq)]
 pub struct ClearMsg<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    channel: StrIndex,
-    message: Option<StrIndex>,
+    channel: MaybeOwnedIndex,
+    message: Option<MaybeOwnedIndex>,
 }
 
 impl<'a> ClearMsg<'a> {
@@ -35,7 +35,7 @@ impl<'a> ClearMsg<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for ClearMsg<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_MSG)?;
@@ -81,7 +81,6 @@ serde_struct!(ClearMsg {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -94,7 +93,7 @@ mod tests {
     #[test]
     fn clear_msg() {
         let input = ":tmi.twitch.tv CLEARMSG #museun :HeyGuys\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cm = ClearMsg::from_irc(msg).unwrap();
             assert_eq!(cm.channel(), "#museun");
             assert_eq!(cm.message().unwrap(), "HeyGuys");
@@ -104,7 +103,7 @@ mod tests {
     #[test]
     fn clear_msg_empty() {
         let input = ":tmi.twitch.tv CLEARMSG #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cm = ClearMsg::from_irc(msg).unwrap();
             assert_eq!(cm.channel(), "#museun");
             assert!(cm.message().is_none());
@@ -115,7 +114,7 @@ mod tests {
     fn clear_msg_uuid() {
         let input =
             "@login=ronni;target-msg-id=abc-123-def :tmi.twitch.tv CLEARMSG #dallas :HeyGuys\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cm = ClearMsg::from_irc(msg).unwrap();
             assert_eq!(cm.channel(), "#dallas");
             assert_eq!(cm.message().unwrap(), "HeyGuys");

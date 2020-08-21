@@ -1,111 +1,34 @@
 //! Twitch messages that can be parsed from `IrcMessage`, or subscribed to from the `Dispatcher`
 //!
-macro_rules! serde_struct {
-    (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]); };
-
-    ($ty:ident { $($field:ident),* $(,)? }) => {
-        #[cfg(feature = "serde")]
-        impl<'a> ::serde::Serialize for $ty<'a> {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: ::serde::Serializer,
-            {
-                use ::serde::ser::SerializeMap as _;
-                let len = serde_struct!(@len $($field),*);
-                let mut s = serializer.serialize_map(Some(len))?;
-                $( s.serialize_entry(stringify!($field), &self.$field())?; )*
-                s.end()
-            }
-        }
-
-        serde_struct!{ @de $ty }
-    };
-
-    (@de $ty:ident) => {
-        #[cfg(feature = "serde")]
-        impl<'de, 'a> ::serde::Deserialize<'de> for $ty<'a> {
-            fn deserialize<D>(deserializer: D) -> Result<$ty<'a>, D::Error>
-            where
-                D: ::serde::Deserializer<'de>,
-            {
-                deserializer.deserialize_map($crate::serde::RawVisitor::default())
-            }
-        }
-    };
-}
-
-macro_rules! impl_custom_debug {
-    ($ty:ident { $($field:ident),* $(,)? }) => {
-        impl<'a> std::fmt::Debug for $ty<'a> {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_struct(stringify!($ty))
-                    $( .field(stringify!($field), &self.$field()) )*
-                .finish()
-            }
-        }
-    };
-}
-
-// TODO get rid of these macros
-macro_rules! raw {
-    () => {
-        /// Get the raw message
-        pub fn raw(&self) -> &str {
-            &*self.raw
-        }
-    };
-}
-
-macro_rules! into_inner_raw {
-    () => {
-        /// Consumes the message, returning the raw [`Str<'_>`](./enum.Str.html)
-        fn into_inner(self) -> Str<'a> {
-            self.raw
-        }
-    };
-}
-
-macro_rules! tags {
-    () => {
-        /// Get a view of parsable tags
-        pub fn tags(&self) -> Tags<'_> {
-            Tags {
-                data: &self.raw,
-                indices: &self.tags,
-            }
-        }
-    };
-}
-
-macro_rules! str_field {
-    ($(#[$meta:meta])* $name:ident) => {
-        $(#[$meta])*
-        pub fn $name(&self) -> &str {
-            &self.raw[self.$name]
-        }
-    };
-    ($name:ident) => {
-        pub fn $name(&self) -> &str {
-            &self.raw[self.$name]
-        }
-    };
-}
-
-macro_rules! opt_str_field {
-    ($(#[$meta:meta])* $name:ident) => {
-        $(#[$meta])*
-        pub fn $name(&self) -> Option<&str> {
-            self.$name.map(|index| &self.raw[index])
-        }
-    };
-
-    ($name:ident) => {
-        pub fn $name(&self) -> Option<&str> {
-            self.$name.map(|index| &self.raw[index])
-        }
-    };
-}
+//!
+//! # Converting from an `IrcMessage` to a specific message
+//!
+//! ```
+//! let input = "user!user@user PRIVMSG #test_channel :this is some data\r\n";
+//! let irc_msg = crate::irc::parse(input).next().unwrap().unwrap();
+//!
+//! // this is implemented for all of the tyupes in this module
+//! use twitchchat::FromIrcMessage;
+//! use twitchchat::messages::Privmsg;
+//! // this will produce an error if its not this type of message
+//! let pm = Privmsg::from_irc(msg).unwrap();
+//! assert_eq!(pm.data(), "this is some data");
+//! ```
+//!
+//! # Converting an `IrcMessage` to an enum of all possible messages
+//!
+//! ```
+//! let input = "user!user@user PRIVMSG #test_channel :this is some data\r\n";
+//! let irc_msg = crate::irc::parse(input).next().unwrap().unwrap();
+//!
+//! // this is implemented for all of the tyupes in this module
+//! use twitchchat::FromIrcMessage;
+//! use twitchchat::messages::Commands;
+//!
+//! let all = Commands::from_irc(msg);
+//! assert!(matches!(all, Commands::Privmsg{..}));
+//! ```
+//!
 
 mod commands;
 pub use commands::Commands;

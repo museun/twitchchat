@@ -1,4 +1,4 @@
-use crate::Encodable;
+use super::Encodable;
 use std::io::{Result, Write};
 
 /// Join a channel. This handles prepending a leading '#' for you if you omit it.

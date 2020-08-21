@@ -1,13 +1,13 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// User leave message
 ///
 /// The happens when a user (yourself included) leaves a channel
 #[derive(Clone, PartialEq)]
 pub struct Part<'a> {
-    raw: Str<'a>,
-    name: StrIndex,
-    channel: StrIndex,
+    raw: MaybeOwned<'a>,
+    name: MaybeOwnedIndex,
+    channel: MaybeOwnedIndex,
 }
 
 impl<'a> Part<'a> {
@@ -23,7 +23,7 @@ impl<'a> Part<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Part<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PART)?;
@@ -47,7 +47,6 @@ serde_struct!(Part { raw, name, channel });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -60,7 +59,7 @@ mod tests {
     #[test]
     fn part() {
         let input = ":test!test@test PART #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Part::from_irc(msg).unwrap();
             assert_eq!(msg.name(), "test");
             assert_eq!(msg.channel(), "#museun");

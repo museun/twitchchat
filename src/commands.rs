@@ -13,7 +13,7 @@
 //! [functions]: ./index.html#functions
 //! [types]: ./types/index.html
 //! [encodable]: ./trait.Encodable.html
-pub use super::Encodable;
+pub(crate) use super::Encodable;
 
 macro_rules! write_cmd {
     ($w:expr, $chan:expr => $data:expr) => {{

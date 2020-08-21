@@ -1,14 +1,14 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// When a user's message(s) have been purged.
 ///
 /// Typically after a user is banned from chat or timed out
 #[derive(Clone, PartialEq)]
 pub struct ClearChat<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    channel: StrIndex,
-    name: Option<StrIndex>,
+    channel: MaybeOwnedIndex,
+    name: Option<MaybeOwnedIndex>,
 }
 
 impl<'a> ClearChat<'a> {
@@ -36,7 +36,7 @@ impl<'a> ClearChat<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for ClearChat<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::CLEAR_CHAT)?;
@@ -80,7 +80,6 @@ serde_struct!(ClearChat {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -93,7 +92,7 @@ mod tests {
     #[test]
     fn clear_chat() {
         let input = ":tmi.twitch.tv CLEARCHAT #museun :shaken_bot\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cc = ClearChat::from_irc(msg).unwrap();
             assert_eq!(cc.channel(), "#museun");
             assert_eq!(cc.name().unwrap(), "shaken_bot");
@@ -103,7 +102,7 @@ mod tests {
     #[test]
     fn clear_chat_empty() {
         let input = ":tmi.twitch.tv CLEARCHAT #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cc = ClearChat::from_irc(msg).unwrap();
             assert_eq!(cc.channel(), "#museun");
             assert!(cc.name().is_none());

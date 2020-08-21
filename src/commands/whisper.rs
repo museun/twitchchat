@@ -1,4 +1,4 @@
-use crate::Encodable;
+use super::Encodable;
 use std::io::{Result, Write};
 
 /// Whispers a message to the username.

@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// The parameters for a room being in follower-only mode
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -15,13 +15,13 @@ pub enum FollowersOnly {
 /// Identifies the channel's chat settings (e.g., slow mode duration).
 #[derive(Clone, PartialEq)]
 pub struct RoomState<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    channel: StrIndex,
+    channel: MaybeOwnedIndex,
 }
 
 impl<'a> FromIrcMessage<'a> for RoomState<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::ROOM_STATE)?;
 
@@ -91,7 +91,6 @@ serde_struct!(RoomState { raw, tags, channel });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -104,7 +103,7 @@ mod tests {
     #[test]
     fn user_state() {
         let input = ":tmi.twitch.tv ROOMSTATE #museun\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = RoomState::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#museun");
         }

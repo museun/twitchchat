@@ -1,14 +1,14 @@
-use crate::*;
+use crate::{irc::*, twitch::*, IntoOwned, MaybeOwned, Validator};
 
-/// Sent on successful login, if `TAGS` capability have been sent beforehand.
+/// Sent on successful login, if **TAGS** capability have been sent beforehand.
 #[derive(Clone, PartialEq)]
 pub struct GlobalUserState<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
     /// Your user-id
-    pub user_id: Str<'a>,
+    pub user_id: MaybeOwned<'a>,
     /// Your display name, if set   
-    pub display_name: Option<Str<'a>>,
+    pub display_name: Option<MaybeOwned<'a>>,
     /// Your color, if set. Defaults to `white`
     pub color: Color,
 }
@@ -50,7 +50,7 @@ impl<'a> GlobalUserState<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::GLOBAL_USER_STATE)?;
@@ -63,19 +63,22 @@ impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
 
         let user_id = tags
             .get("user-id")
-            .ok_or_else(|| InvalidMessage::ExpectedTag {
+            .ok_or_else(|| MessageError::ExpectedTag {
                 name: "user-id".to_string(),
             })
-            .map(Str::from)
-            .map(Str::into_owned)?;
+            .map(MaybeOwned::from)
+            .map(MaybeOwned::into_owned)?;
 
-        let display_name = tags.get("display-name").map(Str::from).map(Str::into_owned);
+        let display_name = tags
+            .get("display-name")
+            .map(MaybeOwned::from)
+            .map(MaybeOwned::into_owned);
 
         let color = tags
             .get("color")
             .map(std::str::FromStr::from_str)
             .transpose()
-            .map_err(|err| InvalidMessage::CannotParseTag {
+            .map_err(|err| MessageError::CannotParseTag {
                 name: "color".into(),
                 error: Box::new(err),
             })?
@@ -126,7 +129,6 @@ serde_struct!(GlobalUserState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -139,7 +141,7 @@ mod tests {
     #[test]
     fn global_user_state() {
         let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = GlobalUserState::from_irc(msg).unwrap();
 
             assert_eq!(msg.user_id, "241015868");

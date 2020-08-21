@@ -1,12 +1,12 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// A pong response sent from the server
 ///
 /// This should be a response to sending a PING to the server
 #[derive(Clone, PartialEq)]
 pub struct Pong<'a> {
-    raw: Str<'a>,
-    token: StrIndex,
+    raw: MaybeOwned<'a>,
+    token: MaybeOwnedIndex,
 }
 
 impl<'a> Pong<'a> {
@@ -18,7 +18,7 @@ impl<'a> Pong<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Pong<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PONG)?;
@@ -41,7 +41,6 @@ serde_struct!(Pong { raw, token });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -54,7 +53,7 @@ mod tests {
     #[test]
     fn pong() {
         let input = "PONG :1234567890\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Pong::from_irc(msg).unwrap();
             assert_eq!(msg.token(), "1234567890");
         }

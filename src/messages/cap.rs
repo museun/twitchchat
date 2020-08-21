@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{irc::*, MaybeOwnedIndex, MaybeOwned, Validator};
 
 /// A parsed Capability
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -19,8 +19,8 @@ pub enum Capability<'a> {
 /// Acknowledgement (or not) on a **CAPS** request
 #[derive(Clone, PartialEq)]
 pub struct Cap<'a> {
-    raw: Str<'a>,
-    capability: StrIndex,
+    raw: MaybeOwned<'a>,
+    capability: MaybeOwnedIndex,
     acknowledged: bool,
 }
 
@@ -39,7 +39,7 @@ impl<'a> Cap<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Cap<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         const ACK: &str = "ACK";
@@ -71,7 +71,6 @@ serde_struct!(Cap { raw, capability });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -91,7 +90,7 @@ mod tests {
             "twitch.tv/tags",
             "twitch.tv/commands",
         ];
-        for (msg, expected) in irc::parse(&input).map(|s| s.unwrap()).zip(expected) {
+        for (msg, expected) in parse(&input).map(|s| s.unwrap()).zip(expected) {
             let msg = Cap::from_irc(msg).unwrap();
             assert_eq!(msg.capability(), Capability::Acknowledged(*expected));
         }
@@ -100,7 +99,7 @@ mod tests {
     #[test]
     fn cap_failed() {
         let input = ":tmi.twitch.tv CAP * NAK :foobar\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let cap = Cap::from_irc(msg).unwrap();
             assert_eq!(cap.capability(), Capability::NotAcknowledged("foobar"));
         }

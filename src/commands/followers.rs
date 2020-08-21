@@ -1,5 +1,4 @@
-use super::Channel;
-use crate::Encodable;
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
 /// Enables followers-only mode (only users who have followed for `duration` may chat).

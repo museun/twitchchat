@@ -1,4 +1,4 @@
-use crate::Encodable;
+use super::Encodable;
 use std::io::{Result, Write};
 
 /// Sends the data as a command to the 'jtv' channel (e.g. `/color #FFFFFF`)

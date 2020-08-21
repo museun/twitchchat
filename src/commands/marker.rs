@@ -1,5 +1,4 @@
-use super::{Channel, MaybeEmpty};
-use crate::Encodable;
+use super::{Channel, Encodable, MaybeEmpty};
 use std::io::{Result, Write};
 
 /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.

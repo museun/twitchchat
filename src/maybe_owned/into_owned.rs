@@ -1,18 +1,7 @@
 use super::{MaybeOwned, MaybeOwnedIndex};
-use crate::{color::Color, UserConfig};
+use crate::twitch::{Color, UserConfig};
 
-macro_rules! into_owned {
-    ($ty:ident { $($field:ident),* $(,)? }) => {
-        impl<'a> $crate::IntoOwned<'a> for $ty<'a> {
-            type Output = $ty<'static>;
-            fn into_owned(self) -> Self::Output {
-                $ty { $( $field: self.$field.into_owned(),)* }
-            }
-        }
-    };
-}
-
-/// Converts a 'borrowed' type into an owned type. e.g. `'a` to `'static`
+/// Converts a **borrowed** type into an owned type. e.g. `'a` to `'static`
 pub trait IntoOwned<'a> {
     /// The output type
     type Output: 'static;

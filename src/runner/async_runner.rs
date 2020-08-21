@@ -2,11 +2,14 @@ use crate::{
     channel::Receiver,
     commands,
     connector::Connector,
+    decoder::{AsyncDecoder, DecodeError},
+    encoder::{AsyncEncoder, Encodable},
     messages::{Capability, Commands, Join, MessageId, Part},
     rate_limit::RateLimit,
+    twitch::UserConfig,
     util::{Either, Notify, NotifyHandle},
     writer::{AsyncWriter, MpscWriter},
-    AsyncDecoder, AsyncEncoder, DecodeError, Encodable, FromIrcMessage, RateClass, UserConfig,
+    FromIrcMessage, RateClass,
 };
 
 use super::{
@@ -286,10 +289,10 @@ impl AsyncRunner {
             Left(Left(Right(Some(write_data)))) => {
                 // TODO provide a 'bytes' flavored parser
                 let msg = std::str::from_utf8(&*write_data).map_err(Error::InvalidUtf8)?;
-                let msg = crate::IrcMessage::parse(crate::Str::Borrowed(msg))
+                let msg = crate::irc::IrcMessage::parse(crate::MaybeOwned::Borrowed(msg))
                     .expect("encoder should produce valid IRC messages");
 
-                if let crate::IrcMessage::PRIVMSG = msg.get_command() {
+                if let crate::irc::IrcMessage::PRIVMSG = msg.get_command() {
                     if let Some(ch) = msg.nth_arg(0) {
                         if !self.channels.is_on(ch) {
                             self.channels.add(ch)
@@ -557,7 +560,7 @@ impl AsyncRunner {
 
                 Cap(msg) => match msg.capability() {
                     Capability::Acknowledged(name) => {
-                        use crate::Capability as Cap;
+                        use crate::twitch::Capability as Cap;
 
                         let cap = match Cap::maybe_from_str(name) {
                             Some(cap) => cap,
