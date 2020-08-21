@@ -24,6 +24,11 @@ pub enum Error {
         /// The channel name
         channel: String,
     },
+    /// You could not join this channel, you were banned prior.
+    BannedFromChannel {
+        /// The channel name
+        channel: String,
+    },
     /// Your connection timed out.
     TimedOut,
     /// Twitch restarted the server, you should reconnect.
@@ -43,6 +48,7 @@ impl std::fmt::Display for Error {
             }
             Self::AlreadyOnChannel { channel } => write!(f, "already on channel '{}'", channel),
             Self::NotOnChannel { channel } => write!(f, "not on channel '{}'", channel),
+            Self::BannedFromChannel { channel } => write!(f, "banned from channel '{}'", channel),
             Self::TimedOut => write!(f, "your connection timed out"),
             Self::ShouldReconnect => write!(f, "you should reconnect. Twitch restarted the server"),
             Self::UnexpectedEof => write!(f, "reached an unexpected EOF"),

@@ -86,7 +86,9 @@ impl Bot {
 
         for channel in channels {
             println!("joining: {}", channel);
-            runner.join(channel).await?;
+            if let Err(err) = runner.join(channel).await {
+                eprintln!("error while joining '{}': {}", channel, err);
+            }
         }
 
         // if you store this somewhere, you can quit the bot gracefully

@@ -4,10 +4,10 @@ use crate::{
     connector::Connector,
     decoder::{AsyncDecoder, DecodeError},
     encoder::{AsyncEncoder, Encodable},
-    messages::{Capability, Commands, Join, MessageId, Part},
+    messages::{Capability, Commands, MessageId},
     rate_limit::{RateClass, RateLimit},
     twitch::UserConfig,
-    util::{Either, Notify, NotifyHandle},
+    util::{Notify, NotifyHandle},
     writer::{AsyncWriter, MpscWriter},
     FromIrcMessage,
 };
@@ -160,19 +160,37 @@ impl AsyncRunner {
         self.encoder.encode(commands::join(channel)).await?;
 
         let channel = crate::commands::Channel(channel).to_string();
-
         log::debug!("waiting for a response");
-        let channel_and_us = |msg: &Join<'_>, this: &AsyncRunner| {
-            msg.channel() == channel && msg.name() == this.identity.username()
-        };
-        self.wait_for_cmd(
-            |cmd| match cmd {
-                Commands::Join(msg) => Some(msg),
-                _ => None,
-            },
-            channel_and_us,
-        )
-        .await?;
+
+        let mut queue = VecDeque::new();
+
+        let status = self
+            .wait_for(&mut queue, |msg, this| match msg {
+                // check to see if it was us that joined the channel
+                Commands::Join(msg) => {
+                    Ok(msg.channel() == channel && msg.name() == this.identity.username())
+                }
+
+                // check to see if we were banned
+                Commands::Notice(msg) if matches!(msg.msg_id(), Some(MessageId::MsgBanned)) => {
+                    Err(Error::BannedFromChannel {
+                        channel: msg.channel().to_string(),
+                    })
+                }
+
+                _ => Ok(false),
+            })
+            .await?;
+
+        if let Some(status) = status {
+            match status {
+                Status::Quit | Status::Eof => return Err(Error::UnexpectedEof),
+                _ => unimplemented!(),
+            }
+        }
+
+        self.missed_messages.extend(queue);
+
         log::debug!("joined '{}'", channel);
 
         Ok(())
@@ -190,20 +208,29 @@ impl AsyncRunner {
         self.encoder.encode(commands::part(channel)).await?;
 
         let channel = crate::commands::Channel(channel).to_string();
-
         log::debug!("waiting for a response");
-        let channel_and_us = |msg: &Part<'_>, this: &AsyncRunner| {
-            msg.channel() == channel && msg.name() == this.identity.username()
-        };
-        self.wait_for_cmd(
-            |cmd| match cmd {
-                Commands::Part(msg) => Some(msg),
-                _ => None,
-            },
-            channel_and_us,
-        )
-        .await?;
+
+        let mut queue = VecDeque::new();
+
+        let status = self
+            .wait_for(&mut queue, |msg, this| match msg {
+                // check to see if it was us that left the channel
+                Commands::Part(msg) => {
+                    Ok(msg.channel() == channel && msg.name() == this.identity.username())
+                }
+                _ => Ok(false),
+            })
+            .await?;
+
+        if let Some(status) = status {
+            match status {
+                Status::Quit | Status::Eof => return Err(Error::UnexpectedEof),
+                _ => unimplemented!(),
+            }
+        }
         log::debug!("left '{}'", channel);
+
+        self.missed_messages.extend(queue);
 
         Ok(())
     }
@@ -349,6 +376,8 @@ impl AsyncRunner {
     async fn check_messages(&mut self, all: &Commands<'static>) -> Result<(), Error> {
         use {Commands::*, TimeoutState::*};
 
+        log::trace!("< {}", all.raw().escape_debug());
+
         match &all {
             Ping(msg) => {
                 let token = msg.token();
@@ -406,52 +435,25 @@ impl AsyncRunner {
     }
 }
 
-type WaitFor<T> = Either<VecDeque<T>, Status<'static>>;
-
 impl AsyncRunner {
-    async fn wait_for_cmd<F, T, E>(&mut self, extract: F, cmp: E) -> Result<(), Error>
+    async fn wait_for<F>(
+        &mut self,
+        missed: &mut VecDeque<Commands<'static>>,
+        func: F,
+    ) -> Result<Option<Status<'static>>, Error>
     where
-        for<'a> F: Fn(&'a Commands<'static>) -> Option<&'a T>,
-        E: Fn(&T, &Self) -> bool,
-
-        // for clippy
-        F: Send + Sync,
-        T: Send + Sync,
-        E: Send + Sync,
+        F: Fn(&Commands<'static>, &Self) -> Result<bool, Error> + Send + Sync,
     {
-        let messages = self
-            .wait_for(|msg, this| extract(msg).map(|msg| cmp(msg, this)).unwrap_or(false))
-            .await?;
-
-        match messages {
-            Either::Left(messages) => self.missed_messages.extend(messages),
-            Either::Right(res) => match res {
-                Status::Quit | Status::Eof => return Err(Error::UnexpectedEof),
-                _ => unimplemented!(),
-            },
-        }
-
-        Ok(())
-    }
-
-    async fn wait_for<F>(&mut self, func: F) -> Result<WaitFor<Commands<'static>>, Error>
-    where
-        F: Fn(&Commands<'static>, &Self) -> bool,
-
-        // for clippy
-        F: Send + Sync,
-    {
-        let mut missed_messages = VecDeque::new();
         loop {
             match self.step().await? {
                 StepResult::Status(Status::Message(msg)) => {
-                    if func(&msg, self) {
-                        break Ok(Either::Left(missed_messages));
+                    if func(&msg, self)? {
+                        break Ok(None);
                     }
-                    missed_messages.push_back(msg);
+                    missed.push_back(msg);
                 }
-                StepResult::Status(d) => return Ok(Either::Right(d)),
-                StepResult::Nothing => futures_lite::future::yield_now().await,
+                StepResult::Status(d) => return Ok(Some(d)),
+                StepResult::Nothing => continue,
             }
         }
     }
