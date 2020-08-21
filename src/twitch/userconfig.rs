@@ -1,4 +1,4 @@
-use crate::Capability;
+use crate::twitch::Capability;
 use std::collections::BTreeSet;
 
 /**

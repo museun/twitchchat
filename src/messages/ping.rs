@@ -1,10 +1,10 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// A ping request from the server
 #[derive(Clone, PartialEq)]
 pub struct Ping<'a> {
-    raw: Str<'a>,
-    token: StrIndex,
+    raw: MaybeOwned<'a>,
+    token: MaybeOwnedIndex,
 }
 
 impl<'a> Ping<'a> {
@@ -16,7 +16,7 @@ impl<'a> Ping<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Ping<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::PING)?;
@@ -39,7 +39,6 @@ serde_struct!(Ping { raw, token });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -52,7 +51,7 @@ mod tests {
     #[test]
     fn ping() {
         let input = "PING :1234567890\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Ping::from_irc(msg).unwrap();
             assert_eq!(msg.token(), "1234567890");
         }

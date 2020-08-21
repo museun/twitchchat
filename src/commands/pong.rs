@@ -1,4 +1,4 @@
-use crate::Encodable;
+use super::Encodable;
 use std::io::{Result, Write};
 
 /// Respond to a server request (normally a PING) with the provided token

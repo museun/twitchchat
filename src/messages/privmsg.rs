@@ -1,4 +1,8 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
+
+use crate::twitch::{
+    parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeInfo, BadgeKind, Color, Emotes,
+};
 
 /// Some PRIVMSGs are considered 'CTCP' (client-to-client protocol)
 ///
@@ -18,12 +22,12 @@ pub enum Ctcp<'a> {
 /// Message sent by a user
 #[derive(Clone, PartialEq)]
 pub struct Privmsg<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    name: StrIndex,
-    channel: StrIndex,
-    data: StrIndex,
-    ctcp: Option<StrIndex>,
+    name: MaybeOwnedIndex,
+    channel: MaybeOwnedIndex,
+    data: MaybeOwnedIndex,
+    ctcp: Option<MaybeOwnedIndex>,
 }
 
 impl<'a> Privmsg<'a> {
@@ -176,7 +180,7 @@ impl<'a> Privmsg<'a> {
         self.tags().get("msg-id")
     }
 
-    fn contains_badge(&self, badge: BadgeKind) -> bool {
+    fn contains_badge(&self, badge: BadgeKind<'_>) -> bool {
         self.tags()
             .get("badges")
             .into_iter()
@@ -186,7 +190,7 @@ impl<'a> Privmsg<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Privmsg<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         const CTCP_MARKER: char = '\x01';
@@ -204,14 +208,14 @@ impl<'a> FromIrcMessage<'a> for Privmsg<'a> {
                     //
                     // skip the first byte
                     let head = index.start + 1;
-                    let ctcp_index = StrIndex::raw(head as usize, (head as usize) + pos);
+                    let ctcp_index = MaybeOwnedIndex::raw(head as usize, (head as usize) + pos);
 
                     // for the byte + space
                     index.start += (pos as u16) + 2;
                     index.end -= 1;
                     ctcp.replace(ctcp_index);
                 }
-                None => return Err(InvalidMessage::ExpectedData),
+                None => return Err(MessageError::ExpectedData),
             }
         }
 
@@ -278,7 +282,6 @@ serde_struct!(Privmsg {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -299,7 +302,7 @@ mod tests {
     #[test]
     fn privmsg() {
         let input = ":test!user@host PRIVMSG #museun :this is a test\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Privmsg::from_irc(msg).unwrap();
 
             assert_eq!(msg.name(), "test");
@@ -312,7 +315,7 @@ mod tests {
     #[test]
     fn privmsg_boundary() {
         let input = ":test!user@host PRIVMSG #museun :\u{FFFD}\u{1F468}\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Privmsg::from_irc(msg).unwrap();
 
             assert_eq!(msg.name(), "test");
@@ -325,7 +328,7 @@ mod tests {
     #[test]
     fn privmsg_action() {
         let input = ":test!user@host PRIVMSG #museun :\x01ACTION this is a test\x01\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Privmsg::from_irc(msg).unwrap();
 
             assert_eq!(msg.name(), "test");
@@ -338,7 +341,7 @@ mod tests {
     #[test]
     fn privmsg_unknown() {
         let input = ":test!user@host PRIVMSG #museun :\x01FOOBAR this is a test\x01\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Privmsg::from_irc(msg).unwrap();
 
             assert_eq!(msg.name(), "test");
@@ -351,7 +354,7 @@ mod tests {
     #[test]
     fn privmsg_community_rewards() {
         let input = "@custom-reward-id=abc-123-foo;msg-id=highlighted-message :test!user@host PRIVMSG #museun :Notice me!\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Privmsg::from_irc(msg).unwrap();
             assert_eq!(msg.name(), "test");
             assert_eq!(msg.channel(), "#museun");

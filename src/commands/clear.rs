@@ -1,5 +1,5 @@
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
-use {super::Channel, crate::Encodable};
 
 /// Clear chat history for all users in this room.
 #[non_exhaustive]

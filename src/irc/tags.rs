@@ -1,4 +1,4 @@
-use crate::{Str, TagIndices};
+use crate::{irc::TagIndices, MaybeOwned};
 use std::{borrow::Borrow, str::FromStr};
 
 /// Tags are IRCv3 message tags. Twitch uses them extensively.
@@ -8,7 +8,7 @@ use std::{borrow::Borrow, str::FromStr};
 /// This type is intentionall very cheap and just borrows a pre-computed set of indices and a wrapped string
 #[derive(Clone, PartialEq)]
 pub struct Tags<'a> {
-    pub(crate) data: &'a Str<'a>,
+    pub(crate) data: &'a MaybeOwned<'a>,
     pub(crate) indices: &'a TagIndices,
 }
 
@@ -20,7 +20,7 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 
 impl<'a> Tags<'a> {
     /// Build the tags view from this borrowed `Str` and an associated `TagIndices`
-    pub fn from_data_indices(data: &'a Str<'a>, indices: &'a TagIndices) -> Self {
+    pub fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
         Self { data, indices }
     }
 
@@ -54,8 +54,8 @@ impl<'a> Tags<'a> {
     [FromStr]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 
     ```rust
-    # use twitchchat::{TagIndices, Tags, Str};
-    let input: Str<'_> = "@foo=42;color=#1E90FF".into();
+    # use twitchchat::{TagIndices, Tags, MaybeOwned};
+    let input: MaybeOwned<'_> = "@foo=42;color=#1E90FF".into();
     let indices = TagIndices::build_indices(&*input);
     let tags = Tags::from_data_indices(&input, &indices);
 
@@ -95,8 +95,8 @@ impl<'a> Tags<'a> {
     If it wasn't found it'll return false
 
     ```rust
-    # use twitchchat::{TagIndices, Tags, Str};
-    let input: Str<'_> = "@foo=42;ok=true;nope=false;test=1;not_test=0".into();
+    # use twitchchat::{TagIndices, Tags, MaybeOwned};
+    let input: MaybeOwned<'_> = "@foo=42;ok=true;nope=false;test=1;not_test=0".into();
     let indices = TagIndices::build_indices(&*input);
     let tags = Tags::from_data_indices(&input, &indices);
 
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn invalid_input_missing_leading_at() {
-        let data = Str::Borrowed("foo=bar;baz=quux");
+        let data = MaybeOwned::Borrowed("foo=bar;baz=quux");
         let indices = TagIndices::build_indices(&*data);
 
         let tags = Tags::from_data_indices(&data, &indices);
@@ -217,7 +217,7 @@ mod tests {
         let inputs = &["@", ""];
 
         for input in inputs {
-            let data = Str::Borrowed(*input);
+            let data = MaybeOwned::Borrowed(*input);
             let indices = TagIndices::build_indices(&*data);
 
             let tags = Tags::from_data_indices(&data, &indices);
@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn get_parsed() {
-        let input = Str::Borrowed("@foo=42;badges=broadcaster/1,subscriber/6");
+        let input = MaybeOwned::Borrowed("@foo=42;badges=broadcaster/1,subscriber/6");
         let indices = TagIndices::build_indices(&*input);
 
         let tags = Tags::from_data_indices(&input, &indices);
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn get_bool() {
-        let input = Str::Borrowed("@foo=42;ok=true;nope=false");
+        let input = MaybeOwned::Borrowed("@foo=42;ok=true;nope=false");
         let indices = TagIndices::build_indices(&*input);
 
         let tags = Tags::from_data_indices(&input, &indices);
@@ -281,7 +281,7 @@ mod tests {
         ];
 
         for input in inputs {
-            let data = Str::Borrowed(*input);
+            let data = MaybeOwned::Borrowed(*input);
             let indices = TagIndices::build_indices(&*data);
             let tags = Tags::from_data_indices(&data, &indices);
 
@@ -301,7 +301,7 @@ mod tests {
         ];
 
         for input in inputs {
-            let data = Str::Borrowed(*input);
+            let data = MaybeOwned::Borrowed(*input);
             let indices = TagIndices::build_indices(&*data);
             let tags = Tags::from_data_indices(&data, &indices);
 
@@ -360,7 +360,7 @@ mod tests {
             "user-id",
         ];
 
-        let input = Str::Borrowed(input);
+        let input = MaybeOwned::Borrowed(input);
         let indices = TagIndices::build_indices(&*input);
 
         let tags = Tags::from_data_indices(&input, &indices);

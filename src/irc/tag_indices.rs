@@ -1,11 +1,11 @@
-use crate::{IntoOwned, StrIndex};
+use crate::{IntoOwned, MaybeOwnedIndex};
 
 /// Pre-computed tag indices
 ///
 /// This type is only exposed for those wanting to extend/make custom types.
 #[derive(Default, Clone, PartialEq)]
 pub struct TagIndices {
-    pub(super) map: Box<[(StrIndex, StrIndex)]>,
+    pub(super) map: Box<[(MaybeOwnedIndex, MaybeOwnedIndex)]>,
 }
 
 impl std::fmt::Debug for TagIndices {
@@ -31,7 +31,7 @@ impl TagIndices {
         }
 
         let mut map = Vec::with_capacity(input.chars().filter(|&c| c == ';').count() + 1);
-        let (mut key, mut value) = (StrIndex::new(1), StrIndex::new(1));
+        let (mut key, mut value) = (MaybeOwnedIndex::new(1), MaybeOwnedIndex::new(1));
 
         let mut mode = Mode::Head;
 

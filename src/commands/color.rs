@@ -1,4 +1,4 @@
-use crate::Encodable;
+use super::Encodable;
 use std::convert::TryInto;
 use std::io::{Result, Write};
 
@@ -7,7 +7,7 @@ use std::io::{Result, Write};
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Color<'a> {
-    pub(crate) color: crate::color::Color,
+    pub(crate) color: crate::twitch::Color,
     #[cfg_attr(feature = "serde", serde(skip))]
     marker: std::marker::PhantomData<&'a ()>,
 }
@@ -15,7 +15,7 @@ pub struct Color<'a> {
 /// Change your username color.
 pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
 where
-    T: TryInto<crate::color::Color>,
+    T: TryInto<crate::twitch::Color>,
 {
     color.try_into().map(|color| Color {
         color,
@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn color_encode() {
-        let blue: crate::color::Color = "blue".parse().unwrap();
+        let blue: crate::twitch::Color = "blue".parse().unwrap();
         test_encode(
             color(blue).unwrap(),
             format!("PRIVMSG jtv :/color {}\r\n", blue),
@@ -49,7 +49,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn color_serde() {
-        let blue: crate::color::Color = "blue".parse().unwrap();
+        let blue: crate::twitch::Color = "blue".parse().unwrap();
         test_serde(
             color(blue).unwrap(),
             format!("PRIVMSG jtv :/color {}\r\n", blue),

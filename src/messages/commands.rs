@@ -103,7 +103,7 @@ impl<'a> IntoOwned<'a> for Commands<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Commands<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         macro_rules! map {
@@ -138,8 +138,8 @@ impl<'a> FromIrcMessage<'a> for Commands<'a> {
         Ok(this)
     }
 
-    /// Consumes this wrapper and returns the raw `Str<'a>`
-    fn into_inner(self) -> Str<'a> {
+    /// Consumes this wrapper and returns the raw `MaybeOwned<'a>`
+    fn into_inner(self) -> MaybeOwned<'a> {
         match self {
             Self::Raw(msg) => msg.into_inner(),
             Self::IrcReady(msg) => msg.into_inner(),
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn ensure_const_match() {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
-        let msg = IrcMessage::parse(Str::Borrowed(input)).unwrap();
+        let msg = IrcMessage::parse(MaybeOwned::Borrowed(input)).unwrap();
         let all = Commands::from_irc(msg).unwrap();
         assert!(matches!(all, Commands::Privmsg{..}));
     }

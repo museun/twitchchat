@@ -1,13 +1,13 @@
-use crate::*;
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// User join message
 ///
 /// The happens when a user (yourself included) joins a channel
 #[derive(Clone, PartialEq)]
 pub struct Join<'a> {
-    raw: Str<'a>,
-    name: StrIndex,
-    channel: StrIndex,
+    raw: MaybeOwned<'a>,
+    name: MaybeOwnedIndex,
+    channel: MaybeOwnedIndex,
 }
 
 impl<'a> Join<'a> {
@@ -23,7 +23,7 @@ impl<'a> Join<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Join<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::JOIN)?;
@@ -47,7 +47,6 @@ serde_struct!(Join { raw, name, channel });
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -60,34 +59,34 @@ mod tests {
     #[test]
     fn join_bad_command() {
         let input = ":tmi.twitch.tv NOT_JOIN #foo\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err,InvalidMessage::InvalidCommand { .. }))
+            assert!(matches!(err,MessageError::InvalidCommand { .. }))
         }
     }
 
     #[test]
     fn join_bad_nick() {
         let input = ":tmi.twitch.tv JOIN #foo\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err, InvalidMessage::ExpectedNick))
+            assert!(matches!(err, MessageError::ExpectedNick))
         }
     }
 
     #[test]
     fn join_bad_channel() {
         let input = ":tmi.twitch.tv JOIN\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err, InvalidMessage::ExpectedArg { pos: 0 }))
+            assert!(matches!(err, MessageError::ExpectedArg { pos: 0 }))
         }
     }
 
     #[test]
     fn join() {
         let input = ":test!test@test JOIN #foo\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Join::from_irc(msg).unwrap();
             assert_eq!(msg.name(), "test");
             assert_eq!(msg.channel(), "#foo");

@@ -1,26 +1,26 @@
-use super::{parser::Parser, InvalidMessage, Prefix, PrefixIndex};
-use crate::{FromIrcMessage, Str, StrIndex};
+use super::{parser::Parser, MessageError, Prefix, PrefixIndex};
+use crate::{FromIrcMessage, MaybeOwned, MaybeOwnedIndex};
 use std::convert::Infallible;
 
 /// A raw irc message `@tags :prefix COMMAND args :data\r\n`
 #[derive(Clone, PartialEq)]
 pub struct IrcMessage<'a> {
     /// The raw string
-    pub raw: Str<'a>,
+    pub raw: MaybeOwned<'a>,
     /// Index of the tags
-    pub tags: Option<StrIndex>,
+    pub tags: Option<MaybeOwnedIndex>,
     /// Index of the prefix
     pub prefix: Option<PrefixIndex>,
     /// Index of the command
-    pub command: StrIndex,
+    pub command: MaybeOwnedIndex,
     /// Index of the args
-    pub args: Option<StrIndex>,
+    pub args: Option<MaybeOwnedIndex>,
     /// Index of the data
-    pub data: Option<StrIndex>,
+    pub data: Option<MaybeOwnedIndex>,
 }
 
 impl<'a> IrcMessage<'a> {
-    pub(crate) fn parse(input: Str<'a>) -> Result<Self, InvalidMessage> {
+    pub(crate) fn parse(input: MaybeOwned<'a>) -> Result<Self, MessageError> {
         // trim any \r\n off incase this was directly called
         let data = if input.ends_with("\r\n") {
             &input.as_ref()[..input.len() - 2]
@@ -30,7 +30,7 @@ impl<'a> IrcMessage<'a> {
 
         let data = data.trim();
         if data.is_empty() {
-            return Err(super::InvalidMessage::EmptyMessage);
+            return Err(super::MessageError::EmptyMessage);
         }
 
         let mut p = Parser {
@@ -79,8 +79,8 @@ impl<'a> IrcMessage<'a> {
         self.data.map(|index| &self.raw[index])
     }
 
-    /// Consumes this type returning the raw `Str<'a>`
-    pub fn into_inner(self) -> Str<'a> {
+    /// Consumes this type returning the raw `MaybeOwned<'a>`
+    pub fn into_inner(self) -> MaybeOwned<'a> {
         self.raw
     }
 
@@ -93,7 +93,7 @@ impl<'a> IrcMessage<'a> {
     }
 
     /// Get the index of the 'nth' argumnet
-    pub fn nth_arg_index(&self, nth: usize) -> Option<StrIndex> {
+    pub fn nth_arg_index(&self, nth: usize) -> Option<MaybeOwnedIndex> {
         let index = self.args?;
         let args = &self.raw[index];
 
@@ -103,7 +103,7 @@ impl<'a> IrcMessage<'a> {
         for ch in args.chars() {
             if ch.is_ascii_whitespace() {
                 if seen == nth {
-                    return Some(StrIndex::raw(head as _, tail as _));
+                    return Some(MaybeOwnedIndex::raw(head as _, tail as _));
                 }
 
                 // skip the space
@@ -115,7 +115,7 @@ impl<'a> IrcMessage<'a> {
         }
 
         if seen == nth {
-            return Some(StrIndex::raw(head as _, tail as _));
+            return Some(MaybeOwnedIndex::raw(head as _, tail as _));
         }
 
         None
@@ -256,9 +256,9 @@ mod tests {
     #[test]
     fn parse_empty_spaces() {
         for i in 0..10 {
-            let s: Str<'_> = format!("{}\r\n", " ".repeat(i)).into();
+            let s: MaybeOwned<'_> = format!("{}\r\n", " ".repeat(i)).into();
             let err = IrcMessage::parse(s).unwrap_err();
-            assert!(matches!(err, InvalidMessage::EmptyMessage))
+            assert!(matches!(err, MessageError::EmptyMessage))
         }
     }
 }

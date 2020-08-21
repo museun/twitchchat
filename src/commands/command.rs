@@ -1,5 +1,4 @@
-use super::Channel;
-use crate::Encodable;
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
 /// Sends the `command` to the `channel` (e.g. `/color #FFFFFF`)

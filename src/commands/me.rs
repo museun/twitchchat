@@ -1,5 +1,4 @@
-use super::Channel;
-use crate::Encodable;
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
 /// Sends an "emote" message in the third person to the channel

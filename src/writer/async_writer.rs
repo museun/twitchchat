@@ -1,4 +1,5 @@
-use crate::{AsyncEncoder, Encodable, Sender};
+use crate::channel::Sender;
+use crate::encoder::{AsyncEncoder, Encodable};
 
 use futures_lite::AsyncWrite;
 use io::Write;

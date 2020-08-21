@@ -1,5 +1,4 @@
-use super::Channel;
-use crate::Encodable;
+use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
 /// Reply to a specific message (using an UUID) on a channel

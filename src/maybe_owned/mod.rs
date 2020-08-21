@@ -1,6 +1,12 @@
+//! This is a [`Cow`][cow] like type used in this crate.
+//!
+//! It is read-only unlike the std implementation.
+//!
+//! Its also specialized for just `str`
+//!
+//! [cow]: https://doc.rust-lang.org/std/borrow/enum.Cow.html
 use std::{fmt::Debug, ops::Deref};
 
-#[macro_use]
 mod into_owned;
 pub use into_owned::IntoOwned;
 
@@ -13,7 +19,7 @@ pub use maybe_owned_index::MaybeOwnedIndex;
 ///
 /// This crate uses indices into this type to reduce the number of allocations of each type
 ///
-/// This is type-aliased to `Str` in this crate and only exposed for people to extend messages themselves.
+/// This only exposed for people to extend messages themselves.
 #[cfg_attr(feature = "serde", derive(::serde::Serialize), serde(untagged))]
 pub enum MaybeOwned<'a> {
     /// Owned variant, a `Box<str>`. This usually means it has a `'static` lifetime

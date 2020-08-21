@@ -75,7 +75,7 @@ async fn handle_message(msg: messages::Commands<'_>) {
         // this crate add them.
         Raw(_) => {}
 
-        /// These happen when you initially connect
+        // These happen when you initially connect
         IrcReady(_) => {}
         Ready(_) => {}
         Cap(_) => {}

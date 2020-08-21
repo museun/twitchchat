@@ -1,5 +1,4 @@
-use super::{Channel, MaybeEmpty};
-use crate::Encodable;
+use super::{Channel, Encodable, MaybeEmpty};
 use std::io::{Result, Write};
 
 /// Temporarily prevent a user from chatting.

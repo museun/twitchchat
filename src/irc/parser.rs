@@ -1,5 +1,5 @@
-use super::{InvalidMessage, IrcMessage, PrefixIndex};
-use crate::{Str, StrIndex};
+use super::{IrcMessage, MessageError, PrefixIndex};
+use crate::{MaybeOwned, MaybeOwnedIndex};
 
 pub(super) struct Parser<'a> {
     pub(super) input: &'a str,
@@ -7,13 +7,13 @@ pub(super) struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    fn mark_index(&mut self, tail: usize, adv: usize) -> StrIndex {
-        let index = StrIndex::raw(self.pos, self.pos + tail);
+    fn mark_index(&mut self, tail: usize, adv: usize) -> MaybeOwnedIndex {
+        let index = MaybeOwnedIndex::raw(self.pos, self.pos + tail);
         self.pos += adv;
         index
     }
 
-    pub(super) fn tags(&mut self) -> Option<StrIndex> {
+    pub(super) fn tags(&mut self) -> Option<MaybeOwnedIndex> {
         let input = self.input.get(self.pos..)?;
         if input.starts_with('@') {
             if let Some(end) = input.find(' ') {
@@ -43,13 +43,13 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub(super) fn command(&mut self) -> StrIndex {
+    pub(super) fn command(&mut self) -> MaybeOwnedIndex {
         let input = &self.input[self.pos..];
         let pos = input.find(' ').unwrap_or_else(|| input.len());
         self.mark_index(pos, pos + 1)
     }
 
-    pub(super) fn args(&mut self) -> Option<StrIndex> {
+    pub(super) fn args(&mut self) -> Option<MaybeOwnedIndex> {
         if self.pos > self.input.len() || self.input[self.pos..].starts_with(':') {
             return None;
         }
@@ -59,12 +59,12 @@ impl<'a> Parser<'a> {
         Some(self.mark_index(pos, pos))
     }
 
-    pub(super) fn data(self) -> Option<StrIndex> {
+    pub(super) fn data(self) -> Option<MaybeOwnedIndex> {
         let pos = self.input.get(self.pos..).and_then(|s| s.find(':'))?;
         self.input
             .get(self.pos + pos + 1..)
             .filter(|s| !s.is_empty())
-            .map(|_| StrIndex::raw(self.pos + pos + 1, self.input.len()))
+            .map(|_| MaybeOwnedIndex::raw(self.pos + pos + 1, self.input.len()))
     }
 }
 
@@ -82,7 +82,7 @@ impl<'a> IrcParserIter<'a> {
 }
 
 impl<'a> Iterator for IrcParserIter<'a> {
-    type Item = Result<IrcMessage<'a>, InvalidMessage>;
+    type Item = Result<IrcMessage<'a>, MessageError>;
     fn next(&mut self) -> Option<Self::Item> {
         const CRLF: &str = "\r\n";
         if self.pos == self.data.len() {
@@ -92,7 +92,7 @@ impl<'a> Iterator for IrcParserIter<'a> {
         let index = match self.data.get(self.pos..)?.find(CRLF) {
             Some(index) => index + CRLF.len() + self.pos,
             None => {
-                let err = Err(InvalidMessage::IncompleteMessage { pos: self.pos });
+                let err = Err(MessageError::IncompleteMessage { pos: self.pos });
                 self.pos = self.data.len();
                 return err.into();
             }
@@ -101,7 +101,7 @@ impl<'a> Iterator for IrcParserIter<'a> {
         let pos = std::mem::replace(&mut self.pos, index);
         self.data
             .get(pos..index)
-            .map(Str::from)
+            .map(MaybeOwned::from)
             .map(IrcMessage::parse)
     }
 }

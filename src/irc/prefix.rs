@@ -1,8 +1,8 @@
-use crate::{IntoOwned, Str, StrIndex};
+use crate::{IntoOwned, MaybeOwned, MaybeOwnedIndex};
 
 /// Prefix is the sender of a message
 pub struct Prefix<'a> {
-    pub(crate) data: &'a Str<'a>,
+    pub(crate) data: &'a MaybeOwned<'a>,
     pub(crate) index: PrefixIndex,
 }
 
@@ -40,12 +40,12 @@ pub enum PrefixIndex {
     /// A user prefix
     User {
         /// Index of the nickname
-        nick: StrIndex,
+        nick: MaybeOwnedIndex,
     },
     /// A server prefix
     Server {
         /// Index of the hostname
-        host: StrIndex,
+        host: MaybeOwnedIndex,
     },
 }
 
@@ -61,7 +61,7 @@ impl PrefixIndex {
     }
 
     /// Get the index of the nickname
-    pub fn nick_index(self) -> Option<StrIndex> {
+    pub fn nick_index(self) -> Option<MaybeOwnedIndex> {
         match self {
             Self::User { nick } => Some(nick),
             Self::Server { .. } => None,
@@ -69,7 +69,7 @@ impl PrefixIndex {
     }
 
     /// Get the index of the hostname
-    pub fn host_index(self) -> Option<StrIndex> {
+    pub fn host_index(self) -> Option<MaybeOwnedIndex> {
         match self {
             Self::Server { host } => Some(host),
             Self::User { .. } => None,
@@ -77,7 +77,7 @@ impl PrefixIndex {
     }
 
     /// Consumes this returning the index
-    pub fn as_index(self) -> StrIndex {
+    pub fn as_index(self) -> MaybeOwnedIndex {
         match self {
             Self::User { nick } => nick,
             Self::Server { host } => host,

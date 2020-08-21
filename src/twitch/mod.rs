@@ -13,6 +13,8 @@ mod badge;
 pub use badge::{Badge, BadgeInfo, BadgeKind};
 
 pub mod color;
+#[doc(inline)]
+pub use color::Color;
 
 pub(crate) fn parse_emotes(input: &str) -> Vec<Emotes> {
     Emotes::parse(input).collect()

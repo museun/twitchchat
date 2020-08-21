@@ -1,4 +1,4 @@
-use crate::{DecodeError, InvalidMessage};
+use crate::{DecodeError, MessageError};
 
 /// An error Returned by a Runner
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub enum Error {
     /// Invalid utf-8 was parsed (either you sent invalid utf-8, or twitch did and we read it).
     InvalidUtf8(std::str::Utf8Error),
     /// We could not parse a message -- this should never happen
-    ParsingFailure(InvalidMessage),
+    ParsingFailure(MessageError),
     /// You requested a capability and Twitch rejected it
     InvalidCap {
         /// The capability name

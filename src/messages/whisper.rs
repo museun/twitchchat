@@ -1,12 +1,15 @@
-use crate::*;
+use crate::twitch::{
+    parse_badges, parse_badges_iter, parse_emotes, Badge, BadgeKind, Color, Emotes,
+};
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
-/// Message sent by a user
+/// Message sent by another user to your user (a 'DM')
 #[derive(Clone, PartialEq)]
 pub struct Whisper<'a> {
-    raw: Str<'a>,
+    raw: MaybeOwned<'a>,
     tags: TagIndices,
-    name: StrIndex,
-    data: StrIndex,
+    name: MaybeOwnedIndex,
+    data: MaybeOwnedIndex,
 }
 
 impl<'a> Whisper<'a> {
@@ -80,7 +83,7 @@ impl<'a> Whisper<'a> {
         self.tags().get_parsed("user-id")
     }
 
-    fn contains_badge(&self, badge: BadgeKind) -> bool {
+    fn contains_badge(&self, badge: BadgeKind<'_>) -> bool {
         self.tags()
             .get("badges")
             .into_iter()
@@ -90,7 +93,7 @@ impl<'a> Whisper<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Whisper<'a> {
-    type Error = InvalidMessage;
+    type Error = MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         msg.expect_command(IrcMessage::WHISPER)?;
@@ -133,7 +136,6 @@ serde_struct!(Whisper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::irc;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -146,7 +148,7 @@ mod tests {
     #[test]
     fn whisper() {
         let input = ":test!user@host WHISPER museun :this is a test\r\n";
-        for msg in irc::parse(input).map(|s| s.unwrap()) {
+        for msg in parse(input).map(|s| s.unwrap()) {
             let msg = Whisper::from_irc(msg).unwrap();
 
             assert_eq!(msg.name(), "test");
