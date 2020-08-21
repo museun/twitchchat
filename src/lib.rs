@@ -3,7 +3,7 @@
     clippy::redundant_pub_crate,
     clippy::use_self
 )]
-#![warn(
+#![deny(
     deprecated_in_future,
     exported_private_dependencies,
     future_incompatible,
@@ -13,7 +13,7 @@
     missing_docs,
     private_in_public,
     rust_2018_compatibility,
-    rust_2018_idioms,
+    // rust_2018_idioms, // this complains about elided lifetimes.
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code,
@@ -137,7 +137,8 @@ pub mod channel;
 
 #[doc(inline)]
 pub use crate::prelude::{
-    twitch::UserConfig, AsyncDecoder, AsyncRunner, Decoder, IrcMessage, Status,
+    twitch::UserConfig, AsyncDecoder, AsyncEncoder, AsyncRunner, Decoder, Encoder, IrcMessage,
+    Status,
 };
 
 mod validator;

@@ -1,7 +1,8 @@
-#![allow(dead_code)] // TODO actually write tests for this
-                     /*!
-                     A simple leaky-bucket style token-based rate limiter
-                     */
+// TODO actually write tests for this
+#![allow(dead_code)]
+/*!
+A simple leaky-bucket style token-based rate limiter
+*/
 
 use std::time::{Duration, Instant};
 
