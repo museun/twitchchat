@@ -1,5 +1,5 @@
 use super::rate_limit::{PreviousRate, RateLimitedEncoder};
-use crate::{rate_limit::RateLimit, RateClass};
+use crate::rate_limit::{RateClass, RateLimit};
 use std::{
     collections::{HashMap, VecDeque},
     time::Duration,

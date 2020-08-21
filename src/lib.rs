@@ -145,7 +145,7 @@ mod validator;
 
 use crate::channel::Sender;
 use crate::maybe_owned::{MaybeOwned, MaybeOwnedIndex};
-use prelude::*;
+// use prelude::*;
 
 // our internal stuff that should never be exposed
 #[cfg(feature = "serde")]

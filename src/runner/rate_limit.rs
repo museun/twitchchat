@@ -1,4 +1,4 @@
-use crate::{rate_limit::RateLimit, RateClass};
+use crate::rate_limit::{RateClass, RateLimit};
 use futures_lite::{AsyncWrite, AsyncWriteExt};
 use std::{collections::VecDeque, time::Duration};
 
