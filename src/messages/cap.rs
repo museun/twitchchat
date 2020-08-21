@@ -1,4 +1,4 @@
-use crate::{irc::*, MaybeOwnedIndex, MaybeOwned, Validator};
+use crate::{irc::*, MaybeOwned, MaybeOwnedIndex, Validator};
 
 /// A parsed Capability
 #[derive(Debug, Copy, Clone, PartialEq)]

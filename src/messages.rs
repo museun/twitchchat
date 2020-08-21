@@ -4,28 +4,28 @@
 //! # Converting from an `IrcMessage` to a specific message
 //!
 //! ```
-//! let input = "user!user@user PRIVMSG #test_channel :this is some data\r\n";
-//! let irc_msg = crate::irc::parse(input).next().unwrap().unwrap();
+//! let input = ":user!user@user PRIVMSG #test_channel :this is some data\r\n";
+//! let irc_msg = twitchchat::irc::parse(input).next().unwrap().unwrap();
 //!
 //! // this is implemented for all of the tyupes in this module
 //! use twitchchat::FromIrcMessage;
 //! use twitchchat::messages::Privmsg;
 //! // this will produce an error if its not this type of message
-//! let pm = Privmsg::from_irc(msg).unwrap();
+//! let pm = Privmsg::from_irc(irc_msg).unwrap();
 //! assert_eq!(pm.data(), "this is some data");
 //! ```
 //!
 //! # Converting an `IrcMessage` to an enum of all possible messages
 //!
 //! ```
-//! let input = "user!user@user PRIVMSG #test_channel :this is some data\r\n";
-//! let irc_msg = crate::irc::parse(input).next().unwrap().unwrap();
+//! let input = ":user!user@user PRIVMSG #test_channel :this is some data\r\n";
+//! let irc_msg = twitchchat::irc::parse(input).next().unwrap().unwrap();
 //!
 //! // this is implemented for all of the tyupes in this module
 //! use twitchchat::FromIrcMessage;
 //! use twitchchat::messages::Commands;
 //!
-//! let all = Commands::from_irc(msg);
+//! let all = Commands::from_irc(irc_msg).unwrap();
 //! assert!(matches!(all, Commands::Privmsg{..}));
 //! ```
 //!
