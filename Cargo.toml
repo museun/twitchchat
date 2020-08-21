@@ -62,7 +62,7 @@ native-tls       = { version = "0.2.4", optional = true }
 anyhow         = "1.0.32"
 async-executor = { version = "0.1.2", default-features = false }
 serde_json     = { version = "1.0.57", default-features = false, features = ["alloc"] }
-rmp-serde      = { version = "0.14.4" }
+rmp-serde      = "0.14.4"
 
 [[example]]
 name = "message_parse"
