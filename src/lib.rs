@@ -111,21 +111,13 @@ mod util;
 mod validator;
 
 /// Prelude with common types
-// #[doc(no_inline)]
 pub mod prelude {
-    // #[doc(no_inline)]
     pub use super::decoder::{AsyncDecoder, Decoder};
-    // #[doc(no_inline)]
     pub use super::encoder::{AsyncEncoder, Encodable, Encoder};
-    // #[doc(no_inline)]
     pub use super::irc::{IrcMessage, TagIndices, Tags};
-    // #[doc(no_inline)]
     pub use super::rate_limit::RateClass;
-    // #[doc(no_inline)]
     pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-    // #[doc(no_inline)]
     pub use super::twitch;
-    // #[doc(no_inline)]
     pub use super::{commands, messages};
 }
 
