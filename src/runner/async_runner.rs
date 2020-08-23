@@ -18,8 +18,12 @@ use super::{
     Capabilities, Channel, Error, Identity, Status, StepResult,
 };
 
-use futures_lite::{AsyncRead, AsyncWrite, AsyncWriteExt};
-use std::collections::{HashSet, VecDeque};
+use futures_lite::{AsyncRead, AsyncWrite, AsyncWriteExt, Stream};
+use std::{
+    collections::{HashSet, VecDeque},
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 /// An asynchronous runner
 pub struct AsyncRunner {
@@ -611,5 +615,23 @@ impl AsyncRunner {
         };
 
         Ok(identity)
+    }
+}
+
+impl Stream for AsyncRunner {
+    type Item = Commands<'static>;
+
+    fn poll_next(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        use std::future::Future;
+        let fut = self.get_mut().next_message();
+        futures_lite::pin!(fut);
+
+        match futures_lite::ready!(fut.poll(ctx)) {
+            Ok(status) => match status {
+                Status::Message(msg) => Poll::Ready(Some(msg)),
+                Status::Quit | Status::Eof => Poll::Ready(None),
+            },
+            Err(..) => Poll::Ready(None),
+        }
     }
 }
