@@ -534,7 +534,7 @@ impl AsyncRunner {
             // this should always be infallible. its not marked infallible
             // because of the 'non-exhaustive' attribute
             use Commands::*;
-            let commands = Commands::from_irc(msg).unwrap(); // TODO why is this unwrapped?
+            let commands = Commands::from_irc(msg)?;
 
             // this is the simpliest way. and this'll only clone like 9 messages
             missed_messages.push_back(commands.clone().into_owned());

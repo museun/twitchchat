@@ -76,6 +76,7 @@ impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
 
         let color = tags
             .get("color")
+            .filter(|s| !s.is_empty())
             .map(std::str::FromStr::from_str)
             .transpose()
             .map_err(|err| MessageError::CannotParseTag {

@@ -83,3 +83,9 @@ impl From<std::io::Error> for Error {
         Self::Io(err)
     }
 }
+
+impl From<MessageError> for Error {
+    fn from(err: MessageError) -> Self {
+        Self::ParsingFailure(err)
+    }
+}
