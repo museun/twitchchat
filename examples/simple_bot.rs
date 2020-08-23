@@ -7,7 +7,6 @@ use twitchchat::PrivmsgExt as _;
 use twitchchat::{
     messages::{Commands, Privmsg},
     runner::{AsyncRunner, NotifyHandle, Status},
-    writer::{AsyncWriter, MpscWriter},
     UserConfig,
 };
 
@@ -23,12 +22,12 @@ fn main() -> anyhow::Result<()> {
         .with_command("!hello", |args: Args| {
             let output = format!("hello {}!", args.msg.name());
             // We can 'reply' to this message using a writer + our output message
-            args.msg.reply(args.writer, &output).unwrap();
+            args.writer.reply(&args.msg, &output).unwrap();
         })
         .with_command("!uptime", move |args: Args| {
             let output = format!("its been running for {:.2?}", start.elapsed());
-            // We can send a message back (without quoting the sender)  using a writer + our output message
-            args.msg.say(args.writer, &output).unwrap();
+            // We can send a message back (without quoting the sender) using a writer + our output message
+            args.writer.say(&args.msg, &output).unwrap();
         })
         .with_command("!quit", move |args: Args| {
             // because we're using sync stuff, turn async into sync with smol!
@@ -42,12 +41,9 @@ fn main() -> anyhow::Result<()> {
     smol::run(async move { bot.run(&user_config, &channels).await })
 }
 
-// to make things easier to type
-type Writer = AsyncWriter<MpscWriter>;
-
 struct Args<'a, 'b: 'a> {
     msg: &'a Privmsg<'b>,
-    writer: &'a mut Writer,
+    writer: &'a mut twitchchat::Writer,
     quit: NotifyHandle,
 }
 

@@ -122,6 +122,9 @@ pub mod prelude {
     pub use super::{commands, messages};
 }
 
+/// An AsyncWriter over an MpscWriter
+pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
+
 // errors
 #[doc(inline)]
 pub use decoder::DecodeError;

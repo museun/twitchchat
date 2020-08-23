@@ -3,25 +3,18 @@ use std::io::Write;
 
 /// Extensions to the `Privmsg` message type
 pub trait PrivmsgExt {
-    /// Reply to this message with `data` over `writer`
-    fn reply<W>(&self, writer: &mut W, data: &str) -> std::io::Result<()>
-    where
-        W: Write + ?Sized;
+    /// Reply to this message with `data`
+    fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()>;
 
     /// Send a message back to the channel this Privmsg came from
-    fn say<W>(&self, writer: &mut W, data: &str) -> std::io::Result<()>
-    where
-        W: Write + ?Sized;
+    fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()>;
 }
 
-impl<'a> PrivmsgExt for Privmsg<'a> {
-    fn reply<W>(&self, writer: &mut W, data: &str) -> std::io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
+impl<'a, W: Write + ?Sized> PrivmsgExt for W {
+    fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
         let cmd = crate::commands::reply(
-            self.channel(),
-            self.tags().get("id").ok_or_else(|| {
+            msg.channel(),
+            msg.tags().get("id").ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
                     "you must have `TAGS` enabled",
@@ -29,16 +22,13 @@ impl<'a> PrivmsgExt for Privmsg<'a> {
             })?,
             data,
         );
-        cmd.encode(writer)?;
-        writer.flush()
+        cmd.encode(self)?;
+        self.flush()
     }
 
-    fn say<W>(&self, writer: &mut W, data: &str) -> std::io::Result<()>
-    where
-        W: Write + ?Sized,
-    {
-        let cmd = crate::commands::privmsg(self.channel(), data);
-        cmd.encode(writer)?;
-        writer.flush()
+    fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
+        let cmd = crate::commands::privmsg(msg.channel(), data);
+        cmd.encode(self)?;
+        self.flush()
     }
 }
