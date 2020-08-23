@@ -158,4 +158,22 @@ mod tests {
             assert_eq!(msg.emote_sets(), vec!["0"]);
         }
     }
+
+    #[test]
+    fn global_user_state_empty_color() {
+        let input = "@badge-info=;badges=;color=;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
+        for msg in parse(input).map(|s| s.unwrap()) {
+            let msg = GlobalUserState::from_irc(msg).unwrap();
+
+            assert_eq!(msg.user_id, "241015868");
+            assert_eq!(msg.user_id(), "241015868");
+
+            assert_eq!(msg.display_name.as_ref().unwrap(), "shaken_bot");
+            assert_eq!(msg.display_name().unwrap(), "shaken_bot");
+
+            assert_eq!(msg.color(), crate::twitch::Color::default());
+
+            assert_eq!(msg.emote_sets(), vec!["0"]);
+        }
+    }
 }
