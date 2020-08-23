@@ -5,8 +5,8 @@ use crate::{irc::*, twitch::*, IntoOwned, MaybeOwned, Validator};
 pub struct GlobalUserState<'a> {
     raw: MaybeOwned<'a>,
     tags: TagIndices,
-    /// Your user-id
-    pub user_id: MaybeOwned<'a>,
+    /// Your user-id, if you have Tags enabled
+    pub user_id: Option<MaybeOwned<'a>>,
     /// Your display name, if set   
     pub display_name: Option<MaybeOwned<'a>>,
     /// Your color, if set. Defaults to `white`
@@ -33,9 +33,9 @@ impl<'a> GlobalUserState<'a> {
             .unwrap_or_default()
     }
 
-    /// Your user-id
-    pub fn user_id(&self) -> &str {
-        &*self.user_id
+    /// Your user-id -- only available if you have TAGs enabled
+    pub fn user_id(&self) -> Option<&str> {
+        self.user_id.as_deref()
     }
 
     /// Your display name, if set   
@@ -63,11 +63,8 @@ impl<'a> FromIrcMessage<'a> for GlobalUserState<'a> {
 
         let user_id = tags
             .get("user-id")
-            .ok_or_else(|| MessageError::ExpectedTag {
-                name: "user-id".to_string(),
-            })
             .map(MaybeOwned::from)
-            .map(MaybeOwned::into_owned)?;
+            .map(MaybeOwned::into_owned);
 
         let display_name = tags
             .get("display-name")
@@ -144,17 +141,24 @@ mod tests {
         let input = "@badge-info=;badges=;color=#FF69B4;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
         for msg in parse(input).map(|s| s.unwrap()) {
             let msg = GlobalUserState::from_irc(msg).unwrap();
-
-            assert_eq!(msg.user_id, "241015868");
-            assert_eq!(msg.user_id(), "241015868");
-
-            assert_eq!(msg.display_name.as_ref().unwrap(), "shaken_bot");
+            assert_eq!(msg.user_id().unwrap(), "241015868");
             assert_eq!(msg.display_name().unwrap(), "shaken_bot");
 
             let color = "#FF69B4".parse().unwrap();
             assert_eq!(msg.color, color);
             assert_eq!(msg.color(), color);
+            assert_eq!(msg.emote_sets(), vec!["0"]);
+        }
+    }
 
+    #[test]
+    fn global_user_state_no_tags() {
+        let input = ":tmi.twitch.tv GLOBALUSERSTATE\r\n";
+        for msg in parse(input).map(|s| s.unwrap()) {
+            let msg = GlobalUserState::from_irc(msg).unwrap();
+            assert!(msg.user_id().is_none());
+            assert!(msg.display_name().is_none());
+            assert_eq!(msg.color(), crate::twitch::Color::default());
             assert_eq!(msg.emote_sets(), vec!["0"]);
         }
     }
@@ -164,15 +168,9 @@ mod tests {
         let input = "@badge-info=;badges=;color=;display-name=shaken_bot;emote-sets=0;user-id=241015868;user-type= :tmi.twitch.tv GLOBALUSERSTATE\r\n";
         for msg in parse(input).map(|s| s.unwrap()) {
             let msg = GlobalUserState::from_irc(msg).unwrap();
-
-            assert_eq!(msg.user_id, "241015868");
-            assert_eq!(msg.user_id(), "241015868");
-
-            assert_eq!(msg.display_name.as_ref().unwrap(), "shaken_bot");
+            assert_eq!(msg.user_id().unwrap(), "241015868");
             assert_eq!(msg.display_name().unwrap(), "shaken_bot");
-
             assert_eq!(msg.color(), crate::twitch::Color::default());
-
             assert_eq!(msg.emote_sets(), vec!["0"]);
         }
     }

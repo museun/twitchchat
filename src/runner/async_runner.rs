@@ -591,12 +591,13 @@ impl AsyncRunner {
 
                 GlobalUserState(msg) => {
                     break Identity::Full {
+                        // these unwraps should be safe because we'll have all of the TAGs here
                         name: our_name.unwrap(),
-                        user_id: msg.user_id.parse().unwrap(),
+                        user_id: msg.user_id.unwrap().parse().unwrap(),
                         display_name: msg.display_name.map(|s| s.to_string()),
                         color: msg.color,
                         caps,
-                    }
+                    };
                 }
 
                 // Reply to any PINGs while waiting. Although Twitch doesn't
