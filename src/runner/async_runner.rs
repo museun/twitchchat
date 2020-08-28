@@ -95,7 +95,7 @@ impl AsyncRunner {
         .await?;
         log::debug!("connection is ready: {:?}", identity);
 
-        let (writer_tx, writer_rx) = crate::channel::bounded(64);
+        let (writer_tx, writer_rx) = crate::channel::unbounded();
         let (notify, notify_handle) = Notify::new();
         let (activity_tx, activity_rx) = crate::channel::bounded(32);
 
