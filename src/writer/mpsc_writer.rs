@@ -47,6 +47,39 @@ impl MpscWriter {
         msg.encode(&mut self.buf)?;
         self.flush()
     }
+
+    fn split_buf(&mut self) -> Option<Box<[u8]>> {
+        let end = match self.buf.iter().position(|&c| c == b'\n') {
+            Some(p) if self.buf.get(p - 1) == Some(&b'\r') => p,
+            _ => return None,
+        };
+
+        // include the \n
+        let mut tail = self.buf.split_off(end + 1);
+        std::mem::swap(&mut self.buf, &mut tail);
+        Some(tail.into_boxed_slice())
+    }
+
+    fn inner_flush(&mut self) -> std::io::Result<()> {
+        use crate::channel::TrySendError;
+
+        let tail = match self.split_buf() {
+            Some(tail) => tail,
+            None => {
+                log::warn!("cannot flush an incomplete buffer");
+                return Ok(());
+            }
+        };
+
+        match self.channel.try_send(tail) {
+            Ok(..) => Ok(()),
+            Err(TrySendError::Closed(..)) => Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "writer was closed",
+            )),
+            Err(TrySendError::Full(..)) => unreachable!(),
+        }
+    }
 }
 
 impl Write for MpscWriter {
@@ -56,22 +89,7 @@ impl Write for MpscWriter {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        use crate::channel::TrySendError;
-
-        let buf = std::mem::take(&mut self.buf);
-        match self.channel.try_send(buf.into_boxed_slice()) {
-            Ok(..) => Ok(()),
-            Err(TrySendError::Closed(..)) => {
-                let err = io::Error::new(io::ErrorKind::UnexpectedEof, "writer was closed");
-                Err(err)
-            }
-            // this should never happen, but place the 'data' back into self and
-            // have it try again
-            Err(TrySendError::Full(data)) => {
-                self.buf = data.into();
-                Ok(())
-            }
-        }
+        self.inner_flush()
     }
 }
 
@@ -88,24 +106,33 @@ impl AsyncWrite for MpscWriter {
 
     fn poll_flush(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.as_mut();
-        let data = std::mem::take(&mut this.buf);
-        match this.channel.try_send(data.into_boxed_slice()) {
-            Ok(()) => Poll::Ready(Ok(())),
-            // this should never happen, but place the 'data' back into self and
-            // have it try again
-            Err(crate::channel::TrySendError::Full(data)) => {
-                this.buf = data.into();
-                Poll::Pending
-            }
-            Err(crate::channel::TrySendError::Closed(..)) => {
-                let kind = io::ErrorKind::UnexpectedEof;
-                let err = io::Error::new(kind, "writer was closed");
-                Poll::Ready(Err(err))
-            }
-        }
+        Poll::Ready(this.inner_flush())
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         self.poll_flush(cx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn mpsc_empty_flush() {
+        let (tx, rx) = crate::channel::bounded(1);
+        let mut m = MpscWriter::new(tx);
+        assert!(m.flush().is_ok());
+        assert!(rx.try_recv().is_none());
+
+        let _ = m.write(b"asdf").unwrap();
+        assert!(m.flush().is_ok());
+        assert!(rx.try_recv().is_none());
+
+        let _ = m.write(b"\r\n").unwrap();
+        assert!(m.flush().is_ok());
+        assert_eq!(&*rx.try_recv().unwrap(), b"asdf\r\n");
+
+        assert!(m.flush().is_ok());
+        assert!(rx.try_recv().is_none());
     }
 }
