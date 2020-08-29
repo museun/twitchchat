@@ -29,6 +29,7 @@
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 
+#[allow(unused_macros)]
 macro_rules! connector_ctor {
     (non_tls: $(#[$meta:meta])*) => {
         #[doc = "Create a new"]
@@ -215,6 +216,7 @@ mod required {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod testing {
     use crate::connector::Connector as ConnectorTrait;
     use futures_lite::{AsyncRead, AsyncWrite};
