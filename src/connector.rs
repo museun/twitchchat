@@ -29,6 +29,55 @@
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::{future::Future, io::Result as IoResult, net::SocketAddr};
 
+macro_rules! connector_ctor {
+    (non_tls: $(#[$meta:meta])*) => {
+        #[doc = "Create a new"]
+        $(#[$meta])*
+        #[doc = "non-TLS connector that connects to the ***default Twitch*** address."]
+        pub fn twitch() -> Self {
+            Self::custom($crate::TWITCH_IRC_ADDRESS).expect("twitch DNS resolution")
+        }
+
+        #[doc = "Create a new"]
+        $(#[$meta])*
+        #[doc = "non-TLS connector with a custom address."]
+        pub fn custom<A>(addrs: A) -> ::std::io::Result<Self>
+        where
+            A: ::std::net::ToSocketAddrs,
+        {
+            addrs.to_socket_addrs().map(|addrs| Self {
+                addrs: addrs.collect(),
+            })
+        }
+    };
+
+    (tls: $(#[$meta:meta])*) => {
+        #[doc = "Create a new"]
+        $(#[$meta])*
+        #[doc = "TLS connector that connects to the ***default Twitch*** address."]
+        pub fn twitch() -> Self {
+            Self::custom($crate::TWITCH_IRC_ADDRESS_TLS, $crate::TWITCH_TLS_DOMAIN)
+                .expect("twitch DNS resolution")
+        }
+
+
+        #[doc = "Create a new"]
+        $(#[$meta])*
+        #[doc = "TLS connector with a custom address and TLS domain."]
+        pub fn custom<A, D>(addrs: A, domain: D) -> ::std::io::Result<Self>
+        where
+            A: ::std::net::ToSocketAddrs,
+            D: Into<::std::string::String>,
+        {
+            let tls_domain = domain.into();
+            addrs.to_socket_addrs().map(|addrs| Self {
+                addrs: addrs.collect(),
+                tls_domain,
+            })
+        }
+    };
+}
+
 #[cfg(feature = "async-io")]
 /// Connector for using an [`async_io`](https://docs.rs/async-io/latest/async_io/) wrapper over [`std::net::TcpStream`](https://doc.rust-lang.org/std/net/struct.TcpStream.html)
 pub mod async_io;
@@ -162,5 +211,21 @@ mod required {
     ))]
     compile_error! {
         "'tokio', 'tokio-util' and 'webpki-roots' must be enabled when 'tokio-rustls' is enabled"
+    }
+}
+
+#[cfg(test)]
+mod testing {
+    use crate::connector::Connector as ConnectorTrait;
+    use futures_lite::{AsyncRead, AsyncWrite};
+
+    pub fn assert_connector<T: ConnectorTrait>() {}
+    pub fn assert_type_is_read_write<T: AsyncRead + AsyncWrite>() {}
+    pub fn assert_obj_is_sane<T>(_obj: T)
+    where
+        T: ConnectorTrait,
+        T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+        for<'a> &'a T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+    {
     }
 }
