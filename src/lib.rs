@@ -25,7 +25,7 @@
 #![cfg_attr(docsrs, feature(doc_alias))]
 /*!
 
-This crate provides a way to interface with [Twitch]'s chat (via IRC).
+This crate provides a way to interface with [Twitch](https://dev.twitch.tv/docs/irc)'s chat (via IRC).
 
 Along with the messages as Rust types, it provides methods for sending messages.
 
@@ -49,7 +49,6 @@ For just encoding messages:
 * [encoder]
 ---
 
-[Twitch]: https://www.twitch.tv
 [runner]: runner/index.html
 [encoder]: encoder/index.html
 [decoder]: decoder/index.html
