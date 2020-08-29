@@ -134,5 +134,11 @@ mod tests {
 
         assert!(m.flush().is_ok());
         assert!(rx.try_recv().is_none());
+
+        assert!(m.buf.is_empty());
+
+        let _ = m.write(b"\r\n").unwrap();
+        assert!(m.flush().is_ok());
+        assert_eq!(&*rx.try_recv().unwrap(), b"\r\n");
     }
 }
