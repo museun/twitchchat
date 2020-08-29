@@ -1,6 +1,7 @@
 // NOTE: this demo requires `--feature async-io`.
 use anyhow::Context;
 
+use std::sync::Arc;
 use twitchchat::{
     commands, connector, messages,
     runner::{AsyncRunner, Status},
@@ -124,12 +125,18 @@ async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let fut = async move {
-        // create a user configuration
-        let user_config = get_user_config()?;
-        // get some channels to join from the environment
-        let channels = channels_to_join()?;
+    // create a user configuration
+    let user_config = get_user_config()?;
+    // get some channels to join from the environment
+    let channels = channels_to_join()?;
 
+    let executor = async_executor::Executor::new();
+    // so we can send the executor to other futures -- async_executor doesn't have a 'global' executor.
+    let executor = Arc::new(executor);
+
+    // clone it so we can move it into the future
+    let ex = executor.clone();
+    let fut = async move {
         // connect and join the provided channels
         let runner = connect(&user_config, &channels).await?;
 
@@ -140,12 +147,12 @@ fn main() -> anyhow::Result<()> {
         let mut writer = runner.writer();
 
         // spawn something off in the background that'll exit in 10 seconds
-        async_executor::Task::spawn({
+        ex.spawn({
             let mut writer = writer.clone();
             let channels = channels.clone();
             async move {
                 println!("in 10 seconds we'll exit");
-                async_io::Timer::new(std::time::Duration::from_secs(10)).await;
+                async_io::Timer::after(std::time::Duration::from_secs(10)).await;
 
                 // send one final message to all channels
                 for channel in channels {
@@ -170,5 +177,5 @@ fn main() -> anyhow::Result<()> {
     };
 
     // any executor would work, we'll use async_executor so can spawn tasks
-    async_executor::Executor::new().run(fut)
+    futures_lite::future::block_on(executor.run(fut))
 }

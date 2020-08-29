@@ -141,12 +141,12 @@ fn main() -> anyhow::Result<()> {
         let mut writer = runner.writer();
 
         // spawn something off in the background that'll exit in 10 seconds
-        smol::Task::spawn({
+        smol::spawn({
             let mut writer = writer.clone();
             let channels = channels.clone();
             async move {
                 println!("in 10 seconds we'll exit");
-                smol::Timer::new(std::time::Duration::from_secs(10)).await;
+                smol::Timer::after(std::time::Duration::from_secs(10)).await;
 
                 // send one final message to all channels
                 for channel in channels {
@@ -170,5 +170,5 @@ fn main() -> anyhow::Result<()> {
         main_loop(runner).await
     };
 
-    smol::run(fut)
+    smol::block_on(fut)
 }

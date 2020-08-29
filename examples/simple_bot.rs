@@ -38,7 +38,7 @@ fn main() -> anyhow::Result<()> {
         });
 
     // run the bot in the executor
-    smol::run(async move { bot.run(&user_config, &channels).await })
+    smol::block_on(async move { bot.run(&user_config, &channels).await })
 }
 
 struct Args<'a, 'b: 'a> {
