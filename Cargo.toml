@@ -20,7 +20,7 @@ all-features = true
 log = "0.4.11"
 
 # just the futures traits
-futures-lite = "0.1.11"
+futures-lite = "1.0.0"
 
 # field pin projection
 pin-project-lite = "0.1.7"
@@ -29,7 +29,7 @@ pin-project-lite = "0.1.7"
 async-dup = "1.2.1"
 
 # message passing
-async-channel = "1.4.0"
+async-channel = "1.4.1"
 
 # for timing out futures
 futures-timer = "3.0.2"
@@ -42,8 +42,8 @@ serde = { version = "1.0.115", optional = true, features = ["derive"] }
 
 # optional runtimes (for TcpStream)
 # these use the futures AsyncWrite+AsyncRead
-async-io  = { version = "0.1.11", optional = true }
-smol      = { version = "0.3.3", optional = true }
+async-io  = { version = "0.2.5", optional = true }
+smol      = { version = "0.4.1", optional = true }
 async-tls = { version = "0.9.0", default-features = false, features = ["client"], optional = true } 
 # TODO look into what their features do. the ones they have enabled by default seem important
 async-std = { version = "1.6.3", optional = true }
@@ -60,7 +60,7 @@ native-tls       = { version = "0.2.4", optional = true }
 
 [dev-dependencies]
 anyhow         = "1.0.32"
-async-executor = { version = "0.1.2", default-features = false }
+async-executor = { version = "0.2.0", default-features = false }
 serde_json     = { version = "1.0.57", default-features = false, features = ["alloc"] }
 rmp-serde      = "0.14.4"
 
