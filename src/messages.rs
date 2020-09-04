@@ -5,11 +5,11 @@
 //!
 //! ```
 //! let input = ":user!user@user PRIVMSG #test_channel :this is some data\r\n";
-//! let irc_msg = twitchchat::irc::parse(input).next().unwrap().unwrap();
+//! let irc_msg = twitchchat_sync::irc::parse(input).next().unwrap().unwrap();
 //!
 //! // this is implemented for all of the tyupes in this module
-//! use twitchchat::FromIrcMessage;
-//! use twitchchat::messages::Privmsg;
+//! use twitchchat_sync::FromIrcMessage;
+//! use twitchchat_sync::messages::Privmsg;
 //! // this will produce an error if its not this type of message
 //! let pm = Privmsg::from_irc(irc_msg).unwrap();
 //! assert_eq!(pm.data(), "this is some data");
@@ -19,11 +19,11 @@
 //!
 //! ```
 //! let input = ":user!user@user PRIVMSG #test_channel :this is some data\r\n";
-//! let irc_msg = twitchchat::irc::parse(input).next().unwrap().unwrap();
+//! let irc_msg = twitchchat_sync::irc::parse(input).next().unwrap().unwrap();
 //!
 //! // this is implemented for all of the tyupes in this module
-//! use twitchchat::FromIrcMessage;
-//! use twitchchat::messages::Commands;
+//! use twitchchat_sync::FromIrcMessage;
+//! use twitchchat_sync::messages::Commands;
 //!
 //! let all = Commands::from_irc(irc_msg).unwrap();
 //! assert!(matches!(all, Commands::Privmsg{..}));

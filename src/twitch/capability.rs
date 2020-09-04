@@ -29,8 +29,11 @@ impl Capability {
         }
     }
 
-    pub(crate) fn maybe_from_str(s: &str) -> Option<Self> {
-        match s {
+    /// Attempts to 'parse' this capability from a string
+    ///
+    /// This will take the form of `twitch.tv/$tag` and produce a `Capability`
+    pub(crate) fn maybe_from_str(input: &str) -> Option<Self> {
+        match input {
             "twitch.tv/membership" => Some(Self::Membership),
             "twitch.tv/tags" => Some(Self::Tags),
             "twitch.tv/commands" => Some(Self::Commands),

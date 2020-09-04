@@ -1,4 +1,4 @@
-use crate::encoder::Encodable;
+use crate::Encodable;
 
 use futures_lite::AsyncWrite;
 use std::{

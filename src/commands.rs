@@ -5,10 +5,7 @@
 //! The [functions][functions] in this module produce borrowed types in the [`types`][types] module. You can store the [`types`][types] for multiple encodings.
 //!
 //! ### Some provided encoders:
-//! * [`AsyncEncoder`](../struct.AsyncEncoder.html)
 //! * [`Encoder`](../struct.Encoder.html)
-//! * [`MpscWriter`](../writer/struct.MpscWriter.html)
-//! * [`AsyncWriter`](../writer/struct.AsyncWriter.html)
 //!
 //! [functions]: ./index.html#functions
 //! [types]: ./types/index.html
@@ -129,9 +126,7 @@ macro_rules! serde_for_commands {
 
                     let mut s = serializer.serialize_struct(stringify!($ty), std::cmp::max(len, 1))?;
                     s.serialize_field("raw", raw)?;
-                    $(
-                        s.serialize_field(stringify!($field), &self.$field)?;
-                    )*
+                    $( s.serialize_field(stringify!($field), &self.$field)?; )*
                     s.end()
                 }
             }
@@ -224,7 +219,16 @@ where
     }
 }
 
-pub(crate) struct Channel<'a>(pub &'a str);
+/// A channel wrapper that when `.to_string()` is called will ensure a leading `#` is added.
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct Channel<'a>(pub(crate) &'a str);
+
+impl<'a> Channel<'a> {
+    /// Create a new channel wrapper
+    pub const fn new(channel: &'a str) -> Self {
+        Self(channel)
+    }
+}
 
 impl<'a> Display for Channel<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

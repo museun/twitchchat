@@ -21,8 +21,8 @@
     unused_import_braces,
     unused_qualifications
 )]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_alias))]
+#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_alias))]
+#![cfg_attr(feature = "all_docs", feature(doc_cfg))]
 /*!
 
 This crate provides a way to interface with [Twitch](https://dev.twitch.tv/docs/irc)'s chat (via IRC).
@@ -57,11 +57,69 @@ For just encoding messages:
 [commands]: commands/index.html
 [irc]: irc/index.html
 */
-// #[cfg(all(doctest, feature = "async", feature = "tokio_native_tls"))]
-// doc_comment::doctest!("../README.md");
 
-/// A boxed `Future` that is `Send + Sync`
-pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
+macro_rules! cfg_async {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(feature = "async"))]
+            #[cfg_attr(any(feature = "all_docs", docsrs), doc(cfg(feature = "async")))]
+            $item
+        )*
+    };
+}
+
+cfg_async! {
+    /// A boxed `Future` that is `Send + Sync`
+    pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
+
+    pub mod connector;
+    pub mod runner;
+    pub mod writer;
+    pub mod channel;
+}
+
+pub mod rate_limit;
+
+// our internal stuff that should never be exposed
+mod ext;
+
+mod util;
+
+/// Prelude with common types
+pub mod prelude {
+    pub use crate::irc::{IrcMessage, TagIndices, Tags};
+    pub use crate::Encodable;
+    pub use crate::{commands, messages, twitch};
+    pub use crate::{Decoder, Encoder};
+
+    cfg_async! {
+        pub use super::decoder::AsyncDecoder;
+        pub use super::encoder::AsyncEncoder;
+        pub use super::rate_limit::RateClass;
+        pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
+    }
+}
+
+cfg_async! {
+    /// An AsyncWriter over an MpscWriter
+    pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
+}
+
+cfg_async! {
+    #[doc(inline)]
+    pub use self::decoder::AsyncDecoder;
+
+    // #[doc(inline)]
+    // pub use self::encoder::AsyncEncoder;
+
+    pub use self::runner::{AsyncRunner, Status, Error as RunnerError};
+}
+
+cfg_async! {
+    use crate::channel::Sender;
+}
+
+pub use ext::PrivmsgExt;
 
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
@@ -87,67 +145,32 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 mod macros;
 
 pub mod commands;
-pub mod connector;
-pub mod decoder;
-pub mod encoder;
-pub mod irc;
-pub mod maybe_owned;
 pub mod messages;
-pub mod rate_limit;
-pub mod runner;
-pub mod twitch;
 
-// TODO this could use more implementations and better documentation
-pub mod writer;
+pub mod irc;
+pub use irc::{IrcMessage, MessageError};
 
-// this is so we don't expose an external dep
-pub mod channel;
-
-// our internal stuff that should never be exposed
-mod ext;
-#[cfg(feature = "serde")]
-mod serde;
-mod util;
-mod validator;
-
-/// Prelude with common types
-pub mod prelude {
-    pub use super::decoder::{AsyncDecoder, Decoder};
-    pub use super::encoder::{AsyncEncoder, Encodable, Encoder};
-    pub use super::irc::{IrcMessage, TagIndices, Tags};
-    pub use super::rate_limit::RateClass;
-    pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-    pub use super::twitch;
-    pub use super::{commands, messages};
-}
-
-/// An AsyncWriter over an MpscWriter
-pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
-
-// errors
-#[doc(inline)]
-pub use decoder::DecodeError;
-pub use irc::MessageError;
-pub use runner::Error as RunnerError;
-
-// very common types
-#[doc(inline)]
-pub use self::decoder::{AsyncDecoder, Decoder};
-#[doc(inline)]
-pub use self::encoder::{AsyncEncoder, Encoder};
-pub use self::irc::IrcMessage;
-pub use self::runner::{AsyncRunner, Status};
-pub use self::twitch::UserConfig;
-
-// traits
-#[doc(inline)]
-pub use encoder::Encodable;
-pub use ext::PrivmsgExt;
 #[doc(inline)]
 pub use irc::{FromIrcMessage, IntoIrcMessage};
+
+pub mod twitch;
+pub use twitch::UserConfig;
+
+mod decoder;
+pub use decoder::{DecodeError, Decoder};
+
+mod encoder;
+pub use encoder::Encoder;
+
+mod encodable;
+pub use encodable::Encodable;
+
+pub mod maybe_owned;
 pub use maybe_owned::IntoOwned;
-#[doc(inline)]
+use maybe_owned::{MaybeOwned, MaybeOwnedIndex};
+
+mod validator;
 pub use validator::Validator;
 
-use crate::channel::Sender;
-use crate::maybe_owned::{MaybeOwned, MaybeOwnedIndex};
+#[cfg(feature = "serde")]
+mod serde;

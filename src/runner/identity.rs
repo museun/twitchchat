@@ -45,8 +45,9 @@ impl Identity {
     ///
     /// If its anonymous, it'll be `justinfan1234`
     pub fn username(&self) -> &str {
+        let (nick, _) = crate::ANONYMOUS_LOGIN;
         match self {
-            Self::Anonymous { .. } => crate::JUSTINFAN1234,
+            Self::Anonymous { .. } => nick,
             Self::Basic { name, .. } | Self::Full { name, .. } => &*name,
         }
     }
