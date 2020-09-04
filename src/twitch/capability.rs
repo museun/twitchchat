@@ -32,6 +32,7 @@ impl Capability {
     /// Attempts to 'parse' this capability from a string
     ///
     /// This will take the form of `twitch.tv/$tag` and produce a `Capability`
+    #[allow(dead_code)]
     pub(crate) fn maybe_from_str(input: &str) -> Option<Self> {
         match input {
             "twitch.tv/membership" => Some(Self::Membership),

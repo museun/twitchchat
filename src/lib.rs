@@ -68,59 +68,6 @@ macro_rules! cfg_async {
     };
 }
 
-cfg_async! {
-    /// A boxed `Future` that is `Send + Sync`
-    pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
-
-    pub mod connector;
-    pub mod runner;
-    pub mod writer;
-    pub mod channel;
-}
-
-pub mod rate_limit;
-
-// our internal stuff that should never be exposed
-mod ext;
-
-mod util;
-
-/// Prelude with common types
-pub mod prelude {
-    pub use crate::irc::{IrcMessage, TagIndices, Tags};
-    pub use crate::Encodable;
-    pub use crate::{commands, messages, twitch};
-    pub use crate::{Decoder, Encoder};
-
-    cfg_async! {
-        pub use super::decoder::AsyncDecoder;
-        pub use super::encoder::AsyncEncoder;
-        pub use super::rate_limit::RateClass;
-        pub use super::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-    }
-}
-
-cfg_async! {
-    /// An AsyncWriter over an MpscWriter
-    pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
-}
-
-cfg_async! {
-    #[doc(inline)]
-    pub use self::decoder::AsyncDecoder;
-
-    // #[doc(inline)]
-    // pub use self::encoder::AsyncEncoder;
-
-    pub use self::runner::{AsyncRunner, Status, Error as RunnerError};
-}
-
-cfg_async! {
-    use crate::channel::Sender;
-}
-
-pub use ext::PrivmsgExt;
-
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
@@ -143,6 +90,44 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 #[macro_use]
 #[allow(unused_macros)]
 mod macros;
+
+/// Prelude with common types
+pub mod prelude {
+    pub use crate::irc::{IrcMessage, TagIndices, Tags};
+    pub use crate::rate_limit::RateClass;
+    pub use crate::Encodable;
+    pub use crate::{commands, messages, twitch};
+    pub use crate::{Decoder, Encoder};
+
+    cfg_async! {
+        pub use crate::decoder::AsyncDecoder;
+        pub use crate::encoder::AsyncEncoder;
+        pub use crate::runner::{AsyncRunner, Identity, NotifyHandle, Status};
+    }
+}
+
+cfg_async! {
+    /// A boxed `Future` that is `Send + Sync`
+    pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
+
+    pub mod connector;
+    pub mod runner;
+    pub mod writer;
+    pub mod channel;
+
+    /// An AsyncWriter over an MpscWriter
+    pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
+
+    #[doc(inline)]
+    pub use self::decoder::AsyncDecoder;
+
+    #[doc(inline)]
+    pub use self::encoder::AsyncEncoder;
+
+    pub use self::runner::{AsyncRunner, Status, Error as RunnerError};
+}
+
+pub mod rate_limit;
 
 pub mod commands;
 pub mod messages;
@@ -172,5 +157,9 @@ use maybe_owned::{MaybeOwned, MaybeOwnedIndex};
 mod validator;
 pub use validator::Validator;
 
+mod ext;
 #[cfg(feature = "serde")]
 mod serde;
+mod util;
+
+pub use ext::PrivmsgExt;

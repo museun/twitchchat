@@ -320,7 +320,7 @@ impl AsyncRunner {
             Left(Left(Right(Some(write_data)))) => {
                 // TODO provide a 'bytes' flavored parser
                 let msg = std::str::from_utf8(&*write_data).map_err(Error::InvalidUtf8)?;
-                let res = crate::irc::parse_one(&msg) //
+                let res = crate::irc::parse_one(msg) //
                     .expect("encoder should produce valid IRC messages");
                 let msg = res.1;
 

@@ -10,7 +10,7 @@ It contains your user name, your OAuth token and the capabilities you want to re
 
 # example using a builder
 ```
-# use twitchchat_sync::twitch::{Capability, UserConfig};
+# use twitchchat::twitch::{Capability, UserConfig};
 # std::env::set_var("TWITCH_NAME", "foo");
 # std::env::set_var("TWITCH_TOKEN", format!("oauth:{}", "a".repeat(30)));
 // as anonymous

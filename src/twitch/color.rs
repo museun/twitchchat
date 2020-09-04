@@ -7,7 +7,7 @@ Both an RGB triplet and named Colors are provided.
 ## Try to parse a RGB from a #RRGGBB or RRGGBB
 ```
 # use std::str::FromStr as _;
-# use twitchchat_sync::twitch::color::RGB;
+# use twitchchat::twitch::color::RGB;
 let rgb: RGB = "#00FF19".parse().unwrap();
 assert_eq!(rgb.red(), 0x00);
 assert_eq!(rgb.green(), 0xFF);
@@ -23,7 +23,7 @@ assert_eq!(rgb.blue(), 0x19);
 ## Turning it back into a string
 ```
 # use std::str::FromStr as _;
-# use twitchchat_sync::twitch::color::RGB;
+# use twitchchat::twitch::color::RGB;
 let input = "#00FF19";
 let rgb: RGB = input.parse().unwrap();
 assert_eq!(rgb.to_string(), input);
@@ -33,7 +33,7 @@ assert_eq!(rgb.to_string(), input);
 ## Try to parse a Color from a named color
 ```
 # use std::str::FromStr as _;
-# use twitchchat_sync::twitch::color::*;
+# use twitchchat::twitch::color::*;
 let input = "Blue Violet";
 let color: Color = input.parse().unwrap();
 assert_eq!(color.rgb, RGB(0x8A, 0x2B, 0xE2));
@@ -42,7 +42,7 @@ assert_eq!(color.kind, TwitchColor::BlueViolet);
 
 # Conversions
 ```
-# use twitchchat_sync::twitch::color::*;
+# use twitchchat::twitch::color::*;
 let input = "Blue Violet";
 let color: Color = input.parse().unwrap();
 

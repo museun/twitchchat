@@ -151,7 +151,7 @@ pub trait Connector: Send + Sync + Clone {
     type Output: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static;
     /// The `connect` method. This should return a boxed future of a `std::io::Result` of the `Output` type.
     ///
-    /// e.g. `Box::pin(async move { std::net::TcpStream::connect("someaddr") })
+    /// e.g. `Box::pin(async move { std::net::TcpStream::connect("someaddr") })`
     fn connect(&mut self) -> crate::BoxedFuture<IoResult<Self::Output>>;
 }
 
@@ -226,7 +226,7 @@ mod testing {
     pub fn assert_obj_is_sane<T>(_obj: T)
     where
         T: ConnectorTrait,
-        T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+        T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
         for<'a> &'a T::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
     {
     }

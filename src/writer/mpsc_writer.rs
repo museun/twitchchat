@@ -12,7 +12,7 @@ use std::{
 /// This can be used both a `std::io::Write` instance and a `AsyncWrite` instance.
 pub struct MpscWriter {
     buf: Vec<u8>,
-    channel: crate::Sender<Box<[u8]>>,
+    channel: crate::channel::Sender<Box<[u8]>>,
 }
 
 impl std::fmt::Debug for MpscWriter {
@@ -32,7 +32,7 @@ impl Clone for MpscWriter {
 
 impl MpscWriter {
     /// Create a new Writer with this Sender
-    pub const fn new(channel: crate::Sender<Box<[u8]>>) -> Self {
+    pub const fn new(channel: crate::channel::Sender<Box<[u8]>>) -> Self {
         Self {
             buf: Vec::new(),
             channel,
