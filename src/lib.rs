@@ -75,7 +75,7 @@ For just encoding messages:
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
-            #[cfg(any(feature = "async"))]
+            #[cfg(feature = "async")]
             #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
             $item
         )*
