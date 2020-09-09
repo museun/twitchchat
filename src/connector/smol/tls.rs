@@ -1,6 +1,6 @@
 use super::*;
 
-/// A `smol` connector that uses `async-tls` (a `rustls` wrapper). This does use TLS.
+/// A `smol` connector that uses `async-tls` (a `rustls` wrapper). This uses TLS.
 ///
 /// To use this type, ensure you set up the 'TLS Domain' in the
 /// configuration. The crate provides the 'TLS domain' for Twitch in the root of this crate.

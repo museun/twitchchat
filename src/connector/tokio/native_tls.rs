@@ -1,6 +1,6 @@
 use super::*;
 
-/// A `tokio` connector that uses `tokio-native-tls` (a `native-tls` wrapper). This does use TLS.
+/// A `tokio` connector that uses `tokio-native-tls` (a `native-tls` wrapper). This uses TLS.
 ///
 /// To use this type, ensure you set up the 'TLS Domain' in the configuration.
 ///

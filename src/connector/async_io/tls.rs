@@ -1,7 +1,7 @@
 use super::*;
 use std::io::Result;
 
-/// A `async_io` connector that uses `async-tls` (a `rustls` wrapper). This does use TLS.
+/// A `async_io` connector that uses `async-tls` (a `rustls` wrapper). This uses TLS.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConnectorTls {
     addrs: Vec<std::net::SocketAddr>,

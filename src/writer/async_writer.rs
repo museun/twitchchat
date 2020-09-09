@@ -1,5 +1,6 @@
 use crate::channel::Sender;
-use crate::encoder::{AsyncEncoder, Encodable};
+use crate::encoder::AsyncEncoder;
+use crate::Encodable;
 
 use futures_lite::AsyncWrite;
 use io::Write;
@@ -81,33 +82,5 @@ where
             self.encode(msg).await?;
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn is_that_right() {
-        let (tx, rx) = crate::channel::bounded(10);
-
-        let (_a, _b) = crate::channel::unbounded();
-        let w = crate::writer::MpscWriter::new(tx);
-        let mut w = AsyncWriter::new(w, _a);
-
-        use crate::commands::*;
-        let fut = async move {
-            w.encode_many(&[raw("hello"), raw("world")]).await.unwrap();
-            w.encode_many(vec![&raw("hello"), &raw("world")])
-                .await
-                .unwrap();
-            // w.encode_many([&raw("hello"), &raw("world")]).await.unwrap();
-        };
-
-        futures_lite::future::block_on(fut);
-
-        while let Some(t) = rx.try_recv() {
-            eprintln!("{}", std::str::from_utf8(&*t).unwrap().escape_debug());
-        }
     }
 }

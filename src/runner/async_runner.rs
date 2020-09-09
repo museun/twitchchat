@@ -1,15 +1,15 @@
+cfg_async! {
 use crate::{
     channel::Receiver,
     commands,
     connector::Connector,
-    decoder::{AsyncDecoder, DecodeError},
-    encoder::{AsyncEncoder, Encodable},
+    encoder::AsyncEncoder,
     messages::{Capability, Commands, MessageId},
     rate_limit::{RateClass, RateLimit},
     twitch::UserConfig,
     util::{Notify, NotifyHandle},
     writer::{AsyncWriter, MpscWriter},
-    FromIrcMessage,
+    AsyncDecoder, DecodeError, Encodable, FromIrcMessage, IrcMessage,
 };
 
 use super::{
@@ -59,7 +59,7 @@ impl std::fmt::Debug for AsyncRunner {
 impl AsyncRunner {
     /// Connect with the provided connector and the provided UserConfig
     ///
-    /// This returns the Runner with your identity set.    
+    /// This returns the Runner with your identity set.
     pub async fn connect<C>(connector: C, user_config: &UserConfig) -> Result<Self, Error>
     where
         C: Connector,
@@ -152,7 +152,7 @@ impl AsyncRunner {
         self.notify_handle.clone()
     }
 
-    /// Join `channel` and wait for it to complete    
+    /// Join `channel` and wait for it to complete
     pub async fn join(&mut self, channel: &str) -> Result<(), Error> {
         if self.is_on_channel(channel) {
             return Err(Error::AlreadyOnChannel {
@@ -163,7 +163,7 @@ impl AsyncRunner {
         log::debug!("joining '{}'", channel);
         self.encoder.encode(commands::join(channel)).await?;
 
-        let channel = crate::commands::Channel(channel).to_string();
+        let channel = crate::commands::Channel::new(channel).to_string();
         log::debug!("waiting for a response");
 
         let mut queue = VecDeque::new();
@@ -211,7 +211,7 @@ impl AsyncRunner {
         log::debug!("leaving '{}'", channel);
         self.encoder.encode(commands::part(channel)).await?;
 
-        let channel = crate::commands::Channel(channel).to_string();
+        let channel = crate::commands::Channel::new(channel).to_string();
         log::debug!("waiting for a response");
 
         let mut queue = VecDeque::new();
@@ -320,8 +320,9 @@ impl AsyncRunner {
             Left(Left(Right(Some(write_data)))) => {
                 // TODO provide a 'bytes' flavored parser
                 let msg = std::str::from_utf8(&*write_data).map_err(Error::InvalidUtf8)?;
-                let msg = crate::irc::IrcMessage::parse(crate::MaybeOwned::Borrowed(msg))
+                let res = crate::irc::parse_one(msg) //
                     .expect("encoder should produce valid IRC messages");
+                let msg = res.1;
 
                 if let crate::irc::IrcMessage::PRIVMSG = msg.get_command() {
                     if let Some(ch) = msg.nth_arg(0) {
@@ -533,7 +534,7 @@ impl AsyncRunner {
         let mut our_name = None;
 
         let identity = loop {
-            let msg = decoder.read_message().await?;
+            let msg: IrcMessage<'_> = decoder.read_message().await?;
 
             // this should always be infallible. its not marked infallible
             // because of the 'non-exhaustive' attribute
@@ -634,4 +635,5 @@ impl Stream for AsyncRunner {
             Err(..) => Poll::Ready(None),
         }
     }
+}
 }

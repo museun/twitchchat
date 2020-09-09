@@ -1,6 +1,6 @@
 use crate::{DecodeError, MessageError};
 
-/// An error Returned by a Runner
+/// An error returned by a Runner
 #[derive(Debug)]
 pub enum Error {
     /// An I/O error occured

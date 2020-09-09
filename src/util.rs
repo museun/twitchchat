@@ -1,41 +1,18 @@
-#![allow(dead_code)] // some of these won't be used for now
-use futures_lite::future::{ready, Ready};
-use std::{
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
-
-pub fn name<T>(_: &T) -> &'static str {
-    std::any::type_name::<T>()
-}
-
-/// Note: This does not work (the way you'd expect) with compound types.
-///
-/// This is mainly used to turn 'twitchchat::messages::GlobalUserState' et.al
-/// into 'GlobalUserState'
-pub fn trim_type_name<T>() -> &'static str {
-    let ty = std::any::type_name::<T>();
-    if ty.contains('<') {
-        return ty;
-    }
-    ty.rsplit("::").next().unwrap_or(ty)
-}
-
-pub fn trim_type_name_val<T>(_: &T) -> &'static str {
-    let ty = std::any::type_name::<T>();
-    if ty.contains('<') {
-        return ty;
-    }
-    ty.rsplit("::").next().unwrap_or(ty)
-}
-
+#[allow(dead_code)]
 pub fn timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs()
 }
+
+cfg_async! {
+use futures_lite::future::{ready, Ready};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 // TODO if we make this clonable it can be used in the Writers
 pub struct Notify {
@@ -154,7 +131,7 @@ where
 }
 
 pin_project_lite::pin_project! {
-    pub struct Or<A,B> {
+    pub struct Or<A, B> {
         #[pin]
         left: A,
 
@@ -202,4 +179,5 @@ where
 
         Poll::Pending
     }
+}
 }
