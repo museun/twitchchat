@@ -21,6 +21,8 @@ pub const WINDOW: Duration = Duration::from_secs(45);
 pub const TIMEOUT: Duration = Duration::from_secs(10);
 pub const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(30);
 
-pub async fn next_delay() {
-    futures_timer::Delay::new(WINDOW).await
+cfg_async! {
+    pub async fn next_delay() {
+        futures_timer::Delay::new(WINDOW).await
+    }
 }

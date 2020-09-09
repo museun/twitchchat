@@ -1,3 +1,4 @@
+cfg_async! {
 use super::rate_limit::{PreviousRate, RateLimitedEncoder};
 use crate::rate_limit::{RateClass, RateLimit};
 use std::{
@@ -107,4 +108,5 @@ impl Channels {
     pub fn remove(&mut self, name: &str) {
         self.map.remove(name);
     }
+}
 }

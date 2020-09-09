@@ -1,17 +1,22 @@
-use futures_lite::{AsyncWrite, AsyncWriteExt};
+cfg_async! {
 use std::{
     io::{Result as IoResult, Write},
     pin::Pin,
     task::{Context, Poll},
 };
 
-pin_project_lite::pin_project! {
-    /// An asynchronous encoder.
-    pub struct AsyncEncoder<W> {
-        #[pin]
-        pub(crate) writer: W,
-        pos: usize,
-        data: Vec<u8>
+use futures_lite::{AsyncWrite, AsyncWriteExt};
+
+/// An asynchronous encoder.
+pub struct AsyncEncoder<W> {
+    pub(crate) writer: W,
+    pos: usize,
+    data: Vec<u8>,
+}
+
+impl<W> std::fmt::Debug for AsyncEncoder<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncEncoder").finish()
     }
 }
 
@@ -111,25 +116,31 @@ where
 
 impl<W> AsyncWrite for AsyncEncoder<W>
 where
-    W: AsyncWrite + Send + Sync,
+    W: AsyncWrite + Unpin + Send + Sync,
 {
     fn poll_write(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         ctx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<IoResult<usize>> {
-        let this = self.project();
-        this.writer.poll_write(ctx, buf)
+        let mut this = self.as_mut();
+        let writer = &mut this.writer;
+        futures_lite::pin!(writer);
+        writer.poll_write(ctx, buf)
     }
 
-    fn poll_flush(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<IoResult<()>> {
-        let this = self.project();
-        this.writer.poll_flush(ctx)
+    fn poll_flush(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<IoResult<()>> {
+        let mut this = self.as_mut();
+        let writer = &mut this.writer;
+        futures_lite::pin!(writer);
+        writer.poll_flush(ctx)
     }
 
-    fn poll_close(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<IoResult<()>> {
-        let this = self.project();
-        this.writer.poll_close(ctx)
+    fn poll_close(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<IoResult<()>> {
+        let mut this = self.as_mut();
+        let writer = &mut this.writer;
+        futures_lite::pin!(writer);
+        writer.poll_close(ctx)
     }
 }
 
@@ -154,4 +165,5 @@ mod tests {
         };
         futures_lite::future::block_on(fut);
     }
+}
 }

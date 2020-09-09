@@ -19,9 +19,6 @@
 //! [writer]: struct.AsyncRunner.html#method.writer
 //! [quit]: struct.AsyncRunner.html#method.quit_handle
 
-mod async_runner;
-pub use async_runner::AsyncRunner;
-
 mod status;
 pub use status::{Status, StepResult};
 
@@ -34,11 +31,24 @@ pub use identity::Identity;
 mod error;
 pub use error::Error;
 
-mod rate_limit;
+#[allow(dead_code)]
 mod timeout;
 
-mod channel;
-pub use channel::Channel;
+cfg_async! {
+    mod rate_limit;
+}
 
-#[doc(inline)]
-pub use crate::util::NotifyHandle;
+cfg_async! {
+    mod channel;
+    pub use channel::Channel;
+}
+
+cfg_async! {
+    mod async_runner;
+    pub use async_runner::AsyncRunner;
+}
+
+cfg_async! {
+    #[doc(inline)]
+    pub use crate::util::NotifyHandle;
+}

@@ -1,15 +1,15 @@
+cfg_async! {
 use crate::{
     channel::Receiver,
     commands,
     connector::Connector,
-    decoder::AsyncDecoder,
     encoder::AsyncEncoder,
     messages::{Capability, Commands, MessageId},
     rate_limit::{RateClass, RateLimit},
     twitch::UserConfig,
     util::{Notify, NotifyHandle},
     writer::{AsyncWriter, MpscWriter},
-    DecodeError, Encodable, FromIrcMessage, IrcMessage,
+    AsyncDecoder, DecodeError, Encodable, FromIrcMessage, IrcMessage,
 };
 
 use super::{
@@ -59,7 +59,7 @@ impl std::fmt::Debug for AsyncRunner {
 impl AsyncRunner {
     /// Connect with the provided connector and the provided UserConfig
     ///
-    /// This returns the Runner with your identity set.    
+    /// This returns the Runner with your identity set.
     pub async fn connect<C>(connector: C, user_config: &UserConfig) -> Result<Self, Error>
     where
         C: Connector,
@@ -152,7 +152,7 @@ impl AsyncRunner {
         self.notify_handle.clone()
     }
 
-    /// Join `channel` and wait for it to complete    
+    /// Join `channel` and wait for it to complete
     pub async fn join(&mut self, channel: &str) -> Result<(), Error> {
         if self.is_on_channel(channel) {
             return Err(Error::AlreadyOnChannel {
@@ -635,4 +635,5 @@ impl Stream for AsyncRunner {
             Err(..) => Poll::Ready(None),
         }
     }
+}
 }

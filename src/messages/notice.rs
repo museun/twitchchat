@@ -326,7 +326,7 @@ pub enum MessageId<'a> {
     UntimeoutBanned,
     /// <user> is no longer timed out in this channel.
     UntimeoutSuccess,
-    /// Usage: “/ban <username> [reason]” - Permanently prevent a user from
+    /// Usage: “/ban <username> <reason>” - Permanently prevent a user from
     /// chatting. Reason is optional and will be shown to the target and other
     /// moderators. Use “/unban” to remove a ban.
     UsageBan,
@@ -337,7 +337,7 @@ pub enum MessageId<'a> {
     /// Chocolate, Coral, DodgerBlue, Firebrick, GoldenRod, Green, HotPink,
     /// OrangeRed, Red, SeaGreen, SpringGreen, YellowGreen.
     UsageColor,
-    /// Usage: “/commercial [length]” - Triggers a commercial. Length (optional)
+    /// Usage: “/commercial <length>” - Triggers a commercial. Length (optional)
     /// must be a positive number of seconds.
     UsageCommercial,
     /// Usage: “/disconnect” - Reconnects to chat.
@@ -364,8 +364,9 @@ pub enum MessageId<'a> {
     UsageMarker,
     /// Usage: “/me <message>” - Send an “emote” message in the third person.
     UsageMe,
-    /// Usage: “/mod <username>” - Grant mod status to a user. Use “/mods” to
-    /// list the moderators of this channel.
+    /// Usage: “/mod <username>” - Grant mod status to a user.
+    ///
+    /// Use “/mods” to list the moderators of this channel.
     UsageMod,
     /// Usage: “/mods” - Lists the moderators of this channel.
     UsageMods,
@@ -378,20 +379,23 @@ pub enum MessageId<'a> {
     UsageRaid,
     /// Usage: “/slowoff” - Disables slow mode.
     UsageSlowOff,
-    /// Usage: “/slow” [duration] - Enables slow mode (limit how often users may
-    /// send messages). Duration (optional, default=<number>) must be a positive
-    /// integer number of seconds. Use “/slowoff” to disable.
+    /// Usage: “/slow” <duration> - Enables slow mode (limit how often users may
+    /// send messages).
+    ///
+    /// Duration (optional, default=<number>) must be a positive integer number of seconds. Use “/slowoff” to disable.
     UsageSlowOn,
     /// Usage: “/subscribersoff” - Disables subscribers-only mode.
     UsageSubsOff,
     /// Usage: “/subscribers” - Enables subscribers-only mode (only subscribers
     /// may chat in this channel). Use “/subscribersoff” to disable.
     UsageSubsOn,
-    /// Usage: “/timeout <username> [duration][time unit] [reason]" -
-    /// Temporarily prevent a user from chatting. Duration (optional, default=10
-    /// minutes) must be a positive integer; time unit (optional, default=s)
-    /// must be one of s, m, h, d, w; maximum duration is 2 weeks. Combinations
-    /// like 1d2h are also allowed. Reason is optional and will be shown to the
+    /// Usage: “/timeout <username> <duration><time unit> <reason>" -
+    /// Temporarily prevent a user from chatting.
+    ///
+    /// Duration (optional, default=10 minutes) must be a positive integer; time unit (optional, default=s)
+    /// must be one of s, m, h, d, w; maximum duration is 2 weeks.
+    ///
+    /// Combinations like 1d2h are also allowed. Reason is optional and will be shown to the
     /// target user and other moderators. Use “untimeout” to remove a timeout.
     UsageTimeout,
     /// Usage: “/unban <username>” - Removes a ban on a user.

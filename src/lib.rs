@@ -91,41 +91,29 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 #[allow(unused_macros)]
 mod macros;
 
-/// Prelude with common types
-pub mod prelude {
-    pub use crate::irc::{IrcMessage, TagIndices, Tags};
-    pub use crate::rate_limit::RateClass;
-    pub use crate::Encodable;
-    pub use crate::{commands, messages, twitch};
-    pub use crate::{Decoder, Encoder};
+pub mod decoder;
+pub use decoder::{DecodeError, Decoder};
+cfg_async! { pub use decoder::AsyncDecoder; }
 
-    cfg_async! {
-        pub use crate::decoder::AsyncDecoder;
-        pub use crate::encoder::AsyncEncoder;
-        pub use crate::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-    }
-}
+pub mod encoder;
+pub use encoder::Encoder;
+cfg_async! { pub use encoder::AsyncEncoder; }
 
 cfg_async! {
     /// A boxed `Future` that is `Send + Sync`
     pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
 
-    pub mod connector;
-    pub mod runner;
-    pub mod writer;
-    pub mod channel;
-
     /// An AsyncWriter over an MpscWriter
     pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
-
-    #[doc(inline)]
-    pub use self::decoder::AsyncDecoder;
-
-    #[doc(inline)]
-    pub use self::encoder::AsyncEncoder;
-
-    pub use self::runner::{AsyncRunner, Status, Error as RunnerError};
 }
+
+cfg_async! { pub mod connector; }
+cfg_async! { pub mod writer; }
+cfg_async! { pub mod channel; }
+
+pub mod runner;
+pub use runner::{Error as RunnerError, Status};
+cfg_async! { pub use runner::AsyncRunner; }
 
 pub mod rate_limit;
 
@@ -140,12 +128,6 @@ pub use irc::{FromIrcMessage, IntoIrcMessage};
 
 pub mod twitch;
 pub use twitch::UserConfig;
-
-mod decoder;
-pub use decoder::{DecodeError, Decoder};
-
-mod encoder;
-pub use encoder::Encoder;
 
 mod encodable;
 pub use encodable::Encodable;
@@ -163,3 +145,18 @@ mod serde;
 mod util;
 
 pub use ext::PrivmsgExt;
+
+// /// Prelude with common types
+// pub mod prelude {
+//     pub use crate::irc::{IrcMessage, TagIndices, Tags};
+//     pub use crate::rate_limit::RateClass;
+//     pub use crate::Encodable;
+//     pub use crate::{commands, messages, twitch};
+//     pub use crate::{Decoder, Encoder};
+
+//     cfg_async! {
+//         pub use crate::decoder::AsyncDecoder;
+//         pub use crate::encoder::AsyncEncoder;
+//         pub use crate::runner::{AsyncRunner, Identity, NotifyHandle, Status};
+//     }
+// }

@@ -1,6 +1,6 @@
 use super::*;
 
-/// A `async_std` connector that uses `async-tls` (a `rustls` wrapper). This does use TLS.
+/// A `async_std` connector that uses `async-tls` (a `rustls` wrapper). This uses TLS.
 ///
 /// To use this type, ensure you set up the 'TLS Domain' in the configuration.
 ///

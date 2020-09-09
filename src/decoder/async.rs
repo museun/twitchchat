@@ -1,5 +1,5 @@
-use super::*;
-use crate::{irc::IrcMessage, IntoOwned};
+cfg_async! {
+use crate::{irc::IrcMessage, IntoOwned,DecodeError};
 
 use std::{
     future::Future,
@@ -121,4 +121,5 @@ mod tests {
 
         futures_lite::future::block_on(fut);
     }
+}
 }

@@ -48,8 +48,6 @@
 //! [async_decoder]: struct.AsyncDecoder.html
 //!
 
-pub use crate::{DecodeError, Decoder};
-
 cfg_async! {
     mod r#async;
     pub use r#async::*;
