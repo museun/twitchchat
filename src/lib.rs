@@ -22,7 +22,6 @@
     unused_qualifications
 )]
 #![cfg_attr(docsrs, feature(doc_cfg), feature(doc_alias))]
-#![cfg_attr(feature = "all_docs", feature(doc_cfg))]
 /*!
 
 This crate provides a way to interface with [Twitch](https://dev.twitch.tv/docs/irc)'s chat (via IRC).
@@ -62,7 +61,7 @@ macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
             #[cfg(any(feature = "async"))]
-            #[cfg_attr(any(feature = "all_docs", docsrs), doc(cfg(feature = "async")))]
+            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
             $item
         )*
     };

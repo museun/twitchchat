@@ -17,7 +17,6 @@ all-features = true
 
 [features]
 default = []
-all_docs = []
 async = [
     "log",
     "futures-lite",
