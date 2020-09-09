@@ -30,6 +30,21 @@ Along with the messages as Rust types, it provides methods for sending messages.
 
 ---
 
+By default, this crate depends on zero external crates -- but it makes it rather limited in scope.
+
+This allows parsing, and decoding/encoding to standard trait types (`std::io::{Read, Write}`).
+
+The use the `AsyncRunner` (an async-event loop) and related helpers, you must able the `async` feature.
+
+***NOTE*** This is a breaking change from `0.12` which had the async stuff enabled by default.
+
+```toml
+twitchchat = { version = "0.13", features = ["async"] }
+```
+To use a specific `TcpStream`/`TlStream` refer to the runtime table below.
+
+---
+
 For twitch types:
 * [twitch]
 * [messages]
