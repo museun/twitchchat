@@ -12,7 +12,7 @@ It also provides an 'event' loop which you can use to make a bot.
 ## Opt-in features
 By default, this crate depends on zero external crates -- but it makes it rather limited in scope. It can just parse/decode/encode to standard trait types (`std::io::{Read, Write}`). 
 
-The use the `AsyncRunner` (an async-event loop) you must able the `async` feature.
+To use the `AsyncRunner` (an async-event loop) you must able the `async` feature.
 
 ***NOTE*** This is a breaking change from `0.12` which had the async stuff enabled by default.
 

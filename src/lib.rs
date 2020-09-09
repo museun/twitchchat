@@ -34,7 +34,7 @@ By default, this crate depends on zero external crates -- but it makes it rather
 
 This allows parsing, and decoding/encoding to standard trait types (`std::io::{Read, Write}`).
 
-The use the `AsyncRunner` (an async-event loop) and related helpers, you must able the `async` feature.
+To use the `AsyncRunner` (an async-event loop) and related helpers, you must able the `async` feature.
 
 ***NOTE*** This is a breaking change from `0.12` which had the async stuff enabled by default.
 
