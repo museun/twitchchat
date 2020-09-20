@@ -1,7 +1,6 @@
 // NOTE: this demo requires `--feature async-io`.
 use anyhow::Context;
 
-use std::sync::Arc;
 use twitchchat::{
     commands, connector, messages,
     runner::{AsyncRunner, Status},
@@ -130,13 +129,9 @@ fn main() -> anyhow::Result<()> {
     // get some channels to join from the environment
     let channels = channels_to_join()?;
 
+    // any executor would work, we'll use async_executor so can spawn tasks
     let executor = async_executor::Executor::new();
-    // so we can send the executor to other futures -- async_executor doesn't have a 'global' executor.
-    let executor = Arc::new(executor);
-
-    // clone it so we can move it into the future
-    let ex = executor.clone();
-    let fut = async move {
+    futures_lite::future::block_on(executor.run(async {
         // connect and join the provided channels
         let runner = connect(&user_config, &channels).await?;
 
@@ -147,7 +142,7 @@ fn main() -> anyhow::Result<()> {
         let mut writer = runner.writer();
 
         // spawn something off in the background that'll exit in 10 seconds
-        ex.spawn({
+        executor.spawn({
             let mut writer = writer.clone();
             let channels = channels.clone();
             async move {
@@ -176,8 +171,5 @@ fn main() -> anyhow::Result<()> {
         println!("starting main loop");
         // your 'main loop'. you'll just call next_message() until you're done
         main_loop(runner).await
-    };
-
-    // any executor would work, we'll use async_executor so can spawn tasks
-    futures_lite::future::block_on(executor.run(fut))
+    }))
 }
