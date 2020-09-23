@@ -1,13 +1,13 @@
 // NOTE: this demo requires `--features="tokio/full tokio-util"`.
-mod include;
-use anyhow::Context;
-
-use crate::include::{channels_to_join, get_user_config, handle_message};
 use twitchchat::{
     commands, connector, messages,
     runner::{AsyncRunner, Status},
     UserConfig,
 };
+
+// this is a helper module to reduce code deduplication
+mod include;
+use crate::include::{channels_to_join, get_user_config, main_loop};
 
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
     // create a connector using ``tokio``, this connects to Twitch.
@@ -33,30 +33,6 @@ async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Resul
     }
 
     Ok(runner)
-}
-
-async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
-    loop {
-        match runner.next_message().await? {
-            // this is the parsed message -- across all channels (and notifications from Twitch)
-            Status::Message(msg) => {
-                handle_message(msg).await;
-            }
-
-            // you signaled a quit
-            Status::Quit => {
-                println!("we signaled we wanted to quit");
-                break;
-            }
-            // the connection closed normally
-            Status::Eof => {
-                println!("we got a 'normal' eof");
-                break;
-            }
-        }
-    }
-
-    Ok(())
 }
 
 #[tokio::main]

@@ -1,5 +1,6 @@
-use anyhow::Context;
-use twitchchat::{messages, UserConfig};
+#![allow(dead_code)]
+use anyhow::Context as _;
+use twitchchat::{messages, AsyncRunner, Status, UserConfig};
 
 // some helpers for the demo
 fn get_env_var(key: &str) -> anyhow::Result<String> {
@@ -32,7 +33,33 @@ pub fn channels_to_join() -> anyhow::Result<Vec<String>> {
     Ok(channels)
 }
 
-pub async fn handle_message(msg: messages::Commands<'_>) {
+// a 'main loop'
+pub async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
+    loop {
+        match runner.next_message().await? {
+            // this is the parsed message -- across all channels (and notifications from Twitch)
+            Status::Message(msg) => {
+                handle_message(msg).await;
+            }
+
+            // you signaled a quit
+            Status::Quit => {
+                println!("we signaled we wanted to quit");
+                break;
+            }
+            // the connection closed normally
+            Status::Eof => {
+                println!("we got a 'normal' eof");
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+// you can generally ignore the lifetime for these types.
+async fn handle_message(msg: messages::Commands<'_>) {
     use messages::Commands::*;
     // All sorts of messages
     match msg {

@@ -1,16 +1,18 @@
 // note this uses `smol`. you can use `tokio` or `async_std` or `async_io` if you prefer.
-mod include;
-use anyhow::Context as _;
-use std::collections::HashMap;
-
+// this is a helper module to reduce code deduplication
 // extensions to the Privmsg type
-use crate::include::{channels_to_join, get_user_config};
 use twitchchat::PrivmsgExt as _;
 use twitchchat::{
     messages::{Commands, Privmsg},
     runner::{AsyncRunner, NotifyHandle, Status},
     UserConfig,
 };
+
+// this is a helper module to reduce code deduplication
+mod include;
+use crate::include::{channels_to_join, get_user_config};
+
+use std::collections::HashMap;
 
 fn main() -> anyhow::Result<()> {
     // you'll need a user configuration
@@ -24,12 +26,12 @@ fn main() -> anyhow::Result<()> {
         .with_command("!hello", |args: Args| {
             let output = format!("hello {}!", args.msg.name());
             // We can 'reply' to this message using a writer + our output message
-            args.writer.reply(&args.msg, &output).unwrap();
+            args.writer.reply(args.msg, &output).unwrap();
         })
         .with_command("!uptime", move |args: Args| {
             let output = format!("its been running for {:.2?}", start.elapsed());
             // We can send a message back (without quoting the sender) using a writer + our output message
-            args.writer.say(&args.msg, &output).unwrap();
+            args.writer.say(args.msg, &output).unwrap();
         })
         .with_command("!quit", move |args: Args| {
             // because we're using sync stuff, turn async into sync with smol!
