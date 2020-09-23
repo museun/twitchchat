@@ -1,7 +1,5 @@
 // note this uses `smol`. you can use `tokio` or `async_std` or `async_io` if you prefer.
-use anyhow::Context as _;
-use std::collections::HashMap;
-
+// this is a helper module to reduce code deduplication
 // extensions to the Privmsg type
 use twitchchat::PrivmsgExt as _;
 use twitchchat::{
@@ -9,6 +7,12 @@ use twitchchat::{
     runner::{AsyncRunner, NotifyHandle, Status},
     UserConfig,
 };
+
+// this is a helper module to reduce code deduplication
+mod include;
+use crate::include::{channels_to_join, get_user_config};
+
+use std::collections::HashMap;
 
 fn main() -> anyhow::Result<()> {
     // you'll need a user configuration
@@ -22,12 +26,12 @@ fn main() -> anyhow::Result<()> {
         .with_command("!hello", |args: Args| {
             let output = format!("hello {}!", args.msg.name());
             // We can 'reply' to this message using a writer + our output message
-            args.writer.reply(&args.msg, &output).unwrap();
+            args.writer.reply(args.msg, &output).unwrap();
         })
         .with_command("!uptime", move |args: Args| {
             let output = format!("its been running for {:.2?}", start.elapsed());
             // We can send a message back (without quoting the sender) using a writer + our output message
-            args.writer.say(&args.msg, &output).unwrap();
+            args.writer.say(args.msg, &output).unwrap();
         })
         .with_command("!quit", move |args: Args| {
             // because we're using sync stuff, turn async into sync with smol!
@@ -140,35 +144,4 @@ impl Bot {
         }
         input.splitn(2, ' ').next()
     }
-}
-
-// some helpers for the demo
-fn get_env_var(key: &str) -> anyhow::Result<String> {
-    std::env::var(key).with_context(|| format!("please set `{}`", key))
-}
-
-// channels can be either in the form of '#museun' or 'museun'. the crate will internally add the missing #
-fn channels_to_join() -> anyhow::Result<Vec<String>> {
-    let channels = get_env_var("TWITCH_CHANNEL")?
-        .split(',')
-        .map(ToString::to_string)
-        .collect();
-    Ok(channels)
-}
-
-fn get_user_config() -> anyhow::Result<twitchchat::UserConfig> {
-    let name = get_env_var("TWITCH_NAME")?;
-    let token = get_env_var("TWITCH_TOKEN")?;
-
-    // you need a `UserConfig` to connect to Twitch
-    let config = UserConfig::builder()
-        // the name of the associated twitch account
-        .name(name)
-        // and the provided OAuth token
-        .token(token)
-        // and enable all of the advanced message signaling from Twitch
-        .enable_all_capabilities()
-        .build()?;
-
-    Ok(config)
 }
