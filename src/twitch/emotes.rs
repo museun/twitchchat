@@ -24,14 +24,17 @@ pub struct Emotes {
 impl Emotes {
     /// Parse emotes from a string, returning an iterator over each emote
     pub fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
-        input.split_terminator('/').filter_map(|s| {
-            get_parts(s, ':').and_then(|(head, tail)| {
-                let emotes = Self {
-                    id: head.parse().ok()?,
-                    ranges: get_ranges(tail).collect(),
-                };
-                emotes.into()
-            })
+        input.split_terminator('/').filter_map(Self::parse_item)
+    }
+
+    /// Parse single emote
+    pub fn parse_item(item: &str) -> Option<Self> {
+        get_parts(item, ':').and_then(|(head, tail)| {
+            let emotes = Self {
+                id: head.parse().ok()?,
+                ranges: get_ranges(tail).collect(),
+            };
+            emotes.into()
         })
     }
 }

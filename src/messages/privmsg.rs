@@ -30,6 +30,40 @@ pub struct Privmsg<'a> {
     ctcp: Option<MaybeOwnedIndex>,
 }
 
+#[derive(Debug)]
+pub struct BadgesIter<'a> {
+    items: std::str::Split<'a, &'a str>,
+}
+
+impl<'a> Iterator for BadgesIter<'a> {
+    type Item = Badge<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(item) = self.items.next() {
+            Badge::parse(item)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct EmotesIter<'a> {
+    items: std::str::SplitTerminator<'a, &'a str>,
+}
+
+impl<'a> Iterator for EmotesIter<'a> {
+    type Item = Emotes;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(item) = self.items.next() {
+            Emotes::parse_item(item)
+        } else {
+            None
+        }
+    }
+}
+
 impl<'a> Privmsg<'a> {
     raw!();
     tags!();
@@ -45,6 +79,20 @@ impl<'a> Privmsg<'a> {
         /// Data that the user provided
         data
     );
+
+    /// Iterator alternative to Privmsg::badges()
+    pub fn iter_badges(&self) -> BadgesIter {
+        BadgesIter {
+            items: self.tags().get("badges").unwrap().split(","),
+        }
+    }
+
+    /// Iterator alternative to Privmsg::emotes()
+    pub fn iter_emotes(&self) -> EmotesIter {
+        EmotesIter {
+            items: self.tags().get("emotes").unwrap().split_terminator("/"),
+        }
+    }
 
     /// Gets the 'CTCP' kind associated with this message, if any
     pub fn ctcp(&self) -> Option<Ctcp<'_>> {
