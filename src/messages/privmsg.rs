@@ -30,16 +30,17 @@ pub struct Privmsg<'a> {
     ctcp: Option<MaybeOwnedIndex>,
 }
 
+/// An iterator over badges
 #[derive(Debug)]
 pub struct BadgesIter<'a> {
-    items: std::str::Split<'a, &'a str>,
+    items: Option<std::str::Split<'a, char>>,
 }
 
 impl<'a> Iterator for BadgesIter<'a> {
     type Item = Badge<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(item) = self.items.next() {
+        if let Some(item) = self.items.as_mut()?.next() {
             Badge::parse(item)
         } else {
             None
@@ -47,16 +48,17 @@ impl<'a> Iterator for BadgesIter<'a> {
     }
 }
 
+/// An iterator over emotes
 #[derive(Debug)]
 pub struct EmotesIter<'a> {
-    items: std::str::SplitTerminator<'a, &'a str>,
+    items: Option<std::str::SplitTerminator<'a, char>>,
 }
 
 impl<'a> Iterator for EmotesIter<'a> {
     type Item = Emotes;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(item) = self.items.next() {
+        if let Some(item) = self.items.as_mut()?.next() {
             Emotes::parse_item(item)
         } else {
             None
@@ -80,17 +82,17 @@ impl<'a> Privmsg<'a> {
         data
     );
 
-    /// Iterator alternative to Privmsg::badges()
+    /// Iterator alternative to `Privmsg::badges()`
     pub fn iter_badges(&self) -> BadgesIter {
         BadgesIter {
-            items: self.tags().get("badges").unwrap().split(","),
+            items: self.tags().get("badges").map(|s| s.split(',')),
         }
     }
 
-    /// Iterator alternative to Privmsg::emotes()
+    /// Iterator alternative to `Privmsg::emotes()`
     pub fn iter_emotes(&self) -> EmotesIter {
         EmotesIter {
-            items: self.tags().get("emotes").unwrap().split_terminator("/"),
+            items: self.tags().get("emotes").map(|s| s.split_terminator('/')),
         }
     }
 
