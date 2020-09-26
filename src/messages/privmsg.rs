@@ -30,6 +30,42 @@ pub struct Privmsg<'a> {
     ctcp: Option<MaybeOwnedIndex>,
 }
 
+/// An iterator over badges
+#[derive(Debug)]
+pub struct BadgesIter<'a> {
+    items: Option<std::str::Split<'a, char>>,
+}
+
+impl<'a> Iterator for BadgesIter<'a> {
+    type Item = Badge<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(item) = self.items.as_mut()?.next() {
+            Badge::parse(item)
+        } else {
+            None
+        }
+    }
+}
+
+/// An iterator over emotes
+#[derive(Debug)]
+pub struct EmotesIter<'a> {
+    items: Option<std::str::SplitTerminator<'a, char>>,
+}
+
+impl<'a> Iterator for EmotesIter<'a> {
+    type Item = Emotes;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(item) = self.items.as_mut()?.next() {
+            Emotes::parse_item(item)
+        } else {
+            None
+        }
+    }
+}
+
 impl<'a> Privmsg<'a> {
     raw!();
     tags!();
@@ -45,6 +81,20 @@ impl<'a> Privmsg<'a> {
         /// Data that the user provided
         data
     );
+
+    /// Iterator alternative to `Privmsg::badges()`
+    pub fn iter_badges(&self) -> BadgesIter {
+        BadgesIter {
+            items: self.tags().get("badges").map(|s| s.split(',')),
+        }
+    }
+
+    /// Iterator alternative to `Privmsg::emotes()`
+    pub fn iter_emotes(&self) -> EmotesIter {
+        EmotesIter {
+            items: self.tags().get("emotes").map(|s| s.split_terminator('/')),
+        }
+    }
 
     /// Gets the 'CTCP' kind associated with this message, if any
     pub fn ctcp(&self) -> Option<Ctcp<'_>> {
@@ -361,6 +411,24 @@ mod tests {
             assert_eq!(msg.data(), "Notice me!");
             assert_eq!(msg.custom_reward_id().unwrap(), "abc-123-foo");
             assert_eq!(msg.msg_id().unwrap(), "highlighted-message");
+        }
+    }
+
+    #[test]
+    fn privmsg_badges_iter() {
+        let input = "@badge-info=;badges=broadcaster/1;color=#FF69B4;display-name=museun;emote-only=1;emotes=25:0-4,6-10/81274:12-17;flags=;id=4e160a53-5482-4764-ba28-f224cd59a51f;mod=0;room-id=23196011;subscriber=0;tmi-sent-ts=1601079032426;turbo=0;user-id=23196011;user-type= :museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :Kappa Kappa VoHiYo\r\n";
+        for msg in parse(input).map(|s| s.unwrap()) {
+            let msg = Privmsg::from_irc(msg).unwrap();
+            assert_eq!(msg.iter_badges().count(), 1);
+        }
+    }
+
+    #[test]
+    fn privmsg_emotes_iter() {
+        let input = "@badge-info=;badges=broadcaster/1;color=#FF69B4;display-name=museun;emote-only=1;emotes=25:0-4,6-10/81274:12-17;flags=;id=4e160a53-5482-4764-ba28-f224cd59a51f;mod=0;room-id=23196011;subscriber=0;tmi-sent-ts=1601079032426;turbo=0;user-id=23196011;user-type= :museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :Kappa Kappa VoHiYo\r\n";
+        for msg in parse(input).map(|s| s.unwrap()) {
+            let msg = Privmsg::from_irc(msg).unwrap();
+            assert_eq!(msg.iter_emotes().count(), 2);
         }
     }
 }
