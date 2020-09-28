@@ -17,19 +17,24 @@ all-features = true
 
 [features]
 default = []
+testing = [
+    "async",
+    "async-mutex",    
+]
+
 async = [
-    "log",
-    "futures-lite",
-    "pin-project-lite",
-    "async-dup",
     "async-channel",
-    "futures-timer",
+    "async-dup",
     "fastrand",
+    "futures-lite",
+    "futures-timer",
+    "log",
+    "pin-project-lite",
 ]
 
 [dependencies]
 # logging support
-log = { version = "0.4", optional = true }
+log = { version = "0.4", optional = true, features = ["std"] }
 
 # just the futures traits
 futures-lite = { version = "1.8", optional = true, default-features = false }
@@ -56,12 +61,12 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 # these use the futures AsyncWrite+AsyncRead
 async-io  = { version = "1.1", optional = true }
 smol      = { version = "1.2", optional = true }
-async-tls = { version = "0.10", default-features = false, features = ["client"], optional = true } 
+async-tls = { version = "0.10", default-features = false, features = ["client"], optional = true }
 # TODO look into what their features do. the ones they have enabled by default seem important
 async-std = { version = "1.6", optional = true }
 
 # tokio has its own AsyncWrite+AsyncRead
-tokio            = { version = "0.2", features = ["net"], optional = true } 
+tokio            = { version = "0.2", features = ["net"], optional = true }
 tokio-util       = { version = "0.3", features = ["compat"], optional = true }
 
 tokio-rustls     = { version = "0.14", optional = true }
@@ -69,6 +74,9 @@ webpki-roots     = { version = "0.20", optional = true }
 
 tokio-native-tls = { version = "0.1", optional = true }
 native-tls       = { version = "0.2", optional = true }
+
+# for some test utilities
+async-mutex = { version = "1.4.0", optional = true }
 
 [dev-dependencies]
 anyhow         = "1.0"

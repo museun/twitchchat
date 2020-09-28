@@ -104,10 +104,10 @@ pub mod encoder;
 pub use encoder::Encoder;
 cfg_async! { pub use encoder::AsyncEncoder; }
 
-cfg_async! {
-    /// A boxed `Future` that is `Send + Sync`
-    pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
+/// A boxed `Future` that is `Send + Sync`
+pub type BoxedFuture<T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + Sync>>;
 
+cfg_async! {
     /// An AsyncWriter over an MpscWriter
     pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
 }
