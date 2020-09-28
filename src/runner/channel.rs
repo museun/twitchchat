@@ -12,6 +12,7 @@ use std::{
 ///
 /// # Warning
 /// You shouldn't need to touch this unless you have a good reason to do so.
+///
 /// Improperly using this could result in Twitch disconnecting you, at best and
 /// a ban at worst.
 pub struct Channel {
@@ -42,7 +43,7 @@ impl Channel {
         }
     }
 
-    /// Set the `RateClass` for this channel
+    /// Set the [RateClass] for this channel
     pub fn set_rate_class(&mut self, rate_class: RateClass) {
         self.rate_limited.rate_limit = RateLimit::from_class(rate_class);
         self.rated_limited_at.take();
