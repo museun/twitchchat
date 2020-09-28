@@ -178,7 +178,7 @@ mod tests {
             (r"the_win_end\r", r"the_win_end\\r"),
         ];
         for (input, expected) in tests {
-            assert_eq!(tags::escape_str(&*input), *expected)
+            assert_eq!(tags::escape_str(*input), *expected)
         }
 
         let tests = &["dont_escape+me", "foo=1234"];

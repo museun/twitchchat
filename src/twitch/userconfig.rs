@@ -143,12 +143,12 @@ impl UserConfigBuilder {
         let name = self
             .name
             .filter(|s| validate_name(s))
-            .ok_or_else(|| UserConfigError::InvalidName)?;
+            .ok_or(UserConfigError::InvalidName)?;
 
         let token = self
             .token
             .filter(|s| validate_token(s))
-            .ok_or_else(|| UserConfigError::InvalidToken)?;
+            .ok_or(UserConfigError::InvalidToken)?;
 
         match (name.as_str(), token.as_str()) {
             (crate::JUSTINFAN1234, crate::JUSTINFAN1234) => {

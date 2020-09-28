@@ -277,7 +277,7 @@ pub fn unescape_str(s: &str) -> MaybeOwned<'_> {
 /// [ref]: https://ircv3.net/specs/extensions/message-tags.html#escaping-values
 pub fn escape_str(s: &str) -> std::borrow::Cow<'_, str> {
     const NEEDS_ESCAPE: [char; 5] = [';', ' ', '\\', '\n', '\r'];
-    let n = s.chars().filter(|c| NEEDS_ESCAPE.contains(&c)).count();
+    let n = s.chars().filter(|c| NEEDS_ESCAPE.contains(c)).count();
     if n == 0 {
         return s.into();
     }
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn round_trip_escape() {
         let s = r"foo;bar and\foo\rwith\n";
-        assert_eq!(unescape_str(&*escape_str(&s)), s);
+        assert_eq!(unescape_str(&*escape_str(s)), s);
     }
 
     #[test]
@@ -421,8 +421,8 @@ mod tests {
             let indices = TagIndices::build_indices(&*data);
             let tags = Tags::from_data_indices(&data, &indices);
 
-            let v = tags.into_iter().collect::<Vec<_>>();
-            assert_eq!(v.len(), input.chars().filter(|&c| c == ';').count() + 1);
+            let len = tags.into_iter().count();
+            assert_eq!(len, input.chars().filter(|&c| c == ';').count() + 1);
         }
     }
 
