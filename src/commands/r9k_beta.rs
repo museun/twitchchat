@@ -14,7 +14,7 @@ pub struct R9kBeta<'a> {
 ///
 /// Use [r9k_beta_off] to disable.
 ///
-/// [r9k_beta_off]: ./fn.r9k_beta_off.html
+/// [r9k_beta_off]: super::r9k_beta_off()
 pub const fn r9k_beta(channel: &str) -> R9kBeta<'_> {
     R9kBeta { channel }
 }

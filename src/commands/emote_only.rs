@@ -13,7 +13,7 @@ pub struct EmoteOnly<'a> {
 ///
 /// Use [emote_only_off] to disable.
 ///
-/// [emote_only_off]: ./fn.emote_only_off.html
+/// [emote_only_off]: super::emote_only_off()
 pub const fn emote_only(channel: &str) -> EmoteOnly<'_> {
     EmoteOnly { channel }
 }

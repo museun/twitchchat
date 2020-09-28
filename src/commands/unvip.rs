@@ -14,7 +14,7 @@ pub struct Unvip<'a> {
 ///
 /// Use [vips] to list the VIPs of this channel.
 ///
-/// [vips]: ./fn.vips.html
+/// [vips]: super::vips()
 pub const fn unvip<'a>(channel: &'a str, username: &'a str) -> Unvip<'a> {
     Unvip { channel, username }
 }

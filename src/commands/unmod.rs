@@ -14,7 +14,7 @@ pub struct Unmod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./fn.mods.html
+/// [mods]: super::mods()
 pub const fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
     Unmod { channel, username }
 }

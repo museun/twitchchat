@@ -14,7 +14,7 @@ pub struct GiveMod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./fn.mods.html
+/// [mods]: super::mods()
 pub const fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
     GiveMod { channel, username }
 }

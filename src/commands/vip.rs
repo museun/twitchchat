@@ -14,7 +14,7 @@ pub struct Vip<'a> {
 ///
 /// Use [vips] to list the VIPs of this channel.
 ///
-/// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
+/// [vips]: super::vips()
 pub const fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
     Vip { channel, username }
 }

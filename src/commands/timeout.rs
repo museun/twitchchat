@@ -29,7 +29,7 @@ pub struct Timeout<'a> {
 ///
 /// Use [untimeout] to remove a timeout.
 ///
-/// [untimeout]: ./fn.untimeout.html
+/// [untimeout]: super::untimeout()
 pub fn timeout<'a>(
     channel: &'a str,
     username: &'a str,

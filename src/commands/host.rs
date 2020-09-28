@@ -14,7 +14,7 @@ pub struct Host<'a> {
 ///
 /// Use [unhost] to unset host mode.
 ///
-/// [unhost]: ./struct.Encoder.html#method.unhost
+/// [unhost]: super::unhost()
 pub const fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
     Host { source, target }
 }

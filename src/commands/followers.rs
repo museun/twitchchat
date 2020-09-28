@@ -18,7 +18,7 @@ pub struct Followers<'a> {
 ///
 /// Use [followers_off] to disable.
 ///
-/// [followers_off]: ./fn.followers_off.html
+/// [followers_off]: super::followers_off()
 pub const fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
     Followers { channel, duration }
 }

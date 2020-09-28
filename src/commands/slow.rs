@@ -16,7 +16,7 @@ pub struct Slow<'a> {
 ///
 /// Use [slow_off] to disable.
 ///
-/// [slow_off]: ./fn.slow_off.html
+/// [slow_off]: super::slow_off()
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
     Slow {
         channel,
