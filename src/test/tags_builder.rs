@@ -33,14 +33,20 @@ impl std::error::Error for BuilderError {}
 /// # use twitchchat::twitch::{color::RGB, Color};
 /// use twitchchat::test::TagsBuilder;
 ///
-/// let (tags_data, tags_indices) = TagsBuilder::new()
+/// // create a builder
+/// let user_tags = TagsBuilder::new()
+///      // and add some key-values
 ///     .add("color", "#F0F0F0")
 ///     .add("display-name", "some-fancy-name")
+///      // it'll escape both keys and values
 ///     .add("my-message", "my\nmessage\nspans\nmultiple\nlines")
+///      // and return a type you can keep around
 ///     .build()
+///      // or an error if you provided empty keys / or no keys
 ///     .unwrap();
 ///
-/// let tags = Tags::from_data_indices(&tags_data, &tags_indices);
+/// // get the 'normal' tags from this type
+/// let tags = user_tags.as_tags();
 ///
 /// let color = tags.get_parsed::<_, Color>("color").unwrap();
 /// assert_eq!(color.rgb, RGB(0xF0, 0xF0, 0xF0));
@@ -93,13 +99,11 @@ impl<'a> TagsBuilder<'a> {
         self
     }
 
-    /// Build the tags reference string and its indices
+    /// Build the tags reference string and its indices.
     ///
-    /// # Returns
-    /// This returns a tuple that can be used with [`Tags::from_data_indices`](crate::irc::Tags#from_data_indices)
-    ///
-    /// If any empty keys were found, or no keys at all then an error will be returned,
-    pub fn build(self) -> Result<(MaybeOwned<'static>, TagIndices), BuilderError> {
+    /// # Errors
+    /// If any empty keys were found, or no keys at all then an error will be returned.
+    pub fn build(self) -> Result<UserTags, BuilderError> {
         use std::fmt::Write as _;
         if self.tags.is_empty() {
             return Err(BuilderError::EmptyTags);
@@ -126,18 +130,35 @@ impl<'a> TagsBuilder<'a> {
         }
 
         let indices = TagIndices::build_indices(&buf);
-        Ok((buf.into(), indices))
+        Ok(UserTags {
+            data: buf.into(),
+            indices,
+        })
+    }
+}
+
+/// Tags built by the user
+#[derive(Clone, Debug, PartialEq)]
+pub struct UserTags {
+    /// The rendered string
+    ///
+    /// This is in the form of '@key=val;key=val' without the trailing space, but with the leading '@'
+    pub data: MaybeOwned<'static>,
+    /// Indices of tags in the string
+    pub indices: TagIndices,
+}
+
+impl UserTags {
+    /// Get these tags as the 'normal' tags type
+    pub fn as_tags(&self) -> Tags<'_> {
+        Tags::from_data_indices(&self.data, &self.indices)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
-
-    use {
-        super::*,
-        crate::irc::{tags, Tags},
-    };
+    use {super::*, crate::irc::tags};
 
     #[test]
     fn escape() {
@@ -175,8 +196,8 @@ mod tests {
             builder = builder.add(*k, *v);
         }
 
-        let (data, indices) = builder.build().unwrap();
-        let tags = Tags::from_data_indices(&data, &indices);
+        let user_tags = builder.build().unwrap();
+        let tags = user_tags.as_tags();
 
         for (k, v) in tests {
             assert_eq!(tags.get_unescaped(k).unwrap(), *v)
@@ -189,13 +210,13 @@ mod tests {
             BuilderError::EmptyTags
         ));
 
-        let (data, indices) = TagsBuilder::new().add("empty", "").build().unwrap();
-        let tags = Tags::from_data_indices(&data, &indices);
+        let user_tags = TagsBuilder::new().add("empty", "").build().unwrap();
+        let tags = user_tags.as_tags();
         assert_eq!(tags.get_unescaped("empty").unwrap(), "");
 
         for escaped in &[" ", r"\n", r"\r", r"\", r"hello;"] {
-            let (data, indices) = TagsBuilder::new().add(*escaped, "").build().unwrap();
-            let tags = Tags::from_data_indices(&data, &indices);
+            let user_tags = TagsBuilder::new().add(*escaped, "").build().unwrap();
+            let tags = user_tags.as_tags();
             assert_eq!(tags.get_unescaped(*escaped).unwrap(), "");
         }
 
@@ -215,8 +236,8 @@ mod tests {
         let tags = pm.tags();
 
         {
-            let (data, indices) = TagsBuilder::new().merge(&tags).build().unwrap();
-            let new_tags = Tags::from_data_indices(&data, &indices);
+            let user_tags = TagsBuilder::new().merge(&tags).build().unwrap();
+            let new_tags = user_tags.as_tags();
 
             // this ensures they are sorted the same for the tests
             let old = tags.iter().collect::<BTreeMap<_, _>>();
@@ -226,33 +247,33 @@ mod tests {
 
         // merging overrides previously set tags
         {
-            let (data, indices) = TagsBuilder::new()
+            let user_tags = TagsBuilder::new()
                 .add("color", "#FF00FF")
                 .merge(&tags)
                 .build()
                 .unwrap();
-            let tags = Tags::from_data_indices(&data, &indices);
+            let tags = user_tags.as_tags();
             assert_eq!(tags.get_unescaped("color").unwrap(), "#FF69B4");
         }
 
         // adding overrides previously set tags
         {
-            let (data, indices) = TagsBuilder::new()
+            let user_tags = TagsBuilder::new()
                 .merge(&tags)
                 .add("color", "#FF00FF")
                 .build()
                 .unwrap();
-            let tags = Tags::from_data_indices(&data, &indices);
+            let tags = user_tags.as_tags();
             assert_eq!(tags.get_unescaped("color").unwrap(), "#FF00FF");
         }
 
         {
-            let (data, indices) = TagsBuilder::new()
+            let user_tags = TagsBuilder::new()
                 .add("color", "#FF00FF")
                 .add("color", "#FF0000")
                 .build()
                 .unwrap();
-            let tags = Tags::from_data_indices(&data, &indices);
+            let tags = user_tags.as_tags();
             assert_eq!(tags.get_unescaped("color").unwrap(), "#FF0000");
         }
     }
