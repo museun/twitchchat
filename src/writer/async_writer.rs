@@ -56,7 +56,7 @@ where
         }
     }
 
-    /// Encode this `Encodable` message to the writer.
+    /// Encode this [Encodable] message to the writer.
     pub async fn encode<M>(&mut self, msg: M) -> io::Result<()>
     where
         M: Encodable + Send + Sync,
@@ -71,7 +71,7 @@ where
         Ok(())
     }
 
-    /// Encode a slice of `Encodable` messages to the writer.
+    /// Encode a slice of [Encodable] messages to the writer.
     pub async fn encode_many<'a, I, M>(&mut self, msgs: I) -> io::Result<()>
     where
         I: IntoIterator<Item = &'a M> + Send + Sync + 'a,
