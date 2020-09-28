@@ -38,9 +38,7 @@ pub struct UserConfig {
 }
 
 impl UserConfig {
-    /// Create a builder to make a [Config]
-    ///
-    /// [Config]: ./struct.UserConfig.html
+    /// Create a builder to make a [UserConfig]
     pub fn builder() -> UserConfigBuilder {
         UserConfigBuilder::default()
     }
@@ -52,8 +50,6 @@ impl UserConfig {
 }
 
 /// User config error returned by the [UserConfigBuilder]
-///
-/// [UserConfigBuilder]: ./struct.UserConfigBuilder.html
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
 pub enum UserConfigError {
@@ -82,8 +78,6 @@ impl std::fmt::Display for UserConfigError {
 impl std::error::Error for UserConfigError {}
 
 /// Builder for making a [UserConfig]
-///
-/// [UserConfig]: ./struct.UserConfig.html
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserConfigBuilder {
@@ -127,9 +121,9 @@ impl UserConfigBuilder {
 
     /// Enables all of the capabilities.
     ///
-    /// This is just a shortcut for enabling all of the Capabilities listed [here][here].
+    /// This is just a shortcut for enabling all of the Capabilities listed [here].
     ///
-    /// [here]: ./enum.Capability.html
+    /// [here]: Capability
     pub fn enable_all_capabilities(self) -> Self {
         self.capabilities(&[
             Capability::Membership,
@@ -144,17 +138,17 @@ impl UserConfigBuilder {
     ///
     /// If the anonymous `name` OR `token` is used without the other matching one this will return an [error].
     ///
-    /// [error]: ./enum.UserConfigError.html
+    /// [error]: UserConfigError
     pub fn build(self) -> Result<UserConfig, UserConfigError> {
         let name = self
             .name
             .filter(|s| validate_name(s))
-            .ok_or_else(|| UserConfigError::InvalidName)?;
+            .ok_or(UserConfigError::InvalidName)?;
 
         let token = self
             .token
             .filter(|s| validate_token(s))
-            .ok_or_else(|| UserConfigError::InvalidToken)?;
+            .ok_or(UserConfigError::InvalidToken)?;
 
         match (name.as_str(), token.as_str()) {
             (crate::JUSTINFAN1234, crate::JUSTINFAN1234) => {

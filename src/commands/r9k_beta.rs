@@ -4,6 +4,7 @@ use std::io::{Result, Write};
 
 /// Enables r9k mode.    
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct R9kBeta<'a> {
@@ -14,7 +15,7 @@ pub struct R9kBeta<'a> {
 ///
 /// Use [r9k_beta_off] to disable.
 ///
-/// [r9k_beta_off]: ./fn.r9k_beta_off.html
+/// [r9k_beta_off]: super::r9k_beta_off()
 pub const fn r9k_beta(channel: &str) -> R9kBeta<'_> {
     R9kBeta { channel }
 }

@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Revoke moderator status from a user.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Unmod<'a> {
@@ -14,7 +15,7 @@ pub struct Unmod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./fn.mods.html
+/// [mods]: super::mods()
 pub const fn unmod<'a>(channel: &'a str, username: &'a str) -> Unmod<'a> {
     Unmod { channel, username }
 }

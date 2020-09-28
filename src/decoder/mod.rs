@@ -1,14 +1,14 @@
 //! Decoding utilities.
 //!
-//! A decoder lets you decode messages from an `std::io::Read` (or `futures::io::AsyncRead` for async) in either an iterative fashion, or one-by-one.
+//! A decoder lets you decode messages from an [std::io::Read] (or [futures_lite::AsyncRead] for async) in either an iterative fashion, or one-by-one.
 //!
 //! When not using the Iterator (or Stream), you'll get a borrowed message from the reader that is valid until the next read.
 //!
 //! With the Iterator (or Stream) interface, it'll return an owned messages.
 //!
 //! This crate provides both 'Sync' (Iterator based) and 'Async' (Stream based) decoding.
-//! * sync: [`Decoder`][decoder]
-//! * async: [`AsyncDecoder`][async_decoder]
+//! * sync: [Decoder]
+//! * async: [AsyncDecoder]
 //!
 //! # Borrowed messages
 //! ```
@@ -44,9 +44,6 @@
 //!     let msg: twitchchat::IrcMessage<'static> = msg.unwrap();
 //! }
 //! ```
-//! [decoder]: struct.Decoder.html
-//! [async_decoder]: struct.AsyncDecoder.html
-//!
 
 cfg_async! {
     mod r#async;

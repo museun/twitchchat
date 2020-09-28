@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Enables slow mode (limit how often users may send messages).
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Slow<'a> {
@@ -16,7 +17,7 @@ pub struct Slow<'a> {
 ///
 /// Use [slow_off] to disable.
 ///
-/// [slow_off]: ./fn.slow_off.html
+/// [slow_off]: super::slow_off()
 pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
     Slow {
         channel,

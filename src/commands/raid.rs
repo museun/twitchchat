@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Raid another channel.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Raid<'a> {
@@ -14,7 +15,7 @@ pub struct Raid<'a> {
 ///
 /// Use [unraid] to cancel the Raid.
 ///
-/// [unraid]: ./fn.unraid.html
+/// [unraid]: super::unraid()
 pub const fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
     Raid { source, target }
 }

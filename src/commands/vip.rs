@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Grant VIP status to a user.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Vip<'a> {
@@ -14,7 +15,7 @@ pub struct Vip<'a> {
 ///
 /// Use [vips] to list the VIPs of this channel.
 ///
-/// [vips]: ./struct.Encoder.html#methodruct.html#method.vips
+/// [vips]: super::vips()
 pub const fn vip<'a>(channel: &'a str, username: &'a str) -> Vip<'a> {
     Vip { channel, username }
 }

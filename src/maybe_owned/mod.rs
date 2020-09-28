@@ -1,10 +1,8 @@
-//! This is a [`Cow`][cow] like type used in this crate.
+//! This is a [std::borrow::Cow] like type used in this crate.
 //!
 //! It is read-only unlike the std implementation.
 //!
 //! Its also specialized for just `str`
-//!
-//! [cow]: https://doc.rust-lang.org/std/borrow/enum.Cow.html
 use std::{fmt::Debug, ops::Deref};
 
 mod into_owned;

@@ -1,15 +1,16 @@
 use super::{Channel, Encodable};
 use std::io::{Result, Write};
 
-/// Clear chat history for all users in this room.
+/// Clear chat history for all users on `channel`.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Clear<'a> {
     pub(crate) channel: &'a str,
 }
 
-/// Clear chat history for all users in this room.
+/// Clear chat history for all users on `channel`.
 pub const fn clear(channel: &str) -> Clear<'_> {
     Clear { channel }
 }

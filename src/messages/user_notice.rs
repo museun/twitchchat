@@ -18,9 +18,7 @@ pub enum SubPlan<'a> {
     Unknown(&'a str),
 }
 
-/// The kind of notice it was, retrieved via [`UserNotice::msg_id`][msg_id]
-///
-/// [msg_id]: ./struct.UserNotice.html#method.msg_id
+/// The kind of notice it was, retrieved via [UserNotice::msg_id()]
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]

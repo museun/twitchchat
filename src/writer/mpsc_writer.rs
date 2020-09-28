@@ -9,7 +9,9 @@ use std::{
 
 /// A mpsc-based writer.
 ///
-/// This can be used both a `std::io::Write` instance and a `AsyncWrite` instance.
+/// This can be used both a [std::io::Write] instance and an [AsyncWrite][async-write] instance.
+///
+/// [async-write]: futures_lite::AsyncWrite
 pub struct MpscWriter {
     buf: Vec<u8>,
     channel: crate::channel::Sender<Box<[u8]>>,

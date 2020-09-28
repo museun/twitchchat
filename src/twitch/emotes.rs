@@ -98,7 +98,7 @@ mod tests {
         ];
 
         for (input, expect) in inputs {
-            let emotes = Emotes::parse(&input).collect::<Vec<_>>();
+            let emotes = Emotes::parse(input).collect::<Vec<_>>();
             assert_eq!(emotes.len(), expect.len());
             assert_eq!(emotes, *expect);
         }

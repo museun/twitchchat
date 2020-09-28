@@ -19,7 +19,7 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 }
 
 impl<'a> Tags<'a> {
-    /// Build the tags view from this borrowed `Str` and an associated `TagIndices`
+    /// Build the tags view from this borrowed `MaybeOwned` and an associated `TagIndices`
     pub fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
         Self { data, indices }
     }
@@ -61,11 +61,9 @@ impl<'a> Tags<'a> {
         self.indices.get(key.borrow(), &*self.data)
     }
 
-    /** Tries to get the tag as a parsable [`FromStr`] type.
+    /** Tries to get the tag as a parsable [std::str::FromStr] type.
 
     This returns None if it cannot parse, or cannot find the tag
-
-    [FromStr]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 
     ```rust
     # use twitchchat::{irc::{TagIndices, Tags}, maybe_owned::MaybeOwned};
@@ -167,7 +165,7 @@ impl<'a> IntoIterator for &'a Tags<'a> {
     }
 }
 
-/// An iterator over the Tags
+/// An iterator over the [Tags]
 #[derive(Clone)]
 pub struct TagsIter<'a> {
     inner: &'a Tags<'a>,
@@ -210,7 +208,7 @@ impl<'a> ::serde::Serialize for Tags<'a> {
     }
 }
 
-/// The reverse of [`escape_str`](#escape_str).
+/// The reverse of [escape_str].
 ///
 ///
 /// ```rust
@@ -219,7 +217,7 @@ impl<'a> ::serde::Serialize for Tags<'a> {
 /// assert_eq!(&*unescape_str(&*escape_str(s)), s);
 /// ```
 ///
-/// Use [`escape_str`](escape_str) to reverse this.
+/// Use [escape_str] to reverse this.
 /// ### Format
 ///
 /// | escaped              | character   |
@@ -264,7 +262,7 @@ pub fn unescape_str(s: &str) -> MaybeOwned<'_> {
 /// assert_eq!(&*unescape_str(&*escape_str(s)), s);
 /// ```
 ///
-/// Use [`unescape_str`](unescape_str) to reverse this.
+/// Use [unescape_str] to reverse this.
 /// ### Format
 ///
 /// | character   | escaped              |
@@ -279,7 +277,7 @@ pub fn unescape_str(s: &str) -> MaybeOwned<'_> {
 /// [ref]: https://ircv3.net/specs/extensions/message-tags.html#escaping-values
 pub fn escape_str(s: &str) -> std::borrow::Cow<'_, str> {
     const NEEDS_ESCAPE: [char; 5] = [';', ' ', '\\', '\n', '\r'];
-    let n = s.chars().filter(|c| NEEDS_ESCAPE.contains(&c)).count();
+    let n = s.chars().filter(|c| NEEDS_ESCAPE.contains(c)).count();
     if n == 0 {
         return s.into();
     }
@@ -307,7 +305,7 @@ mod tests {
     #[test]
     fn round_trip_escape() {
         let s = r"foo;bar and\foo\rwith\n";
-        assert_eq!(unescape_str(&*escape_str(&s)), s);
+        assert_eq!(unescape_str(&*escape_str(s)), s);
     }
 
     #[test]
@@ -423,8 +421,8 @@ mod tests {
             let indices = TagIndices::build_indices(&*data);
             let tags = Tags::from_data_indices(&data, &indices);
 
-            let v = tags.into_iter().collect::<Vec<_>>();
-            assert_eq!(v.len(), input.chars().filter(|&c| c == ';').count() + 1);
+            let len = tags.into_iter().count();
+            assert_eq!(len, input.chars().filter(|&c| c == ';').count() + 1);
         }
     }
 

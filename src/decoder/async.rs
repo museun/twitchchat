@@ -9,9 +9,9 @@ use std::{
 
 use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, Stream};
 
-/// A decoder over `futures::io::AsyncRead` that produces `IrcMessage`s
+/// A decoder over [futures_lite::AsyncRead] that produces [IrcMessage]s
 ///
-/// This will return an `DecodeError::Eof` when its done reading manually.
+/// This will return an [DecodeError::Eof] when its done reading manually.
 ///
 /// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
 pub struct AsyncDecoder<R> {
@@ -26,7 +26,7 @@ impl<R> std::fmt::Debug for AsyncDecoder<R> {
 }
 
 impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
-    /// Create a new AsyncDecoder from this `futures::io::Read` instance
+    /// Create a new AsyncDecoder from this [futures_lite::AsyncRead] instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
@@ -36,9 +36,9 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
 
     /// Read the next message.
     ///
-    /// This returns a borrowed IrcMessage which is valid until the next AsyncDecoder call is made.
+    /// This returns a borrowed [IrcMessage] which is valid until the next AsyncDecoder call is made.
     ///
-    /// If you just want an owned one, use the AsyncDecoder as an stream. e.g. dec.next().
+    /// If you just want an owned one, use the [AsyncDecoder] as an stream. e.g. dec.next().
     pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
         self.buf.clear();
         let n = self

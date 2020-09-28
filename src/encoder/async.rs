@@ -71,7 +71,7 @@ impl<W> AsyncEncoder<W>
 where
     W: AsyncWrite + Send + Sync + Unpin,
 {
-    /// Create a new Encoder over this `futures::io::AsyncWrite` instance
+    /// Create a new Encoder over this [futures_lite::AsyncWrite] instance
     pub fn new(writer: W) -> Self {
         Self {
             writer,
@@ -80,7 +80,7 @@ where
         }
     }
 
-    /// Get the inner `futures::io::AsyncWrite` instance out
+    /// Get the inner [futures_lite::AsyncWrite] instance out
     ///
     /// This writes and flushes any buffered data before it consumes self.
     pub async fn into_inner(mut self) -> IoResult<W> {
@@ -94,7 +94,7 @@ where
         Ok(self.writer)
     }
 
-    /// Encode this `Encodable` message to the writer.
+    /// Encode this [Encodable](crate::Encodable) message to the writer.
     ///
     /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>

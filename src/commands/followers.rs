@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Enables followers-only mode (only users who have followed for `duration` may chat).
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Followers<'a> {
@@ -18,7 +19,7 @@ pub struct Followers<'a> {
 ///
 /// Use [followers_off] to disable.
 ///
-/// [followers_off]: ./fn.followers_off.html
+/// [followers_off]: super::followers_off()
 pub const fn followers<'a>(channel: &'a str, duration: &'a str) -> Followers<'a> {
     Followers { channel, duration }
 }

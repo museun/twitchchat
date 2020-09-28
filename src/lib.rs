@@ -21,28 +21,27 @@
     unused_import_braces,
     unused_qualifications
 )]
-#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_alias))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_alias))]
+#![cfg_attr(docsrs, feature(broken_intra_doc_links))]
 /*!
 
 This crate provides a way to interface with [Twitch](https://dev.twitch.tv/docs/irc)'s chat (via IRC).
 
 Along with the messages as Rust types, it provides methods for sending messages.
-
 ---
 
 By default, this crate depends on zero external crates -- but it makes it rather limited in scope.
 
 This allows parsing, and decoding/encoding to standard trait types (`std::io::{Read, Write}`).
 
-To use the `AsyncRunner` (an async-event loop) and related helpers, you must able the `async` feature.
+To use the [AsyncRunner] (an async-event loop) and related helpers, you must able the `async` feature.
 
 ***NOTE*** This is a breaking change from `0.12` which had the async stuff enabled by default.
 
 ```toml
 twitchchat = { version = "0.13", features = ["async"] }
 ```
-To use a specific `TcpStream`/`TlStream` refer to the runtime table below.
-
 ---
 
 For twitch types:
@@ -61,15 +60,7 @@ For just decoding messages:
 ---
 For just encoding messages:
 * [encoder]
----
 
-[runner]: runner/index.html
-[encoder]: encoder/index.html
-[decoder]: decoder/index.html
-[twitch]: twitch/index.html
-[messages]: messages/index.html
-[commands]: commands/index.html
-[irc]: irc/index.html
 */
 
 macro_rules! cfg_async {
@@ -162,18 +153,3 @@ mod serde;
 mod util;
 
 pub use ext::PrivmsgExt;
-
-// /// Prelude with common types
-// pub mod prelude {
-//     pub use crate::irc::{IrcMessage, TagIndices, Tags};
-//     pub use crate::rate_limit::RateClass;
-//     pub use crate::Encodable;
-//     pub use crate::{commands, messages, twitch};
-//     pub use crate::{Decoder, Encoder};
-
-//     cfg_async! {
-//         pub use crate::decoder::AsyncDecoder;
-//         pub use crate::encoder::AsyncEncoder;
-//         pub use crate::runner::{AsyncRunner, Identity, NotifyHandle, Status};
-//     }
-// }

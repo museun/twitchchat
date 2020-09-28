@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Temporarily prevent a user from chatting.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Timeout<'a> {
@@ -29,7 +30,7 @@ pub struct Timeout<'a> {
 ///
 /// Use [untimeout] to remove a timeout.
 ///
-/// [untimeout]: ./fn.untimeout.html
+/// [untimeout]: super::untimeout()
 pub fn timeout<'a>(
     channel: &'a str,
     username: &'a str,

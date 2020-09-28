@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Grant moderator status to a user.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct GiveMod<'a> {
@@ -14,7 +15,7 @@ pub struct GiveMod<'a> {
 ///
 /// Use [mods] to list the moderators of this channel.
 ///
-/// [mods]: ./fn.mods.html
+/// [mods]: super::mods()
 pub const fn give_mod<'a>(channel: &'a str, username: &'a str) -> GiveMod<'a> {
     GiveMod { channel, username }
 }

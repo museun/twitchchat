@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Host another channel.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Host<'a> {
@@ -14,7 +15,7 @@ pub struct Host<'a> {
 ///
 /// Use [unhost] to unset host mode.
 ///
-/// [unhost]: ./struct.Encoder.html#method.unhost
+/// [unhost]: super::unhost()
 pub const fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
     Host { source, target }
 }

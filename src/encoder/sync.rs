@@ -16,17 +16,17 @@ impl<W> Encoder<W>
 where
     W: Write,
 {
-    /// Create a new Encoder over this `std::io::Write` instance
+    /// Create a new Encoder over this [std::io::Write] instance
     pub fn new(writer: W) -> Self {
         Self { writer }
     }
 
-    /// Get the inner `std::io::Write` instance out
+    /// Get the inner [std::io::Write] instance out
     pub fn into_inner(self) -> W {
         self.writer
     }
 
-    /// Encode this `Encodable` message to the writer and flushes it.
+    /// Encode this [Encodable] message to the writer and flushes it.
     pub fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
         M: Encodable,

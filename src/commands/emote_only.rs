@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Enables emote-only mode (only emoticons may be used in chat).
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct EmoteOnly<'a> {
@@ -13,7 +14,7 @@ pub struct EmoteOnly<'a> {
 ///
 /// Use [emote_only_off] to disable.
 ///
-/// [emote_only_off]: ./fn.emote_only_off.html
+/// [emote_only_off]: super::emote_only_off()
 pub const fn emote_only(channel: &str) -> EmoteOnly<'_> {
     EmoteOnly { channel }
 }

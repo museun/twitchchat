@@ -5,7 +5,7 @@ use crate::{DecodeError, MessageError};
 pub enum Error {
     /// An I/O error occured
     Io(std::io::Error),
-    /// Invalid utf-8 was parsed (either you sent invalid utf-8, or twitch did and we read it).
+    /// Invalid utf-8 was parsed (either you sent invalid utf-8, or Twitch did and we read it).
     InvalidUtf8(std::str::Utf8Error),
     /// We could not parse a message -- this should never happen
     ParsingFailure(MessageError),

@@ -88,7 +88,7 @@ pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), MessageError> {
 
     let pos = input
         .find(CRLF)
-        .ok_or_else(|| MessageError::IncompleteMessage { pos: 0 })?
+        .ok_or(MessageError::IncompleteMessage { pos: 0 })?
         + CRLF.len();
 
     let next = &input[..pos];

@@ -5,6 +5,7 @@ use std::io::Write;
 
 /// Registers with Twitch. This writes the `UserConfig` out
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Register<'a> {

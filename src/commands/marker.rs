@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Adds a stream marker (with an optional comment, **max 140** characters) at the current timestamp.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Marker<'a> {

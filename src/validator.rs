@@ -41,17 +41,17 @@ impl<'a> Validator for IrcMessage<'a> {
     fn expect_nick(&self) -> Result<MaybeOwnedIndex, MessageError> {
         self.prefix
             .and_then(|p| p.nick_index())
-            .ok_or_else(|| MessageError::ExpectedNick)
+            .ok_or(MessageError::ExpectedNick)
     }
 
     fn expect_arg(&self, nth: usize) -> Result<&str, MessageError> {
         self.nth_arg(nth)
-            .ok_or_else(|| MessageError::ExpectedArg { pos: nth })
+            .ok_or(MessageError::ExpectedArg { pos: nth })
     }
 
     fn expect_arg_index(&self, nth: usize) -> Result<MaybeOwnedIndex, MessageError> {
         self.nth_arg_index(nth)
-            .ok_or_else(|| MessageError::ExpectedArg { pos: nth })
+            .ok_or(MessageError::ExpectedArg { pos: nth })
     }
 
     fn expect_data(&self) -> Result<&str, MessageError> {
@@ -59,6 +59,6 @@ impl<'a> Validator for IrcMessage<'a> {
     }
 
     fn expect_data_index(&self) -> Result<MaybeOwnedIndex, MessageError> {
-        self.data.ok_or_else(|| MessageError::ExpectedData)
+        self.data.ok_or(MessageError::ExpectedData)
     }
 }

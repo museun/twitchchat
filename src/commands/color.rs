@@ -4,6 +4,7 @@ use std::io::{Result, Write};
 
 /// Change your username color.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Color<'a> {
@@ -12,7 +13,8 @@ pub struct Color<'a> {
     marker: std::marker::PhantomData<&'a ()>,
 }
 
-/// Change your username color.
+/// Change your username `color`.
+// TODO documentation tests to show how you can use this with different types
 pub fn color<T>(color: T) -> std::result::Result<Color<'static>, T::Error>
 where
     T: TryInto<crate::twitch::Color>,

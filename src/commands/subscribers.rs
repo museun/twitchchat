@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Enables subscribers-only mode (only subscribers may chat in this channel).
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Subscribers<'a> {
@@ -13,7 +14,7 @@ pub struct Subscribers<'a> {
 ///
 /// Use [subscribers_off] to disable.
 ///
-/// [subscribers_off]: ./fn.subscribers_off.html
+/// [subscribers_off]: super::subscribers_off()
 pub const fn subscribers(channel: &str) -> Subscribers<'_> {
     Subscribers { channel }
 }
