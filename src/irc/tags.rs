@@ -39,7 +39,21 @@ impl<'a> Tags<'a> {
         self.len() == 0
     }
 
+    /// Tries to get this `key` -- with an unescaped output string
+    ///
+    /// Twitch requires some characters to be escaped.
+    // TODO write more documentation explaining this
+    pub fn get_unescaped<K>(&self, key: &K) -> Option<MaybeOwned<'a>>
+    where
+        K: ?Sized + Borrow<str>,
+    {
+        self.indices.get_unescaped(key.borrow(), &*self.data)
+    }
+
     /// Tries to get this `key`
+    ///
+    /// # NOTE: This does not unescape the tag value.
+    // TODO write more documentation explaining this
     pub fn get<K>(&self, key: &K) -> Option<&'a str>
     where
         K: ?Sized + Borrow<str>,
@@ -83,7 +97,8 @@ impl<'a> Tags<'a> {
         K: ?Sized + Borrow<str>,
         E: FromStr,
     {
-        self.get(key)
+        self.get_unescaped(key)
+            .as_deref()
             .map(FromStr::from_str)
             .transpose()
             .ok()
@@ -142,7 +157,6 @@ impl<'a> Tags<'a> {
 
 impl<'a> IntoIterator for &'a Tags<'a> {
     type Item = (&'a str, &'a str);
-
     type IntoIter = TagsIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -176,11 +190,8 @@ impl<'a> Iterator for TagsIter<'a> {
         let pos = self.pos;
         self.pos += 1;
 
-        self.inner
-            .indices
-            .map
-            .get(pos)
-            .map(|&(k, v)| (&self.inner.data[k], &self.inner.data[v]))
+        let (k, v) = self.inner.indices.map.get(pos)?;
+        Some((&self.inner.data[k], &self.inner.data[v]))
     }
 }
 
@@ -199,10 +210,116 @@ impl<'a> ::serde::Serialize for Tags<'a> {
     }
 }
 
+/// The reverse of [`escape_str`](#escape_str).
+///
+///
+/// ```rust
+/// # use twitchchat::test::*;
+/// let s = r"hello world; this is\na test";
+/// assert_eq!(&*unescape_str(&*escape_str(s)), s);
+/// ```
+///
+/// Use [`escape_str`](escape_str) to reverse this.
+/// ### Format
+///
+/// | escaped              | character   |
+/// | -------------------- | ----------- |
+/// | `\:`                 | `;`         |
+/// | `\s`                 | ` ` (space) |
+/// | `\\`                 | `\`         |
+/// | `\r`                 | `CR`        |
+/// | `\n`                 | `LF`        |
+/// | the character itself | --          |
+///
+/// [ref]: https://ircv3.net/specs/extensions/message-tags.html#escaping-values
+pub fn unescape_str(s: &str) -> MaybeOwned<'_> {
+    if !s.chars().any(|c| c == '\\') {
+        return MaybeOwned::Borrowed(s);
+    }
+    let mut buf = String::with_capacity(s.len());
+    let mut iter = s.chars();
+    while let Some(c) = iter.next() {
+        match c {
+            '\\' => match iter.next() {
+                Some(':') => buf.push(';'),
+                Some('s') => buf.push(' '),
+                Some('\\') => buf.push('\\'),
+                Some('r') => buf.push('\r'),
+                Some('n') => buf.push('\n'),
+                Some(c) => buf.push(c),
+                None => break,
+            },
+            c => buf.push(c),
+        }
+    }
+
+    MaybeOwned::Owned(buf.into())
+}
+
+/// Escapes a string according to the [IRCv3 spec][ref]
+///
+/// ```rust
+/// # use twitchchat::test::*;
+/// let s = r"hello world; this is\na test";
+/// assert_eq!(&*unescape_str(&*escape_str(s)), s);
+/// ```
+///
+/// Use [`unescape_str`](unescape_str) to reverse this.
+/// ### Format
+///
+/// | character   | escaped              |
+/// | ----------- | -------------------- |
+/// | `;`         | `\:`                 |
+/// | ` ` (space) | `\s`                 |
+/// | `\`         | `\\`                 |
+/// | `CR`        | `\r`                 |
+/// | `LF`        | `\n`                 |
+/// | --          | the character itself |
+///
+/// [ref]: https://ircv3.net/specs/extensions/message-tags.html#escaping-values
+pub fn escape_str(s: &str) -> std::borrow::Cow<'_, str> {
+    const NEEDS_ESCAPE: [char; 5] = [';', ' ', '\\', '\n', '\r'];
+    let n = s.chars().filter(|c| NEEDS_ESCAPE.contains(&c)).count();
+    if n == 0 {
+        return s.into();
+    }
+
+    let mut buf = String::with_capacity(s.len() + n);
+    for ch in s.chars() {
+        match ch {
+            ';' => buf.push_str(r"\:"),
+            ' ' => buf.push_str(r"\s"),
+            '\\' => buf.push_str(r"\\"),
+            '\n' => buf.push_str(r"\n"),
+            '\r' => buf.push_str(r"\r"),
+            ch => buf.push(ch),
+        }
+    }
+
+    buf.into()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::str::FromStr;
+
+    #[test]
+    fn round_trip_escape() {
+        let s = r"foo;bar and\foo\rwith\n";
+        assert_eq!(unescape_str(&*escape_str(&s)), s);
+    }
+
+    #[test]
+    fn escaped_tag() {
+        let s = escape_str(r"@hello;world=abc\ndef");
+        let data = MaybeOwned::Borrowed(&*s);
+        let indices = TagIndices::build_indices(&*data);
+
+        let tags = Tags::from_data_indices(&data, &indices);
+        assert_eq!(tags.get_unescaped("hello;world").unwrap(), r"abc\ndef");
+        assert_eq!(tags.get("hello;world").unwrap(), r"abc\\ndef",);
+    }
 
     #[test]
     fn invalid_input_missing_leading_at() {

@@ -4,7 +4,7 @@
 pub enum MessageError {
     /// Invalid command
     InvalidCommand {
-        /// Expedted this command
+        /// Expected this command
         expected: String,
         /// But got this command
         got: String,
@@ -65,7 +65,6 @@ impl std::fmt::Display for MessageError {
             Self::CannotParseTag { name, error } => write!(f, "cannot parse '{}': {}", name, error),
             Self::IncompleteMessage { pos } => write!(f, "incomplete message starting at: {}", pos),
             Self::EmptyMessage => write!(f, "no message could be parsed"),
-
             Self::Custom { error } => write!(f, "custom error: {}", error),
         }
     }
