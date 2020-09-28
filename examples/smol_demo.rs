@@ -8,7 +8,8 @@ use crate::include::{channels_to_join, get_user_config, main_loop};
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
     // create a connector using ``smol``, this connects to Twitch.
     // you can provide a different address with `custom`
-    let connector = connector::smol::Connector::twitch();
+    // this can fail if DNS resolution cannot happen
+    let connector = connector::smol::Connector::twitch().unwrap();
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'

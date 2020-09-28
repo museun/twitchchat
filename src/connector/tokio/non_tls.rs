@@ -37,6 +37,6 @@ mod tests {
 
         assert_connector::<Connector>();
         assert_type_is_read_write::<<Connector as C>::Output>();
-        assert_obj_is_sane(Connector::twitch());
+        assert_obj_is_sane(Connector::twitch().unwrap());
     }
 }
