@@ -198,7 +198,7 @@ These can be [parsed] from their **name** in
 - `"snake_case"`
 - `"lower case"`
 
-[parsed]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+[parsed]: std::str::FromStr
 */
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -258,7 +258,7 @@ impl FromStr for Color {
 impl Default for Color {
     /// Defaults to having a kind of [Turbo] and RGB of #FFFFFF (white)
     ///
-    /// [Turbo]: ./enum.TwitchColor.html#variant.Turbo
+    /// [Turbo]: TwitchColor::Turbo
     fn default() -> Self {
         Self {
             kind: TwitchColor::Turbo,
@@ -365,9 +365,6 @@ impl From<TwitchColor> for RGB {
 }
 
 /// A utility method that returns an array of [TwitchColor]s mapped to its corresponding [RGB]
-///
-/// [TwitchColor]: ./enum.TwitchColor.html
-/// [RGB]: ./struct.RGB.html
 pub const fn twitch_colors() -> [(TwitchColor, RGB); 15] {
     use TwitchColor::*;
     [
