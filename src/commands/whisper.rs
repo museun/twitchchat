@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Whispers a message to the username.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Whisper<'a> {

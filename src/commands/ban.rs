@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Permanently prevent a user from chatting.
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Ban<'a> {

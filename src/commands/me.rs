@@ -3,6 +3,7 @@ use std::io::{Result, Write};
 
 /// Sends an "emote" message in the third person to the channel
 #[non_exhaustive]
+#[must_use = "commands must be encoded"]
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 pub struct Me<'a> {
