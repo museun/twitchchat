@@ -37,9 +37,9 @@ impl std::error::Error for DecodeError {
     }
 }
 
-/// A decoder over `std::io::Read` that produces `IrcMessage`s
+/// A decoder over [std::io::Read] that produces [IrcMessage]s
 ///
-/// This will return an `DecodeError::Eof` when reading manually.
+/// This will return an [DecodeError::Eof] when reading manually.
 ///
 /// When reading it as a iterator, `Eof` will signal the end of the iterator (e.g. `None`)
 pub struct Decoder<R> {
@@ -57,7 +57,7 @@ impl<R> Decoder<R>
 where
     R: Read,
 {
-    /// Create a new Decoder from this `std::io::Read` instance
+    /// Create a new Decoder from this [std::io::Read] instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: BufReader::new(reader),
@@ -67,9 +67,9 @@ where
 
     /// Read the next message.
     ///
-    /// This returns a borrowed IrcMessage which is valid until the next Decoder call is made.
+    /// This returns a borrowed [IrcMessage] which is valid until the next Decoder call is made.
     ///
-    /// If you just want an owned one, use the Decoder as an iterator. e.g. dec.next().
+    /// If you just want an owned one, use the [Decoder] as an iterator. e.g. dec.next().
     pub fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
         self.buf.clear();
         let n = self
