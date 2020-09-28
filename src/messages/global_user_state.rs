@@ -1,6 +1,14 @@
 use crate::{irc::*, twitch::*, IntoOwned, MaybeOwned, Validator};
 
-/// Sent on successful login, if **TAGS** capability have been sent beforehand.
+/// Sent on successful login, if both **TAGS** and **COMMANDS** capabilities have been sent beforehand.
+///
+/// # NOTE:
+///
+/// Because Twitch is extremely inconsistent in its documentation you can get this message without any Tags attached.
+///
+/// If only **COMMANDS** and **MEMBERSHIP** are sent, you'll get this message,
+/// but it'll be empty (read: default). You should check the [GlobalUserState::has_tags()] to
+/// verify that you actually got the real message
 #[derive(Clone, PartialEq)]
 pub struct GlobalUserState<'a> {
     raw: MaybeOwned<'a>,
@@ -16,6 +24,11 @@ pub struct GlobalUserState<'a> {
 impl<'a> GlobalUserState<'a> {
     raw!();
     tags!();
+
+    /// Determines whether this message actually had tags attached
+    pub fn has_tags(&self) -> bool {
+        !self.tags.is_empty()
+    }
 
     /// Your available emote sets, always contains atleast '0'
     pub fn emote_sets(&self) -> Vec<&str> {

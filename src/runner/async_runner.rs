@@ -533,6 +533,23 @@ impl AsyncRunner {
         let mut caps = Capabilities::default();
         let mut our_name = None;
 
+        use crate::twitch::Capability as TwitchCap;
+        // Twitch says we'll be getting a GlobalUserState if we just send the
+        // Tags capability
+        //
+        // This is false. Twitch will only send GlobalUserState if we've sent
+        // the Commands capability and atleast 1 other capability.
+        //
+        // That other capability doesn't have to be Tags, interestingly enough.
+        // So a combination of both 'Commands' and 'Membership' will produce an
+        // empty GlobalUserState
+        //
+        // We'll check for both Tags and Commands
+        //
+        let will_be_getting_global_user_state_hopefully =
+            user_config.capabilities.contains(&TwitchCap::Tags) &&
+            user_config.capabilities.contains(&TwitchCap::Commands);
+
         let identity = loop {
             let msg: IrcMessage<'_> = decoder.read_message().await?;
 
@@ -555,9 +572,12 @@ impl AsyncRunner {
                     // if we do send Tags
                     if is_anonymous {
                         break Identity::Anonymous { caps };
-                    };
+                    }
 
-                    if !caps.tags {
+                    // if we're not looking for any more caps and we won't be
+                    // getting a GlobalUserState just give them the basic
+                    // Identity
+                    if looking_for.is_empty() && !will_be_getting_global_user_state_hopefully {
                         break Identity::Basic {
                             name: our_name.take().unwrap(),
                             caps,
@@ -594,15 +614,29 @@ impl AsyncRunner {
                     }
                 },
 
+                // NOTE: This will only be sent when there's both Commands and atleast one other CAP requested
                 GlobalUserState(msg) => {
+                    // TODO: this is so shitty.
+                    let id = match msg.user_id {
+                        Some(id) => id.parse().unwrap(),
+                        // XXX: we can get this message without any tags
+                        None => {
+                            break Identity::Basic {
+                                name: our_name.take().unwrap(),
+                                caps,
+                            };
+                        }
+                    };
+
                     break Identity::Full {
                         // these unwraps should be safe because we'll have all of the TAGs here
                         name: our_name.unwrap(),
-                        user_id: msg.user_id.unwrap().parse().unwrap(),
+                        user_id: id,
                         display_name: msg.display_name.map(|s| s.to_string()),
                         color: msg.color,
                         caps,
                     };
+
                 }
 
                 // Reply to any PINGs while waiting. Although Twitch doesn't
@@ -611,7 +645,15 @@ impl AsyncRunner {
                 // already
                 Ping(msg) => encoder.encode(commands::pong(msg.token())).await?,
 
-                _ => {}
+                _ => {
+                    // we have our name, but we won't be getting GlobalUserState and we've got all of our Caps
+                    if our_name.is_some() && !will_be_getting_global_user_state_hopefully && looking_for.is_empty() {
+                        break Identity::Basic {
+                            name: our_name.take().unwrap(),
+                            caps,
+                        };
+                    }
+                }
             };
         };
 

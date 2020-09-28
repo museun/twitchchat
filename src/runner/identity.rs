@@ -12,8 +12,6 @@ pub enum Identity {
     },
 
     /// A basic identity.
-    ///
-    /// This means you didn't enable all of the capabilities
     Basic {
         /// Your username
         name: String,
@@ -23,9 +21,9 @@ pub enum Identity {
 
     /// A full identity
     ///
-    /// This has more information than a `Basic` identity.
+    /// This has more information about your user than a `Basic` identity.
     ///
-    /// This is created if you've enabled all of the capabilities.
+    /// This is created if you've enabled atleast `Tags` and `Commands`.
     Full {
         /// Your username
         name: String,
