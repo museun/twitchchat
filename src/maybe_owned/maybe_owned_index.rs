@@ -3,7 +3,7 @@ use std::ops::{Index, Range};
 
 type IndexWidth = u16;
 
-/// An index into a `MaybeOwned`.
+/// An index into a [MaybeOwned].
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct MaybeOwnedIndex {
     /// The start index
