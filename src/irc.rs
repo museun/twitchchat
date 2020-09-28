@@ -61,7 +61,7 @@ pub use message::IrcMessage;
 mod prefix;
 pub use prefix::{Prefix, PrefixIndex};
 
-mod tags;
+pub(crate) mod tags;
 pub use tags::{Tags, TagsIter};
 
 mod tag_indices;

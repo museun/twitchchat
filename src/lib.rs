@@ -137,6 +137,9 @@ pub mod messages;
 pub mod irc;
 pub use irc::{IrcMessage, MessageError};
 
+/// Helpful testing utilities
+pub mod test;
+
 #[doc(inline)]
 pub use irc::{FromIrcMessage, IntoIrcMessage};
 

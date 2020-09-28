@@ -1,3 +1,4 @@
+use crate::maybe_owned::MaybeOwned;
 use crate::{IntoOwned, MaybeOwnedIndex};
 
 /// Pre-computed tag indices
@@ -78,14 +79,16 @@ impl TagIndices {
     }
 
     // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
+    pub(crate) fn get_unescaped<'a>(&'a self, key: &str, data: &'a str) -> Option<MaybeOwned<'a>> {
+        self.get(key, data).map(crate::test::unescape_str)
+    }
+
+    // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
     pub(crate) fn get<'a>(&'a self, key: &str, data: &'a str) -> Option<&'a str> {
-        self.map.iter().find_map(|(k, v)| {
-            if key == &data[k] {
-                Some(&data[v])
-            } else {
-                None
-            }
-        })
+        let key = crate::test::escape_str(key);
+        self.map
+            .iter()
+            .find_map(|(k, v)| if key == data[k] { Some(&data[v]) } else { None })
     }
 }
 
