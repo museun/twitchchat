@@ -26,7 +26,7 @@ impl<R> std::fmt::Debug for AsyncDecoder<R> {
 }
 
 impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
-    /// Create a new AsyncDecoder from this [futures_lite::Read] instance
+    /// Create a new AsyncDecoder from this [futures_lite::AsyncRead] instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
