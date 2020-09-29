@@ -29,11 +29,13 @@ mod tests {
     #[test]
     fn join_encode() {
         test_encode(join("#museun"), "JOIN #museun\r\n");
+        test_encode(join("#MUSEUN"), "JOIN #museun\r\n");
     }
 
     #[test]
     fn join_ensure_channel_encode() {
         test_encode(join("museun"), "JOIN #museun\r\n");
+        test_encode(join("MUSEUN"), "JOIN #museun\r\n");
     }
 
     #[test]

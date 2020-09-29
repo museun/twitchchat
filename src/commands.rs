@@ -232,10 +232,11 @@ impl<'a> Channel<'a> {
 
 impl<'a> Display for Channel<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO IRC has special casing rules. We should implement it
         if self.0.starts_with('#') {
-            write!(f, "{}", self.0)
+            write!(f, "{}", self.0.to_lowercase())
         } else {
-            write!(f, "#{}", self.0)
+            write!(f, "#{}", self.0.to_lowercase())
         }
     }
 }
