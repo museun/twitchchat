@@ -56,9 +56,8 @@ macro_rules! connector_ctor {
         #[doc = "Create a new"]
         $(#[$meta])*
         #[doc = "TLS connector that connects to the ***default Twitch*** address."]
-        pub fn twitch() -> Self {
+        pub fn twitch() -> ::std::io::Result<Self> {
             Self::custom($crate::TWITCH_IRC_ADDRESS_TLS, $crate::TWITCH_TLS_DOMAIN)
-                .expect("twitch DNS resolution")
         }
 
 
