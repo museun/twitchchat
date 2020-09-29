@@ -29,11 +29,13 @@ mod tests {
     #[test]
     fn part_encode() {
         test_encode(part("#museun"), "PART #museun\r\n");
+        test_encode(part("#MUSEUN"), "PART #museun\r\n");
     }
 
     #[test]
     fn part_ensure_channel_encode() {
         test_encode(part("museun"), "PART #museun\r\n");
+        test_encode(part("MUSEUN"), "PART #museun\r\n");
     }
 
     #[test]
