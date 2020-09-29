@@ -9,7 +9,7 @@ async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Resul
     // create a connector using ``async_io``, this connects to Twitch.
     // you can provide a different address with `custom`
     // this can fail if DNS resolution cannot happen
-    let connector = connector::async_io::Connector::twitch().unwrap();
+    let connector = connector::async_io::Connector::twitch()?;
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'

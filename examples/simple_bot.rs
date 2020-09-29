@@ -80,7 +80,7 @@ impl Bot {
     // run the bot until its done
     async fn run(&mut self, user_config: &UserConfig, channels: &[String]) -> anyhow::Result<()> {
         // this can fail if DNS resolution cannot happen
-        let connector = twitchchat::connector::smol::Connector::twitch().unwrap();
+        let connector = twitchchat::connector::smol::Connector::twitch()?;
 
         let mut runner = AsyncRunner::connect(connector, user_config).await?;
         println!("connecting, we are: {}", runner.identity.username());

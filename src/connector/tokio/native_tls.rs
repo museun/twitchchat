@@ -56,6 +56,6 @@ mod tests {
 
         assert_connector::<ConnectorNativeTls>();
         assert_type_is_read_write::<<ConnectorNativeTls as C>::Output>();
-        assert_obj_is_sane(ConnectorNativeTls::twitch());
+        assert_obj_is_sane(ConnectorNativeTls::twitch().unwrap());
     }
 }
