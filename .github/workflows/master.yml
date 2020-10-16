@@ -47,6 +47,7 @@ jobs:
           command: test
           args: --verbose --target ${{ matrix.target }} --all-features
 
+  # note, this does not test the openssl stuff on windows because its a pain
   windows:
     name: Windows
     runs-on: windows-latest
@@ -56,10 +57,9 @@ jobs:
         target:
           - x86_64-pc-windows-gnu
           - x86_64-pc-windows-msvc
-          # - i686-pc-windows-msvc # would require openssl
+          - i686-pc-windows-msvc
         toolchain:
           - stable
-
     steps:
       - uses: actions/checkout@v2
 
@@ -77,14 +77,25 @@ jobs:
           command: test
           args: --verbose --target ${{ matrix.target }} --no-default-features
 
-      - name: Install OpenSSL
-        run: vcpkg install openssl:x64-windows
-
       - name: Test all features
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --target ${{ matrix.target }} --all-features
+          # this is basically --all-features sans openssl.
+          args: --verbose --target ${{ matrix.target }} --no-default-features >
+            --features async
+            --features async-io
+            --features async-std
+            --features async-tls
+            --features serde
+            --features smol
+            --features testing
+            --features tokio
+            --features tokio-native-tls
+            --features native-tls
+            --features tokio-rustls
+            --features webpki-roots
+            --features tokio-util
 
   macos:
     name: MacOS
