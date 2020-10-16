@@ -9,22 +9,24 @@
 //! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    |`async-io`               |
 //! | [`smol`](https://docs.rs/smol/latest/smol/)                |`smol`                   |
 //! | [`async_std`](https://docs.rs/async-std/latest/async_std/) |`async-std`              |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             |`tokio` and `tokio-util` |
+//! | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                |`tokio` and `tokio-util` |
 //!
 //! ## TLS
 //!
 //! If you want TLS supports, enable the above runtime and also enable the cooresponding features:
 //!
-//! | Read/Write provider                                        | Runtime     | Features                                          | TLS backend                |
-//! | ---                                                        | ---         | ---                                               | ---                        |
-//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `"async-tls"`                                       | [`rustls`][rustls]         |
-//! | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `"async-tls"`                                       | [`rustls`][rustls]         |
-//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                       | [`rustls`][rustls]         |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
-//! | [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
+//! | Read/Write provider                                        | Runtime     | Features                                             | TLS backend                |
+//! | ---------------------------------------------------------- | ----------- | ---------------------------------------------------- | -------------------------- |
+//! | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `"async-tls"`                                        | [`rustls`][rustls]         |
+//! | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `"async-tls"`                                        | [`rustls`][rustls]         |
+//! | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                        | [`rustls`][rustls]         |
+//! | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
+//! | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
+//! | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-openssl"`, `"openssl"`       | [`openssl`][openssl]       |
 //!
 //! [rustls]: https://docs.rs/rustls/0.18.1/rustls/
 //! [native-tls]: https://docs.rs/native-tls/0.2.4/native_tls/
+//! [openssl]: https://docs.rs/openssl/0.10/openssl/
 //!
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::{future::Future, io::Result as IoResult, net::SocketAddr};
@@ -115,7 +117,7 @@ pub use self::smol::Connector as SmolConnector;
 pub use self::smol::ConnectorTls as SmolConnectorTls;
 
 #[cfg(all(feature = "tokio", feature = "tokio-util"))]
-/// Connector for using a [`tokio::net::TcpStream`](https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html)
+/// Connector for using a [`tokio::net::TcpStream`](https://docs.rs/tokio/0.2/tokio/net/struct.TcpStream.html)
 pub mod tokio;
 
 #[cfg(all(feature = "tokio", feature = "tokio-util"))]
@@ -139,6 +141,15 @@ pub use self::tokio::ConnectorRustTls as TokioConnectorRustTls;
 ))]
 #[doc(inline)]
 pub use self::tokio::ConnectorNativeTls as TokioConnectorNativeTls;
+
+#[cfg(all(
+    feature = "tokio",
+    feature = "tokio-util",
+    feature = "tokio-openssl",
+    feature = "openssl"
+))]
+#[doc(inline)]
+pub use self::tokio::ConnectorOpenSsl as TokioConnectorOpenSsl;
 
 /// The connector trait. This is used to abstract out runtimes.
 ///
@@ -211,6 +222,14 @@ mod required {
     ))]
     compile_error! {
         "'tokio', 'tokio-util' and 'webpki-roots' must be enabled when 'tokio-rustls' is enabled"
+    }
+
+    #[cfg(all(
+        feature = "tokio-openssl",
+        not(all(feature = "tokio", feature = "tokio-util", feature = "openssl"))
+    ))]
+    compile_error! {
+        "'tokio', 'tokio-util' and 'openssl' must be enabled when 'tokio-openssl' is enabled"
     }
 }
 

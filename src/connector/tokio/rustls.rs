@@ -13,7 +13,7 @@ pub struct ConnectorRustTls {
 
 impl ConnectorRustTls {
     connector_ctor!(tls:
-        /// [`tokio`](https://docs.rs/tokio/latest/tokio/) (using [`tokio-rustls`](https://docs.rs/tokio-rustls/latest/tokio_rustls/))
+        /// [`tokio`](https://docs.rs/tokio/0.2/tokio/) (using [`tokio-rustls`](https://docs.rs/tokio-rustls/latest/tokio_rustls/))
     );
 }
 

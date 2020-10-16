@@ -37,7 +37,7 @@ This crate is runtime agonostic. To use..
 | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async-io`               |
 | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`                   |
 | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async-std`              |
-| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio` and `tokio-util` |
+| [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio` and `tokio-util` |
 
 ### TLS
 
@@ -48,8 +48,8 @@ If you want TLS supports, enable the above runtime and also enable the coorespon
 | [`async_io`](https://docs.rs/async-io/latest/async_io/)    | `async_io`  | `"async-tls"`                                        | [`rustls`][rustls]         |
 | [`smol`](https://docs.rs/smol/latest/smol/)                | `smol`      | `"async-tls"`                                        | [`rustls`][rustls]         |
 | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                        | [`rustls`][rustls]         |
-| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
-| [`tokio`](https://docs.rs/tokio/latest/tokio/)             | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
+| [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
+| [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
 
 [rustls]: https://docs.rs/rustls/0.18.1/rustls/
 [native-tls]: https://docs.rs/native-tls/0.2.4/native_tls/

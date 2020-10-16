@@ -14,3 +14,7 @@ mod rustls;
 
 #[cfg(all(feature = "tokio-rustls", feature = "webpki-roots"))]
 pub use rustls::*;
+
+#[cfg(all(feature = "tokio-openssl", feature = "openssl"))]
+mod openssl;
+pub use self::openssl::*;

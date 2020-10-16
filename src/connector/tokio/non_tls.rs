@@ -8,7 +8,7 @@ pub struct Connector {
 
 impl Connector {
     connector_ctor!(non_tls:
-        /// [`tokio`](https://docs.rs/tokio/latest/tokio/)
+        /// [`tokio`](https://docs.rs/tokio/0.2/tokio/)
     );
 }
 
