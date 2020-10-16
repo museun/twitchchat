@@ -17,4 +17,6 @@ pub use rustls::*;
 
 #[cfg(all(feature = "tokio-openssl", feature = "openssl"))]
 mod openssl;
+
+#[cfg(all(feature = "tokio-openssl", feature = "openssl"))]
 pub use self::openssl::*;
