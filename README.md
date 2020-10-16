@@ -50,9 +50,11 @@ If you want TLS supports, enable the above runtime and also enable the coorespon
 | [`async_std`](https://docs.rs/async-std/latest/async_std/) | `async_std` | `"async-tls"`                                        | [`rustls`][rustls]         |
 | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-rustls"`, `"webpki-roots"`   | [`rustls`][rustls]         |
 | [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-native-tls"`, `"native-tls"` | [`native-tls`][native-tls] |
+| [`tokio`](https://docs.rs/tokio/0.2/tokio/)                | `tokio`     | `"tokio-util"`, `"tokio-openssl"`, `"openssl"`       | [`openssl`][openssl]       |
 
 [rustls]: https://docs.rs/rustls/0.18.1/rustls/
 [native-tls]: https://docs.rs/native-tls/0.2.4/native_tls/
+[openssl]: https://docs.rs/openssl/0.10/openssl/
 
 ## Examples
 
