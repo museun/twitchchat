@@ -1,26 +1,28 @@
 use super::*;
 
-/// A `tokio` connector that uses `tokio-native-tls` (a `native-tls` wrapper). This uses TLS.
+use std::io::{Error, ErrorKind};
+
+/// A `tokio` connector that uses `tokio-openssl` (an `openssl` wrapper). This uses TLS.
 ///
 /// To use this type, ensure you set up the 'TLS Domain' in the configuration.
 ///
 /// The crate provides the 'TLS domain' for Twitch in the root of this crate.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ConnectorNativeTls {
+pub struct ConnectorOpenSsl {
     addrs: Vec<std::net::SocketAddr>,
     tls_domain: String,
 }
 
-impl ConnectorNativeTls {
+impl ConnectorOpenSsl {
     connector_ctor!(tls:
-        /// [`tokio`](https://docs.rs/tokio/0.2/tokio/) (using [`tokio-native-tls`](https://docs.rs/tokio-native-tls/latest/tokio_native_tls/))
+        /// [`tokio`](https://docs.rs/tokio/0.2/tokio/) (using [`tokio-openssl`](https://docs.rs/tokio_openssl/latest/tokio_openssl/))
     );
 }
 
 type CloneStream<T> = async_dup::Mutex<tokio_util::compat::Compat<T>>;
-type Stream = tokio_native_tls::TlsStream<tokio::net::TcpStream>;
+type Stream = tokio_openssl::SslStream<tokio::net::TcpStream>;
 
-impl crate::connector::Connector for ConnectorNativeTls {
+impl crate::connector::Connector for ConnectorOpenSsl {
     type Output = CloneStream<Stream>;
 
     fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
@@ -29,15 +31,14 @@ impl crate::connector::Connector for ConnectorNativeTls {
         let fut = async move {
             use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
 
-            let connector: tokio_native_tls::TlsConnector = ::native_tls::TlsConnector::new()
-                .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?
-                .into();
+            let config = ::openssl::ssl::SslConnector::builder(::openssl::ssl::SslMethod::tls())
+                .and_then(|c| c.build().configure())
+                .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
             let stream = tokio::net::TcpStream::connect(&*this.addrs).await?;
-            let stream = connector
-                .connect(&this.tls_domain, stream)
+            let stream = tokio_openssl::connect(config, &this.tls_domain, stream)
                 .await
-                .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+                .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
             Ok(async_dup::Mutex::new(stream.compat()))
         };
@@ -54,8 +55,8 @@ mod tests {
         use crate::connector::testing::*;
         use crate::connector::Connector as C;
 
-        assert_connector::<ConnectorNativeTls>();
-        assert_type_is_read_write::<<ConnectorNativeTls as C>::Output>();
-        assert_obj_is_sane(ConnectorNativeTls::twitch().unwrap());
+        assert_connector::<ConnectorOpenSsl>();
+        assert_type_is_read_write::<<ConnectorOpenSsl as C>::Output>();
+        assert_obj_is_sane(ConnectorOpenSsl::twitch().unwrap());
     }
 }
