@@ -82,7 +82,8 @@ jobs:
         with:
           command: test
           # this is basically --all-features sans openssl.
-          args: --verbose --target ${{ matrix.target }} --no-default-features >
+          args: >
+            --verbose --target ${{ matrix.target }} 
             --features async
             --features async-io
             --features async-std
