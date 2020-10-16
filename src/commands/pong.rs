@@ -16,10 +16,7 @@ pub const fn pong(token: &str) -> Pong<'_> {
 }
 
 impl<'a> Encodable for Pong<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_nl!(buf, "PONG :{}", self.token)
     }
 }

@@ -17,10 +17,7 @@ pub const fn untimeout<'a>(channel: &'a str, username: &'a str) -> Untimeout<'a>
 }
 
 impl<'a> Encodable for Untimeout<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.channel) => "/untimeout {}", self.username)
     }
 }

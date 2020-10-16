@@ -16,10 +16,7 @@ pub const fn slow_off(channel: &str) -> SlowOff<'_> {
 }
 
 impl<'a> Encodable for SlowOff<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.channel) => "/slowoff")
     }
 }

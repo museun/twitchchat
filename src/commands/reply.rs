@@ -22,7 +22,7 @@ pub const fn reply<'a>(channel: &'a str, msg_id: &'a str, msg: &'a str) -> Reply
 }
 
 impl<'a> Encodable for Reply<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_nl!(
             buf,
             "@reply-parent-msg-id={} PRIVMSG {} :{}",

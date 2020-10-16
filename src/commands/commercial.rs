@@ -22,9 +22,7 @@ pub fn commercial(channel: &str, length: impl Into<Option<usize>>) -> Commercial
 }
 
 impl<'a> Encodable for Commercial<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
+fn encode(&self, buf:&mut dyn Write) -> Result<()>
     {
         let length = self.length.map(|s| s.to_string());
         write_cmd!(buf, Channel(self.channel) => "/commercial{}", MaybeEmpty(length.as_deref()))

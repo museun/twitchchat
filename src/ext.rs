@@ -10,7 +10,10 @@ pub trait PrivmsgExt {
     fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()>;
 }
 
-impl<'a, W: Write + ?Sized> PrivmsgExt for W {
+impl<'a, W> PrivmsgExt for W
+where
+    W: Write + Sized,
+{
     fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
         let cmd = crate::commands::reply(
             msg.channel(),

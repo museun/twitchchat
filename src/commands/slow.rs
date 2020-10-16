@@ -26,10 +26,7 @@ pub fn slow(channel: &str, duration: impl Into<Option<usize>>) -> Slow<'_> {
 }
 
 impl<'a> Encodable for Slow<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(
             buf,
             Channel(self.channel) =>

@@ -17,10 +17,7 @@ pub const fn whisper<'a>(username: &'a str, message: &'a str) -> Whisper<'a> {
 }
 
 impl<'a> Encodable for Whisper<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_jtv_cmd!(buf, "/w {} {}", self.username, self.message)
     }
 }

@@ -21,10 +21,7 @@ pub const fn r9k_beta(channel: &str) -> R9kBeta<'_> {
 }
 
 impl<'a> Encodable for R9kBeta<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.channel) => "/r9kbeta")
     }
 }

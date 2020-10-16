@@ -16,10 +16,7 @@ pub const fn jtv_command(data: &str) -> JtvCommand<'_> {
 }
 
 impl<'a> Encodable for JtvCommand<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_jtv_cmd!(buf, self.data)
     }
 }
