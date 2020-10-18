@@ -174,10 +174,7 @@ macro_rules! from_other {
     };
 }
 
-type Raw<'a> = IrcMessage<'a>;
-
 from_other! {
-    Raw
     IrcReady
     Ready
     Cap
