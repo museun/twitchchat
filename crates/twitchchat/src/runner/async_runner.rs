@@ -2,7 +2,6 @@ cfg_async! {
 use crate::{
     channel::Receiver,
     commands,
-    connector::Connector,
     encoder::AsyncEncoder,
     messages::{Capability, Commands, MessageId},
     rate_limit::{RateClass, RateLimit},
@@ -60,23 +59,17 @@ impl AsyncRunner {
     /// Connect with the provided connector and the provided UserConfig
     ///
     /// This returns the Runner with your identity set.
-    pub async fn connect<C>(connector: C, user_config: &UserConfig) -> Result<Self, Error>
+    pub async fn connect<IO>(io: IO, user_config: &UserConfig) -> Result<Self, Error>
     where
-        C: Connector,
-        for<'a> &'a C::Output: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+        IO: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
     {
-        log::debug!("connecting");
-        let mut stream = { connector }.connect().await?;
-        log::debug!("connection established");
+        let (read, mut write) = futures_lite::io::split(io);
 
         log::debug!("registering");
         let mut buf = vec![];
         commands::register(user_config).encode(&mut buf)?;
-        stream.write_all(&buf).await?;
+        write.write_all(&buf).await?;
         log::debug!("registered");
-
-        let read = async_dup::Arc::new(stream);
-        let write = read.clone();
 
         let read: Box<dyn AsyncRead + Send + Sync + Unpin> = Box::new(read);
         let write: Box<dyn AsyncWrite + Send + Sync + Unpin> = Box::new(write);

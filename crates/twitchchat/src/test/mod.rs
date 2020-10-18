@@ -10,4 +10,4 @@ mod conn;
 
 #[cfg(feature = "testing")]
 #[cfg_attr(docsrs, doc(cfg(feature = "testing")))]
-pub use conn::{TestConn, TestConnector};
+pub use conn::{create_mock_connection, TestConn};

@@ -9,8 +9,6 @@ use std::{
 use async_mutex::Mutex;
 use futures_lite::io::*;
 
-use crate::connector::Connector;
-
 /// A test connection that you can use to insert into and read messages from.
 #[derive(Default, Debug, Clone)]
 pub struct TestConn {
@@ -134,24 +132,7 @@ impls! {
     TestConn
 }
 
-/// A [Connector] that uses the [TestConn]
-///
-/// Generally you'll pre-fill the 'read' buffers via
-/// [connector.conn.write_data()](TestConn::write_data()) and then clone the [TestConnector] and give a
-/// copy to the [AsyncRunner](crate::AsyncRunner)
-///
-/// Once the [AsyncRunner](crate::AsyncRunner) has written to the [TestConn]. You can read what was written via the [TestConn::read_all_lines] method.
-#[derive(Default, Debug, Clone)]
-pub struct TestConnector {
-    /// The [TestConn]. You can read/write to this while the [AsyncRunner](crate::AsyncRunner) has the connector
-    pub conn: TestConn,
-}
-
-impl Connector for TestConnector {
-    type Output = TestConn;
-
-    fn connect(&mut self) -> crate::BoxedFuture<Result<Self::Output>> {
-        let conn = self.conn.clone();
-        Box::pin(async move { Ok(conn) })
-    }
+/// TODO: Something
+pub fn create_mock_connection() -> TestConn {
+    todo!()
 }
