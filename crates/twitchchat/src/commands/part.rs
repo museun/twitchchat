@@ -16,7 +16,7 @@ pub const fn part(channel: &str) -> Part<'_> {
 }
 
 impl<'a> Encodable for Part<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write!(buf, "PART {}\r\n", super::Channel(self.channel))
     }
 }

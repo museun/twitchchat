@@ -20,9 +20,7 @@ pub const fn subscribers(channel: &str) -> Subscribers<'_> {
 }
 
 impl<'a> Encodable for Subscribers<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
+fn encode(&self, buf:&mut dyn Write) -> Result<()>
     {
         write_cmd!(buf, Channel(self.channel) => "/subscribers")
     }

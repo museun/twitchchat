@@ -28,10 +28,7 @@ pub fn ban<'a>(channel: &'a str, username: &'a str, reason: impl Into<Option<&'a
 }
 
 impl<'a> Encodable for Ban<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf,
             Channel(self.channel) =>
             "/ban {}{}", self.username, MaybeEmpty(self.reason)

@@ -16,9 +16,7 @@ pub const fn unhost(channel: &str) -> Unhost<'_> {
 }
 
 impl<'a> Encodable for Unhost<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
+fn encode(&self, buf:&mut dyn Write) -> Result<()>
     {
         write_cmd!(buf, Channel(self.channel) => "/unhost")
     }

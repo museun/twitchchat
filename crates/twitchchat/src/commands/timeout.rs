@@ -46,10 +46,7 @@ pub fn timeout<'a>(
 }
 
 impl<'a> Encodable for Timeout<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.channel)=>
             "/timeout {}{}{}",
             self.username,

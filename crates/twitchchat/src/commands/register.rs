@@ -27,7 +27,7 @@ pub fn register(user_config: &UserConfig) -> Register<'_> {
 }
 
 impl<'a> Encodable for Register<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> std::io::Result<()> {
+    fn encode(&self, buf: &mut dyn Write) -> std::io::Result<()> {
         let UserConfig {
             name,
             token,

@@ -16,7 +16,7 @@ pub const fn join(channel: &str) -> Join<'_> {
 }
 
 impl<'a> Encodable for Join<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_nl!(buf, "JOIN {}", super::Channel(self.channel))
     }
 }

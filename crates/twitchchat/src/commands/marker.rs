@@ -24,7 +24,7 @@ pub fn marker<'a>(channel: &'a str, comment: impl Into<Option<&'a str>>) -> Mark
 }
 
 impl<'a> Encodable for Marker<'a> {
-    fn encode<W: Write + ?Sized>(&self, buf: &mut W) -> Result<()> {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         fn truncate(s: &str) -> &str {
             const MAX: usize = 140;
             if s.len() <= MAX {

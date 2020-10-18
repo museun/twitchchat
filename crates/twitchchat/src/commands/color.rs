@@ -26,10 +26,7 @@ where
 }
 
 impl<'a> Encodable for Color<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_jtv_cmd!(buf, "/color {}", &self.color.to_string())
     }
 }

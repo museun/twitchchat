@@ -17,10 +17,7 @@ pub const fn privmsg<'a>(channel: &'a str, msg: &'a str) -> Privmsg<'a> {
 }
 
 impl<'a> Encodable for Privmsg<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_nl!(buf, "PRIVMSG {} :{}", Channel(self.channel), self.msg)
     }
 }

@@ -16,10 +16,7 @@ pub const fn raw(data: &str) -> Raw<'_> {
 }
 
 impl<'a> Encodable for Raw<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_nl!(buf, "{}", self.data)
     }
 }

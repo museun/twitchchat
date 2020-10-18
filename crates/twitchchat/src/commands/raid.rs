@@ -21,10 +21,7 @@ pub const fn raid<'a>(source: &'a str, target: &'a str) -> Raid<'a> {
 }
 
 impl<'a> Encodable for Raid<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.source) => "/raid {}", Channel(self.target))
     }
 }

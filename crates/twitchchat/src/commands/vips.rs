@@ -16,10 +16,7 @@ pub const fn vips(channel: &str) -> Vips<'_> {
 }
 
 impl<'a> Encodable for Vips<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.channel) => "/vips")
     }
 }

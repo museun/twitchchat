@@ -19,10 +19,7 @@ pub const fn disconnect() -> Disconnect<'static> {
 }
 
 impl<'a> Encodable for Disconnect<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_jtv_cmd!(buf, "/disconnect")
     }
 }

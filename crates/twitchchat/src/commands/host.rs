@@ -21,10 +21,7 @@ pub const fn host<'a>(source: &'a str, target: &'a str) -> Host<'a> {
 }
 
 impl<'a> Encodable for Host<'a> {
-    fn encode<W>(&self, buf: &mut W) -> Result<()>
-    where
-        W: Write + ?Sized,
-    {
+    fn encode(&self, buf: &mut dyn Write) -> Result<()> {
         write_cmd!(buf, Channel(self.source) => "/host {}", Channel(self.target))
     }
 }
