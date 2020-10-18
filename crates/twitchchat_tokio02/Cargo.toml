@@ -1,8 +1,15 @@
 [package]
-name = "twitchchat_tokio02"
-version = "0.1.0"
-authors = ["museun <museun@outlook.com>"]
-edition = "2018"
+name          = "twitchchat_tokio02"
+edition       = "2018"
+version       = "0.1.0"
+authors       = ["museun <museun@outlook.com>"]
+keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
+license       = "MIT OR Apache-2.0"
+readme        = "README.md"
+description   = "twitchchat connector using tokio 0.2"
+documentation = "https://docs.rs/twitchchat_tokio02/latest/twitchchat_tokio02/"
+repository    = "https://github.com/museun/twitchchat"
+categories    = ["asynchronous", "network-programming"]
 
 [features]
 rustls = ["tokio-rustls", "webpki-roots"]
