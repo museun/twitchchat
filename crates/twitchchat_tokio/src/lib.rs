@@ -5,7 +5,9 @@ pub async fn connect_twitch() -> std::io::Result<Compat<TcpStream>> {
     connect_custom(twitchchat::TWITCH_IRC_ADDRESS).await
 }
 
-pub async fn connect_custom(addrs: impl ToSocketAddrs) -> std::io::Result<Compat<TcpStream>> {
+pub async fn connect_custom(
+    addrs: impl ToSocketAddrs + Send + Sync,
+) -> std::io::Result<Compat<TcpStream>> {
     use tokio_util::compat::Tokio02AsyncReadCompatExt;
     TcpStream::connect(addrs)
         .await
@@ -28,8 +30,8 @@ pub mod native_tls {
     }
 
     pub async fn connect_custom(
-        addrs: impl ToSocketAddrs,
-        domain: impl Into<String>,
+        addrs: impl ToSocketAddrs + Send + Sync,
+        domain: impl Into<String> + Send + Sync,
     ) -> std::io::Result<Compat<TlsStream<TcpStream>>> {
         use tokio_util::compat::Tokio02AsyncReadCompatExt;
 
@@ -62,8 +64,8 @@ pub mod rustls {
     }
 
     pub async fn connect_custom(
-        addrs: impl ToSocketAddrs,
-        domain: impl Into<String>,
+        addrs: impl ToSocketAddrs + Send + Sync,
+        domain: impl Into<String> + Send + Sync,
     ) -> std::io::Result<Compat<TlsStream<TcpStream>>> {
         use tokio_util::compat::Tokio02AsyncReadCompatExt;
 
@@ -104,8 +106,8 @@ pub mod openssl {
     }
 
     pub async fn connect_custom(
-        addrs: impl ToSocketAddrs,
-        domain: impl Into<String>,
+        addrs: impl ToSocketAddrs + Send + Sync,
+        domain: impl Into<String> + Send + Sync,
     ) -> std::io::Result<Compat<SslStream<TcpStream>>> {
         use tokio_util::compat::Tokio02AsyncReadCompatExt;
 
@@ -131,7 +133,7 @@ mod tests {
     fn assert_it<F, Fut, R>(_func: F)
     where
         F: Fn() -> Fut,
-        Fut: Future<Output = std::io::Result<R>> + Send + 'static,
+        Fut: Future<Output = std::io::Result<R>> + Send + Sync + 'static,
         R: AsyncRead + AsyncWrite,
         R: Send + Sync + Unpin + 'static,
     {

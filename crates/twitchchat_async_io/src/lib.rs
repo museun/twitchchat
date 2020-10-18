@@ -5,7 +5,11 @@ pub async fn connect_twitch() -> std::io::Result<Async<TcpStream>> {
     connect_custom(twitchchat::TWITCH_IRC_ADDRESS).await
 }
 
-pub async fn connect_custom(addrs: impl ToSocketAddrs) -> std::io::Result<Async<TcpStream>> {
+pub async fn connect_custom<A>(addrs: A) -> std::io::Result<Async<TcpStream>>
+where
+    A: ToSocketAddrs + Send + Sync,
+    A::Iter: Send + Sync,
+{
     for addr in addrs.to_socket_addrs()? {
         if let Ok(stream) = Async::<TcpStream>::connect(addr).await {
             return Ok(stream);
@@ -29,10 +33,15 @@ pub mod rustls {
         .await
     }
 
-    pub async fn connect_custom(
-        addrs: impl ToSocketAddrs,
-        domain: impl Into<String>,
-    ) -> std::io::Result<TlsStream<Async<TcpStream>>> {
+    pub async fn connect_custom<A, D>(
+        addrs: A,
+        domain: D,
+    ) -> std::io::Result<TlsStream<Async<TcpStream>>>
+    where
+        A: ToSocketAddrs + Send + Sync,
+        A::Iter: Send + Sync,
+        D: Into<String> + Send + Sync,
+    {
         let domain = domain.into();
         for addr in addrs.to_socket_addrs()? {
             if let Ok(stream) = Async::<TcpStream>::connect(addr).await {
@@ -54,7 +63,7 @@ mod tests {
     fn assert_it<F, Fut, R>(_func: F)
     where
         F: Fn() -> Fut,
-        Fut: Future<Output = std::io::Result<R>> + Send + 'static,
+        Fut: Future<Output = std::io::Result<R>> + Send + Sync + 'static,
         R: AsyncRead + AsyncWrite,
         R: Send + Sync + Unpin + 'static,
     {

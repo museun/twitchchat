@@ -4,7 +4,11 @@ pub async fn connect_twitch() -> std::io::Result<TcpStream> {
     connect_custom(twitchchat::TWITCH_IRC_ADDRESS).await
 }
 
-pub async fn connect_custom(addrs: impl ToSocketAddrs) -> std::io::Result<TcpStream> {
+pub async fn connect_custom<A>(addrs: A) -> std::io::Result<TcpStream>
+where
+    A: ToSocketAddrs + Send + Sync,
+    A::Iter: Send + Sync,
+{
     TcpStream::connect(addrs).await
 }
 
@@ -21,10 +25,12 @@ pub mod rustls {
         .await
     }
 
-    pub async fn connect_custom(
-        addrs: impl ToSocketAddrs,
-        domain: impl Into<String>,
-    ) -> std::io::Result<TlsStream<TcpStream>> {
+    pub async fn connect_custom<A, D>(addrs: A, domain: D) -> std::io::Result<TlsStream<TcpStream>>
+    where
+        A: ToSocketAddrs + Send + Sync,
+        A::Iter: Send + Sync,
+        D: Into<String> + Send + Sync,
+    {
         let stream = TcpStream::connect(addrs).await?;
         let domain = domain.into();
         TlsConnector::new().connect(&domain, stream).await
@@ -41,7 +47,7 @@ mod tests {
     fn assert_it<F, Fut, R>(_func: F)
     where
         F: Fn() -> Fut,
-        Fut: Future<Output = std::io::Result<R>> + Send + 'static,
+        Fut: Future<Output = std::io::Result<R>> + Send + Sync + 'static,
         R: AsyncRead + AsyncWrite,
         R: Send + Sync + Unpin + 'static,
     {
