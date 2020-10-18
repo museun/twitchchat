@@ -80,10 +80,10 @@ pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";
 
 /// The Twitch WebSocket address for non-TLS connections
-pub const TWITCH_WS_ADDRESS: &str = "ws://irc-ws.chat.twitch.tv:80";
+pub const TWITCH_WS_ADDRESS: &str = "irc-ws.chat.twitch.tv:80";
 
 /// The Twitch WebSocket address for TLS connections
-pub const TWITCH_WS_ADDRESS_TLS: &str = "wss://irc-ws.chat.twitch.tv:443";
+pub const TWITCH_WS_ADDRESS_TLS: &str = "irc-ws.chat.twitch.tv:443";
 
 /// A TLS domain for Twitch
 pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
