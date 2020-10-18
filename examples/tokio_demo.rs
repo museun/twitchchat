@@ -1,23 +1,19 @@
-// NOTE: this demo requires `--features="async-std async-std/attributes"`.
-use twitchchat::{
-    commands, connector, messages,
-    runner::{AsyncRunner, Status},
-    UserConfig,
-};
+// NOTE: this demo requires `--features="tokio/full tokio-util"`.
+use twitchchat::{commands, runner::AsyncRunner, UserConfig};
 
 // this is a helper module to reduce code deduplication
 mod include;
 use crate::include::{channels_to_join, get_user_config, main_loop};
 
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
-    // create a connector using ``async_std``, this connects to Twitch.
+    // create a connector using ``tokio``, this connects to Twitch.
     // you can provide a different address with `custom`
-    let connector = connector::async_std::Connector::twitch()?;
+    let stream = twitchchat_tokio::connect_twitch().await?;
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'
     // this method will block until you're ready
-    let mut runner = AsyncRunner::connect(connector, user_config).await?;
+    let mut runner = AsyncRunner::connect(stream, user_config).await?;
     println!("..and we're connected");
 
     // and the identity Twitch gave you
@@ -35,7 +31,7 @@ async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Resul
     Ok(runner)
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // create a user configuration
     let user_config = get_user_config()?;
@@ -52,12 +48,12 @@ async fn main() -> anyhow::Result<()> {
     let mut writer = runner.writer();
 
     // spawn something off in the background that'll exit in 10 seconds
-    async_std::task::spawn({
+    tokio::spawn({
         let mut writer = writer.clone();
         let channels = channels.clone();
         async move {
             println!("in 10 seconds we'll exit");
-            async_std::task::sleep(std::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
             // send one final message to all channels
             for channel in channels {
@@ -66,12 +62,11 @@ async fn main() -> anyhow::Result<()> {
             }
 
             println!("sending quit signal");
-            assert!(quit_handle.notify().await);
+            quit_handle.notify().await;
         }
     });
 
     // you can encode all sorts of 'commands'
-
     for channel in &channels {
         writer
             .encode(commands::privmsg(channel, "hello world!"))

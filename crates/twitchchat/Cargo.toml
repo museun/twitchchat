@@ -65,27 +65,3 @@ anyhow         = "1.0.33"
 async-executor = { version = "1.3.0", default-features = false }
 serde_json     = "1.0.59"
 rmp-serde      = "0.14.4"
-
-[[example]]
-name = "message_parse"
-required-features = ["async"]
-
-# [[example]]
-# name = "smol_demo"
-# required-features = ["smol", "async"]
-
-# [[example]]
-# name = "async_io_demo"
-# required-features = ["async-io", "async"]
-
-# [[example]]
-# name = "async_std_demo"
-# required-features = ["async-std", "async-std/attributes", "async"]
-
-# [[example]]
-# name = "tokio_demo"
-# required-features = ["tokio/full", "tokio-util", "async"]
-
-# [[example]]
-# name = "simple_bot"
-# required-features = ["smol", "async"]

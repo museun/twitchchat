@@ -1,6 +1,6 @@
 use twitchchat::{
     messages,
-    //  for `from_irc()`
+    // for `from_irc()`
     FromIrcMessage as _,
     // for into_owned()
     IntoOwned as _,

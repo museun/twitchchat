@@ -1,4 +1,8 @@
 [workspace]
 members = [
-    "crates/*"
+    "crates/*",
+    
+    # internal crates
+    "examples"
 ]
+

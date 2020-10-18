@@ -1,20 +1,20 @@
-// NOTE: this demo requires `--feature async-io`.
-use twitchchat::{commands, connector, runner::AsyncRunner, UserConfig};
+// NOTE: this demo requires `--feature smol`.
+use twitchchat::{commands, runner::AsyncRunner, UserConfig};
 
 // this is a helper module to reduce code deduplication
 mod include;
 use crate::include::{channels_to_join, get_user_config, main_loop};
 
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
-    // create a connector using ``async_io``, this connects to Twitch.
+    // create a connector using ``smol``, this connects to Twitch.
     // you can provide a different address with `custom`
     // this can fail if DNS resolution cannot happen
-    let connector = connector::async_io::Connector::twitch()?;
+    let stream = twitchchat_smol::connect_twitch().await?;
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'
     // this method will block until you're ready
-    let mut runner = AsyncRunner::connect(connector, user_config).await?;
+    let mut runner = AsyncRunner::connect(stream, user_config).await?;
     println!("..and we're connected");
 
     // and the identity Twitch gave you
@@ -33,14 +33,12 @@ async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Resul
 }
 
 fn main() -> anyhow::Result<()> {
-    // create a user configuration
-    let user_config = get_user_config()?;
-    // get some channels to join from the environment
-    let channels = channels_to_join()?;
+    let fut = async move {
+        // create a user configuration
+        let user_config = get_user_config()?;
+        // get some channels to join from the environment
+        let channels = channels_to_join()?;
 
-    // any executor would work, we'll use async_executor so can spawn tasks
-    let executor = async_executor::Executor::new();
-    futures_lite::future::block_on(executor.run(async {
         // connect and join the provided channels
         let runner = connect(&user_config, &channels).await?;
 
@@ -51,25 +49,24 @@ fn main() -> anyhow::Result<()> {
         let mut writer = runner.writer();
 
         // spawn something off in the background that'll exit in 10 seconds
-        executor
-            .spawn({
-                let mut writer = writer.clone();
-                let channels = channels.clone();
-                async move {
-                    println!("in 10 seconds we'll exit");
-                    async_io::Timer::after(std::time::Duration::from_secs(10)).await;
+        smol::spawn({
+            let mut writer = writer.clone();
+            let channels = channels.clone();
+            async move {
+                println!("in 10 seconds we'll exit");
+                smol::Timer::after(std::time::Duration::from_secs(10)).await;
 
-                    // send one final message to all channels
-                    for channel in channels {
-                        let cmd = commands::privmsg(&channel, "goodbye, world");
-                        writer.encode(cmd).await.unwrap();
-                    }
-
-                    println!("sending quit signal");
-                    quit_handle.notify().await;
+                // send one final message to all channels
+                for channel in channels {
+                    let cmd = commands::privmsg(&channel, "goodbye, world");
+                    writer.encode(cmd).await.unwrap();
                 }
-            })
-            .detach();
+
+                println!("sending quit signal");
+                quit_handle.notify().await;
+            }
+        })
+        .detach();
 
         // you can encode all sorts of 'commands'
         for channel in &channels {
@@ -81,5 +78,7 @@ fn main() -> anyhow::Result<()> {
         println!("starting main loop");
         // your 'main loop'. you'll just call next_message() until you're done
         main_loop(runner).await
-    }))
+    };
+
+    smol::block_on(fut)
 }

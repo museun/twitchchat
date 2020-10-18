@@ -1,9 +1,8 @@
+// we need to rename tokio-0.2 to tokio for the macros to work
+use tokio02 as tokio;
+
 // NOTE: this demo requires `--features="tokio/full tokio-util"`.
-use twitchchat::{
-    commands, connector, messages,
-    runner::{AsyncRunner, Status},
-    UserConfig,
-};
+use twitchchat::{commands, runner::AsyncRunner, UserConfig};
 
 // this is a helper module to reduce code deduplication
 mod include;
@@ -12,12 +11,12 @@ use crate::include::{channels_to_join, get_user_config, main_loop};
 async fn connect(user_config: &UserConfig, channels: &[String]) -> anyhow::Result<AsyncRunner> {
     // create a connector using ``tokio``, this connects to Twitch.
     // you can provide a different address with `custom`
-    let connector = connector::tokio::Connector::twitch()?;
+    let stream = twitchchat_tokio02::connect_twitch().await?;
 
     println!("we're connecting!");
     // create a new runner. this is a provided async 'main loop'
     // this method will block until you're ready
-    let mut runner = AsyncRunner::connect(connector, user_config).await?;
+    let mut runner = AsyncRunner::connect(stream, user_config).await?;
     println!("..and we're connected");
 
     // and the identity Twitch gave you
