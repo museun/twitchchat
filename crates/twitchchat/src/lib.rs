@@ -112,7 +112,6 @@ cfg_async! {
     pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
 }
 
-// cfg_async! { pub mod connector; }
 cfg_async! { pub mod writer; }
 cfg_async! { pub mod channel; }
 
