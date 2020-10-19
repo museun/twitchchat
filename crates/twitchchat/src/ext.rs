@@ -10,6 +10,7 @@ pub trait PrivmsgExt {
     fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()>;
 }
 
+#[cfg(feature = "write")]
 impl PrivmsgExt for crate::writer::MpscWriter {
     fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
         let cmd = commands::reply(
