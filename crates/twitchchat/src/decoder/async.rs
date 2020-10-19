@@ -38,7 +38,10 @@ impl<R> std::fmt::Debug for AsyncDecoder<R> {
     }
 }
 
-impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
+impl<R> AsyncDecoder<R>
+where
+    R: AsyncRead + Send + Unpin,
+{
     /// Create a new [`AsyncDecoder`] from this [`futures_io::AsyncRead`][read] instance
     ///
     /// [read]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncRead.html
@@ -88,7 +91,7 @@ impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
 /// This will produce `Result<IrcMessage<'static>, DecodeError>` until an `Eof` is received
 impl<R> Stream for AsyncDecoder<R>
 where
-    R: AsyncRead + Send + Sync + Unpin,
+    R: AsyncRead + Send + Unpin,
 {
     type Item = Result<IrcMessage<'static>, DecodeError>;
 

@@ -56,7 +56,7 @@ pub enum Event {
 }
 
 impl Event {
-    fn from_raw(s: &str) -> Self {
+    pub(crate) fn from_raw(s: &str) -> Self {
         use IrcMessage as M;
         match s {
             M::IRC_READY => Self::IrcReady,
@@ -143,7 +143,7 @@ pub async fn wait_for<I>(
     dec: &mut AsyncDecoder<I>,
 ) -> Result<(IrcMessage<'static>, Vec<IrcMessage<'static>>), Error>
 where
-    I: AsyncRead + AsyncWrite + Send + Sync + Unpin,
+    I: AsyncRead + AsyncWrite + Send + Unpin,
 {
     let mut missed = vec![];
     loop {
@@ -156,13 +156,13 @@ where
 }
 }
 
-enum Done<'a> {
+pub(crate) enum Done<'a> {
     Yep(IrcMessage<'a>),
     Nope(IrcMessage<'a>),
     Yield,
 }
 
-fn wait_inner(
+pub(crate) fn wait_inner(
     result: Result<IrcMessage<'_>, DecodeError>,
     event: Event,
 ) -> Result<Done<'_>, Error> {

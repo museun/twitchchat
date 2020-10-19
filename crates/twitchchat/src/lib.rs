@@ -80,6 +80,9 @@ pub const TWITCH_WS_ADDRESS: &str = "irc-ws.chat.twitch.tv:80";
 /// The Twitch WebSocket address for TLS connections
 pub const TWITCH_WS_ADDRESS_TLS: &str = "irc-ws.chat.twitch.tv:443";
 
+/// A TLS domain for Twitch's websocket
+pub const TWITCH_WS_TLS_DOMAIN: &str = "irc-ws.chat.twitch.tv";
+
 /// A TLS domain for Twitch
 pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
 
@@ -96,7 +99,7 @@ pub use decoder::{DecodeError, Decoder};
 cfg_async! {
     pub use decoder::AsyncDecoder;
     /// A boxed `AsyncRead` trait
-    pub type BoxedRead = Box<dyn futures_lite::AsyncRead + Send + Sync + Unpin>;
+    pub type BoxedRead = Box<dyn futures_lite::AsyncRead + Send + Unpin>;
     /// A boxed `AsyncDecoder`
     pub type BoxedAsyncDecoder = AsyncDecoder<BoxedRead>;
 }
@@ -106,7 +109,7 @@ pub use encoder::Encoder;
 cfg_async! {
     pub use encoder::AsyncEncoder;
     /// A boxed `BoxedWrite` trait
-    pub type BoxedWrite = Box<dyn futures_lite::AsyncWrite + Send + Sync + Unpin>;
+    pub type BoxedWrite = Box<dyn futures_lite::AsyncWrite + Send + Unpin>;
     /// A boxed `AsyncEncoder`
     pub type BoxedAsyncEncoder = AsyncEncoder<BoxedWrite>;
 }
@@ -116,7 +119,7 @@ cfg_async! {
 pub fn make_pair<IO>(io: IO) -> (AsyncDecoder<futures_lite::io::ReadHalf< IO>>, AsyncEncoder<futures_lite::io::WriteHalf<IO>>)
 where
     IO: futures_lite::AsyncRead + futures_lite::AsyncWrite,
-    IO: Send + Sync + Unpin + 'static,
+    IO: Send + Unpin + 'static,
 {
     let (read, write) = futures_lite::io::split(io);
     (AsyncDecoder::new(read), AsyncEncoder::new(write))
@@ -128,7 +131,7 @@ cfg_async! {
 pub fn make_boxed_pair<IO>(io: IO) -> (BoxedAsyncDecoder, BoxedAsyncEncoder)
 where
     IO: futures_lite::AsyncRead + futures_lite::AsyncWrite,
-    IO: Send + Sync + Unpin + 'static,
+    IO: Send + Unpin + 'static,
 {
     let (read, write) = futures_lite::io::split(io);
     let read: BoxedRead = Box::new(read);
@@ -166,7 +169,7 @@ pub mod writer {
     impl MpscWriter {
         pub fn from_encoder<W>(encoder: Encoder<W>) -> Self
         where
-            W: Write + Send + Sync + 'static,
+            W: Write + Send + 'static,
         {
             let mut encoder = encoder;
             let (tx, rx) = flume::unbounded();
@@ -178,7 +181,7 @@ pub mod writer {
         cfg_async! {
         pub fn from_async_encoder<W>(encoder: AsyncEncoder<W>) -> Self
         where
-            W: AsyncWrite + Send + Sync + Unpin + 'static,
+            W: AsyncWrite + Send + Unpin + 'static,
         {
             let mut encoder = encoder;
             use futures_lite::future::block_on;
@@ -192,7 +195,7 @@ pub mod writer {
         fn _start<F>(receiver: flume::Receiver<Packet>, stop: flume::Sender<()>, mut encode: F)
         where
             F: FnMut(Box<[u8]>) -> std::io::Result<()>,
-            F: Send + Sync + 'static,
+            F: Send + 'static,
         {
             // TODO don't do this for the async one
             let _ = std::thread::spawn(move || {

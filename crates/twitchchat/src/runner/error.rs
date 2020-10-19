@@ -24,6 +24,23 @@ pub enum Error {
     ShouldReconnect,
     /// An unexpected EOF was found -- this means the connectionc losed abnormally.
     UnexpectedEof,
+    /// An EOF was read -- this isn't a real error
+    Eof,
+
+    #[cfg(feature = "ws")]
+    /// A Soketto handshake error (websockets)
+    Handshake(soketto::handshake::Error),
+
+    #[cfg(feature = "ws")]
+    /// A Soketto connection error (websockets)
+    Connection(soketto::connection::Error),
+
+    #[cfg(feature = "ws")]
+    /// A Soketto error, with status code (websockets)
+    CannotConnect {
+        /// The status code
+        status_code: u16,
+    },
 }
 
 impl std::fmt::Display for Error {
@@ -39,6 +56,19 @@ impl std::fmt::Display for Error {
             Self::TimedOut => write!(f, "your connection timed out"),
             Self::ShouldReconnect => write!(f, "you should reconnect. Twitch restarted the server"),
             Self::UnexpectedEof => write!(f, "reached an unexpected EOF"),
+
+            Error::Eof => f.write_str("reach an expected EOF"),
+
+            #[cfg(feature = "ws")]
+            Error::Handshake(err) => write!(f, "soketto handshake error: {}", err),
+
+            #[cfg(feature = "ws")]
+            Error::Connection(err) => write!(f, "soketto connection error: {}", err),
+
+            #[cfg(feature = "ws")]
+            Error::CannotConnect { status_code } => {
+                write!(f, "soketto error, status code: {}", status_code)
+            }
         }
     }
 }
@@ -49,6 +79,10 @@ impl std::error::Error for Error {
             Self::Io(err) => Some(err),
             Self::InvalidUtf8(err) => Some(err),
             Self::ParsingFailure(err) => Some(err),
+            #[cfg(feature = "ws")]
+            Self::Handshake(err) => Some(err),
+            #[cfg(feature = "ws")]
+            Self::Connection(err) => Some(err),
             _ => None,
         }
     }
@@ -74,5 +108,19 @@ impl From<std::io::Error> for Error {
 impl From<MessageError> for Error {
     fn from(err: MessageError) -> Self {
         Self::ParsingFailure(err)
+    }
+}
+
+#[cfg(feature = "ws")]
+impl From<soketto::handshake::Error> for Error {
+    fn from(err: soketto::handshake::Error) -> Self {
+        Self::Handshake(err)
+    }
+}
+
+#[cfg(feature = "ws")]
+impl From<soketto::connection::Error> for Error {
+    fn from(err: soketto::connection::Error) -> Self {
+        Self::Connection(err)
     }
 }

@@ -47,7 +47,14 @@ impl<'a> FromIrcMessage<'a> for Cap<'a> {
         msg.expect_command(IrcMessage::CAP)?;
 
         let this = Self {
-            capability: msg.expect_data_index()?,
+            // See: https://github.com/museun/twitchchat/issues/164#issuecomment-712095586
+            // "* ACK :cap"
+            capability: match msg.data {
+                Some(index) => index,
+                // "* ACK cap"
+                None => msg.expect_arg_index(2)?,
+            },
+            // capability: msg.expect_data_index()?,
             acknowledged: msg.expect_arg(1)? == ACK,
             raw: msg.raw,
         };

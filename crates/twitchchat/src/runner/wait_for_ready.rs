@@ -145,7 +145,7 @@ pub async fn wait_until_ready<IO>(
     user_config: &UserConfig,
 ) -> Result<(Identity, Vec<IrcMessage<'static>>), Error>
 where
-    IO: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
+    IO: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
     let mut missed_messages = Vec::new();
 
@@ -178,7 +178,10 @@ where
 }
 }
 
-fn check_message(msg: &IrcMessage<'_>, state: &mut ReadyState) -> Result<StepState, Error> {
+pub(crate) fn check_message(
+    msg: &IrcMessage<'_>,
+    state: &mut ReadyState,
+) -> Result<StepState, Error> {
     const FAILURE: &str = "Login authentication failed";
 
     use crate::{
@@ -301,23 +304,23 @@ fn check_message(msg: &IrcMessage<'_>, state: &mut ReadyState) -> Result<StepSta
     }
 }
 
-enum StepState {
+pub(crate) enum StepState {
     Skip,
     Continue,
     ShouldPong(String),
     Identity(Identity),
 }
 
-struct ReadyState {
-    looking_for: HashSet<Capability>,
-    caps: Capabilities,
-    our_name: Option<String>,
-    is_anonymous: bool,
-    will_be_getting_global_user_state_hopefully: bool,
+pub(crate) struct ReadyState {
+    pub(crate) looking_for: HashSet<Capability>,
+    pub(crate) caps: Capabilities,
+    pub(crate) our_name: Option<String>,
+    pub(crate) is_anonymous: bool,
+    pub(crate) will_be_getting_global_user_state_hopefully: bool,
 }
 
 impl ReadyState {
-    fn new(user_config: &UserConfig) -> Self {
+    pub(crate) fn new(user_config: &UserConfig) -> Self {
         let is_anonymous = user_config.is_anonymous();
 
         let will_be_getting_global_user_state_hopefully =

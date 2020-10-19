@@ -37,7 +37,7 @@ where
 
 impl<W> Write for AsyncEncoder<W>
 where
-    W: Write + Send + Sync,
+    W: Write + Send,
 {
     fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
         self.writer.write(buf)
@@ -50,12 +50,12 @@ where
 
 impl<W> AsyncEncoder<W>
 where
-    W: Write + Send + Sync,
+    W: Write + Send,
 {
     /// If the wrapped writer is synchronous, you can use this method to encode the message to it.
     pub fn encode_sync<M>(&mut self, msg: M) -> IoResult<()>
     where
-        M: Encodable + Send + Sync,
+        M: Encodable + Send,
     {
         msg.encode(&mut self.data)?;
         let data = &self.data[self.pos..];
@@ -71,7 +71,7 @@ where
 
 impl<W> AsyncEncoder<W>
 where
-    W: AsyncWrite + Send + Sync + Unpin,
+    W: AsyncWrite + Send + Unpin,
 {
     /// Create a new Encoder over this [`futures_io::AsyncWrite`][write] instance
     ///
@@ -105,7 +105,7 @@ where
     /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
-        M: Encodable + Send + Sync,
+        M: Encodable + Send,
         W: Unpin,
     {
         msg.encode(&mut self.data)?;
@@ -139,7 +139,7 @@ where
 
 impl<W> AsyncWrite for AsyncEncoder<W>
 where
-    W: AsyncWrite + Unpin + Send + Sync,
+    W: AsyncWrite + Unpin + Send,
 {
     fn poll_write(
         mut self: Pin<&mut Self>,
