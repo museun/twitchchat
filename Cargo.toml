@@ -1,6 +1,12 @@
 [workspace]
 members = [
-    "crates/*",
+    "twitchchat",
+    "twitchchat_async_io",
+    "twitchchat_async_net",
+    "twitchchat_async_std",
+    "twitchchat_smol",
+    "twitchchat_tokio",
+    "twitchchat_tokio02",
     
     # internal crates
     "examples"
