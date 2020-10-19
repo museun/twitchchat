@@ -1,4 +1,4 @@
-cfg_async! {
+// cfg_async! {
 use std::{
     io::{Result as IoResult, Write},
     pin::Pin,
@@ -6,6 +6,8 @@ use std::{
 };
 
 use futures_lite::{AsyncWrite, AsyncWriteExt};
+
+use crate::Encodable;
 
 /// An asynchronous encoder.
 pub struct AsyncEncoder<W> {
@@ -53,7 +55,7 @@ where
     /// If the wrapped writer is synchronous, you can use this method to encode the message to it.
     pub fn encode_sync<M>(&mut self, msg: M) -> IoResult<()>
     where
-        M: crate::Encodable + Send + Sync,
+        M: Encodable + Send + Sync,
     {
         msg.encode(&mut self.data)?;
         let data = &self.data[self.pos..];
@@ -71,7 +73,9 @@ impl<W> AsyncEncoder<W>
 where
     W: AsyncWrite + Send + Sync + Unpin,
 {
-    /// Create a new Encoder over this [futures_lite::AsyncWrite] instance
+    /// Create a new Encoder over this [`futures_io::AsyncWrite`][write] instance
+    ///
+    /// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
     pub fn new(writer: W) -> Self {
         Self {
             writer,
@@ -80,9 +84,11 @@ where
         }
     }
 
-    /// Get the inner [futures_lite::AsyncWrite] instance out
+    /// Get the inner [`futures_io::AsyncWrite`][write] instance out
     ///
     /// This writes and flushes any buffered data before it consumes self.
+    ///
+    /// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
     pub async fn into_inner(mut self) -> IoResult<W> {
         if self.data.is_empty() {
             return Ok(self.writer);
@@ -94,12 +100,12 @@ where
         Ok(self.writer)
     }
 
-    /// Encode this [Encodable](crate::Encodable) message to the writer.
+    /// Encode this [`Encodable`] message to the writer.
     ///
     /// This flushes the data before returning
     pub async fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
-        M: crate::Encodable + Send + Sync,
+        M: Encodable + Send + Sync,
         W: Unpin,
     {
         msg.encode(&mut self.data)?;
@@ -111,6 +117,23 @@ where
         self.data.clear();
         self.pos = 0;
         Ok(())
+    }
+
+    // TODO make this stateful
+
+    /// Join a `channel`
+    pub async fn join(&mut self, channel: &str) -> IoResult<()> {
+        self.encode(crate::commands::join(channel)).await
+    }
+
+    /// Leave a `channel`
+    pub async fn part(&mut self, channel: &str) -> IoResult<()> {
+        self.encode(crate::commands::part(channel)).await
+    }
+
+    /// Send a message to a channel
+    pub async fn privmsg(&mut self, channel: &str, data: &str) -> IoResult<()> {
+        self.encode(crate::commands::privmsg(channel, data)).await
     }
 }
 
@@ -166,4 +189,4 @@ mod tests {
         futures_lite::future::block_on(fut);
     }
 }
-}
+// }

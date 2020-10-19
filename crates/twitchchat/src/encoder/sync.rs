@@ -16,23 +16,38 @@ impl<W> Encoder<W>
 where
     W: Write,
 {
-    /// Create a new Encoder over this [std::io::Write] instance
+    /// Create a new Encoder over this [`std::io::Write`] instance
     pub fn new(writer: W) -> Self {
         Self { writer }
     }
 
-    /// Get the inner [std::io::Write] instance out
+    /// Get the inner [`std::io::Write`] instance out
     pub fn into_inner(self) -> W {
         self.writer
     }
 
-    /// Encode this [Encodable] message to the writer and flushes it.
+    /// Encode this [`Encodable`] message to the writer and flushes it.
     pub fn encode<M>(&mut self, msg: M) -> IoResult<()>
     where
         M: Encodable,
     {
         msg.encode(&mut self.writer)?;
         self.writer.flush()
+    }
+
+    /// Join a `channel`
+    pub fn join(&mut self, channel: &str) -> IoResult<()> {
+        self.encode(crate::commands::join(channel))
+    }
+
+    /// Leave a `channel`
+    pub fn part(&mut self, channel: &str) -> IoResult<()> {
+        self.encode(crate::commands::part(channel))
+    }
+
+    /// Send a message to a channel
+    pub fn privmsg(&mut self, channel: &str, data: &str) -> IoResult<()> {
+        self.encode(crate::commands::privmsg(channel, data))
     }
 }
 

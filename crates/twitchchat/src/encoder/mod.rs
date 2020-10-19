@@ -19,8 +19,8 @@
 //! ```
 //!
 //! ## Using an Encoder
-//! This crate provides composable types (Writers/Encoders) which can be used with the [Encodable](crate::Encodable) trait.
-//! The types come in both `Sync` and `Async` styles.
+//! This crate provides composable types which can be used with the [Encodable](crate::Encodable) trait.
+//! The types come in both ***sync*** and ***async*** styles.
 //!
 //! ```
 //! use twitchchat::commands;
@@ -39,8 +39,8 @@
 
 cfg_async! {
     mod r#async;
-    pub use r#async::*;
+    pub use r#async::AsyncEncoder;
 }
 
 mod sync;
-pub use sync::*;
+pub use sync::Encoder;

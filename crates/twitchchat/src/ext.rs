@@ -1,5 +1,5 @@
-use crate::{messages::Privmsg, Encodable};
-use std::io::Write;
+use crate::{commands, messages::Privmsg, Encodable};
+use std::io::{Error, ErrorKind, Write};
 
 /// Extensions to the `Privmsg` message type
 pub trait PrivmsgExt {
@@ -10,18 +10,32 @@ pub trait PrivmsgExt {
     fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()>;
 }
 
-impl<'a, W> PrivmsgExt for W
+impl PrivmsgExt for crate::writer::MpscWriter {
+    fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
+        let cmd = commands::reply(
+            msg.channel(),
+            msg.tags().get("id").ok_or_else(|| {
+                Error::new(ErrorKind::PermissionDenied, "you must have `TAGS` enabled")
+            })?,
+            data,
+        );
+        self.send(cmd)
+    }
+
+    fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
+        self.send(commands::privmsg(msg.channel(), data))
+    }
+}
+
+impl<W> PrivmsgExt for W
 where
     W: Write + Sized,
 {
     fn reply(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
-        let cmd = crate::commands::reply(
+        let cmd = commands::reply(
             msg.channel(),
             msg.tags().get("id").ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::PermissionDenied,
-                    "you must have `TAGS` enabled",
-                )
+                Error::new(ErrorKind::PermissionDenied, "you must have `TAGS` enabled")
             })?,
             data,
         );
@@ -30,8 +44,7 @@ where
     }
 
     fn say(&mut self, msg: &Privmsg<'_>, data: &str) -> std::io::Result<()> {
-        let cmd = crate::commands::privmsg(msg.channel(), data);
-        cmd.encode(self)?;
+        commands::privmsg(msg.channel(), data).encode(self)?;
         self.flush()
     }
 }

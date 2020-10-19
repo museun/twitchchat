@@ -1,12 +1,12 @@
 //! Decoding utilities.
 //!
-//! A decoder lets you decode messages from an [std::io::Read] (or [futures_lite::AsyncRead] for async) in either an iterative fashion, or one-by-one.
+//! A decoder lets you decode messages from an [`std::io::Read`] (or [`futures_io::AsyncRead`][read] for async) in either an iterative fashion, or one-by-one.
 //!
-//! When not using the Iterator (or Stream), you'll get a borrowed message from the reader that is valid until the next read.
+//! When not using the [`std::iter::Iterator`] (or [`futures_core::Stream`][stream]), you'll get a borrowed message from the reader that is valid until the next read.
 //!
-//! With the Iterator (or Stream) interface, it'll return an owned messages.
+//! With the `std::iter::Iterator` (or `futures_core::Stream`) interface, it'll return an owned messages.
 //!
-//! This crate provides both 'Sync' (Iterator based) and 'Async' (Stream based) decoding.
+//! This crate provides both ***sync*** (`std::iter::Iterator` based) and ***async*** (`futures_core::Stream` based) decoding.
 //! * sync: [Decoder]
 //! * async: [AsyncDecoder]
 //!
@@ -44,11 +44,17 @@
 //!     let msg: twitchchat::IrcMessage<'static> = msg.unwrap();
 //! }
 //! ```
+//!
+//! [stream]: https://docs.rs/futures-core/0.3.6/futures_core/stream/trait.Stream.html
+//! [read]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncRead.html
+
+mod error;
+pub use error::DecodeError;
 
 cfg_async! {
     mod r#async;
-    pub use r#async::*;
+    pub use r#async::AsyncDecoder;
 }
 
 mod sync;
-pub use sync::*;
+pub use sync::Decoder;

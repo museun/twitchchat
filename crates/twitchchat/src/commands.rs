@@ -4,12 +4,9 @@
 //!
 //! The [functions][functions] in this module produce borrowed types in the [`types`][types] module. You can store the [`types`][types] for multiple encodings.
 //!
-//! ### Some provided encoders:
-//! * [`Encoder`](../struct.Encoder.html)
-//!
 //! [functions]: ./index.html#functions
 //! [types]: ./types/index.html
-//! [encodable]: ./trait.Encodable.html
+//! [encodable]: crate::encodable::Encodable
 pub(crate) use super::Encodable;
 
 macro_rules! write_cmd {
@@ -104,9 +101,6 @@ export_commands! {
 }
 
 macro_rules! serde_for_commands {
-    (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_for_commands!(@one $e)),*]); };
-
     ($($ty:ident { $($field:ident),* $(,)?});* $(;)?) => {
         $(
             #[cfg(feature = "serde")]
@@ -122,8 +116,7 @@ macro_rules! serde_for_commands {
                     self.encode(&mut data).map_err(Error::custom)?;
                     let raw = std::str::from_utf8(&data).map_err(Error::custom)?;
 
-                    let len = serde_for_commands!(@len $($field),*);
-
+                    let len = count_it!($($field)*);
                     let mut s = serializer.serialize_struct(stringify!($ty), std::cmp::max(len, 1))?;
                     s.serialize_field("raw", raw)?;
                     $( s.serialize_field(stringify!($field), &self.$field)?; )*

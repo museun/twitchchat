@@ -1,6 +1,14 @@
 #![allow(dead_code)]
 use anyhow::Context as _;
-use twitchchat::{messages, AsyncRunner, Status, UserConfig};
+
+use futures_lite::StreamExt;
+use twitchchat::{
+    messages,
+    messages::Commands,
+    runner::{Activity, ActivitySender},
+    writer::MpscWriter,
+    BoxedAsyncDecoder, FromIrcMessage, UserConfig,
+};
 
 // some helpers for the demo
 fn get_env_var(key: &str) -> anyhow::Result<String> {
@@ -34,28 +42,22 @@ pub fn channels_to_join() -> anyhow::Result<Vec<String>> {
 }
 
 // a 'main loop'
-pub async fn main_loop(mut runner: AsyncRunner) -> anyhow::Result<()> {
-    loop {
-        match runner.next_message().await? {
-            // this is the parsed message -- across all channels (and notifications from Twitch)
-            Status::Message(msg) => {
-                handle_message(msg).await;
-            }
+pub async fn main_loop(
+    mut decoder: BoxedAsyncDecoder,
+    _writer: MpscWriter,
+    activity: ActivitySender,
+) {
+    while let Some(Ok(msg)) = decoder.next().await {
+        // send a copy of the message to the activity tracker
+        activity.message(Activity::Message(msg.clone()));
 
-            // you signaled a quit
-            Status::Quit => {
-                println!("we signaled we wanted to quit");
-                break;
-            }
-            // the connection closed normally
-            Status::Eof => {
-                println!("we got a 'normal' eof");
-                break;
-            }
-        }
+        // you can parse it into various message types
+        // or just the 'Commands' catch all
+        let msg = Commands::from_irc(msg)
+            .expect("this can only fail if you're parsing your own messages");
+
+        handle_message(msg).await;
     }
-
-    Ok(())
 }
 
 // you can generally ignore the lifetime for these types.

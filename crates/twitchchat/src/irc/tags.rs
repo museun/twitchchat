@@ -20,7 +20,7 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 
 impl<'a> Tags<'a> {
     /// Build the tags view from this borrowed `MaybeOwned` and an associated `TagIndices`
-    pub fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
+    pub const fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
         Self { data, indices }
     }
 
@@ -30,12 +30,12 @@ impl<'a> Tags<'a> {
     }
 
     /// Returns how many tags were parsed
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.indices.len()
     }
 
     /// Returns whether there are any tags
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
@@ -145,7 +145,7 @@ impl<'a> Tags<'a> {
     }
 
     /// Get an iterator over all of the `key, value` pairs of tags
-    pub fn iter(&self) -> TagsIter<'_> {
+    pub const fn iter(&self) -> TagsIter<'_> {
         TagsIter {
             inner: self,
             pos: 0,
@@ -165,7 +165,7 @@ impl<'a> IntoIterator for &'a Tags<'a> {
     }
 }
 
-/// An iterator over the [Tags]
+/// An iterator over the [`Tags`]
 #[derive(Clone)]
 pub struct TagsIter<'a> {
     inner: &'a Tags<'a>,

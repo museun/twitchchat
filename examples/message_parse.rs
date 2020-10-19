@@ -81,8 +81,8 @@ fn parse_demo() {
     assert_eq!(msg.tags().get_parsed::<_, i32>("key3").unwrap(), 42);
 
     // you can convert a parsed message into an Commands easily by using From/Into;
-    let all: messages::Commands<'_> = msg_b.into();
-    assert!(matches!(all, messages::Commands::Raw{..}));
+    let all: messages::Commands<'_> = msg.into();
+    assert!(matches!(all, messages::Commands::Privmsg{..}));
 }
 
 fn decoder_demo() {

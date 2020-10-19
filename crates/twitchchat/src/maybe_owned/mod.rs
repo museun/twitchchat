@@ -28,12 +28,12 @@ pub enum MaybeOwned<'a> {
 
 impl<'a> MaybeOwned<'a> {
     /// Checks whether this type is in the `Owned` state
-    pub fn is_owned(&self) -> bool {
+    pub const fn is_owned(&self) -> bool {
         !self.is_borrowed()
     }
 
     /// Checks whether this type is in the `Borrowed` state
-    pub fn is_borrowed(&self) -> bool {
+    pub const fn is_borrowed(&self) -> bool {
         matches!(self, Self::Borrowed{..})
     }
 }

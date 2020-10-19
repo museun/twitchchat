@@ -14,12 +14,12 @@ impl<'a> std::fmt::Debug for Prefix<'a> {
 
 impl<'a> Prefix<'a> {
     /// Was this message from the server?
-    pub fn is_server(&self) -> bool {
+    pub const fn is_server(&self) -> bool {
         !self.is_user()
     }
 
     /// Was this message from a user?
-    pub fn is_user(&self) -> bool {
+    pub const fn is_user(&self) -> bool {
         matches!(self.index, PrefixIndex::User{ .. })
     }
 
@@ -51,17 +51,17 @@ pub enum PrefixIndex {
 
 impl PrefixIndex {
     /// Was this message from the server?
-    pub fn is_server(&self) -> bool {
+    pub const fn is_server(&self) -> bool {
         !self.is_nick()
     }
 
     /// Was this message from a user?
-    pub fn is_nick(&self) -> bool {
+    pub const fn is_nick(&self) -> bool {
         matches!(self, Self::User{ .. })
     }
 
     /// Get the index of the nickname
-    pub fn nick_index(self) -> Option<MaybeOwnedIndex> {
+    pub const fn nick_index(self) -> Option<MaybeOwnedIndex> {
         match self {
             Self::User { nick } => Some(nick),
             Self::Server { .. } => None,
@@ -69,7 +69,7 @@ impl PrefixIndex {
     }
 
     /// Get the index of the hostname
-    pub fn host_index(self) -> Option<MaybeOwnedIndex> {
+    pub const fn host_index(self) -> Option<MaybeOwnedIndex> {
         match self {
             Self::Server { host } => Some(host),
             Self::User { .. } => None,
@@ -77,7 +77,7 @@ impl PrefixIndex {
     }
 
     /// Consumes this returning the index
-    pub fn as_index(self) -> MaybeOwnedIndex {
+    pub const fn as_index(self) -> MaybeOwnedIndex {
         match self {
             Self::User { nick } => nick,
             Self::Server { host } => host,

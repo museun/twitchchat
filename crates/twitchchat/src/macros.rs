@@ -9,10 +9,13 @@ macro_rules! into_owned {
     };
 }
 
-macro_rules! serde_struct {
-    (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]); };
+macro_rules! count_it {
+    () => { 0 };
+    ($head:tt $($x:tt $xs:tt)*) => { (count_it!($($x)*) << 1) | 1 };
+    ($($x:tt $tail:tt)*) => { count_it!($($x)*) << 1 };
+}
 
+macro_rules! serde_struct {
     ($ty:ident { $($field:ident),* $(,)? }) => {
         #[cfg(feature = "serde")]
         impl<'a> ::serde::Serialize for $ty<'a> {
@@ -21,7 +24,7 @@ macro_rules! serde_struct {
                 S: ::serde::Serializer,
             {
                 use ::serde::ser::SerializeMap as _;
-                let len = serde_struct!(@len $($field),*);
+                let len = count_it!($($field)*);
                 let mut s = serializer.serialize_map(Some(len))?;
                 $( s.serialize_entry(stringify!($field), &self.$field())?; )*
                 s.end()
@@ -78,7 +81,7 @@ macro_rules! into_inner_raw {
 macro_rules! tags {
     () => {
         /// Get a view of parsable tags
-        pub fn tags(&self) -> $crate::irc::Tags<'_> {
+        pub const fn tags(&self) -> $crate::irc::Tags<'_> {
             Tags {
                 data: &self.raw,
                 indices: &self.tags,

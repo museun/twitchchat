@@ -15,9 +15,7 @@ They are presented (to the irc connection) in a `id:range1,range2/id2:range1,..`
 pub struct Emotes {
     /// This emote id, e.g. `Kappa = 25`    
     pub id: usize,
-    /// A list of [Range] in the message where this emote is found
-    ///
-    /// [Range]: https://doc.rust-lang.org/std/ops/struct.Range.html
+    /// A list of [`std::ops::Range`] in the message where this emote is found
     pub ranges: Vec<Range<u16>>,
 }
 
@@ -39,13 +37,11 @@ impl Emotes {
     }
 }
 
-#[inline]
 fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
     let mut split = input.split_terminator(sep);
     (split.next()?, split.next()?).into()
 }
 
-#[inline]
 fn get_ranges(tail: &str) -> impl Iterator<Item = Range<u16>> + '_ {
     tail.split_terminator(',')
         .filter_map(|s| get_parts(s, '-'))

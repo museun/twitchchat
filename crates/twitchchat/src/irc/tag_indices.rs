@@ -69,12 +69,12 @@ impl TagIndices {
     }
 
     /// Get the number of parsed tags
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.map.len()
     }
 
     /// Checks whether any tags were parsed
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
 

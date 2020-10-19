@@ -6,7 +6,7 @@ publish = false
 
 
 [dev-dependencies]
-twitchchat = { version = "0.14", path = "../crates/twitchchat", features = ["async"] }
+twitchchat = { version = "0.14", path = "../crates/twitchchat", features = ["async", "writer"] }
 
 twitchchat_async_io  = { version = "0.1", path = "../crates/twitchchat_async_io" }
 twitchchat_async_net = { version = "0.1", path = "../crates/twitchchat_async_net" }
@@ -26,7 +26,7 @@ async-std = { version = "1.6.5", features = ["attributes"] }
 smol      = "1.2.4"
 async-net = "1.4.7"
 async-io  = "1.1.10"
-
+flume     = { version = "0.9.1", features = ["async"], default-features = false }
 
 [[example]]
 name = "message_parse"
@@ -35,6 +35,10 @@ path = "message_parse.rs"
 [[example]]
 name = "smol_demo"
 path = "smol_demo.rs"
+
+[[example]]
+name = "async_net_demo"
+path = "async_net_demo.rs"
 
 [[example]]
 name = "async_io_demo"

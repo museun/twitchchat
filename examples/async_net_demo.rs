@@ -19,9 +19,9 @@ async fn connect(
     user_config: &UserConfig,
     channels: &[String],
 ) -> anyhow::Result<(BoxedAsyncDecoder, BoxedAsyncEncoder)> {
-    // create a connector using ``tokio``, this connects to Twitch.
+    // create a connector using ``async_io``, this connects to Twitch.
     // you can provide a different address with `connect_custom`
-    let mut stream = twitchchat_tokio::connect_twitch().await?;
+    let mut stream = twitchchat_async_net::connect_twitch().await?;
     println!("we're connecting!");
 
     // this method will block until you're ready
@@ -50,7 +50,7 @@ async fn connect(
 
 async fn do_some_stuff(writer: MpscWriter, channels: Vec<String>) {
     println!("in 10 seconds we'll exit");
-    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+    async_io::Timer::after(std::time::Duration::from_secs(10)).await;
 
     // send one final message to all channels
     for channel in channels {
@@ -62,18 +62,24 @@ async fn do_some_stuff(writer: MpscWriter, channels: Vec<String>) {
     writer.shutdown().await;
 }
 
-fn setup_idle_detection(writer: MpscWriter) -> ActivitySender {
+fn setup_idle_detection(
+    executor: &async_executor::Executor<'_>,
+    writer: MpscWriter,
+) -> ActivitySender {
     let (activity, input) = Activity::pair();
     let (tx, rx) = flume::unbounded();
     // spawn off the idle detection loop
-    tokio::spawn(idle_detection_loop(input, tx));
+    executor.spawn(idle_detection_loop(input, tx)).detach();
     // and set up the responder loop
-    tokio::spawn(respond_to_idle_events(writer, rx));
+    executor.spawn(respond_to_idle_events(writer, rx)).detach();
     // and return the handle for interaction with the loop
     activity
 }
 
 async fn start(user_config: &UserConfig, channels: Vec<String>) -> anyhow::Result<()> {
+    // any executor would work, we'll use async_executor so can spawn tasks
+    let executor = async_executor::Executor::new();
+
     // connect and join the provided channels
     let (decoder, encoder) = connect(&user_config, &channels).await?;
 
@@ -81,7 +87,9 @@ async fn start(user_config: &UserConfig, channels: Vec<String>) -> anyhow::Resul
     let writer = MpscWriter::from_async_encoder(encoder);
 
     // spawn something off in the background that'll exit in 10 seconds
-    tokio::spawn(do_some_stuff(writer.clone(), channels.clone()));
+    executor
+        .spawn(do_some_stuff(writer.clone(), channels.clone()))
+        .detach();
 
     // you can encode all sorts of 'commands'
     for channel in &channels {
@@ -89,7 +97,7 @@ async fn start(user_config: &UserConfig, channels: Vec<String>) -> anyhow::Resul
     }
 
     // you can set up idle detection, as well
-    let activity = setup_idle_detection(writer.clone());
+    let activity = setup_idle_detection(&executor, writer.clone());
 
     // and then start 'main' loop
     println!("starting main loop");
@@ -98,13 +106,13 @@ async fn start(user_config: &UserConfig, channels: Vec<String>) -> anyhow::Resul
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     // create a user configuration
     let user_config = get_user_config()?;
     // get some channels to join from the environment
     let channels = channels_to_join()?;
 
     // and start it
-    start(&user_config, channels).await
+    let fut = start(&user_config, channels);
+    futures_lite::future::block_on(fut)
 }

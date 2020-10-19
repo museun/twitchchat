@@ -1,7 +1,8 @@
-cfg_async! {
-use crate::{irc::IrcMessage, IntoOwned,DecodeError};
+// cfg_async! {
+use crate::{irc::IrcMessage, DecodeError, IntoOwned};
 
 use std::{
+    collections::VecDeque,
     future::Future,
     pin::Pin,
     task::{Context, Poll},
@@ -9,14 +10,26 @@ use std::{
 
 use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, Stream};
 
-/// A decoder over [futures_lite::AsyncRead] that produces [IrcMessage]s
+/// A decoder over [`futures_io::AsyncRead`][write] that produces [`IrcMessage`]s
 ///
-/// This will return an [DecodeError::Eof] when its done reading manually.
+/// This will return an [`DecodeError::Eof`] when its done reading manually.
 ///
 /// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
+///
+/// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
 pub struct AsyncDecoder<R> {
     reader: AsyncBufReader<R>,
     buf: Vec<u8>,
+    back_queue: VecDeque<IrcMessage<'static>>,
+}
+
+impl<R> Extend<IrcMessage<'static>> for AsyncDecoder<R> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = IrcMessage<'static>>,
+    {
+        self.back_queue.extend(iter)
+    }
 }
 
 impl<R> std::fmt::Debug for AsyncDecoder<R> {
@@ -26,20 +39,27 @@ impl<R> std::fmt::Debug for AsyncDecoder<R> {
 }
 
 impl<R: AsyncRead + Send + Sync + Unpin> AsyncDecoder<R> {
-    /// Create a new AsyncDecoder from this [futures_lite::AsyncRead] instance
+    /// Create a new [`AsyncDecoder`] from this [`futures_io::AsyncRead`][read] instance
+    ///
+    /// [read]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncRead.html
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
             buf: Vec::with_capacity(1024),
+            back_queue: VecDeque::new(),
         }
     }
 
     /// Read the next message.
     ///
-    /// This returns a borrowed [IrcMessage] which is valid until the next AsyncDecoder call is made.
+    /// This returns a borrowed [`IrcMessage`] which is valid until the next [`AsyncDecoder`] call is made.
     ///
-    /// If you just want an owned one, use the [AsyncDecoder] as an stream. e.g. dec.next().
+    /// If you just want an owned one, use the [`AsyncDecoder`] as an stream. e.g. dec.next().
     pub async fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
+        if let Some(msg) = self.back_queue.pop_front() {
+            return Ok(msg);
+        }
+
         self.buf.clear();
         let n = self
             .reader
@@ -78,11 +98,17 @@ where
         let fut = this.read_message();
         futures_lite::pin!(fut);
 
-        match futures_lite::ready!(fut.poll(cx)) {
-            Err(DecodeError::Eof) => Poll::Ready(None),
-            Ok(msg) => Poll::Ready(Some(Ok(msg.into_owned()))),
-            Err(err) => Poll::Ready(Some(Err(err))),
-        }
+        let res = match futures_lite::ready!(fut.poll(cx)) {
+            Err(DecodeError::Eof) => None,
+            Err(DecodeError::Io(err)) if crate::util::is_blocking_error(&err) => {
+                cx.waker().wake_by_ref();
+                return Poll::Pending;
+            }
+            Ok(msg) => Some(Ok(msg.into_owned())),
+            Err(err) => Some(Err(err)),
+        };
+
+        Poll::Ready(res)
     }
 }
 
@@ -122,4 +148,4 @@ mod tests {
         futures_lite::future::block_on(fut);
     }
 }
-}
+// }

@@ -1,50 +1,29 @@
-use crate::{IntoOwned as _, IrcMessage, MessageError};
-use std::io::{BufRead, BufReader, Read};
+use crate::{DecodeError, IntoOwned as _, IrcMessage};
 
-/// An error produced by a Decoder.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum DecodeError {
-    /// An I/O error occurred
-    Io(std::io::Error),
-    /// Invalid UTf-8 was read.
-    InvalidUtf8(std::str::Utf8Error),
-    /// Could not parse the IRC message
-    ParseError(MessageError),
-    /// EOF was reached
-    Eof,
-}
+use std::{
+    collections::VecDeque,
+    io::{BufRead, BufReader, Read},
+};
 
-impl std::fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Io(err) => write!(f, "io error: {}", err),
-            Self::InvalidUtf8(err) => write!(f, "invalid utf8: {}", err),
-            Self::ParseError(err) => write!(f, "parse error: {}", err),
-            Self::Eof => f.write_str("end of file reached"),
-        }
-    }
-}
-
-impl std::error::Error for DecodeError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Io(err) => Some(err),
-            Self::InvalidUtf8(err) => Some(err),
-            Self::ParseError(err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
-/// A decoder over [std::io::Read] that produces [IrcMessage]s
+/// A decoder over [`std::io::Read`] that produces [`IrcMessage`]s
 ///
-/// This will return an [DecodeError::Eof] when reading manually.
+/// This will return an [`DecodeError::Eof`] when reading manually.
 ///
 /// When reading it as a iterator, `Eof` will signal the end of the iterator (e.g. `None`)
 pub struct Decoder<R> {
+    // TODO don't use this. it'll be bad with a non-blocking stream
     reader: BufReader<R>,
     buf: Vec<u8>,
+    back_queue: VecDeque<IrcMessage<'static>>,
+}
+
+impl<R> Extend<IrcMessage<'static>> for Decoder<R> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = IrcMessage<'static>>,
+    {
+        self.back_queue.extend(iter)
+    }
 }
 
 impl<R> std::fmt::Debug for Decoder<R> {
@@ -57,20 +36,25 @@ impl<R> Decoder<R>
 where
     R: Read,
 {
-    /// Create a new Decoder from this [std::io::Read] instance
+    /// Create a new Decoder from this [`std::io::Read`] instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: BufReader::new(reader),
             buf: Vec::with_capacity(1024),
+            back_queue: VecDeque::new(),
         }
     }
 
     /// Read the next message.
     ///
-    /// This returns a borrowed [IrcMessage] which is valid until the next Decoder call is made.
+    /// This returns a borrowed [`IrcMessage`] which is valid until the next Decoder call is made.
     ///
-    /// If you just want an owned one, use the [Decoder] as an iterator. e.g. dec.next().
+    /// If you just want an owned one, use the [`Decoder`] as an iterator. e.g. dec.next().
     pub fn read_message(&mut self) -> Result<IrcMessage<'_>, DecodeError> {
+        if let Some(msg) = self.back_queue.pop_front() {
+            return Ok(msg);
+        }
+
         self.buf.clear();
         let n = self
             .reader
@@ -106,10 +90,16 @@ impl<R: Read> Iterator for Decoder<R> {
     type Item = Result<IrcMessage<'static>, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.read_message() {
-            Err(DecodeError::Eof) => None,
-            Ok(msg) => Some(Ok(msg.into_owned())),
-            Err(err) => Some(Err(err)),
+        loop {
+            break match self.read_message() {
+                Ok(msg) => Some(Ok(msg.into_owned())),
+                Err(DecodeError::Eof) => None,
+
+                // block until we get a message
+                Err(DecodeError::Io(err)) if crate::util::is_blocking_error(&err) => continue,
+
+                Err(err) => Some(Err(err)),
+            };
         }
     }
 }

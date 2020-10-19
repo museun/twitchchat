@@ -1,3 +1,18 @@
+#[derive(Debug)]
+#[non_exhaustive]
+/// An error returned by [`std::str::FromStr`] for [`Capability`]
+pub struct CapabilityParseError {
+    cap: String,
+}
+
+impl std::fmt::Display for CapabilityParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "unknown capability: {}", self.cap.escape_debug())
+    }
+}
+
+impl std::error::Error for CapabilityParseError {}
+
 /// Capability used to enable extra functionality with the protocol
 ///
 /// Without any of these specified, you will just able to read/write basic messages
@@ -28,17 +43,26 @@ impl Capability {
             Self::Commands => "CAP REQ :twitch.tv/commands",
         }
     }
+}
 
-    /// Attempts to 'parse' this capability from a string
+impl std::str::FromStr for Capability {
+    type Err = CapabilityParseError;
+
+    /// Currently only these caps are supported:
     ///
-    /// This will take the form of `twitch.tv/$tag` and produce a [Capability]
-    #[allow(dead_code)]
-    pub(crate) fn maybe_from_str(input: &str) -> Option<Self> {
-        match input {
-            "twitch.tv/membership" => Some(Self::Membership),
-            "twitch.tv/tags" => Some(Self::Tags),
-            "twitch.tv/commands" => Some(Self::Commands),
-            _ => None,
-        }
+    /// * "twitch.tv/membership"
+    /// * "twitch.tv/tags"
+    /// * "twitch.tv/commands"
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let this = match input {
+            "twitch.tv/membership" => Self::Membership,
+            "twitch.tv/tags" => Self::Tags,
+            "twitch.tv/commands" => Self::Commands,
+            cap => {
+                let cap = cap.to_string();
+                return Err(CapabilityParseError { cap });
+            }
+        };
+        Ok(this)
     }
 }

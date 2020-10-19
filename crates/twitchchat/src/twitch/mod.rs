@@ -1,7 +1,7 @@
 //! Common Twitch types
 
 mod capability;
-pub use capability::Capability;
+pub use capability::{Capability, CapabilityParseError};
 
 mod userconfig;
 pub use userconfig::{UserConfig, UserConfigBuilder, UserConfigError};

@@ -1,4 +1,5 @@
-#[allow(dead_code)]
+use std::sync::{Arc, Mutex};
+
 pub fn timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -6,178 +7,45 @@ pub fn timestamp() -> u64 {
         .as_secs()
 }
 
-cfg_async! {
-use futures_lite::future::{ready, Ready};
-use std::{
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
-
-// TODO if we make this clonable it can be used in the Writers
-pub struct Notify {
-    rx: crate::channel::Receiver<()>,
-    triggered: bool,
+/// Determines whether this error is a blocking error
+pub fn is_blocking_error(err: &std::io::Error) -> bool {
+    use std::io::ErrorKind::*;
+    matches!(err.kind(), WouldBlock | Interrupted | TimedOut)
 }
 
-impl std::fmt::Debug for Notify {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Notify").finish()
-    }
-}
-
-impl Notify {
-    pub fn new() -> (Self, NotifyHandle) {
-        let (tx, rx) = crate::channel::bounded(1);
-        let this = Self {
-            rx,
-            triggered: false,
-        };
-        (this, NotifyHandle { tx })
-    }
-
-    pub async fn wait(&mut self) {
-        // cache the wait
-        if self.triggered {
-            return;
-        }
-
-        use futures_lite::StreamExt as _;
-        let _ = self.rx.next().await;
-        self.triggered = true;
-    }
-}
-
-/// A notify handle for sending a single-shot signal to the 'other side'
-#[derive(Clone)]
-pub struct NotifyHandle {
-    tx: crate::channel::Sender<()>,
-}
-
-impl std::fmt::Debug for NotifyHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NotifyHandle").finish()
-    }
-}
-
-impl NotifyHandle {
-    /// Consumes the handle, notifying the other side.
-    ///
-    /// Returns false if the other side wasn't around any more
-    pub async fn notify(self) -> bool {
-        self.tx.send(()).await.is_ok()
-    }
-}
-
-pub enum Either<L, R> {
-    Left(L),
-    Right(R),
-}
-
-pub use Either::{Left, Right};
-
-pub trait FutExt
+/// Splits this IO object into Read and Write halves
+pub fn split<IO>(io: IO) -> (ReadHalf<IO>, WriteHalf<IO>)
 where
-    Self: Future + Send + Sync + Sized,
-    Self::Output: Send + Sync,
+    IO: std::io::Read + std::io::Write,
 {
-    fn either<F>(self, other: F) -> Or<Self, F>
-    where
-        F: Future + Send + Sync,
-        F::Output: Send + Sync;
-
-    fn first<F>(self, other: F) -> Or<Self, F>
-    where
-        F: Future + Send + Sync,
-        F::Output: Send + Sync;
-
-    fn now_or_never(self) -> Or<Self, Ready<()>>;
+    let this = Arc::new(Mutex::new(io));
+    (ReadHalf(this.clone()), WriteHalf(this))
 }
 
-impl<T> FutExt for T
+/// Read half of an IO object
+pub struct ReadHalf<T>(Arc<Mutex<T>>);
+
+impl<T> std::io::Read for ReadHalf<T>
 where
-    T: Future + Send + Sync,
-    T::Output: Send + Sync,
+    T: std::io::Read,
 {
-    fn either<F>(self, right: F) -> Or<Self, F>
-    where
-        F: Future + Send + Sync,
-        F::Output: Send + Sync,
-    {
-        let left = self;
-        Or {
-            left,
-            right,
-            biased: false,
-        }
-    }
-
-    fn first<F>(self, right: F) -> Or<Self, F>
-    where
-        F: Future + Send + Sync,
-        F::Output: Send + Sync,
-    {
-        let left = self;
-        Or {
-            left,
-            right,
-            biased: true,
-        }
-    }
-
-    fn now_or_never(self) -> Or<Self, Ready<()>> {
-        self.first(ready(()))
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.0.lock().unwrap().read(buf)
     }
 }
 
-pin_project_lite::pin_project! {
-    pub struct Or<A, B> {
-        #[pin]
-        left: A,
+/// Write half of an IO object
+pub struct WriteHalf<T>(Arc<Mutex<T>>);
 
-        #[pin]
-        right: B,
-
-        biased: bool,
-    }
-}
-
-impl<A, B> Future for Or<A, B>
+impl<T> std::io::Write for WriteHalf<T>
 where
-    A: Future + Send + Sync,
-    A::Output: Send + Sync,
-
-    B: Future + Send + Sync,
-    A::Output: Send + Sync,
+    T: std::io::Write,
 {
-    type Output = Either<A::Output, B::Output>;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-
-        macro_rules! poll {
-            ($expr:ident => $map:expr) => {
-                if let Poll::Ready(t) = this.$expr.poll(cx).map($map) {
-                    return Poll::Ready(t);
-                }
-            };
-        }
-
-        if *this.biased {
-            poll!(left => Left);
-            poll!(right => Right);
-            return Poll::Pending;
-        }
-
-        if fastrand::bool() {
-            poll!(left => Left);
-            poll!(right => Right);
-        } else {
-            poll!(right => Right);
-            poll!(left => Left);
-        }
-
-        Poll::Pending
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.lock().unwrap().write(buf)
     }
-}
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.lock().unwrap().flush()
+    }
 }

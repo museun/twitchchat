@@ -1,11 +1,10 @@
 // note this uses `smol`. you can use `tokio` or `async_std` or `async_io` if you prefer.
-// this is a helper module to reduce code deduplication
-// extensions to the Privmsg type
-use twitchchat::PrivmsgExt as _;
+use futures_lite::{AsyncRead, AsyncWrite, StreamExt as _};
 use twitchchat::{
     messages::{Commands, Privmsg},
-    runner::{AsyncRunner, NotifyHandle, Status},
-    UserConfig,
+    runner::wait_until_ready,
+    writer::MpscWriter,
+    AsyncDecoder, AsyncEncoder, FromIrcMessage, PrivmsgExt as _, UserConfig,
 };
 
 // this is a helper module to reduce code deduplication
@@ -35,10 +34,9 @@ fn main() -> anyhow::Result<()> {
         })
         .with_command("!quit", move |args: Args| {
             // because we're using sync stuff, turn async into sync with smol!
-            smol::block_on(async move {
-                // calling this will cause read_message() to eventually return Status::Quit
-                args.quit.notify().await
-            });
+            let writer = args.writer.clone();
+            // (note there is an async version of this function, too)
+            smol::block_on(async move { writer.shutdown_sync() });
         });
 
     // run the bot in the executor
@@ -47,8 +45,7 @@ fn main() -> anyhow::Result<()> {
 
 struct Args<'a, 'b: 'a> {
     msg: &'a Privmsg<'b>,
-    writer: &'a mut twitchchat::Writer,
-    quit: NotifyHandle,
+    writer: &'a mut MpscWriter,
 }
 
 trait Command: Send + Sync {
@@ -79,59 +76,55 @@ impl Bot {
 
     // run the bot until its done
     async fn run(&mut self, user_config: &UserConfig, channels: &[String]) -> anyhow::Result<()> {
-        // this can fail if DNS resolution cannot happen
-        let stream = twitchchat_smol::connect_twitch().await?;
+        let mut stream = twitchchat_smol::connect_twitch().await?;
 
-        let mut runner = AsyncRunner::connect(stream, user_config).await?;
-        println!("connecting, we are: {}", runner.identity.username());
+        let (identity, _missed_messages) = wait_until_ready(&mut stream, user_config).await?;
+        println!("connecting, we are: {}", identity.username());
+
+        let (decode, mut encode) = twitchchat::make_pair(stream);
 
         for channel in channels {
             println!("joining: {}", channel);
-            if let Err(err) = runner.join(channel).await {
-                eprintln!("error while joining '{}': {}", channel, err);
-            }
+            encode.join(channel).await?
         }
 
         // if you store this somewhere, you can quit the bot gracefully
         // let quit = runner.quit_handle();
 
         println!("starting main loop");
-        self.main_loop(&mut runner).await
+        self.main_loop(decode, encode).await
     }
 
     // the main loop of the bot
-    async fn main_loop(&mut self, runner: &mut AsyncRunner) -> anyhow::Result<()> {
+    async fn main_loop<D, E>(
+        &mut self,
+        mut decoder: AsyncDecoder<D>,
+        encoder: AsyncEncoder<E>,
+    ) -> anyhow::Result<()>
+    where
+        D: AsyncRead + Send + Sync + Unpin + 'static,
+        E: AsyncWrite + Send + Sync + Unpin + 'static,
+    {
         // this is clonable, but we can just share it via &mut
-        // this is rate-limited writer
-        let mut writer = runner.writer();
-        // this is clonable, but using it consumes it.
-        // this is used to 'quit' the main loop
-        let quit = runner.quit_handle();
+        let mut writer = MpscWriter::from_async_encoder(encoder);
 
-        loop {
-            // this drives the internal state of the crate
-            match runner.next_message().await? {
-                // if we get a Privmsg (you'll get an Commands enum for all messages received)
-                Status::Message(Commands::Privmsg(pm)) => {
-                    // see if its a command and do stuff with it
-                    if let Some(cmd) = Self::parse_command(pm.data()) {
-                        if let Some(command) = self.commands.get_mut(cmd) {
-                            println!("dispatching to: {}", cmd.escape_debug());
+        while let Some(Ok(msg)) = decoder.next().await {
+            let msg = Commands::from_irc(msg)
+                .expect("this can only fail if you're parsing custom messages");
 
-                            let args = Args {
-                                msg: &pm,
-                                writer: &mut writer,
-                                quit: quit.clone(),
-                            };
-
-                            command.handle(args);
-                        }
+            // if we get a Privmsg (you'll get an Commands enum for all messages received)
+            if let Commands::Privmsg(pm) = msg {
+                // see if its a command and do stuff with it
+                if let Some(cmd) = Self::parse_command(pm.data()) {
+                    if let Some(command) = self.commands.get_mut(cmd) {
+                        println!("dispatching to: {}", cmd.escape_debug());
+                        let args = Args {
+                            msg: &pm,
+                            writer: &mut writer,
+                        };
+                        command.handle(args);
                     }
                 }
-                // stop if we're stopping
-                Status::Quit | Status::Eof => break,
-                // ignore the rest
-                Status::Message(..) => continue,
             }
         }
 

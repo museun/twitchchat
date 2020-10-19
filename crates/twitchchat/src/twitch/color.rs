@@ -256,9 +256,7 @@ impl FromStr for Color {
 }
 
 impl Default for Color {
-    /// Defaults to having a kind of [Turbo] and RGB of #FFFFFF (white)
-    ///
-    /// [Turbo]: TwitchColor::Turbo
+    /// Defaults to having a kind of [`TwitchColor::Turbo`] and RGB of #FFFFFF (white)
     fn default() -> Self {
         Self {
             kind: TwitchColor::Turbo,
@@ -364,7 +362,7 @@ impl From<TwitchColor> for RGB {
     }
 }
 
-/// A utility method that returns an array of [TwitchColor]s mapped to its corresponding [RGB]
+/// A utility method that returns an array of [`TwitchColor`]s mapped to its corresponding [`RGB`]
 pub const fn twitch_colors() -> [(TwitchColor, RGB); 15] {
     use TwitchColor::*;
     [

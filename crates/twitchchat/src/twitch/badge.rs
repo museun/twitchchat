@@ -1,9 +1,8 @@
 /// The kind of the [badges] that are associated with messages.
 ///
-/// Any unknown (e.g. custom badges/sub events, etc) are placed into the [Unknown] variant.
+/// Any unknown (e.g. custom badges/sub events, etc) are placed into the [`BadgeKind::Unknown`] variant.
 ///
 /// [badges]: Badge
-/// [Unknown]: BadgeKind::Unknown
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]

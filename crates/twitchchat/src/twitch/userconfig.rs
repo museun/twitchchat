@@ -38,7 +38,7 @@ pub struct UserConfig {
 }
 
 impl UserConfig {
-    /// Create a builder to make a [UserConfig]
+    /// Create a builder to make a [`UserConfig`]
     pub fn builder() -> UserConfigBuilder {
         UserConfigBuilder::default()
     }
@@ -49,7 +49,7 @@ impl UserConfig {
     }
 }
 
-/// User config error returned by the [UserConfigBuilder]
+/// User config error returned by the [`UserConfigBuilder]
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
 pub enum UserConfigError {
@@ -77,7 +77,7 @@ impl std::fmt::Display for UserConfigError {
 
 impl std::error::Error for UserConfigError {}
 
-/// Builder for making a [UserConfig]
+/// Builder for making a [`UserConfig`]
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserConfigBuilder {
@@ -168,12 +168,10 @@ impl UserConfigBuilder {
     }
 }
 
-#[inline]
 const fn validate_name(s: &str) -> bool {
     !s.is_empty()
 }
 
-#[inline]
 fn validate_token(s: &str) -> bool {
     if s == crate::JUSTINFAN1234 {
         return true;
