@@ -1,21 +1,21 @@
 [package]
-name = "examples"
+name    = "examples"
 version = "0.0.0"
 edition = "2018"
 publish = false
 
 
 [dev-dependencies]
-twitchchat = { version = "0.14", path = "../crates/twitchchat", features = ["async", "writer"] }
+twitchchat = { version = "0.14", path = "../twitchchat", features = ["async", "writer"] }
 
-twitchchat_async_io  = { version = "0.1", path = "../crates/twitchchat_async_io" }
-twitchchat_async_net = { version = "0.1", path = "../crates/twitchchat_async_net" }
-twitchchat_async_std = { version = "0.1", path = "../crates/twitchchat_async_std" }
-twitchchat_smol      = { version = "0.1", path = "../crates/twitchchat_smol" }
-twitchchat_tokio     = { version = "0.1", path = "../crates/twitchchat_tokio" }
-twitchchat_tokio02   = { version = "0.1", path = "../crates/twitchchat_tokio02" }
+twitchchat_async_io  = { version = "0.1", path = "../twitchchat_async_io" }
+twitchchat_async_net = { version = "0.1", path = "../twitchchat_async_net" }
+twitchchat_async_std = { version = "0.1", path = "../twitchchat_async_std" }
+twitchchat_smol      = { version = "0.1", path = "../twitchchat_smol" }
+twitchchat_tokio     = { version = "0.1", path = "../twitchchat_tokio" }
+twitchchat_tokio02   = { version = "0.1", path = "../twitchchat_tokio02" }
 
-anyhow = "1.0.33"
+anyhow         = "1.0.33"
 async-executor = "1.3.0"
 futures-lite = "1.11.1"
 
