@@ -1,3 +1,33 @@
+macro_rules! cfg_async {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "async")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+            $item
+        )*
+    };
+}
+
+macro_rules! cfg_writer {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "writer")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "writer")))]
+            $item
+        )*
+    };
+}
+
+macro_rules! cfg_ws {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "ws")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "ws")))]
+            $item
+        )*
+    };
+}
+
 macro_rules! into_owned {
     ($ty:ident { $($field:ident),* $(,)? }) => {
         impl<'a> $crate::IntoOwned<'a> for $ty<'a> {

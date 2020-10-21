@@ -6,8 +6,9 @@ use twitchchat::{
     messages,
     messages::Commands,
     runner::{Activity, ActivitySender},
+    split::r#async::BoxedDecoder,
     writer::MpscWriter,
-    BoxedAsyncDecoder, FromIrcMessage, UserConfig,
+    FromIrcMessage, UserConfig,
 };
 
 // some helpers for the demo
@@ -42,11 +43,7 @@ pub fn channels_to_join() -> anyhow::Result<Vec<String>> {
 }
 
 // a 'main loop'
-pub async fn main_loop(
-    mut decoder: BoxedAsyncDecoder,
-    _writer: MpscWriter,
-    activity: ActivitySender,
-) {
+pub async fn main_loop(mut decoder: BoxedDecoder, _writer: MpscWriter, activity: ActivitySender) {
     while let Some(Ok(msg)) = decoder.next().await {
         // send a copy of the message to the activity tracker
         activity.message(Activity::Message(msg.clone()));

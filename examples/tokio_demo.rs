@@ -7,8 +7,9 @@ use twitchchat::{
         Activity,
         ActivitySender,
     },
+    split::r#async::{BoxedDecoder, BoxedEncoder},
     writer::MpscWriter,
-    BoxedAsyncDecoder, BoxedAsyncEncoder, UserConfig,
+    UserConfig,
 };
 
 // this is a helper module to reduce code deduplication
@@ -18,7 +19,7 @@ use crate::include::{channels_to_join, get_user_config, main_loop};
 async fn connect(
     user_config: &UserConfig,
     channels: &[String],
-) -> anyhow::Result<(BoxedAsyncDecoder, BoxedAsyncEncoder)> {
+) -> anyhow::Result<(BoxedDecoder, BoxedEncoder)> {
     // create a connector using ``tokio``, this connects to Twitch.
     // you can provide a different address with `connect_custom`
     let mut stream = twitchchat_tokio::connect_twitch().await?;
@@ -33,7 +34,7 @@ async fn connect(
     println!("our identity: {:#?}", identity);
 
     // make an decoder and encoder
-    let (decode, mut encode) = twitchchat::make_boxed_pair(stream);
+    let (decode, mut encode) = twitchchat::split::r#async::make_boxed_pair(stream);
 
     for channel in channels {
         // the runner itself has 'blocking' join/part to ensure you join/leave a channel.

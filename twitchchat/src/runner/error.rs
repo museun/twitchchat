@@ -28,14 +28,17 @@ pub enum Error {
     Eof,
 
     #[cfg(feature = "ws")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ws")))]
     /// A Soketto handshake error (websockets)
     Handshake(soketto::handshake::Error),
 
     #[cfg(feature = "ws")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ws")))]
     /// A Soketto connection error (websockets)
     Connection(soketto::connection::Error),
 
     #[cfg(feature = "ws")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ws")))]
     /// A Soketto error, with status code (websockets)
     CannotConnect {
         /// The status code
@@ -111,16 +114,18 @@ impl From<MessageError> for Error {
     }
 }
 
-#[cfg(feature = "ws")]
+cfg_ws! {
 impl From<soketto::handshake::Error> for Error {
     fn from(err: soketto::handshake::Error) -> Self {
         Self::Handshake(err)
     }
 }
+}
 
-#[cfg(feature = "ws")]
+cfg_ws! {
 impl From<soketto::connection::Error> for Error {
     fn from(err: soketto::connection::Error) -> Self {
         Self::Connection(err)
     }
+}
 }

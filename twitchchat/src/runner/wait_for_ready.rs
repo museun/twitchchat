@@ -2,18 +2,9 @@ use std::collections::HashSet;
 
 cfg_async! { use futures_lite::{AsyncRead, AsyncWrite}; }
 
-cfg_async! {
-    use crate::{
-        AsyncDecoder,
-        AsyncEncoder,
-    };
-}
-
 use crate::{
     commands, //
     twitch::Capability,
-    Decoder,
-    Encoder,
     IntoOwned as _,
     IrcMessage,
     UserConfig,
@@ -71,10 +62,7 @@ where
 {
     let mut missed_messages = Vec::new();
 
-    let (read, write) = crate::util::split(io);
-    let mut read = Decoder::new(read);
-    let mut write = Encoder::new(write);
-
+    let (mut read, mut write) = crate::split::sync::make_pair(io);
     write.encode(commands::register(user_config))?;
 
     let mut state = ReadyState::new(user_config);
@@ -149,10 +137,7 @@ where
 {
     let mut missed_messages = Vec::new();
 
-    let (read, write) = futures_lite::io::split(io);
-    let mut read = AsyncDecoder::new(read);
-    let mut write = AsyncEncoder::new(write);
-
+    let (mut read, mut write) = crate::split::r#async::make_pair(io);
     write.encode(commands::register(user_config)).await?;
 
     let mut state = ReadyState::new(user_config);

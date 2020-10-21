@@ -64,7 +64,7 @@ impl Activity {
 }
 
 cfg_async! {
-#[cfg(feature = "writer")]
+cfg_writer!{
 /// A helper function that'll respond to the tokens produced by [`idle_detection_loop`]
 pub async fn respond_to_idle_events(
     writer: crate::writer::MpscWriter,
@@ -75,6 +75,7 @@ pub async fn respond_to_idle_events(
             break;
         }
     }
+}
 }
 }
 
