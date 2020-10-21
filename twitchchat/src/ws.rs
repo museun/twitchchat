@@ -9,7 +9,7 @@ use std::future::Future;
 use crate::{
     commands,
     runner::{
-        wait_for_ready::{check_message, ReadyState, StepState},
+        wait_until_ready::{check_message, ReadyState, StepState},
         Error, Identity,
     },
     util::is_blocking_error,
@@ -18,6 +18,7 @@ use crate::{
 
 pub use crate::runner::Event;
 
+// TODO move this into split
 /// Make a WebSocket decoder/encoder pair
 pub fn make_pair<IO>(io: IO) -> (WsDecoder<IO>, WsEncoder<IO>)
 where
@@ -81,7 +82,7 @@ where
 /// [timed_out]: crate::runner::Error::TimedOut
 /// [should_reconnect]: crate::runner::Error::ShouldReconnect
 /// [unexpected_eof]: crate::runner::Error::UnexpectedEof
-pub async fn wait_for_ready<IO>(
+pub async fn wait_until_ready<IO>(
     io: &mut IO,
     user_config: &UserConfig,
 ) -> Result<(Identity, Vec<IrcMessage<'static>>), Error>
