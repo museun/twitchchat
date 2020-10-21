@@ -81,6 +81,8 @@ impl Bot {
         let (identity, _missed_messages) = wait_until_ready(&mut stream, user_config).await?;
         println!("connecting, we are: {}", identity.username());
 
+        let (decode, mut encode) = twitchchat::split::r#async::make_pair(stream);
+
         for channel in channels {
             println!("joining: {}", channel);
             encode.join(channel).await?
