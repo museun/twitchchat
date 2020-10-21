@@ -1,4 +1,4 @@
-//! # Encoding utilies
+//! # Encoding types and functions.
 //!
 //! ## Using the [Encodable](crate::Encodable) trait
 //! Many [commands](crate::commands) are provided that can be encoded to a writer.

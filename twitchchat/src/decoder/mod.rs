@@ -1,4 +1,4 @@
-//! Decoding utilities.
+//! Decoding types and functions.
 //!
 //! A decoder lets you decode messages from an [`std::io::Read`] (or [`futures_io::AsyncRead`][read] for async) in either an iterative fashion, or one-by-one.
 //!

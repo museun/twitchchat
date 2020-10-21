@@ -2,10 +2,11 @@
 //!
 //! ## Required/Optional features:
 //!
-//! | Feature   |                                                                  |
-//! | --------- | ---------------------------------------------------------------- |
-//! | `writer`  | **_required_** for this module                                   |
-//! | `async`   | enables the use of [`AsyncEncoder`] and [`MpscWriter::shutdown`] |
+//! | Feature        |                                                                  |
+//! | -------------- | ---------------------------------------------------------------- |
+//! | `writer`       | **_required_** for this module                                   |
+//! | `async`        | enables the use of [`AsyncEncoder`] and [`MpscWriter::shutdown`] |
+//! | `async` + `ws` | enables the use of [`WsEncoder`] and [`MpscWriter::shutdown`]    |
 //!
 //! ## Example
 //!
@@ -30,7 +31,13 @@
 use crate::*;
 
 use std::io::Write;
-cfg_async! { use futures_lite::io::AsyncWrite; }
+cfg_async! {
+    use futures_lite::io::AsyncWrite;
+    cfg_ws! {
+        use futures_lite::io::AsyncRead;
+        use crate::ws::WsEncoder;
+    }
+}
 
 enum Packet {
     Data(Box<[u8]>),
@@ -77,6 +84,30 @@ impl MpscWriter {
         let (stop_tx, wait_for_it) = flume::bounded(1);
         Self::_start(rx, stop_tx, move |data| block_on(encoder.encode(data)));
         Self { tx, wait_for_it }
+    }
+    }
+
+    cfg_async! {
+    cfg_ws!{
+    /// Create a writer from an asynchronous [`WsEncoder`]
+    pub fn from_ws_encoder<W>(encoder: WsEncoder<W>) -> Self
+    where
+        W: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    {
+        let mut encoder = encoder;
+        use futures_lite::future::block_on;
+        let (tx, rx) = flume::unbounded();
+        let (stop_tx, wait_for_it) = flume::bounded(1);
+        Self::_start(rx, stop_tx, move |data| {
+            block_on(async {
+                encoder
+                    .encode(data)
+                    .await
+                    .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))
+            })
+        });
+        Self { tx, wait_for_it }
+    }
     }
     }
 

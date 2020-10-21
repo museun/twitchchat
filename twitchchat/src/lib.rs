@@ -36,11 +36,19 @@ By default, this crate depends on zero external crates -- but it makes it rather
 This allows parsing, and decoding/encoding to standard trait types (`std::io::{Read, Write}`).
 
 ```toml
-twitchchat = { version = "0.15", features = ["async"] }
+twitchchat = { version = "0.15", features = ["async", "features"] }
 ```
+
+Available features:
+
+| feature  | effect                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------ |
+| `async`  | this enables the async dependencies and provides all of the `Async` prefixed types and async functions |
+| `writer` | this enables the `MpscWriter`                                                                          |
+| `ws`     | this enables the _WebSocket_ `WsEncoder` and `WsDecoder` types                                         |
 ---
 
-For twitch types:
+For Twitch types:
 * [twitch]
 * [messages]
 * [commands]
@@ -51,11 +59,14 @@ For the 'irc' types underneath it all:
 For event loop helpers:
 * [runner]
 ---
-For just decoding messages:
+For decoding messages:
 * [decoder]
 ---
-For just encoding messages:
+For encoding messages:
 * [encoder]
+---
+For using a websocket transport:
+* [ws]
 */
 
 /// The Twitch IRC address for non-TLS connections
@@ -101,6 +112,14 @@ pub use runner::Error;
 
 pub mod commands;
 pub mod messages;
+
+cfg_async! {
+cfg_ws!{
+    pub mod ws;
+    #[doc(inline)]
+    pub use ws::{WsDecoder, WsEncoder};
+}
+}
 
 pub mod irc;
 pub use irc::{IrcMessage, MessageError};

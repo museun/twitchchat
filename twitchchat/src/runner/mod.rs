@@ -6,7 +6,7 @@ mod error;
 mod identity;
 mod timeout;
 mod wait_for;
-mod wait_for_ready;
+pub(crate) mod wait_for_ready;
 
 pub use capabilities::Capabilities;
 pub use error::Error;
@@ -27,8 +27,4 @@ cfg_async! {
     }
 
     pub use wait_for::wait_for;
-
-    cfg_ws! {
-        pub mod ws;
-    }
 }

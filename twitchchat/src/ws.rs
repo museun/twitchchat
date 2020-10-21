@@ -1,4 +1,6 @@
 //! A Websocket 'Encoder' and 'Decoder'
+//!
+//! This requires the `ws` and `async` features
 
 use futures_lite::{AsyncRead, AsyncWrite};
 use std::collections::VecDeque;
