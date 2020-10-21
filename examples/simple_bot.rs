@@ -81,15 +81,10 @@ impl Bot {
         let (identity, _missed_messages) = wait_until_ready(&mut stream, user_config).await?;
         println!("connecting, we are: {}", identity.username());
 
-        let (decode, mut encode) = twitchchat::split::r#async::make_pair(stream);
-
         for channel in channels {
             println!("joining: {}", channel);
             encode.join(channel).await?
         }
-
-        // if you store this somewhere, you can quit the bot gracefully
-        // let quit = runner.quit_handle();
 
         println!("starting main loop");
         self.main_loop(decode, encode).await
