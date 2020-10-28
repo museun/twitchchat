@@ -1,0 +1,45 @@
+[package]
+name          = "twitchchat"
+edition       = "2018"
+version       = "0.15.0"
+authors       = ["museun <museun@outlook.com>"]
+keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
+license       = "MIT OR Apache-2.0"
+readme        = "README.md"
+description   = "interface to the irc-side of twitch's chat system"
+documentation = "https://docs.rs/twitchchat/latest/twitchchat/"
+repository    = "https://github.com/museun/twitchchat"
+categories    = ["asynchronous", "network-programming", "parser-implementations"]
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = true
+
+[features]
+default     = []
+writer      = ["flume"]
+async       = ["flume/async", "futures-lite"]
+sink_stream = ["async", "futures"]
+
+[dependencies]
+# logging support
+log = { version = "0.4.11", features = ["std"] }
+
+# just the futures traits
+futures-lite = { version = "1.11.1", optional = true }
+
+# for async stuff that require more
+futures = { version = "0.3.6", default-features = false, features = ["std"], optional = true }
+
+# for optional serialization and deserialization
+serde = { version = "1.0.117", features = ["derive"], optional = true }
+
+# for message passing -- we'll use std channels for non-async code
+# TODO don't expose this in the public api
+flume = { version = "0.9.1", package = "flume", default-features = false,  optional = true }
+
+[dev-dependencies]
+async-executor = { version = "1.3", default-features = false }
+futures        = { version = "0.3", default-features = false }
+rmp-serde      = "0.14"
+serde_json     = "1.0"

@@ -1,0 +1,26 @@
+[package]
+name = "twitchchat_tungstenite"
+version = "0.1.0"
+authors = ["museun <museun@outlook.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+# async-native-tls  = ["async-tungstenite/async-native-tls"]
+# async-std-runtime = ["async-tungstenite/async-std-runtime"]
+# async-tls         = ["async-tungstenite/async-tls"]
+# gio-runtime       = ["async-tungstenite/gio-runtime"]
+# tokio-native-tls  = ["async-tungstenite/tokio-native-tls"]
+# tokio-openssl     = ["async-tungstenite/tokio-openssl"]
+# tokio-runtime     = ["async-tungstenite/tokio-runtime"]
+# tokio-rustls      = ["async-tungstenite/tokio-rustls"]
+
+[dependencies]
+twitchchat = "0.15"
+
+async-tungstenite = "0.10.0"
+futures-core      = "0.3.7"
+futures-io        = "0.3.7"
+futures-sink      = "0.3.7"
+

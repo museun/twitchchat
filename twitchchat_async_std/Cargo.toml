@@ -1,0 +1,23 @@
+[package]
+name          = "twitchchat_async_std"
+edition       = "2018"
+version       = "0.1.0"
+authors       = ["museun <museun@outlook.com>"]
+keywords      = ["twitch", "irc", "async", "asynchronous", "async_std"]
+license       = "MIT OR Apache-2.0"
+readme        = "README.md"
+description   = "twitchchat connector using async_std"
+documentation = "https://docs.rs/twitchchat_async_std/latest/twitchchat_async_std/"
+repository    = "https://github.com/museun/twitchchat"
+categories    = ["asynchronous", "network-programming"]
+
+[features]
+rustls = ["async-tls"]
+
+[dependencies]
+twitchchat = "0.15"
+async-std = "1.6.5"
+async-tls = { version = "0.10.0", optional = true }
+
+[dev-dependencies]
+futures-io = "0.3.6"
