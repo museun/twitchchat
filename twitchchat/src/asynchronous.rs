@@ -53,7 +53,7 @@ pub async fn respond_to_idle_events(
 /// * create [`ActivitySender`] and [`ActivityReceiver`] with the [`Activity::pair()`] function.
 /// * create a [`std::sync::mpsc::sync_channel`] that is used for its responses (the **PING tokens**).
 /// * start the loop (you'll probably want to spawn a task so you don't block the current future)
-///     * see [`idle_detection_loop_sync()`] for an sync version
+///     * see [`sync::idle_detection_loop()`][idle_detection_loop] for an sync version
 /// * when you want to delay the timeout (e.g. you wrote something), send a [`Activity::Tick`] via [`ActivitySender::message()`].
 /// * when you read a message, you should give a copy of it to the loop, send a [`Activity::Message`] via [`ActivitySender::message()`].
 /// * when you want to signal a shutdown,  send a [`Activity::Quit`] via [`ActivitySender::message()`].
@@ -64,7 +64,7 @@ pub async fn respond_to_idle_events(
 ///
 /// This is the type you should encode as `ping`.
 ///
-/// If the server does not reply within [`TIMEOUT`][timeout] then the loop will exit, producing an [`Error::TimedOut`]
+/// If the server does not reply within [`TIMEOUT`][timeout] then the loop will exit, producing an [`TimedOutError::TimedOut`]
 ///
 /// # Example
 ///
@@ -129,9 +129,11 @@ pub async fn respond_to_idle_events(
 /// }
 /// ```
 ///
-/// [window]: crate::runner::WINDOW
-/// [timeout]: crate::runner::TIMEOUT
+/// [window]: WINDOW
+/// [timeout]: TIMEOUT
 /// [ping]: crate::commands::ping
+/// [idle_detection_loop]: crate::sync::idle_detection_loop
+///
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 pub async fn idle_detection_loop(

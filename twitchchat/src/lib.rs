@@ -10,7 +10,7 @@
     missing_copy_implementations,
     missing_crate_level_docs,
     missing_debug_implementations,
-    // missing_docs, // TODO re-enable this
+    missing_docs, // TODO re-enable this
     private_in_public,
     rust_2018_compatibility,
     // rust_2018_idioms, // this complains about elided lifetimes.

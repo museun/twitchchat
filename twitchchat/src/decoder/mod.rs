@@ -1,8 +1,8 @@
 //! Decoding types and functions.
 //!
-//! A decoder lets you decode messages from an [`std::io::Read`], [`futures::AsyncRead`][read], for a [`futures::Stream`] in either an iterative fashion, or one-by-one.
+//! A decoder lets you decode messages from an [`std::io::Read`], [`futures::AsyncRead`], for a [`futures::Stream`] in either an iterative fashion, or one-by-one.
 //!
-//! When not using the [`std::iter::Iterator`] (or [`futures::Stream`][stream]), you'll get a borrowed message from the reader that is valid until the next read.
+//! When not using the [`std::iter::Iterator`] (or [`futures::Stream`]), you'll get a borrowed message from the reader that is valid until the next read.
 //!
 //! With the `std::iter::Iterator` (or `futures::Stream`) interface, it'll return an owned messages.
 //!

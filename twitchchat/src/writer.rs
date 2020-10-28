@@ -2,11 +2,11 @@
 //!
 //! ## Required/Optional features:
 //!
-//! | Feature        |                                                                  |
-//! | -------------- | ---------------------------------------------------------------- |
-//! | `writer`       | **_required_** for this module                                   |
-//! | `async`        | enables the use of [`AsyncEncoder`] and [`MpscWriter::shutdown`] |
-//! | `sink_stream`  | enables the use of [`SinkEncoder`]                               |
+//! | Feature       |                                                                                      |
+//! | ------------- | ------------------------------------------------------------------------------------ |
+//! | `writer`      | **_required_** for this module                                                       |
+//! | `async`       | enables the use of [`asynchronous::Encoder`][async_enc] and [`MpscWriter::shutdown`] |
+//! | `sink_stream` | enables the use of [`stream::Encoder`][stream_enc]                                   |
 //!
 //! You can combine them into configurations such as: `["writer", "async", "sink_stream"]`
 //!
@@ -30,6 +30,10 @@
 //! // any futher sends after a shutdown will result in an error
 //! writer2.send(commands::raw("foobar\r\n")).unwrap_err();
 //! ```
+//!
+//! [async_enc]: crate::asynchronous::Encoder
+//! [stream_enc]: crate::stream::Encoder
+//!
 use crate::Encodable;
 
 use std::io::Write;
@@ -51,7 +55,9 @@ pub struct MpscWriter {
 }
 
 impl MpscWriter {
-    /// Create a writer from a synchronous [`Encoder`]
+    /// Create a writer from a synchronous [`Encoder`][enc]
+    ///
+    /// [enc]: crate::sync::Encoder
     pub fn from_encoder<W>(encoder: crate::sync::Encoder<W>) -> Self
     where
         W: Write + Send + 'static,
@@ -63,9 +69,11 @@ impl MpscWriter {
         Self { tx, wait_for_it }
     }
 
-    /// Create a writer from an asynchronous [`AsyncEncoder`]
+    /// Create a writer from an asynchronous [`Encoder`][enc]
     ///
     /// This requires `feature = "async"`
+    ///
+    /// [enc]: crate::asynchronous::Encoder
     #[cfg(feature = "async")]
     #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
     pub fn from_async_encoder<W>(encoder: crate::asynchronous::Encoder<W>) -> Self
@@ -80,9 +88,11 @@ impl MpscWriter {
         Self { tx, wait_for_it }
     }
 
-    /// Create a writer from an asynchronous [`SinkEncoder`]
+    /// Create a writer from an asynchronous, sink-backed [`Encoder`][enc]
     ///
     /// This requires `feature = "sink_stream"`
+    ///
+    /// [enc]: crate::stream::Encoder
     #[cfg(feature = "sink_stream")]
     #[cfg_attr(docsrs, doc(cfg(feature = "sink_stream")))]
     pub fn from_sink_encoder<IO, M>(encoder: crate::stream::Encoder<IO, M>) -> Self

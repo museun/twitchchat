@@ -69,6 +69,7 @@ where
             .map(|(_, msg)| msg)
     }
 
+    // TODO this should respond to PINGs
     /// Wait for a specific event.
     ///
     /// This returns the specific matched event and any missed messages read before this returns.

@@ -81,6 +81,14 @@ where
         }
     }
 
+    // TODO this should respond to PINGs
+    /// Wait for a specific event.
+    ///
+    /// This returns the specific matched event and any missed messages read before this returns.
+    ///
+    /// You can use [Decoder::extend][extend] to feed these messages back into the decoder.
+    ///
+    /// [extend]: StreamDecoder::extend()
     pub async fn wait_for(
         &mut self,
         event: Event,
