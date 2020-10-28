@@ -12,7 +12,7 @@
 //! With the parsed type, you can further refine it into specific Twitch-oriented messages.
 //!
 //! ```
-//! use twitchchat::{IrcMessage, MessageError};
+//! use twitchchat::irc::{IrcMessage, MessageError};
 //! // a raw message from the server
 //! let input = "@key1=val;key2=true :user!user@user PRIVMSG #some_channel :\x01ACTION hello world\x01\r\n";
 //!

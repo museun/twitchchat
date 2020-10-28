@@ -103,7 +103,7 @@ impl<'a> IntoOwned<'a> for Commands<'a> {
 }
 
 impl<'a> FromIrcMessage<'a> for Commands<'a> {
-    type Error = MessageError;
+    type Error = crate::irc::MessageError;
 
     fn from_irc(msg: IrcMessage<'a>) -> Result<Self, Self::Error> {
         macro_rules! map {

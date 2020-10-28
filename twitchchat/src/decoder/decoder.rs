@@ -1,4 +1,10 @@
-use crate::{DecodeError, IntoOwned as _, IrcMessage};
+use super::DecodeError;
+
+use crate::{
+    irc::IrcMessage,
+    wait_for::{wait_inner, Event, State},
+    IntoOwned as _,
+};
 
 use std::{
     collections::VecDeque,
@@ -9,27 +15,12 @@ use std::{
 ///
 /// This will return an [`DecodeError::Eof`] when reading manually.
 ///
-/// When reading it as a iterator, `Eof` will signal the end of the iterator (e.g. `None`)
+/// When reading it as an iterator, `Eof` will signal the end of the iterator (e.g. `None`)
 pub struct Decoder<R> {
     // TODO don't use this. it'll be bad with a non-blocking stream
     reader: BufReader<R>,
     buf: Vec<u8>,
     back_queue: VecDeque<IrcMessage<'static>>,
-}
-
-impl<R> Extend<IrcMessage<'static>> for Decoder<R> {
-    fn extend<T>(&mut self, iter: T)
-    where
-        T: IntoIterator<Item = IrcMessage<'static>>,
-    {
-        self.back_queue.extend(iter)
-    }
-}
-
-impl<R> std::fmt::Debug for Decoder<R> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Decoder").finish()
-    }
 }
 
 impl<R> Decoder<R>
@@ -72,9 +63,25 @@ where
             .map(|(_, msg)| msg)
     }
 
+    // TODO this should respond to PINGs
+    pub fn wait_for(
+        &mut self,
+        event: Event,
+    ) -> Result<(IrcMessage<'static>, Vec<IrcMessage<'static>>), DecodeError> {
+        let mut missed = vec![];
+        loop {
+            match wait_inner(self.read_message(), event)? {
+                State::Done(msg) => break Ok((msg.into_owned(), missed)),
+                State::Requeue(msg) => missed.push(msg.into_owned()),
+                // TODO this should actually do parking not yielding
+                State::Yield => std::thread::yield_now(),
+            }
+        }
+    }
+
     /// Returns an iterator over messages.
     ///
-    /// This will produce Results of Messages until an EOF is received
+    /// This will produce `Result`s of `IrcMessages` until an EOF is received
     pub fn iter(&mut self) -> &mut Self {
         self
     }
@@ -101,6 +108,21 @@ impl<R: Read> Iterator for Decoder<R> {
                 Err(err) => Some(Err(err)),
             };
         }
+    }
+}
+
+impl<R> Extend<IrcMessage<'static>> for Decoder<R> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = IrcMessage<'static>>,
+    {
+        self.back_queue.extend(iter)
+    }
+}
+
+impl<R> std::fmt::Debug for Decoder<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Decoder").finish()
     }
 }
 

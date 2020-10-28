@@ -1,14 +1,16 @@
-use crate::{runner::Capabilities, twitch::Color};
+use crate::twitch::Color;
+use std::collections::HashSet;
 
 /// Your identity on Twitch.
 ///
 /// Currently this is only updated when you connect.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum Identity {
     /// An anonymous identity.
     Anonymous {
         /// The capabilities you'll have
-        caps: Capabilities,
+        caps: YourCapabilities,
     },
 
     /// A basic identity.
@@ -16,7 +18,7 @@ pub enum Identity {
         /// Your username
         name: String,
         /// The capabilities you'll have
-        caps: Capabilities,
+        caps: YourCapabilities,
     },
 
     /// A full identity
@@ -34,7 +36,7 @@ pub enum Identity {
         /// You display color, if set
         color: Color,
         /// The capabilities you'll have
-        caps: Capabilities,
+        caps: YourCapabilities,
     },
 }
 
@@ -49,4 +51,18 @@ impl Identity {
             Self::Basic { name, .. } | Self::Full { name, .. } => &*name,
         }
     }
+}
+
+/// Capabilities that Twitch acknowledged.
+#[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
+pub struct YourCapabilities {
+    /// You have the [membership](https://dev.twitch.tv/docs/irc/membership) capability
+    pub membership: bool,
+    /// You have the [commands](https://dev.twitch.tv/docs/irc/commands) capability
+    pub commands: bool,
+    /// You have the [tags](https://dev.twitch.tv/docs/irc/tags) capability
+    pub tags: bool,
+    /// A set of unknown capabilities that Twitch acknowledged
+    pub unknown: HashSet<String>,
 }

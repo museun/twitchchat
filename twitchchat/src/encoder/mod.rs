@@ -26,7 +26,7 @@
 //! use twitchchat::commands;
 //!
 //! let mut buf = vec![];
-//! let mut enc = twitchchat::Encoder::new(&mut buf);
+//! let mut enc = twitchchat::sync::Encoder::new(&mut buf);
 //! enc.encode(commands::join("museun")).unwrap();
 //!
 //! use std::io::Write as _;
@@ -37,10 +37,21 @@
 //! assert_eq!(string, "JOIN #museun\r\nits also a writer\r\n");
 //! ```
 
-cfg_async! {
-    mod r#async;
-    pub use r#async::AsyncEncoder;
-}
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+mod r#async;
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+pub use r#async::AsyncEncoder;
 
 mod sync;
 pub use sync::Encoder;
+
+#[cfg(feature = "sink_stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink_stream")))]
+mod sink;
+
+#[cfg(feature = "sink_stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink_stream")))]
+pub use sink::SinkEncoder;

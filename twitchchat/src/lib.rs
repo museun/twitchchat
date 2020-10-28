@@ -10,7 +10,7 @@
     missing_copy_implementations,
     missing_crate_level_docs,
     missing_debug_implementations,
-    missing_docs,
+    // missing_docs, // TODO re-enable this
     private_in_public,
     rust_2018_compatibility,
     // rust_2018_idioms, // this complains about elided lifetimes.
@@ -36,17 +36,31 @@ By default, this crate depends on zero external crates -- but it makes it rather
 This allows parsing, and decoding/encoding to standard trait types (`std::io::{Read, Write}`).
 
 ```toml
-twitchchat = { version = "0.15", features = ["async", "features"] }
+twitchchat = { version = "0.15", features = ["async", "writer"] }
 ```
 
-Available features:
+### Available features:
 
-| feature  | effect                                                                                                 |
-| -------- | ------------------------------------------------------------------------------------------------------ |
-| `async`  | this enables the async dependencies and provides all of the `Async` prefixed types and async functions |
-| `writer` | this enables the `MpscWriter`                                                                          |
-| `ws`     | this enables the _WebSocket_ `WsEncoder` and `WsDecoder` types                                         |
+| feature       | effect                                                                         |
+| ------------- | ------------------------------------------------------------------------------ |
+| `async`       | provides the [asynchronous] module (and generally all of the `async` functions |
+| `sink_stream` | provides the [stream] module (for use with `Sink+Stream`                       |
+| `writer`      | this enables the [`writer::MpscWriter`]                                        |
+
+### Connectors:
+
+In version `0.14` a `Connector` trait was provided with some common implementations. This has been moved out into separate crates.
+
+* [twitchchat_async_io][twitchchat_async_io]
+* [twitchchat_async_net][twitchchat_async_net]
+* [twitchchat_async_std][twitchchat_async_std]
+* [twitchchat_smol][twitchchat_smol]
+* [twitchchat_tokio][twitchchat_tokio]
+* [twitchchat_tokio02][twitchchat_tokio02]
+
 ---
+
+### Useful modules for decoding/parsing/encoding:
 
 For Twitch types:
 * [twitch]
@@ -56,35 +70,43 @@ For Twitch types:
 For the 'irc' types underneath it all:
 * [irc]
 ---
-For event loop helpers:
-* [runner]
----
-For decoding messages:
-* [decoder]
----
-For encoding messages:
-* [encoder]
----
-For using a websocket transport:
-* [ws]
+
+[twitchchat_async_io]: https://docs.rs/twitchchat_async_io/latest/twitchchat_async_io
+[twitchchat_async_net]: https://docs.rs/twitchchat_async_net/latest/twitchchat_async_net
+[twitchchat_async_std]: https://docs.rs/twitchchat_async_std/latest/twitchchat_async_std
+[twitchchat_smol]: https://docs.rs/twitchchat_smol/latest/twitchchat_smol
+[twitchchat_tokio]: https://docs.rs/twitchchat_tokio/latest/twitchchat_tokio
+[twitchchat_tokio02]: https://docs.rs/twitchchat_tokio02/latest/twitchchat_tokio02
 */
 
 /// The Twitch IRC address for non-TLS connections
+///
+/// `irc.chat.twitch.tv:6667`
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
 /// The Twitch IRC address for TLS connections
+///
+/// `irc.chat.twitch.tv:6697`
 pub const TWITCH_IRC_ADDRESS_TLS: &str = "irc.chat.twitch.tv:6697";
 
 /// The Twitch WebSocket address for non-TLS connections
+///
+/// `irc-ws.chat.twitch.tv:80`
 pub const TWITCH_WS_ADDRESS: &str = "irc-ws.chat.twitch.tv:80";
 
 /// The Twitch WebSocket address for TLS connections
+///
+/// `irc-ws.chat.twitch.tv:443`
 pub const TWITCH_WS_ADDRESS_TLS: &str = "irc-ws.chat.twitch.tv:443";
 
 /// A TLS domain for Twitch's websocket
+///
+/// `irc-ws.chat.twitch.tv`
 pub const TWITCH_WS_TLS_DOMAIN: &str = "irc-ws.chat.twitch.tv";
 
 /// A TLS domain for Twitch
+///
+/// `irc.chat.twitch.tv`
 pub const TWITCH_TLS_DOMAIN: &str = "irc.chat.twitch.tv";
 
 /// An anonymous login.
@@ -95,57 +117,59 @@ pub(crate) const JUSTINFAN1234: &str = "justinfan1234";
 #[allow(unused_macros)]
 mod macros;
 
-pub mod decoder;
-pub use decoder::{DecodeError, Decoder};
-cfg_async! { pub use decoder::AsyncDecoder; }
+#[cfg(feature = "serde")]
+mod serde;
 
-pub mod encoder;
-pub use encoder::Encoder;
-cfg_async! { pub use encoder::AsyncEncoder; }
-
-pub mod split;
-
-cfg_writer! { pub mod writer; }
-
-pub mod runner;
-pub use runner::Error;
+pub mod maybe_owned;
 
 pub mod commands;
 pub mod messages;
 
-cfg_async! {
-cfg_ws!{
-    pub mod ws;
-    #[doc(inline)]
-    pub use ws::{WsDecoder, WsEncoder};
-}
-}
-
 pub mod irc;
-pub use irc::{IrcMessage, MessageError};
+pub mod twitch;
 
-/// Helpful testing utilities
 pub mod test;
 
+pub use encodable::Encodable;
+pub use ext::PrivmsgExt;
 #[doc(inline)]
 pub use irc::{FromIrcMessage, IntoIrcMessage};
-
-pub mod twitch;
-pub use twitch::UserConfig;
-
-mod encodable;
-pub use encodable::Encodable;
-
-pub mod maybe_owned;
 pub use maybe_owned::IntoOwned;
-use maybe_owned::{MaybeOwned, MaybeOwnedIndex};
-
-mod validator;
 pub use validator::Validator;
 
-#[cfg(feature = "serde")]
-mod serde;
-mod util;
+use maybe_owned::{MaybeOwned, MaybeOwnedIndex};
+
+mod encodable;
+mod identity;
+mod validator;
 
 mod ext;
-pub use ext::PrivmsgExt;
+mod util;
+
+mod decoder;
+mod encoder;
+
+mod handshake;
+mod io;
+
+mod timeout;
+mod wait_for;
+
+#[cfg(feature = "writer")]
+#[cfg_attr(docsrs, doc(cfg(feature = "writer")))]
+pub mod writer;
+
+pub mod sync;
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+pub mod asynchronous;
+
+#[cfg(feature = "sink_stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink_stream")))]
+pub mod stream;
+
+mod make_sure_features_flags_are_correct {
+    #[cfg(all(feature = "sink_stream", not(feature = "async")))]
+    compile_error!("`async` must be enabled when `sink_stream` is enabled");
+}

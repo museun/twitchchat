@@ -1,4 +1,3 @@
-// cfg_async! {
 use std::{
     io::{Result as IoResult, Write},
     pin::Pin,
@@ -73,9 +72,7 @@ impl<W> AsyncEncoder<W>
 where
     W: AsyncWrite + Send + Unpin,
 {
-    /// Create a new Encoder over this [`futures_io::AsyncWrite`][write] instance
-    ///
-    /// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
+    /// Create a new Encoder over this [`futures::AsyncWrite`] instance
     pub fn new(writer: W) -> Self {
         Self {
             writer,
@@ -84,11 +81,9 @@ where
         }
     }
 
-    /// Get the inner [`futures_io::AsyncWrite`][write] instance out
+    /// Get the inner [`futures::AsyncWrite`] instance out
     ///
     /// This writes and flushes any buffered data before it consumes self.
-    ///
-    /// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
     pub async fn into_inner(mut self) -> IoResult<W> {
         if self.data.is_empty() {
             return Ok(self.writer);
@@ -189,4 +184,3 @@ mod tests {
         futures_lite::future::block_on(fut);
     }
 }
-// }

@@ -1,5 +1,4 @@
-//! Twitch messages that can be parsed from `IrcMessage`, or subscribed to from the `Dispatcher`
-//!
+//! Twitch messages that can be parsed from `IrcMessage`
 //!
 //! # Converting from an `IrcMessage` to a specific message
 //!

@@ -1,4 +1,4 @@
-use crate::{FromIrcMessage, IrcMessage, MaybeOwned};
+use crate::{irc::IrcMessage, FromIrcMessage, MaybeOwned};
 
 use serde::{
     de::{Error, MapAccess, Visitor},

@@ -1,4 +1,4 @@
-use crate::MessageError;
+use crate::irc::MessageError;
 
 /// An error produced by a Decoder.
 #[derive(Debug)]
@@ -33,5 +33,17 @@ impl std::error::Error for DecodeError {
             Self::ParseError(err) => Some(err),
             _ => None,
         }
+    }
+}
+
+impl From<std::io::Error> for DecodeError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
+    }
+}
+
+impl From<std::str::Utf8Error> for DecodeError {
+    fn from(err: std::str::Utf8Error) -> Self {
+        Self::InvalidUtf8(err)
     }
 }

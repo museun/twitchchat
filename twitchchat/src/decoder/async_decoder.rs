@@ -1,5 +1,9 @@
-// cfg_async! {
-use crate::{irc::IrcMessage, DecodeError, IntoOwned};
+use super::DecodeError;
+use crate::{
+    irc::IrcMessage,
+    wait_for::{wait_inner, Event, State},
+    IntoOwned as _,
+};
 
 use std::{
     collections::VecDeque,
@@ -8,43 +12,26 @@ use std::{
     task::{Context, Poll},
 };
 
-use futures_lite::{io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, Stream};
+use futures_lite::{
+    io::BufReader as AsyncBufReader, AsyncBufReadExt, AsyncRead, AsyncWrite, Stream,
+};
 
-/// A decoder over [`futures_io::AsyncRead`][write] that produces [`IrcMessage`]s
+/// A decoder over [`futures::AsyncRead`] that produces [`IrcMessage`]s
 ///
 /// This will return an [`DecodeError::Eof`] when its done reading manually.
 ///
 /// When reading it as a stream, `Eof` will signal the end of the stream (e.g. `None`)
-///
-/// [write]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncWrite.html
 pub struct AsyncDecoder<R> {
     reader: AsyncBufReader<R>,
     buf: Vec<u8>,
     back_queue: VecDeque<IrcMessage<'static>>,
 }
 
-impl<R> Extend<IrcMessage<'static>> for AsyncDecoder<R> {
-    fn extend<T>(&mut self, iter: T)
-    where
-        T: IntoIterator<Item = IrcMessage<'static>>,
-    {
-        self.back_queue.extend(iter)
-    }
-}
-
-impl<R> std::fmt::Debug for AsyncDecoder<R> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AsyncDecoder").finish()
-    }
-}
-
 impl<R> AsyncDecoder<R>
 where
     R: AsyncRead + Send + Unpin,
 {
-    /// Create a new [`AsyncDecoder`] from this [`futures_io::AsyncRead`][read] instance
-    ///
-    /// [read]: https://docs.rs/futures-io/0.3.6/futures_io/trait.AsyncRead.html
+    /// Create a new [`AsyncDecoder`] from this [`futures::AsyncRead`] instance
     pub fn new(reader: R) -> Self {
         Self {
             reader: AsyncBufReader::new(reader),
@@ -82,9 +69,48 @@ where
             .map(|(_, msg)| msg)
     }
 
+    /// Wait for a specific event.
+    ///
+    /// This returns the specific matched event and any missed messages read before this returns.
+    ///
+    /// You can use [Decoder::extend][extend] to feed these messages back into the decoder.
+    ///
+    /// [extend]: AsyncDecoder::extend()
+    pub async fn wait_for(
+        &mut self,
+        event: Event,
+    ) -> Result<(IrcMessage<'static>, Vec<IrcMessage<'static>>), DecodeError>
+    where
+        R: AsyncWrite,
+    {
+        let mut missed = vec![];
+        loop {
+            match wait_inner(self.read_message().await, event)? {
+                State::Done(msg) => break Ok((msg.into_owned(), missed)),
+                State::Requeue(msg) => missed.push(msg.into_owned()),
+                State::Yield => futures_lite::future::yield_now().await,
+            }
+        }
+    }
+
     /// Consume the decoder returning the inner Reader
     pub fn into_inner(self) -> R {
         self.reader.into_inner()
+    }
+}
+
+impl<R> Extend<IrcMessage<'static>> for AsyncDecoder<R> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = IrcMessage<'static>>,
+    {
+        self.back_queue.extend(iter)
+    }
+}
+
+impl<R> std::fmt::Debug for AsyncDecoder<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncDecoder").finish()
     }
 }
 
@@ -151,4 +177,3 @@ mod tests {
         futures_lite::future::block_on(fut);
     }
 }
-// }
