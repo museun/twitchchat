@@ -15,9 +15,9 @@ categories    = ["asynchronous", "network-programming"]
 rustls = ["async-tls"]
 
 [dependencies]
-twitchchat = "0.14.5"
+twitchchat = "0.15"
 async-io = "1.1.10"
 async-tls = { version = "0.10.0", optional = true }
 
 [dev-dependencies]
-futures-io = "0.3.6"
+futures-io = "0.3.7"

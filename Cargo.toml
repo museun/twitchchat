@@ -7,8 +7,11 @@ members = [
     "twitchchat_smol",
     "twitchchat_tokio",
     "twitchchat_tokio02",
+    "twitchchat_tungstenite",
     
     # internal crates
-    "examples"
+    # "examples"
 ]
 
+[patch.crates-io]
+twitchchat = { path = "twitchchat" }
