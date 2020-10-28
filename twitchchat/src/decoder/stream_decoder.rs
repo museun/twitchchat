@@ -1,5 +1,9 @@
 use futures::{Stream, StreamExt};
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use super::DecodeError;
 use crate::{irc::IrcMessage, wait_for::Event, IntoOwned as _};
@@ -102,8 +106,9 @@ where
             [..] => self.buf.push_str("\r\n"),
         };
 
-        let (p, msg) =
-            crate::irc::parse_one(&self.buf[self.pos..]).map_err(DecodeError::ParseError)?;
+        let (p, msg) = crate::irc::parse_one(&self.buf[self.pos..]) //
+            .map_err(DecodeError::ParseError)?;
+
         self.pos = if p > 0 { self.pos + p } else { 0 };
 
         Ok(msg.into_owned())
@@ -122,5 +127,33 @@ impl<IO> Extend<IrcMessage<'static>> for StreamDecoder<IO> {
 impl<IO> std::fmt::Debug for StreamDecoder<IO> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StreamDecoder").finish()
+    }
+}
+
+impl<IO, I> Stream for StreamDecoder<IO>
+where
+    IO: Stream<Item = I> + Unpin,
+    <IO as Stream>::Item: ReadMessage + Send + Sync,
+{
+    type Item = Result<IrcMessage<'static>, DecodeError>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        use std::future::Future as _;
+
+        let this = self.get_mut();
+        let fut = this.read_message();
+        futures_lite::pin!(fut);
+
+        let res = match futures_lite::ready!(fut.poll(cx)) {
+            Err(DecodeError::Eof) => None,
+            Err(DecodeError::Io(err)) if crate::util::is_blocking_error(&err) => {
+                cx.waker().wake_by_ref();
+                return Poll::Pending;
+            }
+            Ok(msg) => Some(Ok(msg.into_owned())),
+            Err(err) => Some(Err(err)),
+        };
+
+        Poll::Ready(res)
     }
 }
