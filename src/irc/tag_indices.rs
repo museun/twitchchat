@@ -1,12 +1,14 @@
-use crate::maybe_owned::MaybeOwned;
-use crate::{IntoOwned, MaybeOwnedIndex};
+use std::borrow::Cow;
+
+use crate::{maybe_owned::MaybeOwned, IntoOwned, MessageError};
 
 /// Pre-computed tag indices
 ///
 /// This type is only exposed for those wanting to extend/make custom types.
 #[derive(Default, Clone, PartialEq)]
 pub struct TagIndices {
-    pub(super) map: Box<[(MaybeOwnedIndex, MaybeOwnedIndex)]>,
+    // NOTE this is a hack to keep the semver stable, in v0.15 this'll go back to being borrowed.
+    pub(super) map: Box<[(Cow<'static, str>, Cow<'static, str>)]>,
 }
 
 impl std::fmt::Debug for TagIndices {
@@ -21,51 +23,29 @@ impl TagIndices {
     /// Build indices from this tags fragment
     ///
     /// The fragment should be in the form of `'@k1=v2;k2=v2'`    
-    pub fn build_indices(input: &str) -> Self {
+    pub fn build_indices(input: &str) -> Result<Self, MessageError> {
         if !input.starts_with('@') {
-            return Self::default();
+            return Ok(Self::default());
         }
 
-        enum Mode {
-            Head,
-            Tail,
-        }
+        input[1..]
+            .split_terminator(';')
+            .enumerate()
+            .map(|(pos, input)| {
+                use MessageError::{MissingTagKey, MissingTagValue};
+                let expect = |s: Option<&str>, err: fn(usize) -> MessageError| {
+                    s.map(ToString::to_string)
+                        .map(Cow::from)
+                        .ok_or_else(|| err(pos))
+                };
 
-        let mut map = Vec::with_capacity(input.chars().filter(|&c| c == ';').count() + 1);
-        let (mut key, mut value) = (MaybeOwnedIndex::new(1), MaybeOwnedIndex::new(1));
-
-        let mut mode = Mode::Head;
-
-        for (i, ch) in input.char_indices().skip(1) {
-            let i = i + 1;
-            match ch {
-                ';' => {
-                    mode = Mode::Head;
-                    map.push((key.replace(i), value.replace(i)));
-                }
-                '=' => {
-                    mode = Mode::Tail;
-                    value.replace(i);
-                }
-                _ => {
-                    match mode {
-                        Mode::Head => &mut key,
-                        Mode::Tail => &mut value,
-                    }
-                    .bump_tail();
-                }
-            }
-        }
-
-        // we should allow empty values
-        // but not empty keys
-        if !key.is_empty() {
-            map.push((key, value));
-        }
-
-        Self {
-            map: map.into_boxed_slice(),
-        }
+                let mut iter = input.split('=');
+                let key = expect(iter.next().filter(|s| !s.is_empty()), MissingTagKey)?;
+                let value = expect(iter.next(), MissingTagValue)?;
+                Ok((key, value))
+            })
+            .collect::<Result<_, _>>()
+            .map(|map| Self { map })
     }
 
     /// Get the number of parsed tags
@@ -79,16 +59,16 @@ impl TagIndices {
     }
 
     // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
-    pub(crate) fn get_unescaped<'a>(&'a self, key: &str, data: &'a str) -> Option<MaybeOwned<'a>> {
-        self.get(key, data).map(crate::test::unescape_str)
+    pub(crate) fn get_unescaped<'a>(&'a self, key: &str) -> Option<MaybeOwned<'a>> {
+        self.get(key).map(crate::test::unescape_str)
     }
 
     // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
-    pub(crate) fn get<'a>(&'a self, key: &str, data: &'a str) -> Option<&'a str> {
+    pub(crate) fn get<'a>(&'a self, key: &str) -> Option<&'a str> {
         let key = crate::test::escape_str(key);
         self.map
             .iter()
-            .find_map(|(k, v)| if key == data[k] { Some(&data[v]) } else { None })
+            .find_map(|(k, v)| if &key == k { Some(&**v) } else { None })
     }
 }
 
@@ -96,5 +76,15 @@ impl IntoOwned<'static> for TagIndices {
     type Output = Self;
     fn into_owned(self) -> Self::Output {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn utf8_tags() {
+        let input = "@id=86293428;login=yuebing233;display_name=月饼;foo=bar";
+        TagIndices::build_indices(input).unwrap();
     }
 }

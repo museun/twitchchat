@@ -129,7 +129,12 @@ impl<'a> TagsBuilder<'a> {
             .expect("memory for string allocation");
         }
 
-        let indices = TagIndices::build_indices(&buf);
+        let indices = TagIndices::build_indices(&buf).map_err(|err| match err {
+            crate::MessageError::MissingTagKey(_) => BuilderError::EmptyKey,
+            crate::MessageError::MissingTagValue(_) => BuilderError::EmptyTags,
+            _ => unreachable!(),
+        })?;
+
         Ok(UserTags {
             data: buf.into(),
             indices,
