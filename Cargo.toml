@@ -1,7 +1,7 @@
 [package]
 name          = "twitchchat"
 edition       = "2018"
-version       = "0.14.6"
+version       = "0.14.7"
 authors       = ["museun <museun@outlook.com>"]
 keywords      = ["twitch", "irc", "async", "asynchronous", "tokio"]
 license       = "MIT OR Apache-2.0"
