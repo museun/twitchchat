@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crate::irc::{TagIndices, Tags};
+use crate::irc::{MessageError, TagIndices, Tags};
 use crate::MaybeOwned;
 
 #[derive(Debug)]
@@ -129,7 +129,14 @@ impl<'a> TagsBuilder<'a> {
             .expect("memory for string allocation");
         }
 
-        let indices = TagIndices::build_indices(&buf);
+        let indices = TagIndices::build_indices(&buf).map_err(|err| match err {
+            MessageError::MissingTagKey { .. } => BuilderError::EmptyKey,
+            MessageError::MissingTagValue { .. } => BuilderError::EmptyTags,
+            _ => {
+                unreachable!()
+            }
+        })?;
+
         Ok(UserTags {
             data: buf.into(),
             indices,

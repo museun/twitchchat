@@ -20,7 +20,7 @@ impl<'a> std::fmt::Debug for Tags<'a> {
 
 impl<'a> Tags<'a> {
     /// Build the tags view from this borrowed `MaybeOwned` and an associated `TagIndices`
-    pub const fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
+    pub fn from_data_indices(data: &'a MaybeOwned<'a>, indices: &'a TagIndices) -> Self {
         Self { data, indices }
     }
 
@@ -30,12 +30,12 @@ impl<'a> Tags<'a> {
     }
 
     /// Returns how many tags were parsed
-    pub const fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.indices.len()
     }
 
     /// Returns whether there are any tags
-    pub const fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
@@ -47,7 +47,7 @@ impl<'a> Tags<'a> {
     where
         K: ?Sized + Borrow<str>,
     {
-        self.indices.get_unescaped(key.borrow(), &*self.data)
+        self.indices.get_unescaped(key.borrow())
     }
 
     /// Tries to get this `key`
@@ -58,7 +58,7 @@ impl<'a> Tags<'a> {
     where
         K: ?Sized + Borrow<str>,
     {
-        self.indices.get(key.borrow(), &*self.data)
+        self.indices.get(key.borrow())
     }
 
     /** Tries to get the tag as a parsable [std::str::FromStr] type.
@@ -68,7 +68,7 @@ impl<'a> Tags<'a> {
     ```rust
     # use twitchchat::{irc::{TagIndices, Tags}, maybe_owned::MaybeOwned};
     let input: MaybeOwned<'_> = "@foo=42;color=#1E90FF".into();
-    let indices = TagIndices::build_indices(&*input);
+    let indices = TagIndices::build_indices(&*input).unwrap();
     let tags = Tags::from_data_indices(&input, &indices);
 
     // 'foo' can be parsed as a usize
@@ -111,7 +111,7 @@ impl<'a> Tags<'a> {
     # use twitchchat::irc::{TagIndices, Tags};
     # use twitchchat::maybe_owned::MaybeOwned;
     let input: MaybeOwned<'_> = "@foo=42;ok=true;nope=false;test=1;not_test=0".into();
-    let indices = TagIndices::build_indices(&*input);
+    let indices = TagIndices::build_indices(&*input).unwrap();
     let tags = Tags::from_data_indices(&input, &indices);
 
     // key 'foo' is not a bool
@@ -145,7 +145,7 @@ impl<'a> Tags<'a> {
     }
 
     /// Get an iterator over all of the `key, value` pairs of tags
-    pub const fn iter(&self) -> TagsIter<'_> {
+    pub fn iter(&self) -> TagsIter<'_> {
         TagsIter {
             inner: self,
             pos: 0,
@@ -165,7 +165,7 @@ impl<'a> IntoIterator for &'a Tags<'a> {
     }
 }
 
-/// An iterator over the [`Tags`]
+/// An iterator over the [Tags]
 #[derive(Clone)]
 pub struct TagsIter<'a> {
     inner: &'a Tags<'a>,
@@ -188,8 +188,8 @@ impl<'a> Iterator for TagsIter<'a> {
         let pos = self.pos;
         self.pos += 1;
 
-        let (k, v) = self.inner.indices.map.get(pos)?;
-        Some((&self.inner.data[k], &self.inner.data[v]))
+        let (k, v) = &self.inner.indices.map.get(pos)?;
+        Some((&**k, &**v))
     }
 }
 
@@ -312,7 +312,7 @@ mod tests {
     fn escaped_tag() {
         let s = escape_str(r"@hello;world=abc\ndef");
         let data = MaybeOwned::Borrowed(&*s);
-        let indices = TagIndices::build_indices(&*data);
+        let indices = TagIndices::build_indices(&*data).unwrap();
 
         let tags = Tags::from_data_indices(&data, &indices);
         assert_eq!(tags.get_unescaped("hello;world").unwrap(), r"abc\ndef");
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn invalid_input_missing_leading_at() {
         let data = MaybeOwned::Borrowed("foo=bar;baz=quux");
-        let indices = TagIndices::build_indices(&*data);
+        let indices = TagIndices::build_indices(&*data).unwrap();
 
         let tags = Tags::from_data_indices(&data, &indices);
         assert!(tags.is_empty());
@@ -334,7 +334,7 @@ mod tests {
 
         for input in inputs {
             let data = MaybeOwned::Borrowed(*input);
-            let indices = TagIndices::build_indices(&*data);
+            let indices = TagIndices::build_indices(&*data).unwrap();
 
             let tags = Tags::from_data_indices(&data, &indices);
             assert!(tags.is_empty());
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn get_parsed() {
         let input = MaybeOwned::Borrowed("@foo=42;badges=broadcaster/1,subscriber/6");
-        let indices = TagIndices::build_indices(&*input);
+        let indices = TagIndices::build_indices(&*input).unwrap();
 
         let tags = Tags::from_data_indices(&input, &indices);
         assert_eq!(tags.get_parsed::<_, usize>("foo").unwrap(), 42);
@@ -379,7 +379,7 @@ mod tests {
     #[test]
     fn get_bool() {
         let input = MaybeOwned::Borrowed("@foo=42;ok=true;nope=false");
-        let indices = TagIndices::build_indices(&*input);
+        let indices = TagIndices::build_indices(&*input).unwrap();
 
         let tags = Tags::from_data_indices(&input, &indices);
         assert!(!tags.get_as_bool("foo"));
@@ -398,7 +398,7 @@ mod tests {
 
         for input in inputs {
             let data = MaybeOwned::Borrowed(*input);
-            let indices = TagIndices::build_indices(&*data);
+            let indices = TagIndices::build_indices(&*data).unwrap();
             let tags = Tags::from_data_indices(&data, &indices);
 
             assert_eq!(tags.get("foo").unwrap(), "bar");
@@ -418,7 +418,7 @@ mod tests {
 
         for input in inputs {
             let data = MaybeOwned::Borrowed(*input);
-            let indices = TagIndices::build_indices(&*data);
+            let indices = TagIndices::build_indices(&*data).unwrap();
             let tags = Tags::from_data_indices(&data, &indices);
 
             let len = tags.into_iter().count();
@@ -477,7 +477,7 @@ mod tests {
         ];
 
         let input = MaybeOwned::Borrowed(input);
-        let indices = TagIndices::build_indices(&*input);
+        let indices = TagIndices::build_indices(&*input).unwrap();
 
         let tags = Tags::from_data_indices(&input, &indices);
 

@@ -36,6 +36,20 @@ pub enum MessageError {
         error: Box<dyn std::error::Error + Send + Sync>,
     },
 
+    /// An empty key in the tags was provided
+    MissingTagKey(
+        /// Tag pair index this key was expected to be at
+        usize,
+    ),
+
+    /// A value wasn't provided for a tag pair
+    ///
+    /// This usually means the tag was 'key;' and not 'key=val'. 'key=' is allowed.
+    MissingTagValue(
+        /// Tag pair index this key was expected to be at
+        usize,
+    ),
+
     /// An incomplete message was provided
     IncompleteMessage {
         /// At index `pos`
@@ -63,6 +77,8 @@ impl std::fmt::Display for MessageError {
             Self::ExpectedData => write!(f, "expected a data segment in the message"),
             Self::ExpectedTag { name } => write!(f, "expected tag '{}'", name),
             Self::CannotParseTag { name, error } => write!(f, "cannot parse '{}': {}", name, error),
+            Self::MissingTagKey(index) => write!(f, "missing tag key at pair index: {}", index),
+            Self::MissingTagValue(index) => write!(f, "missing tag value at pair index: {}", index),
             Self::IncompleteMessage { pos } => write!(f, "incomplete message starting at: {}", pos),
             Self::EmptyMessage => write!(f, "no message could be parsed"),
             Self::Custom { error } => write!(f, "custom error: {}", error),
