@@ -155,11 +155,11 @@ mod io;
 mod timeout;
 mod wait_for;
 
+pub mod sync;
+
 #[cfg(feature = "writer")]
 #[cfg_attr(docsrs, doc(cfg(feature = "writer")))]
 pub mod writer;
-
-pub mod sync;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]

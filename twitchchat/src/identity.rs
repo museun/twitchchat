@@ -33,7 +33,7 @@ pub enum Identity {
         user_id: i64,
         /// Your display name, if set
         display_name: Option<String>,
-        /// You display color, if set
+        /// Your display color, if set
         color: Color,
         /// The capabilities you'll have
         caps: YourCapabilities,
