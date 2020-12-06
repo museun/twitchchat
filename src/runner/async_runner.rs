@@ -2,7 +2,6 @@ cfg_async! {
 use crate::{
     channel::Receiver,
     commands,
-    connector::Connector,
     encoder::AsyncEncoder,
     messages::{Capability, Commands, MessageId},
     rate_limit::{RateClass, RateLimit},

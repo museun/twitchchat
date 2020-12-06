@@ -66,8 +66,8 @@ For just encoding messages:
 macro_rules! cfg_async {
     ($($item:item)*) => {
         $(
-            #[cfg(feature = "async")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+            // #[cfg(feature = "async")]
+            // #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
             $item
         )*
     };
@@ -112,7 +112,6 @@ cfg_async! {
     pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
 }
 
-cfg_async! { pub mod connector; }
 cfg_async! { pub mod writer; }
 cfg_async! { pub mod channel; }
 
