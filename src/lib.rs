@@ -63,16 +63,6 @@ For just encoding messages:
 
 */
 
-macro_rules! cfg_async {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "async")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-            $item
-        )*
-    };
-}
-
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
@@ -112,24 +102,17 @@ cfg_async! {
     pub type Writer = crate::writer::AsyncWriter<crate::writer::MpscWriter>;
 }
 
-cfg_async! { pub mod connector; }
 cfg_async! { pub mod writer; }
 cfg_async! { pub mod channel; }
 
 pub mod runner;
 pub use runner::{Error as RunnerError, Status};
-cfg_async! { pub use runner::AsyncRunner; }
-
-pub mod rate_limit;
 
 pub mod commands;
 pub mod messages;
 
 pub mod irc;
 pub use irc::{IrcMessage, MessageError};
-
-/// Helpful testing utilities
-pub mod test;
 
 #[doc(inline)]
 pub use irc::{FromIrcMessage, IntoIrcMessage};

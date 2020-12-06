@@ -26,20 +26,6 @@ pub use error::Error;
 mod timeout;
 
 cfg_async! {
-    mod rate_limit;
-}
-
-cfg_async! {
-    mod channel;
-    pub use channel::Channel;
-}
-
-cfg_async! {
-    mod async_runner;
-    pub use async_runner::AsyncRunner;
-}
-
-cfg_async! {
     #[doc(inline)]
     pub use crate::util::NotifyHandle;
 }

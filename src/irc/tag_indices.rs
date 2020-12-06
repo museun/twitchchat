@@ -22,7 +22,7 @@ impl std::fmt::Debug for TagIndices {
 impl TagIndices {
     /// Build indices from this tags fragment
     ///
-    /// The fragment should be in the form of `'@k1=v2;k2=v2'`    
+    /// The fragment should be in the form of `'@k1=v2;k2=v2'`
     pub fn build_indices(input: &str) -> Result<Self, MessageError> {
         if !input.starts_with('@') {
             return Ok(Self::default());
@@ -60,12 +60,12 @@ impl TagIndices {
 
     // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
     pub(crate) fn get_unescaped<'a>(&'a self, key: &str) -> Option<MaybeOwned<'a>> {
-        self.get(key).map(crate::test::unescape_str)
+        self.get(key).map(crate::irc::tags::unescape_str)
     }
 
     // NOTE: this isn't public because they don't verify 'data' is the same as the built-indices data
     pub(crate) fn get<'a>(&'a self, key: &str) -> Option<&'a str> {
-        let key = crate::test::escape_str(key);
+        let key = crate::irc::tags::escape_str(key);
         self.map
             .iter()
             .find_map(|(k, v)| if &key == k { Some(&**v) } else { None })
