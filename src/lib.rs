@@ -117,7 +117,6 @@ cfg_async! { pub mod channel; }
 
 pub mod runner;
 pub use runner::{Error as RunnerError, Status};
-cfg_async! { pub use runner::AsyncRunner; }
 
 pub mod rate_limit;
 

@@ -35,11 +35,6 @@ cfg_async! {
 }
 
 cfg_async! {
-    mod async_runner;
-    pub use async_runner::AsyncRunner;
-}
-
-cfg_async! {
     #[doc(inline)]
     pub use crate::util::NotifyHandle;
 }
