@@ -10,4 +10,4 @@ Cargo.lock
 *.log
 *.html
 
-
+.trash*
