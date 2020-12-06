@@ -63,16 +63,6 @@ For just encoding messages:
 
 */
 
-macro_rules! cfg_async {
-    ($($item:item)*) => {
-        $(
-            // #[cfg(feature = "async")]
-            // #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-            $item
-        )*
-    };
-}
-
 /// The Twitch IRC address for non-TLS connections
 pub const TWITCH_IRC_ADDRESS: &str = "irc.chat.twitch.tv:6667";
 
