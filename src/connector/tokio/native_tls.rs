@@ -27,7 +27,7 @@ impl crate::connector::Connector for ConnectorNativeTls {
         let this = self.clone();
 
         let fut = async move {
-            use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
+            use tokio_util::compat::TokioAsyncReadCompatExt as _;
 
             let connector: tokio_native_tls::TlsConnector = ::native_tls::TlsConnector::new()
                 .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?

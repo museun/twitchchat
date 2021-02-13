@@ -29,14 +29,18 @@ impl crate::connector::Connector for ConnectorOpenSsl {
         let this = self.clone();
 
         let fut = async move {
-            use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
+            use tokio_util::compat::TokioAsyncReadCompatExt as _;
 
             let config = ::openssl::ssl::SslConnector::builder(::openssl::ssl::SslMethod::tls())
                 .and_then(|c| c.build().configure())
                 .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
             let stream = tokio::net::TcpStream::connect(&*this.addrs).await?;
-            let stream = tokio_openssl::connect(config, &this.tls_domain, stream)
+            let ssl = config.into_ssl(&this.tls_domain).map_err(|err| Error::new(ErrorKind::Other, err))?;
+            let mut stream = tokio_openssl::SslStream::new(ssl, stream)
+                .map_err(|err| Error::new(ErrorKind::Other, err))?;
+            std::pin::Pin::new(&mut stream)
+                .connect()
                 .await
                 .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
