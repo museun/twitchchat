@@ -11,7 +11,7 @@ macro_rules! into_owned {
 
 macro_rules! serde_struct {
     (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]); };
+    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_struct!(@one $e)),*]) };
 
     ($ty:ident { $($field:ident),* $(,)? }) => {
         #[cfg(feature = "serde")]

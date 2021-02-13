@@ -105,7 +105,7 @@ export_commands! {
 
 macro_rules! serde_for_commands {
     (@one $($x:tt)*) => { () };
-    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_for_commands!(@one $e)),*]); };
+    (@len $($e:expr),*) => { <[()]>::len(&[$(serde_for_commands!(@one $e)),*]) };
 
     ($($ty:ident { $($field:ident),* $(,)?});* $(;)?) => {
         $(
