@@ -20,7 +20,7 @@ impl<'a> Prefix<'a> {
 
     /// Was this message from a user?
     pub fn is_user(&self) -> bool {
-        matches!(self.index, PrefixIndex::User{ .. })
+        matches!(self.index, PrefixIndex::User { .. })
     }
 
     /// Get the full, raw string
@@ -57,7 +57,7 @@ impl PrefixIndex {
 
     /// Was this message from a user?
     pub fn is_nick(&self) -> bool {
-        matches!(self, Self::User{ .. })
+        matches!(self, Self::User { .. })
     }
 
     /// Get the index of the nickname

@@ -61,7 +61,7 @@ mod tests {
         let input = ":tmi.twitch.tv NOT_JOIN #foo\r\n";
         for msg in parse(input).map(|s| s.unwrap()) {
             let err = Join::from_irc(msg).unwrap_err();
-            assert!(matches!(err,MessageError::InvalidCommand { .. }))
+            assert!(matches!(err, MessageError::InvalidCommand { .. }))
         }
     }
 

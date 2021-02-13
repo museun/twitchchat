@@ -44,7 +44,7 @@ fn parse_demo() {
 
         // parse it as an Commands, which wraps all of the provided messages
         let all = messages::Commands::from_irc(msg).unwrap();
-        assert!(matches!(all, messages::Commands::Privmsg{..}));
+        assert!(matches!(all, messages::Commands::Privmsg { .. }));
 
         // this is still borrowing from the 'input' from above.
         let all: messages::Commands<'_> = all;
@@ -82,7 +82,7 @@ fn parse_demo() {
 
     // you can convert a parsed message into an Commands easily by using From/Into;
     let all: messages::Commands<'_> = msg_b.into();
-    assert!(matches!(all, messages::Commands::Raw{..}));
+    assert!(matches!(all, messages::Commands::Raw { .. }));
 }
 
 fn decoder_demo() {

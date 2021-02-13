@@ -34,7 +34,7 @@ impl<'a> MaybeOwned<'a> {
 
     /// Checks whether this type is in the `Borrowed` state
     pub fn is_borrowed(&self) -> bool {
-        matches!(self, Self::Borrowed{..})
+        matches!(self, Self::Borrowed { .. })
     }
 }
 

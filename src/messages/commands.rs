@@ -215,6 +215,6 @@ mod tests {
         let input = ":test!test@test PRIVMSG #museun :this is a test\r\n";
         let msg = IrcMessage::parse(MaybeOwned::Borrowed(input)).unwrap();
         let all = Commands::from_irc(msg).unwrap();
-        assert!(matches!(all, Commands::Privmsg{..}));
+        assert!(matches!(all, Commands::Privmsg { .. }));
     }
 }
