@@ -37,7 +37,7 @@ async = [
 log = { version = "0.4", optional = true, features = ["std"] }
 
 # just the futures traits
-futures-lite = { version = "1.8", optional = true }
+futures-lite = { version = "1.11", optional = true }
 
 # field pin projection
 pin-project-lite = { version = "0.1", optional = true }
@@ -52,7 +52,7 @@ async-channel = { version = "1.4", optional = true }
 futures-timer = { version = "3.0", optional = true }
 
 # for 'fairness' in the main loop
-fastrand = { version = "1.3", optional = true }
+fastrand = { version = "1.4", optional = true }
 
 # for optional serialization and deserialization
 serde = { version = "1.0", features = ["derive"], optional = true }
@@ -87,7 +87,7 @@ async-mutex = { version = "1.4", optional = true }
 
 [dev-dependencies]
 anyhow         = "1.0"
-async-executor = { version = "1.3", default-features = false }
+async-executor = { version = "1.4", default-features = false }
 serde_json     = "1.0"
 rmp-serde      = "0.14"
 
