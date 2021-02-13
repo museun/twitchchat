@@ -18,7 +18,7 @@ impl crate::connector::Connector for Connector {
     fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
         let addrs = self.addrs.clone();
         let fut = async move {
-            use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
+            use tokio_util::compat::TokioAsyncReadCompatExt as _;
             let stream = tokio::net::TcpStream::connect(&*addrs).await?;
             Ok(async_dup::Mutex::new(stream.compat()))
         };

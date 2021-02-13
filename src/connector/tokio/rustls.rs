@@ -25,7 +25,7 @@ impl crate::connector::Connector for ConnectorRustTls {
     fn connect(&mut self) -> BoxedFuture<std::io::Result<Self::Output>> {
         let this = self.clone();
         let fut = async move {
-            use tokio_util::compat::Tokio02AsyncReadCompatExt as _;
+            use tokio_util::compat::TokioAsyncReadCompatExt as _;
             let domain = tokio_rustls::webpki::DNSNameRef::try_from_ascii_str(&this.tls_domain)
                 .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
 
