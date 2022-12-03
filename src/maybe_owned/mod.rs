@@ -19,6 +19,7 @@ pub use maybe_owned_index::MaybeOwnedIndex;
 ///
 /// This only exposed for people to extend messages themselves.
 #[cfg_attr(feature = "serde", derive(::serde::Serialize), serde(untagged))]
+#[derive(Hash)]
 pub enum MaybeOwned<'a> {
     /// Owned variant, a `Box<str>`. This usually means it has a `'static` lifetime
     Owned(Box<str>),
@@ -58,6 +59,8 @@ impl<'a> PartialEq for MaybeOwned<'a> {
         self.as_ref() == other.as_ref()
     }
 }
+
+impl<'a> Eq for MaybeOwned<'a> {}
 
 impl<'a> PartialEq<str> for MaybeOwned<'a> {
     fn eq(&self, other: &str) -> bool {
