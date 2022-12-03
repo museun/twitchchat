@@ -1,5 +1,7 @@
 use std::ops::Range;
 
+use crate::maybe_owned::MaybeOwned;
+
 /**
 Emotes are little pictograms used in-line in Twitch messages
 
@@ -12,30 +14,40 @@ They are presented (to the irc connection) in a `id:range1,range2/id2:range1,..`
 */
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub struct Emotes {
-    /// This emote id, e.g. `Kappa = 25`    
-    pub id: usize,
+pub struct Emotes<'a> {
+    /// This emote id, e.g. `Kappa = 25`
+    pub id: MaybeOwned<'a>,
     /// A list of [Range] in the message where this emote is found
     ///
     /// [Range]: https://doc.rust-lang.org/std/ops/struct.Range.html
     pub ranges: Vec<Range<u16>>,
 }
 
-impl Emotes {
+impl<'a> Emotes<'a> {
     /// Parse emotes from a string, returning an iterator over each emote
-    pub fn parse(input: &str) -> impl Iterator<Item = Self> + '_ {
+    pub fn parse(input: &'a str) -> impl Iterator<Item = Emotes<'a>> + 'a {
         input.split_terminator('/').filter_map(Self::parse_item)
     }
 
     /// Parse single emote
-    pub fn parse_item(item: &str) -> Option<Self> {
+    pub fn parse_item(item: &'a str) -> Option<Self> {
         get_parts(item, ':').and_then(|(head, tail)| {
             let emotes = Self {
-                id: head.parse().ok()?,
+                id: head.into(),
                 ranges: get_ranges(tail).collect(),
             };
             emotes.into()
         })
+    }
+}
+
+impl<'a> crate::IntoOwned<'a> for Emotes<'a> {
+    type Output = Emotes<'static>;
+    fn into_owned(self) -> Self::Output {
+        Emotes {
+            id: self.id.into_owned(),
+            ranges: self.ranges,
+        }
     }
 }
 
@@ -64,10 +76,11 @@ mod tests {
         macro_rules! emote {
             ($id:expr, $($r:expr),* $(,)?) => {
                 Emotes {
-                    id: $id,
+                    id: $id.to_string().into(),
                     ranges: vec![$($r),*]
                 }
             };
+
         }
 
         let inputs = &[
@@ -94,6 +107,10 @@ mod tests {
             (
                 "33:0-7/25:9-13,15-19",
                 vec![emote!(33, (0..7)), emote!(25, (9..13), (15..19))],
+            ),
+            (
+                "emotesv2_4c3b4ed516de493bbcd2df2f5d450f49:0-25",
+                vec![emote!("emotesv2_4c3b4ed516de493bbcd2df2f5d450f49", (0..25))],
             ),
         ];
 

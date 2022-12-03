@@ -55,7 +55,7 @@ pub struct EmotesIter<'a> {
 }
 
 impl<'a> Iterator for EmotesIter<'a> {
-    type Item = Emotes;
+    type Item = Emotes<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(item) = self.items.as_mut()?.next() {
