@@ -6,7 +6,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use async_mutex::Mutex;
+use async_lock::Mutex;
 use futures_lite::io::*;
 
 use crate::connector::Connector;

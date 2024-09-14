@@ -183,7 +183,7 @@ mod tests {
             (r"the_win_end\r", r"the_win_end\\r"),
         ];
         for (input, expected) in tests {
-            assert_eq!(tags::escape_str(*input), *expected)
+            assert_eq!(tags::escape_str(input), *expected)
         }
 
         let tests = &["dont_escape+me", "foo=1234"];
@@ -236,7 +236,7 @@ mod tests {
         use crate::FromIrcMessage as _;
 
         let msg = "@badge-info=;badges=broadcaster/1;color=#FF69B4;display-name=museun;emote-only=1;emotes=25:0-4,6-10/81274:12-17;flags=;id=4e160a53-5482-4764-ba28-f224cd59a51f;mod=0;room-id=23196011;subscriber=0;tmi-sent-ts=1601079032426;turbo=0;user-id=23196011;user-type= :museun!museun@museun.tmi.twitch.tv PRIVMSG #museun :Kappa Kappa VoHiYo\r\n";
-        let msg = crate::IrcMessage::parse(crate::MaybeOwned::Borrowed(msg)).unwrap();
+        let msg = crate::IrcMessage::parse(MaybeOwned::Borrowed(msg)).unwrap();
         let pm = crate::messages::Privmsg::from_irc(msg).unwrap();
         let tags = pm.tags();
 

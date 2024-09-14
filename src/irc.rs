@@ -94,7 +94,7 @@ pub fn parse_one(input: &str) -> Result<(usize, IrcMessage<'_>), MessageError> {
     let next = &input[..pos];
     let done = next.len() == input.len();
 
-    let msg = IrcMessage::parse(crate::MaybeOwned::Borrowed(next))?;
+    let msg = IrcMessage::parse(MaybeOwned::Borrowed(next))?;
     Ok((if done { 0 } else { pos }, msg))
 }
 

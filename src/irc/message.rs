@@ -30,7 +30,7 @@ impl<'a> IrcMessage<'a> {
 
         let data = data.trim();
         if data.is_empty() {
-            return Err(super::MessageError::EmptyMessage);
+            return Err(MessageError::EmptyMessage);
         }
 
         let mut p = Parser {
@@ -51,7 +51,7 @@ impl<'a> IrcMessage<'a> {
 
     /// Get the raw string
     pub fn get_raw(&self) -> &str {
-        &*self.raw
+        &self.raw
     }
 
     /// Get the raw tags

@@ -395,7 +395,7 @@ mod tests {
         for msg in parse(input).map(|s| s.unwrap()) {
             let msg = UserNotice::from_irc(msg).unwrap();
             assert_eq!(msg.channel(), "#giantwaffle");
-            assert_eq!(msg.tags().is_empty(), false);
+            assert!(!msg.tags().is_empty());
         }
     }
 }

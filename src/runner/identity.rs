@@ -46,7 +46,7 @@ impl Identity {
         let (nick, _) = crate::ANONYMOUS_LOGIN;
         match self {
             Self::Anonymous { .. } => nick,
-            Self::Basic { name, .. } | Self::Full { name, .. } => &*name,
+            Self::Basic { name, .. } | Self::Full { name, .. } => name,
         }
     }
 }

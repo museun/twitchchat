@@ -171,7 +171,7 @@ mod tests {
             let msg = GlobalUserState::from_irc(msg).unwrap();
             assert!(msg.user_id().is_none());
             assert!(msg.display_name().is_none());
-            assert_eq!(msg.color(), crate::twitch::Color::default());
+            assert_eq!(msg.color(), Color::default());
             assert_eq!(msg.emote_sets(), vec!["0"]);
         }
     }
@@ -183,7 +183,7 @@ mod tests {
             let msg = GlobalUserState::from_irc(msg).unwrap();
             assert_eq!(msg.user_id().unwrap(), "241015868");
             assert_eq!(msg.display_name().unwrap(), "shaken_bot");
-            assert_eq!(msg.color(), crate::twitch::Color::default());
+            assert_eq!(msg.color(), Color::default());
             assert_eq!(msg.emote_sets(), vec!["0"]);
         }
     }

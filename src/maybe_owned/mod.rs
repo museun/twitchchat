@@ -74,7 +74,7 @@ impl<'a> PartialEq<&str> for MaybeOwned<'a> {
 impl<'a> AsRef<str> for MaybeOwned<'a> {
     fn as_ref(&self) -> &str {
         match self {
-            MaybeOwned::Owned(s) => &*s,
+            MaybeOwned::Owned(s) => s,
             MaybeOwned::Borrowed(s) => s,
         }
     }

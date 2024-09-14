@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
 
     pub(super) fn command(&mut self) -> MaybeOwnedIndex {
         let input = &self.input[self.pos..];
-        let pos = input.find(' ').unwrap_or_else(|| input.len());
+        let pos = input.find(' ').unwrap_or(input.len());
         self.mark_index(pos, pos + 1)
     }
 
@@ -55,7 +55,7 @@ impl<'a> Parser<'a> {
         }
 
         let input = self.input.get(self.pos..)?;
-        let pos = input.find(" :").unwrap_or_else(|| input.len());
+        let pos = input.find(" :").unwrap_or(input.len());
         Some(self.mark_index(pos, pos))
     }
 

@@ -19,7 +19,7 @@ all-features = true
 default = []
 testing = [
     "async",
-    "async-mutex",    
+    "async-lock",
 ]
 
 async = [
@@ -82,7 +82,7 @@ tokio-openssl    = { version = "0.6", optional = true }
 openssl          = { version = "0.10", optional = true, features = ["v110"] }
 
 # for some test utilities
-async-mutex = { version = "1.4", optional = true }
+async-lock = { version = "3.4", optional = true }
 
 
 [dev-dependencies]
