@@ -71,7 +71,7 @@ tokio-util       = { version = "0.6", features = ["compat"], optional = true }
 
 # rustls
 tokio-rustls     = { version = "0.22", optional = true }
-webpki-roots     = { version = "0.21", optional = true }
+webpki-roots     = { version = "1.0.10", optional = true }
 
 # native-tls
 tokio-native-tls = { version = "0.3", optional = true }
